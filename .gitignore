@@ -12,3 +12,5 @@ artifacts/
 .tools/
 test-results/
 *.tsbuildinfo
+
+.kotlin/
