@@ -13,4 +13,4 @@ Read docs/implementation-plan.md and the original .AGENTS development guide befo
 - Native acceptance requires actual builds and Android emulator checks. Physical-device and performance claims require separate measured evidence.
 - Keep build artifacts and development tools out of Git. Record actual results in docs/verification.md; never turn untested targets into completed claims.
 
-Branch workflow: dev is the integration branch. Develop the current import improvements on dev.feature-todevelop and commit focused changes there. Keep master as the first-draft baseline until an integration or release is requested.
+Branch workflow: dev is the integration branch. Develop the current import improvements on dev.feature-live-import and commit focused changes there. Keep master as the first-draft baseline until an integration or release is requested.

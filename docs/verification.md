@@ -52,7 +52,7 @@ Emulator recovery attempts used headless software acceleration with SwiftShader,
 
 ## Import feedback feature
 
-Work is recorded on dev.feature-todevelop, based on the dev integration branch at cdeff90. Master remains the first-draft baseline.
+Work is recorded on dev.feature-live-import, based on the dev integration branch at cdeff90. Master remains the first-draft baseline.
 
 Desktop metadata and artwork reads now occur outside the catalog mutex. Progress events are emitted after every ten processed audio files and for the final partial batch. The native adapter registers the listener before invoking import and removes it afterwards. The UI refreshes songs, album/artist groups and an open manual picker as import progresses, shows an immediate spinner and counts, and refreshes partial results even if import fails.
 
