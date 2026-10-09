@@ -18,6 +18,10 @@ import {
   compareCatalogTracks,
 } from "../domain";
 type StoredTrack = Track & { file: Blob; cover?: Blob };
+const validReleaseYear = (year: number | undefined) =>
+  year && Number.isInteger(year) && year >= 1000 && year <= 9999
+    ? year
+    : undefined;
 const initialPlayback = (): PlaybackSnapshot => ({
   trackId: null,
   playing: false,
@@ -242,19 +246,28 @@ export class BrowserMusic implements MusicApi {
     this.orderReady ??= (async () => {
       const { parseBlob } = await import("music-metadata");
       for (const old of await this.all<StoredTrack>("tracks")) {
-        if (old.orderMetadataRead || old.demo) continue;
+        if ((old.orderMetadataRead && old.releaseMetadataRead) || old.demo)
+          continue;
         try {
           const metadata = await parseBlob(old.file, {
             duration: false,
             skipCovers: true,
           });
           const current = await this.get<StoredTrack>("tracks", old.id);
-          if (!current || current.orderMetadataRead) continue;
+          if (!current) continue;
           await this.put("tracks", old.id, {
             ...current,
-            trackNumber: metadata.common.track.no || undefined,
-            discNumber: metadata.common.disk.no || undefined,
-            orderMetadataRead: true,
+            ...(!current.orderMetadataRead
+              ? {
+                  trackNumber: metadata.common.track.no || undefined,
+                  discNumber: metadata.common.disk.no || undefined,
+                  orderMetadataRead: true,
+                }
+              : {}),
+            releaseYear: validReleaseYear(
+              metadata.common.year ?? metadata.common.originalyear,
+            ),
+            releaseMetadataRead: true,
           });
         } catch {
           /* inaccessible legacy sources keep their stable fallback order */
@@ -371,6 +384,7 @@ export class BrowserMusic implements MusicApi {
         album = "",
         genre = "",
         durationMs = 0,
+        releaseYear: number | undefined,
         trackNumber: number | undefined,
         discNumber: number | undefined,
         cover: Blob | undefined;
@@ -381,6 +395,7 @@ export class BrowserMusic implements MusicApi {
         album = m.common.album || "";
         genre = m.common.genre?.join(", ") || "";
         durationMs = Math.round((m.format.duration || 0) * 1000);
+        releaseYear = validReleaseYear(m.common.year ?? m.common.originalyear);
         trackNumber = m.common.track.no || undefined;
         discNumber = m.common.disk.no || undefined;
         const p = m.common.picture?.[0];
@@ -412,6 +427,8 @@ export class BrowserMusic implements MusicApi {
         trackNumber,
         discNumber,
         orderMetadataRead: true,
+        releaseYear,
+        releaseMetadataRead: true,
         sourceUri: "browser-file:" + id,
         favorite: existing?.favorite ?? false,
         available: true,

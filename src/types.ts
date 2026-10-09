@@ -3,6 +3,8 @@ export interface Track {
   title: string;
   artist: string;
   album: string;
+  releaseYear?: number | null;
+  releaseMetadataRead?: boolean;
   genre: string;
   trackNumber?: number | null;
   discNumber?: number | null;

@@ -52,6 +52,9 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
   fun number(key:String,metadata:Int){retriever.extractMetadata(metadata)?.substringBefore('/')?.trim()?.toIntOrNull()?.takeIf{it>0}?.let{result.put(key,it)}}
   number("trackNumber",MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
   number("discNumber",MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
+  val year=(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?:retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE))?.take(4)?.toIntOrNull()
+  if(year!=null&&year in 1000..9999)result.put("releaseYear",year)
+  result.put("releaseMetadataRead",true)
  }
  fun albumOrder(uri:Uri):JSONObject {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);JSONObject().also{applyAlbumOrder(it,retriever)}}finally{retriever.release()}}
  fun artwork(uri:Uri):String? {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);retriever.embeddedPicture?.takeIf{it.size<=8*1024*1024}?.let{cachePicture(it)}}catch(_:Exception){null}finally{retriever.release()}}

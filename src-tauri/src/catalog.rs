@@ -35,6 +35,8 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
         duration_ms: 0,
         source_uri: path.to_string_lossy().into(),
         artwork_url: None,
+        release_year: None,
+        release_metadata_read: true,
         track_number: None,
         disc_number: None,
         order_metadata_read: true,
@@ -43,6 +45,7 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
         demo: false,
     };
     if let Ok(tagged) = lofty::read_from_path(path) {
+        t.release_year = crate::album_order::release_year(&tagged);
         t.duration_ms = tagged
             .properties()
             .duration()

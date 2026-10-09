@@ -196,6 +196,18 @@ export function TrackRow({
               </small>
             )}
           </span>
+          {track.album && (
+            <span
+              className="album-label"
+              title={
+                track.album +
+                (track.releaseYear ? " · " + track.releaseYear : "")
+              }
+            >
+              {track.album}
+              {track.releaseYear ? " · " + track.releaseYear : ""}
+            </span>
+          )}
         </span>
       </button>
       <span className="track-duration">

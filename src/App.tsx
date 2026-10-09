@@ -983,6 +983,9 @@ export default function App() {
                         <strong>{g.title}</strong>
                         <span>
                           {g.subtitle || g.ids.length + " " + t.tracks}
+                          {section === "albums" && g.track.releaseYear
+                            ? " · " + g.track.releaseYear
+                            : ""}
                         </span>
                       </button>
                     ))

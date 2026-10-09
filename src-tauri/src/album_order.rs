@@ -13,7 +13,7 @@ pub fn backfill(
 fn backfill_with(
     core: &Arc<Mutex<Store>>,
     ready: &Arc<Mutex<bool>>,
-    mut read: impl FnMut(&Track) -> Result<(Option<u32>, Option<u32>), String>,
+    mut read: impl FnMut(&Track) -> Result<(Option<u32>, Option<u32>, Option<u32>), String>,
 ) -> Result<(), String> {
     let mut ready = ready.lock().map_err(|e| e.to_string())?;
     if *ready {
@@ -22,15 +22,21 @@ fn backfill_with(
     let tracks = core.lock().map_err(|e| e.to_string())?.all_tracks()?;
     for old in tracks
         .into_iter()
-        .filter(|t| !t.order_metadata_read && !t.demo)
+        .filter(|t| (!t.order_metadata_read || !t.release_metadata_read) && !t.demo)
     {
-        if let Ok((track_number, disc_number)) = read(&old) {
+        if let Ok((track_number, disc_number, release_year)) = read(&old) {
             let mut store = core.lock().map_err(|e| e.to_string())?;
             if let Some(mut current) = store.track(&old.id)? {
-                if !current.order_metadata_read && current.source_uri == old.source_uri {
-                    current.track_number = track_number;
-                    current.disc_number = disc_number;
-                    current.order_metadata_read = true;
+                if current.source_uri == old.source_uri {
+                    if !current.order_metadata_read {
+                        current.track_number = track_number;
+                        current.disc_number = disc_number;
+                        current.order_metadata_read = true;
+                    }
+                    if !current.release_metadata_read {
+                        current.release_year = release_year;
+                        current.release_metadata_read = true;
+                    }
                     store.upsert_track(&current)?;
                 }
             }
@@ -40,7 +46,10 @@ fn backfill_with(
     *ready = true;
     Ok(())
 }
-fn read(track: &Track, app: &tauri::AppHandle) -> Result<(Option<u32>, Option<u32>), String> {
+fn read(
+    track: &Track,
+    app: &tauri::AppHandle,
+) -> Result<(Option<u32>, Option<u32>, Option<u32>), String> {
     #[cfg(not(target_os = "android"))]
     {
         let _ = app;
@@ -58,12 +67,16 @@ fn read(track: &Track, app: &tauri::AppHandle) -> Result<(Option<u32>, Option<u3
                 .and_then(|n| u32::try_from(n).ok())
                 .filter(|n| *n > 0)
         };
-        Ok((number("trackNumber"), number("discNumber")))
+        Ok((
+            number("trackNumber"),
+            number("discNumber"),
+            number("releaseYear").filter(|n| (1000..=9999).contains(n)),
+        ))
     }
 }
 
 #[cfg(not(target_os = "android"))]
-fn read_desktop(source: &str) -> Result<(Option<u32>, Option<u32>), String> {
+fn read_desktop(source: &str) -> Result<(Option<u32>, Option<u32>, Option<u32>), String> {
     use lofty::{config::ParseOptions, file::TaggedFileExt, probe::Probe, tag::Accessor};
     let tagged = Probe::open(source)
         .map_err(|e| e.to_string())?
@@ -84,7 +97,28 @@ fn read_desktop(source: &str) -> Result<(Option<u32>, Option<u32>), String> {
             .and_then(|t| t.disk())
             .or_else(|| tagged.tags().iter().find_map(|t| t.disk()))
             .filter(|n| *n > 0),
+        release_year(&tagged),
     ))
+}
+
+#[cfg(not(target_os = "android"))]
+pub fn release_year(tagged: &lofty::file::TaggedFile) -> Option<u32> {
+    use lofty::{
+        file::TaggedFileExt,
+        tag::{Accessor, ItemKey},
+    };
+    tagged
+        .tags()
+        .iter()
+        .find_map(|t| t.year().filter(|y| (1000..=9999).contains(y)))
+        .or_else(|| {
+            tagged.tags().iter().find_map(|t| {
+                t.get_string(&ItemKey::OriginalReleaseDate)
+                    .and_then(|s| s.get(..4))
+                    .and_then(|s| s.parse::<u32>().ok())
+                    .filter(|y| (1000..=9999).contains(y))
+            })
+        })
 }
 
 #[cfg(all(test, not(target_os = "android")))]
@@ -113,6 +147,7 @@ mod tests {
         let mut tag = Tag::new(TagType::Id3v2);
         tag.set_title("Tagged song".into());
         tag.set_album("Fixture Album".into());
+        tag.set_year(2001);
         tag.set_track(10);
         tag.set_disk(2);
         tag.save_to_path(&source, lofty::config::WriteOptions::default())
@@ -122,6 +157,9 @@ mod tests {
             (imported.track_number, imported.disc_number),
             (Some(10), Some(2))
         );
+        assert_eq!(imported.release_year, Some(2001));
+        imported.release_year = None;
+        imported.release_metadata_read = false;
         imported.track_number = None;
         imported.disc_number = None;
         imported.order_metadata_read = false;
@@ -136,7 +174,8 @@ mod tests {
             (updated.track_number, updated.disc_number),
             (Some(10), Some(2))
         );
-        assert!(updated.favorite && updated.order_metadata_read);
+        assert!(updated.favorite && updated.order_metadata_read && updated.release_metadata_read);
+        assert_eq!(updated.release_year, Some(2001));
         assert_eq!(updated.id, imported.id);
         backfill_with(&core, &ready, |_| panic!("metadata should be read once")).unwrap();
         std::fs::remove_dir_all(dir).unwrap();

@@ -434,6 +434,7 @@ function numberedWav(
       ["TALB", "Fixture Album"],
       ["TRCK", String(trackNumber) + "/12"],
       ["TPOS", String(discNumber) + "/2"],
+      ["TYER", "2001"],
     ].map(([name, value]) => {
       const body = Buffer.concat([Buffer.from([0]), Buffer.from(value)]);
       const header = Buffer.alloc(10);
@@ -493,6 +494,12 @@ test("album disc order is preserved in views, queue and legacy library migration
     expected,
   );
   await page.getByRole("tab", { name: "Albums" }).click();
+  await expect(
+    page
+      .locator(".album-card")
+      .filter({ hasText: "Fixture Album" })
+      .locator("span"),
+  ).toHaveText("Fixture Artist · 2001");
   await page
     .locator(".album-card")
     .filter({ hasText: "Fixture Album" })
@@ -522,6 +529,10 @@ test("album disc order is preserved in views, queue and legacy library migration
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
     expected,
   );
+  await expect(page.locator(".library-page .album-label")).toHaveText(
+    Array(4).fill("Fixture Album · 2001"),
+  );
+  await page.screenshot({ path: "artifacts/album-year-label.png" });
   // Simulate the previous catalog format; retained audio blobs must restore the tags.
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -539,6 +550,8 @@ test("album disc order is preserved in views, queue and legacy library migration
         delete value.trackNumber;
         delete value.discNumber;
         delete value.orderMetadataRead;
+        delete value.releaseYear;
+        delete value.releaseMetadataRead;
         value.favorite = true;
         cursor.update(value);
         cursor.continue();
@@ -556,6 +569,9 @@ test("album disc order is preserved in views, queue and legacy library migration
     .click();
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
     expected,
+  );
+  await expect(page.locator(".library-page .album-label")).toHaveText(
+    Array(4).fill("Fixture Album · 2001"),
   );
   await expect(
     page.locator(".library-page .track-row .icon-button[aria-pressed=true]"),

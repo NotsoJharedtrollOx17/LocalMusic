@@ -90,3 +90,5 @@ Import shows a persistent spinner and counts immediately. Catalog updates appear
 On Windows, the folder chooser owns the app window. Choose a folder to begin import; the progress counter then appears and artist/album detail views update as each batch is indexed. Canceling the chooser leaves the library view ready to use.
 
 Album detail follows disc number, then numeric track number. Artist detail groups songs by album and follows that order within each album. Library sorting by album or artist uses the same sequence, and playback from those views uses their ordered IDs. Missing disc tags mean disc one; unnumbered songs follow numbered songs on that disc, with a stable title/ID fallback. The first catalog read after upgrading backfills available local files or granted Android URIs without requiring a reimport. Manually arranged playlists and queues keep their saved order.
+
+Song rows show a compact album name and tagged release year below the artist, including artist views, playlists and queues. Album cards also show the year when present. Existing library entries recover year metadata automatically; missing years are omitted.

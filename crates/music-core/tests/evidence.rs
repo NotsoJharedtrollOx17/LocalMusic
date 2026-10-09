@@ -11,6 +11,8 @@ fn track(id: &str, artist: &str) -> Track {
         duration_ms: 60000,
         source_uri: format!("/private/{id}"),
         artwork_url: None,
+        release_year: None,
+        release_metadata_read: true,
         track_number: None,
         disc_number: None,
         order_metadata_read: true,
