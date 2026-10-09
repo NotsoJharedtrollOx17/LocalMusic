@@ -40,6 +40,8 @@ The portable LLVM route builds a standalone executable without an installer. A s
 
 For a debug build, run `./src-tauri/target/debug/local-music.exe`. Keep the copied runtime DLLs and `llvm-runtime.txt` beside the executable when moving it. WebView2 Runtime must be installed on the destination Windows machine.
 
+To check artwork on this branch, open that executable, inspect the Albums and Artists grids, then open a song detail, the full player and a recap with artwork. Covers should sharpen as their larger cached variant loads. Compare at your usual Windows display scale; an embedded image that is intrinsically small can still look soft.
+
 ### Android
 
 The generated project is checked in under `src-tauri/gen/android`; do not rerun init during normal development. If recovering a deleted scaffold, run `npm.cmd run tauri -- android init` and reapply API 36, minimum API 26, and repository Gradle settings.
@@ -81,7 +83,7 @@ On Windows without symbolic-link privileges, build-android.ps1 falls back to cop
 
 ## Development branches
 
-`dev` is the integration branch; `dev.feature-live-import` contains the current import improvements. Work on the feature branch, then merge reviewed changes into `dev`. The initial first draft remains on `master`.
+`dev` is the integration branch and now contains the live-import improvements. Artwork resolution work is on `dev.upscale-album-covers`; merge it into `dev` after review. The initial first draft remains on `master`.
 
 Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
 

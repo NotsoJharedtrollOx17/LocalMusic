@@ -328,20 +328,6 @@ export default function App() {
     const timeout = setTimeout(() => setNotice(""), 4500);
     return () => clearTimeout(timeout);
   }, [notice]);
-  useEffect(() => {
-    if (modal === "player" && player.trackId)
-      void act(async () => {
-        const url = await api.cover(player.trackId!, 512);
-        setCache((c) =>
-          c[player.trackId!]
-            ? {
-                ...c,
-                [player.trackId!]: { ...c[player.trackId!], artworkUrl: url },
-              }
-            : c,
-        );
-      });
-  }, [modal, player.trackId, act]);
   const current = player.trackId ? cache[player.trackId] : undefined;
   const formatDate = (s: string, zone = settings?.timeZone) =>
     new Intl.DateTimeFormat(settings?.language ?? "en", {
@@ -989,7 +975,7 @@ export default function App() {
                           });
                         }}
                       >
-                        <Cover track={g.track} />
+                        <Cover track={g.track} large />
                         <strong>{g.title}</strong>
                         <span>
                           {g.subtitle || g.ids.length + " " + t.tracks}
@@ -1753,7 +1739,7 @@ export default function App() {
         >
           <div className="full-player">
             <p className="eyebrow">{t.playingFrom}</p>
-            <Cover track={current} className="player-cover" />
+            <Cover track={current} className="player-cover" large />
             <div className="player-title">
               <div>
                 <h2>{current.title}</h2>
@@ -1957,7 +1943,7 @@ export default function App() {
           onClose={() => setModal(null)}
         >
           <div className="track-details">
-            <Cover track={detail} />
+            <Cover track={detail} large />
             <h2>{detail.title}</h2>
             <p>{detail.artist || t.unknownArtist}</p>
             <dl>
@@ -2091,7 +2077,7 @@ export default function App() {
               <>
                 <p className="eyebrow">{t.topTrack}</p>
                 {recap.topTracks[0] && (
-                  <Cover track={recap.topTracks[0].track} />
+                  <Cover track={recap.topTracks[0].track} large />
                 )}
                 <h2>{recap.topTracks[0]?.track.title || t.noPlays}</h2>
                 <p>{recap.topTracks[0]?.track.artist}</p>

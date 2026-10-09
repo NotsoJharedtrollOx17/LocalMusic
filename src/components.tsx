@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   X,
   Play,
@@ -9,7 +9,8 @@ import {
   ArrowDown,
   Trash2,
 } from "lucide-react";
-import { coverUrl } from "./domain";
+import { coverUrl, hash } from "./domain";
+import { api, native } from "./api";
 import { drawOrbit } from "./export";
 import type { Track } from "./types";
 export function IconButton({
@@ -43,24 +44,89 @@ export const time = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 };
+const largeCoverCache = new Map<string, string>();
+const largeCoverRequests = new Map<string, Promise<string>>();
+function largeCover(key: string, id: string): Promise<string> {
+  const cached = largeCoverCache.get(key);
+  if (cached) return Promise.resolve(cached);
+  const pending = largeCoverRequests.get(key);
+  if (pending) return pending;
+  const request = api.cover(id, 512).then(
+    (url) => {
+      largeCoverRequests.delete(key);
+      largeCoverCache.set(key, url);
+      while (largeCoverCache.size > 32) {
+        largeCoverCache.delete(largeCoverCache.keys().next().value!);
+      }
+      return url;
+    },
+    (error) => {
+      largeCoverRequests.delete(key);
+      throw error;
+    },
+  );
+  largeCoverRequests.set(key, request);
+  return request;
+}
 export function Cover({
   track,
   className = "",
+  large = false,
 }: {
   track: Track;
   className?: string;
+  large?: boolean;
 }) {
+  const image = useRef<HTMLImageElement>(null);
+  const key = track.id + ":" + hash(track.artworkUrl ?? "");
+  const [resolved, setResolved] = useState<{ key: string; url: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!large || !native || !image.current) return;
+    let active = true;
+    const element = image.current;
+    const load = () => {
+      void largeCover(key, track.id)
+        .then((url) => {
+          if (active) setResolved({ key, url });
+        })
+        .catch(() => {
+          /* the existing image or geometric fallback stays visible */
+        });
+    };
+    if (typeof IntersectionObserver === "undefined") load();
+    else {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer.disconnect();
+            load();
+          }
+        },
+        { rootMargin: "240px" },
+      );
+      observer.observe(element);
+      return () => {
+        active = false;
+        observer.disconnect();
+      };
+    }
+    return () => {
+      active = false;
+    };
+  }, [large, key, track.id]);
   return (
     <img
+      ref={image}
       className={"cover " + className}
-      src={coverUrl(track)}
+      src={large && resolved?.key === key ? resolved.url : coverUrl(track)}
       alt=""
       loading="lazy"
+      decoding="async"
       onError={(e) => {
-        if (
-          e.currentTarget.src !== coverUrl({ ...track, artworkUrl: undefined })
-        )
-          e.currentTarget.src = coverUrl({ ...track, artworkUrl: undefined });
+        const fallback = coverUrl({ ...track, artworkUrl: undefined });
+        if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
       }}
     />
   );
