@@ -92,6 +92,10 @@ export interface LibraryOptions {
   favoriteOnly?: boolean;
   sort?: "title" | "artist" | "album";
 }
+export interface ImportProgress {
+  imported: number;
+  failed: number;
+}
 export interface MusicApi {
   groups(
     kind: "albums" | "artists",
@@ -105,7 +109,11 @@ export interface MusicApi {
     limit?: number,
     options?: LibraryOptions,
   ): Promise<LibraryPage>;
-  importMusic(files?: File[], mode?: "library" | "folder"): Promise<number>;
+  importMusic(
+    files?: File[],
+    mode?: "library" | "folder",
+    onProgress?: (progress: ImportProgress) => void,
+  ): Promise<number>;
   cancelImport(): Promise<void>;
   addSamples(): Promise<number>;
   setFavorite(id: string, favorite: boolean): Promise<void>;

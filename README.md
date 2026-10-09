@@ -78,3 +78,9 @@ Browser tests launch an isolated server on port 1421 and save screenshots and fa
 The original guide and four visual references remain in `.AGENTS/`. The application ships original geometry and self-hosted fonts. No account, enrichment service, model download or fabricated listening history is used. MIT license; dependency licenses are listed separately.
 
 On Windows without symbolic-link privileges, build-android.ps1 falls back to copying the compiled native library and running Gradle packaging. package-android.ps1 is the packaging-only helper; it does not compile Rust. Use build-android.ps1 for a complete build.
+
+## Development branches
+
+`dev` is the integration branch; `dev.feature-todevelop` contains the current import improvements. Work on the feature branch, then merge reviewed changes into `dev`. The initial first draft remains on `master`.
+
+Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.

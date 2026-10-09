@@ -285,9 +285,14 @@ export class BrowserMusic implements MusicApi {
       total: tracks.length,
     };
   }
-  async importMusic(files: File[] = [], _mode?: string) {
+  async importMusic(
+    files: File[] = [],
+    _mode?: string,
+    onProgress?: (progress: import("../types").ImportProgress) => void,
+  ) {
     this.cancelled = false;
     let count = 0;
+    onProgress?.({ imported: 0, failed: 0 });
     const { parseBlob } = await import("music-metadata");
     for (const file of files) {
       if (this.cancelled) break;
@@ -360,7 +365,9 @@ export class BrowserMusic implements MusicApi {
         cover,
       });
       count++;
+      if (count % 10 === 0) onProgress?.({ imported: count, failed: 0 });
     }
+    onProgress?.({ imported: count, failed: 0 });
     return count;
   }
   async cancelImport() {

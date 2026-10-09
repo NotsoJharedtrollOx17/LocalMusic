@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
+  LoaderCircle,
   Music2,
   ListMusic,
   ChartNoAxesColumn,
@@ -52,6 +53,7 @@ import type {
   Settings,
   Recap,
   CatalogGroup,
+  ImportProgress,
 } from "./types";
 const blank: PlaybackSnapshot = {
   trackId: null,
@@ -119,6 +121,13 @@ export default function App() {
     }),
     [targetMode, setTargetMode] = useState<"count" | "duration">("count"),
     [target, setTarget] = useState(25);
+  const [catalogRevision, setCatalogRevision] = useState(0);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(
+    null,
+  );
+  const importActive = useRef(false);
+  const latestQuery = useRef(query);
+  latestQuery.current = query;
   const settingsWrite = useRef<Promise<void>>(Promise.resolve());
   const fileInput = useRef<HTMLInputElement>(null),
     folderInput = useRef<HTMLInputElement>(null),
@@ -183,7 +192,7 @@ export default function App() {
       180,
     );
     return () => clearTimeout(timer);
-  }, [modal, pickerQuery, act, refreshPicker]);
+  }, [modal, pickerQuery, catalogRevision, act, refreshPicker]);
   const refreshLists = useCallback(
     async () => setLists(await api.playlists()),
     [],
@@ -218,7 +227,7 @@ export default function App() {
   useEffect(() => {
     if (tab === "library" && section !== "songs")
       void act(() => refreshGroups(section));
-  }, [tab, section, total, act, refreshGroups]);
+  }, [tab, section, total, catalogRevision, act, refreshGroups]);
   useEffect(() => {
     if (searchOpen) searchInput.current?.focus();
   }, [searchOpen]);
@@ -369,13 +378,49 @@ export default function App() {
     });
   }
   async function doImport(files?: File[], mode?: "library" | "folder") {
+    if (importActive.current) return;
+    importActive.current = true;
     setBusy(true);
-    await act(async () => {
-      const n = await api.importMusic(files, mode);
-      setNotice(n + " " + t.imported);
-      await refresh(query);
-    });
-    setBusy(false);
+    setNotice("");
+    setImportProgress({ imported: 0, failed: 0 });
+    let refreshing: Promise<void> | undefined;
+    let pending = false;
+    const refreshBatch = () => {
+      pending = true;
+      if (refreshing) return;
+      refreshing = (async () => {
+        while (pending) {
+          pending = false;
+          await refresh(latestQuery.current);
+          setCatalogRevision((revision) => revision + 1);
+        }
+      })()
+        .catch((e) => setError(String(e)))
+        .finally(() => {
+          refreshing = undefined;
+        });
+    };
+    try {
+      await act(async () => {
+        const n = await api.importMusic(files, mode, (progress) => {
+          setImportProgress(progress);
+          if (progress.imported + progress.failed > 0) refreshBatch();
+        });
+        await refreshing;
+        setNotice(n + " " + t.imported);
+      });
+    } finally {
+      await refreshing;
+      try {
+        await refresh(latestQuery.current);
+        setCatalogRevision((revision) => revision + 1);
+      } catch (e) {
+        setError(String(e));
+      }
+      importActive.current = false;
+      setImportProgress(null);
+      setBusy(false);
+    }
   }
   async function samples() {
     setBusy(true);
@@ -635,6 +680,35 @@ export default function App() {
           </IconButton>
         </header>
         <main>
+          {importProgress && (
+            <div
+              className="import-status"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <LoaderCircle
+                className="import-spinner"
+                size={22}
+                aria-hidden="true"
+              />
+              <div>
+                <strong>{t.importing}</strong>
+                <span>
+                  {importProgress.imported} {t.imported}
+                  {importProgress.failed > 0
+                    ? ` · ${importProgress.failed} ${t.importFailed}`
+                    : ""}
+                </span>
+              </div>
+              <button
+                className="text-button"
+                onClick={() => void act(() => api.cancelImport())}
+              >
+                {t.cancel}
+              </button>
+            </div>
+          )}
           {tab === "library" && (
             <section className="library-page">
               <div className="page-heading">
@@ -768,6 +842,7 @@ export default function App() {
                   )}
                   <IconButton
                     label={t.import}
+                    disabled={busy}
                     onClick={() =>
                       native ? void doImport() : fileInput.current?.click()
                     }
@@ -776,17 +851,7 @@ export default function App() {
                   </IconButton>
                 </div>
               </div>
-              {busy && (
-                <div className="status-line" role="status">
-                  {t.importing}
-                  <button
-                    className="text-button"
-                    onClick={() => void act(() => api.cancelImport())}
-                  >
-                    {t.cancel}
-                  </button>
-                </div>
-              )}
+
               {total === 0 && !query ? (
                 <div className="empty-library">
                   <div className="empty-art">

@@ -34,7 +34,9 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
     mimeType: "audio/wav",
     buffer: wav(),
   });
-  await expect(page.getByText("1 tracks imported")).toBeVisible();
+  await expect(
+    page.locator(".toast").filter({ hasText: "1 tracks imported" }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Play Original test tone", exact: true })
     .click();
@@ -159,7 +161,9 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     mimeType: "audio/wav",
     buffer: wav(),
   });
-  await expect(page.getByText("1 tracks imported")).toBeVisible();
+  await expect(
+    page.locator(".toast").filter({ hasText: "1 tracks imported" }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Play Qualified tone", exact: true })
     .click();
@@ -263,4 +267,48 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
   await expect(
     page.getByText("Manual selection", { exact: true }),
   ).toBeVisible();
+});
+
+test("import publishes ten tracks before the remaining files finish", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    const original = crypto.subtle.digest.bind(crypto.subtle);
+    let calls = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    (window as unknown as { releaseImport: () => void }).releaseImport =
+      release;
+    crypto.subtle.digest = async (algorithm, data) => {
+      if (++calls === 11) await gate;
+      return original(algorithm, data);
+    };
+  });
+  const files = Array.from({ length: 11 }, (_, i) => {
+    const buffer = wav(1);
+    buffer.writeInt16LE(i, 44);
+    return { name: "Batch " + i + ".wav", mimeType: "audio/wav", buffer };
+  });
+  await page.locator("input[type=file]").first().setInputFiles(files);
+  await expect(page.locator(".import-status")).toBeVisible();
+  await expect(page.locator(".import-spinner")).toBeVisible();
+  await expect(page.getByText("10 songs", { exact: true })).toBeVisible();
+  await expect(page.locator(".import-status")).toContainText(
+    "10 tracks imported",
+  );
+  const cover = page.locator(".track-row .cover").first();
+  await expect(cover).toHaveAttribute("src", /^data:image\/svg/);
+  expect(
+    await cover.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+  ).toBeGreaterThan(0);
+  await page.evaluate(() =>
+    (window as unknown as { releaseImport: () => void }).releaseImport(),
+  );
+  await expect(page.getByText("11 songs", { exact: true })).toBeVisible();
+  await expect(page.locator(".import-status")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText("11 songs", { exact: true })).toBeVisible();
 });

@@ -227,6 +227,7 @@ async fn import_music(
     let core = state.core.clone();
     let cancel = state.cancel.clone();
     cancel.store(false, Ordering::Relaxed);
+    let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
     #[cfg(not(target_os = "android"))]
     {
         use tauri_plugin_dialog::DialogExt;
@@ -258,22 +259,34 @@ async fn import_music(
                 if !["mp3", "flac", "wav", "m4a", "ogg", "opus", "aac"].contains(&ext.as_str()) {
                     continue;
                 }
-                if catalog::import_file(&mut *core.lock().map_err(|e| e.to_string())?, p, &cache)
-                    .is_ok()
-                {
-                    n += 1
+                let result = catalog::read_file(p, &cache).and_then(|mut track| {
+                    let mut store = core.lock().map_err(|e| e.to_string())?;
+                    if let Some(old) = store.track(&track.id)? {
+                        track.favorite = old.favorite;
+                    }
+                    store.upsert_track(&track)
+                });
+                if result.is_ok() {
+                    n += 1;
                 } else {
-                    failures += 1
+                    failures += 1;
                 }
-                if n % 25 == 0 {
-                    let _ = artwork::prune(&cache, 128 * 1024 * 1024, None);
+                if (n + failures) % 10 == 0 {
                     let _ = app2.emit(
                         "catalog://progress",
                         json!({"imported":n,"failed":failures}),
                     );
                 }
+                if (n + failures) % 25 == 0 {
+                    let _ = artwork::prune(&cache, 128 * 1024 * 1024, None);
+                }
             }
             catalog::reconcile(&mut *core.lock().map_err(|e| e.to_string())?)?;
+            let _ = artwork::prune(&cache, 128 * 1024 * 1024, None);
+            let _ = app2.emit(
+                "catalog://progress",
+                json!({"imported":n,"failed":failures}),
+            );
             Ok(n)
         })
         .await
@@ -282,8 +295,10 @@ async fn import_music(
     #[cfg(target_os = "android")]
     {
         use tauri_plugin_native_music::NativeMusicExt;
+        let app2 = app.clone();
         let value: serde_json::Value = tauri::async_runtime::spawn_blocking(move || {
-            app.native_music().call("importMusic", json!({"mode":mode}))
+            app2.native_music()
+                .call("importMusic", json!({"mode":mode}))
         })
         .await
         .map_err(|e| e.to_string())??;
@@ -308,7 +323,12 @@ async fn import_music(
             }
             store.upsert_track(&t)?;
             count += 1;
+            drop(store);
+            if count % 10 == 0 {
+                let _ = app.emit("catalog://progress", json!({"imported":count,"failed":0}));
+            }
         }
+        let _ = app.emit("catalog://progress", json!({"imported":count,"failed":0}));
         let _ = std::fs::remove_file(manifest);
         Ok(count)
     }

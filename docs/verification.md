@@ -49,3 +49,13 @@ These are debug builds, not signed public releases. The Windows GNU linker origi
 Windows startup smoke check: the refreshed executable stayed running, exposed a nonzero main-window handle, and reported Responding=True. Redirected stdout/stderr were empty. This checks process/window startup only; no native folder import, audio interaction or recap acceptance was performed.
 
 Emulator recovery attempts used headless software acceleration with SwiftShader, GPU-off fallback, and Vulkan disabled. ADB remained offline and no guest kernel boot was observed; the QEMU process threads were suspended. The stalled helper was stopped. This is an environment blocker, not a passed emulator test; the exact cause has not been established.
+
+## Import feedback feature
+
+Work is recorded on dev.feature-todevelop, based on the dev integration branch at cdeff90. Master remains the first-draft baseline.
+
+Desktop metadata and artwork reads now occur outside the catalog mutex. Progress events are emitted after every ten processed audio files and for the final partial batch. The native adapter registers the listener before invoking import and removes it afterwards. The UI refreshes songs, album/artist groups and an open manual picker as import progresses, shows an immediate spinner and counts, and refreshes partial results even if import fails.
+
+Missing or unreadable artwork already has a deterministic geometric fallback in the app palette. The new batch regression blocks file eleven, checks that ten songs and their working SVG covers are visible while the spinner remains, then releases the last file and verifies eleven songs persist after reload.
+
+Verification: production TypeScript/Vite build and seven frontend unit tests passed; the portable Windows debug executable rebuilt successfully with the feature. All six browser journeys passed, including the batch-before-completion regression. Native Windows folder import remains an interactive acceptance check; browser results do not establish native import behavior. Existing Android APK artifacts predate this feature and have not been refreshed in this change.

@@ -2133,3 +2133,40 @@ input[type="range"] {
     --accent-ink: #ff9857;
   }
 }
+
+.import-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  margin: 0 0 24px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  background: var(--paper);
+  border-radius: 12px;
+}
+.import-status > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.import-status span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.import-spinner {
+  flex-shrink: 0;
+  color: var(--accent-ink);
+  animation: import-spin 1s linear infinite;
+}
+@keyframes import-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .import-spinner {
+    animation: none;
+  }
+}

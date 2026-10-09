@@ -40,8 +40,20 @@ class NativeMusic implements MusicApi {
       sort: options.sort ?? "title",
     });
   }
-  importMusic(_files?: File[], mode = "library") {
-    return cmd<number>("import_music", { mode });
+  async importMusic(
+    _files?: File[],
+    mode = "library",
+    onProgress?: (progress: import("../types").ImportProgress) => void,
+  ) {
+    const unlisten = await listen<import("../types").ImportProgress>(
+      "catalog://progress",
+      (event) => onProgress?.(event.payload),
+    );
+    try {
+      return await cmd<number>("import_music", { mode });
+    } finally {
+      unlisten();
+    }
   }
   cancelImport() {
     return cmd<void>("cancel_import");

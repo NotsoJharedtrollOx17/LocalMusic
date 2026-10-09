@@ -7,7 +7,7 @@ use std::{
     io::{Read, Seek, SeekFrom},
     path::Path,
 };
-pub fn import_file(store: &mut Store, path: &Path, cache: &Path) -> Result<(), String> {
+pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
     let mut file = std::fs::File::open(path).map_err(|e| e.to_string())?;
     let size = file.metadata().map_err(|e| e.to_string())?.len();
     let mut hasher = blake3::Hasher::new();
@@ -22,7 +22,6 @@ pub fn import_file(store: &mut Store, path: &Path, cache: &Path) -> Result<(), S
         hasher.update(&buffer[..n]);
     }
     let id = hasher.finalize().to_hex().to_string();
-    let old = store.track(&id)?;
     let mut t = Track {
         id,
         title: path
@@ -36,7 +35,7 @@ pub fn import_file(store: &mut Store, path: &Path, cache: &Path) -> Result<(), S
         duration_ms: 0,
         source_uri: path.to_string_lossy().into(),
         artwork_url: None,
-        favorite: old.as_ref().is_some_and(|t| t.favorite),
+        favorite: false,
         available: true,
         demo: false,
     };
@@ -60,7 +59,7 @@ pub fn import_file(store: &mut Store, path: &Path, cache: &Path) -> Result<(), S
             }
         }
     }
-    store.upsert_track(&t)
+    Ok(t)
 }
 pub fn refresh_track(store: &mut Store, mut track: Track) -> Result<Track, String> {
     let aliases = store.source_uris(&track.id)?;
