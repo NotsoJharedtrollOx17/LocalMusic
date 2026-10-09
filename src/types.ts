@@ -97,6 +97,11 @@ export interface ImportProgress {
   failed: number;
 }
 export interface MusicApi {
+  groupIds(
+    kind: "albums" | "artists",
+    title: string,
+    subtitle: string,
+  ): Promise<string[]>;
   groups(
     kind: "albums" | "artists",
     offset?: number,

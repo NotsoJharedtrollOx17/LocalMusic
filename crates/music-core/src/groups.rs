@@ -14,6 +14,18 @@ pub struct GroupPage {
     pub total: usize,
 }
 impl Store {
+    pub fn group_ids(&self, kind: &str, title: &str, subtitle: &str) -> Result<Vec<String>, String> {
+        let predicate = match kind {
+            "artists" => "artist = ?1",
+            "albums" => "album = ?1 AND artist = ?2",
+            _ => return Err("Invalid library section".into()),
+        };
+        let sql = format!("SELECT id FROM tracks WHERE {predicate} ORDER BY title COLLATE NOCASE, id");
+        let mut statement = self.connection.prepare(&sql).map_err(|e| e.to_string())?;
+        let values = if kind == "artists" { vec![title] } else { vec![title, subtitle] };
+        let rows = statement.query_map(rusqlite::params_from_iter(values), |row| row.get::<_, String>(0)).map_err(|e| e.to_string())?;
+        rows.collect::<rusqlite::Result<Vec<_>>>().map_err(|e| e.to_string())
+    }
     pub fn groups(&self, kind: &str, offset: usize, limit: usize) -> Result<GroupPage, String> {
         let (title, subtitle, where_clause, group) = match kind {
             "albums" => ("album", "artist", "TRIM(album)<>''", "artist,album"),

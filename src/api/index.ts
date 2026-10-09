@@ -14,6 +14,9 @@ export const native = isTauri();
 const cmd = <T>(name: string, args?: Record<string, unknown>) =>
   invoke<T>(name, args);
 class NativeMusic implements MusicApi {
+  groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
+    return cmd<string[]>("group_ids", { kind, title, subtitle });
+  }
   groups(kind: "albums" | "artists", offset = 0) {
     return cmd<{ groups: import("../types").CatalogGroup[]; total: number }>(
       "list_groups",

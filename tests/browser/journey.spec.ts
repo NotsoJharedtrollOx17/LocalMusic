@@ -312,3 +312,110 @@ test("import publishes ten tracks before the remaining files finish", async ({
   await page.reload();
   await expect(page.getByText("11 songs", { exact: true })).toBeVisible();
 });
+
+function taggedWav(title: string, marker: number) {
+  const base = wav(1);
+  base.writeInt16LE(marker, 44);
+  const chunk = (kind: string, value: string) => {
+    const bytes = Buffer.from(value + "\0");
+    const part = Buffer.alloc(8 + bytes.length + (bytes.length % 2));
+    part.write(kind, 0);
+    part.writeUInt32LE(bytes.length, 4);
+    bytes.copy(part, 8);
+    return part;
+  };
+  const info = Buffer.concat([
+    Buffer.from("INFO"),
+    chunk("IART", "Fixture Artist"),
+    chunk("IPRD", "Fixture Album"),
+    chunk("INAM", title),
+  ]);
+  const header = Buffer.alloc(8);
+  header.write("LIST", 0);
+  header.writeUInt32LE(info.length, 4);
+  const result = Buffer.concat([base, header, info]);
+  result.writeUInt32LE(result.length - 8, 4);
+  return result;
+}
+
+test("artist and album details stay populated as import batches arrive", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles({
+      name: "Initial.wav",
+      mimeType: "audio/wav",
+      buffer: taggedWav("Initial", 1),
+    });
+  await expect(page.locator(".toast")).toContainText("1 tracks imported");
+  await page.getByRole("tab", { name: "Artists" }).click();
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Artist" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Play Initial", exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const original = crypto.subtle.digest.bind(crypto.subtle);
+    let calls = 0;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    (
+      window as unknown as { releaseGroupImport: () => void }
+    ).releaseGroupImport = release;
+    crypto.subtle.digest = async (algorithm, data) => {
+      if (++calls === 11) await gate;
+      return original(algorithm, data);
+    };
+  });
+  const files = Array.from({ length: 11 }, (_, i) => ({
+    name: "Song " + i + ".wav",
+    mimeType: "audio/wav",
+    buffer: taggedWav("Song " + i, i + 2),
+  }));
+  await page.locator("input[type=file]").first().setInputFiles(files);
+  await expect(page.locator(".import-status")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Fixture Artist" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Play Song 9", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("11 songs", { exact: true })).toBeVisible();
+  await page.evaluate(() =>
+    (
+      window as unknown as { releaseGroupImport: () => void }
+    ).releaseGroupImport(),
+  );
+  await expect(
+    page.getByRole("button", { name: "Play Song 10", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("12 songs", { exact: true })).toBeVisible();
+  await page.locator(".group-back").click();
+  await page.getByRole("tab", { name: "Albums" }).click();
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Album" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Play Song 10", exact: true }),
+  ).toBeVisible();
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles({
+      name: "Final.wav",
+      mimeType: "audio/wav",
+      buffer: taggedWav("Final", 30),
+    });
+  await expect(
+    page.getByRole("button", { name: "Play Final", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("13 songs", { exact: true })).toBeVisible();
+});

@@ -230,6 +230,18 @@ export class BrowserMusic implements MusicApi {
     const { file: _, cover: __, ...track } = t;
     return { ...track, artworkUrl: this.artwork.get(t.id) };
   }
+  async groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
+    return (await this.all<StoredTrack>("tracks"))
+      .filter((track) =>
+        kind === "artists"
+          ? track.artist === title
+          : track.album === title && track.artist === subtitle,
+      )
+      .sort(
+        (a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id),
+      )
+      .map((track) => track.id);
+  }
   async groups(kind: "albums" | "artists", offset = 0) {
     const all = await this.all<StoredTrack>("tracks");
     const map = new Map<string, import("../types").CatalogGroup>();

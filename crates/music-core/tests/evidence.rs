@@ -183,6 +183,13 @@ fn catalog_filters_and_groups_span_pages() {
     );
     assert_eq!(db.groups("artists", 60, 60).unwrap().groups.len(), 60);
     assert_eq!(db.groups("albums", 0, 60).unwrap().groups[0].ids.len(), 1);
+    assert_eq!(db.group_ids("artists", "Artist 124", "").unwrap(), vec!["track-124"]);
+    let mut another = track("track-125", "Artist 124");
+    another.album = "Another Album".into();
+    db.upsert_track(&another).unwrap();
+    assert_eq!(db.group_ids("artists", "Artist 124", "").unwrap().len(), 2);
+    assert_eq!(db.group_ids("albums", "Another Album", "Artist 124").unwrap(), vec!["track-125"]);
+    assert!(db.group_ids("invalid", "Artist 124", "").is_err());
     assert!(db
         .tracks_with_options("", 0, 60, false, "title;DROP TABLE tracks")
         .is_err());

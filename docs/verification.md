@@ -59,3 +59,11 @@ Desktop metadata and artwork reads now occur outside the catalog mutex. Progress
 Missing or unreadable artwork already has a deterministic geometric fallback in the app palette. The new batch regression blocks file eleven, checks that ten songs and their working SVG covers are visible while the spinner remains, then releases the last file and verifies eleven songs persist after reload.
 
 Verification: production TypeScript/Vite build and seven frontend unit tests passed; the portable Windows debug executable rebuilt successfully with the feature. All six browser journeys passed, including the batch-before-completion regression. Native Windows folder import remains an interactive acceptance check; browser results do not establish native import behavior. Existing Android APK artifacts predate this feature and have not been refreshed in this change.
+
+## Import dialog and group detail correction
+
+The Windows folder picker is attached to the main Tauri window. The UI blocks interaction while the picker is open; import progress appears after a folder is selected. Canceling the picker leaves the library unchanged and does not announce an import. Android retains immediate progress feedback during its native scan.
+
+Artist and album detail views now keep their own track rows. They reload their exact catalog membership on each import revision, and delayed responses from an older group or catalog page cannot replace the current view. Browser regression imports tagged WAV files while an artist detail is open, pauses after ten files, checks the artist rows, then checks that the album detail also updates in place. Core checks cover exact group membership.
+
+Verification for this correction: TypeScript/Vite build, seven frontend tests, ten Rust core tests and seven browser journeys passed. The final portable Windows debug executable built and passed a startup smoke check: it exposed a nonzero main-window handle and Responding=True. The native folder-picker and live artist/album workflow still need interactive Windows acceptance.

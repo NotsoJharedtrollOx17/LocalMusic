@@ -76,7 +76,14 @@ export default function App() {
     [searchOpen, setSearchOpen] = useState(false),
     [onlyFavorites, setOnlyFavorites] = useState(false),
     [sort, setSort] = useState<"title" | "artist" | "album">("title"),
-    [group, setGroup] = useState<{ title: string; ids: string[] } | null>(null);
+    [group, setGroup] = useState<{
+      kind: "albums" | "artists";
+      title: string;
+      subtitle: string;
+      ids: string[];
+    } | null>(null);
+  const [groupTracks, setGroupTracks] = useState<Track[]>([]),
+    [groupLoading, setGroupLoading] = useState(false);
   const [catalogGroups, setCatalogGroups] = useState<CatalogGroup[]>([]),
     [groupsTotal, setGroupsTotal] = useState(0),
     [queueLimit, setQueueLimit] = useState(60);
@@ -122,6 +129,7 @@ export default function App() {
     [targetMode, setTargetMode] = useState<"count" | "duration">("count"),
     [target, setTarget] = useState(25);
   const [catalogRevision, setCatalogRevision] = useState(0);
+  const [chooserOpen, setChooserOpen] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(
     null,
   );
@@ -152,6 +160,8 @@ export default function App() {
   const libraryOptions = useRef({ favoriteOnly: onlyFavorites, sort });
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
   const libraryRequest = useRef(0);
+  const groupRequest = useRef(0);
+  const groupsRequest = useRef(0);
   const refresh = useCallback(
     async (q = "", offset = 0) => {
       const version = offset
@@ -165,9 +175,32 @@ export default function App() {
     },
     [remember],
   );
+  const refreshGroup = useCallback(
+    async (selected: NonNullable<typeof group>, limit = 60) => {
+      const version = ++groupRequest.current;
+      setGroupLoading(true);
+      try {
+        const ids = await api.groupIds(
+          selected.kind,
+          selected.title,
+          selected.subtitle,
+        );
+        const nextTracks = await api.tracksById(ids.slice(0, limit));
+        if (version !== groupRequest.current) return;
+        setGroup({ ...selected, ids });
+        setGroupTracks(nextTracks);
+        remember(nextTracks);
+      } finally {
+        if (version === groupRequest.current) setGroupLoading(false);
+      }
+    },
+    [remember],
+  );
   const refreshGroups = useCallback(
     async (kind: "albums" | "artists", offset = 0) => {
+      const version = offset ? groupsRequest.current : ++groupsRequest.current;
       const p = await api.groups(kind, offset);
+      if (version !== groupsRequest.current) return;
       setCatalogGroups((old) => (offset ? [...old, ...p.groups] : p.groups));
       setGroupsTotal(p.total);
       remember(p.groups.map((g) => g.track));
@@ -228,6 +261,19 @@ export default function App() {
     if (tab === "library" && section !== "songs")
       void act(() => refreshGroups(section));
   }, [tab, section, total, catalogRevision, act, refreshGroups]);
+  const groupIdentity = group
+    ? JSON.stringify([group.kind, group.title, group.subtitle])
+    : "";
+  useEffect(() => {
+    if (group)
+      void act(() => refreshGroup(group, Math.max(60, groupTracks.length)));
+  }, [catalogRevision, groupIdentity, refreshGroup, act]);
+  function closeGroup() {
+    ++groupRequest.current;
+    setGroup(null);
+    setGroupTracks([]);
+    setGroupLoading(false);
+  }
   useEffect(() => {
     if (searchOpen) searchInput.current?.focus();
   }, [searchOpen]);
@@ -306,14 +352,13 @@ export default function App() {
     }).format(new Date(s));
   const visible = useMemo(
     () =>
-      tracks
+      (group ? groupTracks : tracks)
         .filter((x) => group || !onlyFavorites || x.favorite)
-        .filter((x) => !group || group.ids.includes(x.id))
         .sort(
           (a, b) =>
             a[sort].localeCompare(b[sort]) || a.title.localeCompare(b.title),
         ),
-    [tracks, onlyFavorites, group, sort],
+    [tracks, groupTracks, onlyFavorites, group, sort],
   );
   const rows = (
     ts: Track[],
@@ -373,6 +418,7 @@ export default function App() {
       const next = { ...track, favorite: !track.favorite };
       remember([next]);
       setTracks((ts) => ts.map((x) => (x.id === track.id ? next : x)));
+      setGroupTracks((ts) => ts.map((x) => (x.id === track.id ? next : x)));
       if (detail?.id === track.id) setDetail(next);
       if (onlyFavorites && !group) await refresh(query);
     });
@@ -382,7 +428,10 @@ export default function App() {
     importActive.current = true;
     setBusy(true);
     setNotice("");
-    setImportProgress({ imported: 0, failed: 0 });
+    const waitingForFolder = native && !/Android/i.test(navigator.userAgent);
+    setChooserOpen(waitingForFolder);
+    setImportProgress(waitingForFolder ? null : { imported: 0, failed: 0 });
+    let selectionMade = !waitingForFolder;
     let refreshing: Promise<void> | undefined;
     let pending = false;
     const refreshBatch = () => {
@@ -403,11 +452,13 @@ export default function App() {
     try {
       await act(async () => {
         const n = await api.importMusic(files, mode, (progress) => {
+          selectionMade = true;
+          setChooserOpen(false);
           setImportProgress(progress);
           if (progress.imported + progress.failed > 0) refreshBatch();
         });
         await refreshing;
-        setNotice(n + " " + t.imported);
+        if (selectionMade) setNotice(n + " " + t.imported);
       });
     } finally {
       await refreshing;
@@ -418,6 +469,7 @@ export default function App() {
         setError(String(e));
       }
       importActive.current = false;
+      setChooserOpen(false);
       setImportProgress(null);
       setBusy(false);
     }
@@ -481,7 +533,7 @@ export default function App() {
         className={tab === "library" ? "selected" : ""}
         onClick={() => {
           setTab("library");
-          setGroup(null);
+          closeGroup();
           void act(() => refresh(query));
         }}
       >
@@ -628,7 +680,7 @@ export default function App() {
   );
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className="sidebar" inert={chooserOpen}>
         <a
           href="#"
           className="brand"
@@ -670,7 +722,7 @@ export default function App() {
           )}
         </div>
       </aside>
-      <div className="content-shell">
+      <div className="content-shell" inert={chooserOpen}>
         <header className="mobile-brand">
           <span className="brand">
             local<span className="brand-period">.</span>
@@ -751,7 +803,7 @@ export default function App() {
                     aria-label={t.search}
                     value={query}
                     onChange={(e) => {
-                      setGroup(null);
+                      closeGroup();
                       setSection("songs");
                       setQuery(e.target.value);
                     }}
@@ -771,7 +823,7 @@ export default function App() {
                 <button
                   className="text-button group-back"
                   onClick={() => {
-                    setGroup(null);
+                    closeGroup();
                     void act(() => refresh(query));
                   }}
                 >
@@ -811,7 +863,10 @@ export default function App() {
                   </button>
                   <span className="count-dot">·</span>
                   <span>
-                    {total.toLocaleString(settings?.language)} {t.songCount}
+                    {(group ? group.ids.length : total).toLocaleString(
+                      settings?.language,
+                    )}{" "}
+                    {t.songCount}
                   </span>
                 </div>
                 <div className="toolbar-actions">
@@ -903,6 +958,10 @@ export default function App() {
                 <>
                   {visible.length ? (
                     rows(visible, group?.ids ?? visible.map((x) => x.id))
+                  ) : group && groupLoading ? (
+                    <div className="empty-small" role="status">
+                      {t.loading}
+                    </div>
                   ) : (
                     <div className="empty-small">
                       <Search />
@@ -918,16 +977,17 @@ export default function App() {
                       <button
                         key={JSON.stringify([g.title, g.subtitle])}
                         className="album-card"
-                        onClick={() =>
-                          void act(async () => {
-                            ++libraryRequest.current;
-                            setGroup({ title: g.title, ids: g.ids });
-                            const ts = await api.tracksById(g.ids.slice(0, 60));
-                            setTracks(ts);
-                            setTotal(g.ids.length);
-                            remember(ts);
-                          })
-                        }
+                        onClick={() => {
+                          ++libraryRequest.current;
+                          setGroupTracks([]);
+                          setGroupLoading(true);
+                          setGroup({
+                            kind: section,
+                            title: g.title,
+                            subtitle: g.subtitle,
+                            ids: g.ids,
+                          });
+                        }}
                       >
                         <Cover track={g.track} />
                         <strong>{g.title}</strong>
@@ -944,7 +1004,7 @@ export default function App() {
                 </div>
               )}
               {(group
-                ? tracks.length < group.ids.length
+                ? groupTracks.length < group.ids.length
                 : section === "songs"
                   ? tracks.length < total
                   : catalogGroups.length < groupsTotal) && (
@@ -953,10 +1013,15 @@ export default function App() {
                   onClick={() =>
                     void act(async () => {
                       if (group) {
+                        const version = groupRequest.current;
+                        const offset = groupTracks.length;
                         const ts = await api.tracksById(
-                          group.ids.slice(tracks.length, tracks.length + 60),
+                          group.ids.slice(offset, offset + 60),
                         );
-                        setTracks((old) => [...old, ...ts]);
+                        if (version !== groupRequest.current) return;
+                        setGroupTracks((old) =>
+                          old.length === offset ? [...old, ...ts] : old,
+                        );
                         remember(ts);
                       } else if (section === "songs") {
                         await refresh(query, tracks.length);
@@ -1531,7 +1596,11 @@ export default function App() {
           />
         </div>
       )}
-      <nav className="bottom-nav" aria-label="Mobile navigation">
+      <nav
+        className="bottom-nav"
+        aria-label="Mobile navigation"
+        inert={chooserOpen}
+      >
         {nav}
       </nav>
       <input
@@ -1541,7 +1610,8 @@ export default function App() {
         accept="audio/*,.flac,.opus,.ogg,.m4a"
         multiple
         onChange={(e) => {
-          void doImport(Array.from(e.target.files ?? []));
+          const selected = Array.from(e.target.files ?? []);
+          if (selected.length) void doImport(selected);
           e.target.value = "";
         }}
       />
@@ -1552,10 +1622,17 @@ export default function App() {
         multiple
         {...({ webkitdirectory: "" } as object)}
         onChange={(e) => {
-          void doImport(Array.from(e.target.files ?? []));
+          const selected = Array.from(e.target.files ?? []);
+          if (selected.length) void doImport(selected);
           e.target.value = "";
         }}
       />
+      {chooserOpen && (
+        <div className="chooser-shield" role="status" aria-live="polite">
+          <FolderOpen size={24} aria-hidden="true" />
+          <span>{t.selectImportFolder}</span>
+        </div>
+      )}
       {notice && (
         <div className="toast" role="status">
           <Check size={18} />

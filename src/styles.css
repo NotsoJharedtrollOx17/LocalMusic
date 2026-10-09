@@ -2170,3 +2170,22 @@ input[type="range"] {
     animation: none;
   }
 }
+
+.chooser-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--ink);
+  text-align: center;
+  font-weight: 600;
+  pointer-events: auto;
+}
+.chooser-shield svg {
+  color: var(--accent-ink);
+}

@@ -84,3 +84,5 @@ On Windows without symbolic-link privileges, build-android.ps1 falls back to cop
 `dev` is the integration branch; `dev.feature-live-import` contains the current import improvements. Work on the feature branch, then merge reviewed changes into `dev`. The initial first draft remains on `master`.
 
 Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
+
+On Windows, the folder chooser owns the app window. Choose a folder to begin import; the progress counter then appears and artist/album detail views update as each batch is indexed. Canceling the chooser leaves the library view ready to use.

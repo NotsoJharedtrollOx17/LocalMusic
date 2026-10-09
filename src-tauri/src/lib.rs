@@ -41,6 +41,7 @@ async fn command(
     }
     #[cfg(target_os = "android")]
     {
+        let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
         use tauri_plugin_native_music::NativeMusicExt;
         let op = op.to_string();
         tauri::async_runtime::spawn_blocking(move || {
@@ -178,6 +179,19 @@ async fn tracks_by_id(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
+fn group_ids(
+    state: State<MusicState>,
+    kind: String,
+    title: String,
+    subtitle: String,
+) -> Result<Vec<String>> {
+    state
+        .core
+        .lock()
+        .map_err(|e| e.to_string())?
+        .group_ids(&kind, &title, &subtitle)
+}
+#[tauri::command]
 async fn list_groups(
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
@@ -227,7 +241,6 @@ async fn import_music(
     let core = state.core.clone();
     let cancel = state.cancel.clone();
     cancel.store(false, Ordering::Relaxed);
-    let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
     #[cfg(not(target_os = "android"))]
     {
         use tauri_plugin_dialog::DialogExt;
@@ -235,8 +248,16 @@ async fn import_music(
         let cache = artwork::cache_dir(&app)?;
         let _ = mode;
         tauri::async_runtime::spawn_blocking(move || {
-            let folder = app.dialog().file().blocking_pick_folder();
+            let parent = app
+                .get_webview_window("main")
+                .ok_or("Main window unavailable")?;
+            let folder = app
+                .dialog()
+                .file()
+                .set_parent(&parent)
+                .blocking_pick_folder();
             let Some(folder) = folder else { return Ok(0) };
+            let _ = app2.emit("catalog://progress", json!({"imported":0,"failed":0}));
             let path = folder.into_path().map_err(|e| e.to_string())?;
             let mut n = 0usize;
             let mut failures = 0usize;
@@ -308,6 +329,7 @@ async fn import_music(
         let manifest = value["manifestPath"]
             .as_str()
             .ok_or("Invalid import response")?;
+        let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
         let file = std::fs::File::open(manifest).map_err(|e| e.to_string())?;
         let mut count = 0;
         use std::io::BufRead;
@@ -652,6 +674,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_tracks,
             list_groups,
+            group_ids,
             tracks_by_id,
             resolve_cover,
             import_music,
