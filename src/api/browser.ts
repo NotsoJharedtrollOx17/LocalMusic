@@ -32,6 +32,7 @@ export class BrowserMusic implements MusicApi {
   private session: Session | null = null;
   private sequence = 0;
   private startedMono: number | null = null;
+  private startedPosition = 0;
   private startedUtc = "";
   private writes = Promise.resolve();
   private recent: number[] = [];
@@ -74,6 +75,7 @@ export class BrowserMusic implements MusicApi {
         this.sequence = 0;
       }
       if (this.startedMono === null) {
+        this.startedPosition = this.audio.currentTime;
         this.startedMono = performance.now();
         this.startedUtc = new Date().toISOString();
       }
@@ -123,6 +125,7 @@ export class BrowserMusic implements MusicApi {
         !this.audio.ended &&
         this.audio.readyState >= 3
       ) {
+        this.startedPosition = this.audio.currentTime;
         this.startedMono = performance.now();
         this.startedUtc = new Date().toISOString();
       }
@@ -130,6 +133,7 @@ export class BrowserMusic implements MusicApi {
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) this.checkpoint();
       if (!this.audio.paused && !this.audio.ended) {
+        this.startedPosition = this.audio.currentTime;
         this.startedMono = performance.now();
         this.startedUtc = new Date().toISOString();
       }
@@ -178,7 +182,10 @@ export class BrowserMusic implements MusicApi {
     if (this.startedMono === null || !this.session) return;
     const elapsed = Math.max(
       0,
-      Math.round(performance.now() - this.startedMono),
+      Math.min(
+        Math.round(performance.now() - this.startedMono),
+        Math.round((this.audio.currentTime - this.startedPosition) * 1000),
+      ),
     );
     this.startedMono = null;
     if (!elapsed) return;
@@ -470,17 +477,34 @@ export class BrowserMusic implements MusicApi {
     }
     return s;
   }
+  private async updatePreferences(update: (current: Settings) => Settings) {
+    await this.settings();
+    const db = await this.db;
+    return new Promise<Settings>((resolve, reject) => {
+      const tx = db.transaction("settings", "readwrite"),
+        store = tx.objectStore("settings");
+      const request = store.get("preferences");
+      let next: Settings;
+      request.onsuccess = () => {
+        next = update(request.result as Settings);
+        store.put(next, "preferences");
+      };
+      tx.oncomplete = () => resolve(next);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
   async saveSettings(s: Settings) {
-    const current = await this.settings();
-    await this.put("settings", "preferences", {
+    await this.updatePreferences((current) => ({
       ...s,
       privacyRevision: current.privacyRevision ?? 0,
       historyEnabledSince: current.historyEnabledSince,
-    });
+    }));
   }
   async recap(year: number) {
     this.checkpoint();
     if (!this.audio.paused && !this.audio.ended) {
+      this.startedPosition = this.audio.currentTime;
       this.startedMono = performance.now();
       this.startedUtc = new Date().toISOString();
     }
@@ -515,10 +539,11 @@ export class BrowserMusic implements MusicApi {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-    const s = await this.settings();
-    s.historyEnabledSince = new Date().toISOString();
-    s.privacyRevision = (s.privacyRevision ?? 0) + 1;
-    await this.put("settings", "preferences", s);
+    await this.updatePreferences((current) => ({
+      ...current,
+      historyEnabledSince: new Date().toISOString(),
+      privacyRevision: (current.privacyRevision ?? 0) + 1,
+    }));
     if (!this.audio.paused) {
       this.session = {
         id: crypto.randomUUID(),
@@ -528,6 +553,7 @@ export class BrowserMusic implements MusicApi {
         excluded: this.state.excluded,
       };
       this.sequence = 0;
+      this.startedPosition = this.audio.currentTime;
       this.startedMono = performance.now();
       this.startedUtc = new Date().toISOString();
     }
@@ -594,6 +620,7 @@ export class BrowserMusic implements MusicApi {
       Math.max(0, Math.min(ms, this.state.durationMs)) / 1000;
     this.state.positionMs = this.audio.currentTime * 1000;
     if (!this.audio.paused) {
+      this.startedPosition = this.audio.currentTime;
       this.startedMono = performance.now();
       this.startedUtc = new Date().toISOString();
     }
@@ -638,14 +665,16 @@ export class BrowserMusic implements MusicApi {
     this.state.excluded = !!t?.demo || value;
     if (this.session) {
       if (this.session.excluded !== this.state.excluded) {
-        const preferences = await this.settings();
-        preferences.privacyRevision = (preferences.privacyRevision ?? 0) + 1;
-        await this.put("settings", "preferences", preferences);
+        await this.updatePreferences((current) => ({
+          ...current,
+          privacyRevision: (current.privacyRevision ?? 0) + 1,
+        }));
       }
       this.session.excluded = this.state.excluded;
       await this.put("sessions", this.session.id, { ...this.session });
     }
     if (!this.audio.paused) {
+      this.startedPosition = this.audio.currentTime;
       this.startedMono = performance.now();
       this.startedUtc = new Date().toISOString();
     }

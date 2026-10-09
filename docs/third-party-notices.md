@@ -21,3 +21,5 @@ Build tools include Rust, npm/Vite/TypeScript, Vitest, Playwright, the Android S
 No GPL/AGPL source from the guide's reference applications has been transplanted. Preserve dependency notices when packaging. The package-lock.json and Cargo.lock files identify exact resolved versions; review their transitive license metadata before public distribution.
 
 - TanStack Virtual: MIT.
+
+Portable Windows builds include LLVM libunwind; its distribution license is preserved in public/licenses/llvm-runtime.txt and copied beside the executable. WebView2Loader.dll comes from the Microsoft WebView2 SDK used by webview2-com-sys. Review Microsoft redistribution terms before public release packaging.

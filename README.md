@@ -38,6 +38,8 @@ npm.cmd run tauri -- dev
 
 The portable LLVM route builds a standalone executable without an installer. A standard MSVC environment can produce the configured NSIS installer. Music import uses a folder chooser.
 
+For a debug build, run `./src-tauri/target/debug/local-music.exe`. Keep the copied runtime DLLs and `llvm-runtime.txt` beside the executable when moving it. WebView2 Runtime must be installed on the destination Windows machine.
+
 ### Android
 
 The generated project is checked in under `src-tauri/gen/android`; do not rerun init during normal development. If recovering a deleted scaffold, run `npm.cmd run tauri -- android init` and reapply API 36, minimum API 26, and repository Gradle settings.
@@ -50,6 +52,8 @@ npm.cmd run tauri -- android dev
 ```
 
 APK files are produced under `src-tauri/gen/android/app/build/outputs/apk`. Release distribution requires your signing key. MediaStore import requests audio permission; selected folders use persistent Android document grants. Media3 owns background playback and its durable journal independently of the WebView.
+
+Debug artifacts are `x86_64/debug/app-x86_64-debug.apk` for the configured emulator and `arm64/debug/app-arm64-debug.apk` for an ARM64 phone. With a booted device connected, install the appropriate file using `adb install -r <apk-path>`. The current host has not completed an emulator boot; see the verification log before treating native runtime behavior as accepted.
 
 ## Checks
 

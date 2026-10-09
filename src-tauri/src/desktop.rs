@@ -31,6 +31,7 @@ pub fn launch(
             visited: std::collections::HashSet::new(),
             session: None,
             sequence: 0,
+            audio_position: 0,
             last: Instant::now(),
             wall: chrono::Utc::now(),
         };
@@ -98,6 +99,7 @@ struct DesktopPlayer {
     visited: std::collections::HashSet<usize>,
     session: Option<Session>,
     sequence: u64,
+    audio_position: u64,
     last: Instant,
     wall: chrono::DateTime<chrono::Utc>,
 }
@@ -143,9 +145,15 @@ impl DesktopPlayer {
     }
     fn checkpoint(&mut self) {
         let now = Instant::now();
+        let position = self
+            .sink
+            .as_ref()
+            .map(|s| s.get_pos().as_millis() as u64)
+            .unwrap_or(self.audio_position);
         if self.snapshot.playing {
             if let Some(s) = &mut self.session {
-                let delta = now.duration_since(self.last).as_millis() as u64;
+                let delta = (now.duration_since(self.last).as_millis() as u64)
+                    .min(position.saturating_sub(self.audio_position));
                 if delta > 0 {
                     s.played_ms += delta;
                     let i = Interval {
@@ -161,6 +169,7 @@ impl DesktopPlayer {
                 }
             }
         }
+        self.audio_position = position;
         self.last = now;
         self.wall = chrono::Utc::now();
     }
@@ -221,6 +230,7 @@ impl DesktopPlayer {
         self.sequence = 0;
         self.last = Instant::now();
         self.wall = chrono::Utc::now();
+        self.audio_position = sink.get_pos().as_millis() as u64;
         self.sink = Some(sink);
         Ok(())
     }
@@ -270,6 +280,7 @@ impl DesktopPlayer {
                         .map_err(|e| e.to_string())?;
                 }
                 self.snapshot.position_ms = ms;
+                self.audio_position = ms;
             }
             "next" => {
                 if self.snapshot.queue.is_empty() {

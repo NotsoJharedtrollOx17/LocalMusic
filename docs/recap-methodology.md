@@ -13,3 +13,6 @@ Recaps show the real collection start. Months outside coverage are marked unobse
 Internal snapshots preserve playback references privately. Exported JSON includes only display metadata, calendar dates, rounded minutes and counts. PNG exports use a 1080×1920 static card. Neither format includes source paths, exact timestamps, private playlist names or excluded-session data.
 
 Snapshots retain immutable metrics. If session exclusions change after a snapshot was saved, sharing that snapshot is blocked by its internal privacy revision. Generate a new recap to share the corrected history. The revision is not exported.
+
+Desktop checkpoints cap the monotonic interval by rendered source-position progress. Seek rebases that position. This prevents system suspension or an audio stall from adding the whole elapsed timer gap to listening time. Native interruption behavior still requires device verification.
+The browser adapter similarly bounds checkpoints by the audio element position. It checkpoints before programmatic seeks and rebases when playback resumes.

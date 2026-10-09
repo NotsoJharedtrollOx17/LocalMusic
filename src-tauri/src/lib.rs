@@ -266,7 +266,7 @@ async fn import_music(
                     failures += 1
                 }
                 if n % 25 == 0 {
-                    let _ = artwork::prune(&cache,128*1024*1024,None);
+                    let _ = artwork::prune(&cache, 128 * 1024 * 1024, None);
                     let _ = app2.emit(
                         "catalog://progress",
                         json!({"imported":n,"failed":failures}),

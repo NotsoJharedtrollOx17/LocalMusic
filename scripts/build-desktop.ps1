@@ -8,4 +8,12 @@ try {
  if($Portable -or $musicGnu){$musicArgs+=@('--no-bundle')}
  & npm.cmd @musicArgs
  if($LASTEXITCODE -ne 0){throw "Desktop build failed ($LASTEXITCODE)"}
+ if($Portable -or $musicGnu){
+  $musicProfile=if($Debug){"debug"}else{"release"}
+  $musicDesktopOutput=Join-Path $musicRoot "src-tauri/target/$musicProfile"
+  $musicLoader=Get-ChildItem (Join-Path $musicDesktopOutput "build") -Filter "WebView2Loader.dll" -Recurse | Where-Object {$_.Directory.Name -eq "x64"} | Select-Object -First 1
+  if($musicLoader){Copy-Item -LiteralPath $musicLoader.FullName -Destination $musicDesktopOutput -Force}
+  Copy-Item -LiteralPath (Join-Path $musicRoot "public/licenses/llvm-runtime.txt") -Destination $musicDesktopOutput -Force
+  if($musicGnu){foreach($musicRuntime in @("libunwind.dll")){ $musicRuntimePath=Join-Path $musicGnu.FullName "bin/$musicRuntime"; if(Test-Path $musicRuntimePath){Copy-Item -LiteralPath $musicRuntimePath -Destination $musicDesktopOutput -Force}}}
+ }
 }finally{Pop-Location}

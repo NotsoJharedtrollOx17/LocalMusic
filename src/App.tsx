@@ -119,6 +119,7 @@ export default function App() {
     }),
     [targetMode, setTargetMode] = useState<"count" | "duration">("count"),
     [target, setTarget] = useState(25);
+  const settingsWrite = useRef<Promise<void>>(Promise.resolve());
   const fileInput = useRef<HTMLInputElement>(null),
     folderInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null);
@@ -225,7 +226,8 @@ export default function App() {
     if (settings) {
       document.documentElement.lang = settings.language;
       document.documentElement.dataset.theme = settings.theme;
-      void act(() => api.saveSettings(settings));
+      settingsWrite.current = api.saveSettings(settings);
+      void act(() => settingsWrite.current);
     }
   }, [settings]);
   useEffect(() => {
@@ -240,6 +242,7 @@ export default function App() {
   useEffect(() => {
     if (tab === "year" && settings)
       void act(async () => {
+        await settingsWrite.current;
         setRecap(await api.recap(year));
         setSnapshotMode(false);
         setSnapshots(await api.snapshots());
