@@ -9,7 +9,14 @@ import type {
   PlaybackSnapshot,
   Recap,
 } from "../types";
-import { aggregate, generate, hash, coverUrl } from "../domain";
+import {
+  aggregate,
+  generate,
+  hash,
+  coverUrl,
+  compareAlbumTracks,
+  compareCatalogTracks,
+} from "../domain";
 type StoredTrack = Track & { file: Blob; cover?: Blob };
 const initialPlayback = (): PlaybackSnapshot => ({
   trackId: null,
@@ -40,6 +47,7 @@ export class BrowserMusic implements MusicApi {
   private changing = false;
   private privateMode = false;
   private cancelled = false;
+  private orderReady?: Promise<void>;
   constructor() {
     this.db = new Promise((resolve, reject) => {
       const r = indexedDB.open("local-music-v1", 1);
@@ -230,20 +238,51 @@ export class BrowserMusic implements MusicApi {
     const { file: _, cover: __, ...track } = t;
     return { ...track, artworkUrl: this.artwork.get(t.id) };
   }
+  private async ensureAlbumOrder() {
+    this.orderReady ??= (async () => {
+      const { parseBlob } = await import("music-metadata");
+      for (const old of await this.all<StoredTrack>("tracks")) {
+        if (old.orderMetadataRead || old.demo) continue;
+        try {
+          const metadata = await parseBlob(old.file, {
+            duration: false,
+            skipCovers: true,
+          });
+          const current = await this.get<StoredTrack>("tracks", old.id);
+          if (!current || current.orderMetadataRead) continue;
+          await this.put("tracks", old.id, {
+            ...current,
+            trackNumber: metadata.common.track.no || undefined,
+            discNumber: metadata.common.disk.no || undefined,
+            orderMetadataRead: true,
+          });
+        } catch {
+          /* inaccessible legacy sources keep their stable fallback order */
+        }
+      }
+    })();
+    await this.orderReady;
+  }
   async groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
+    await this.ensureAlbumOrder();
     return (await this.all<StoredTrack>("tracks"))
       .filter((track) =>
         kind === "artists"
           ? track.artist === title
           : track.album === title && track.artist === subtitle,
       )
-      .sort(
-        (a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id),
+      .sort((a, b) =>
+        kind === "albums"
+          ? compareAlbumTracks(a, b)
+          : a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
       )
       .map((track) => track.id);
   }
   async groups(kind: "albums" | "artists", offset = 0) {
-    const all = await this.all<StoredTrack>("tracks");
+    await this.ensureAlbumOrder();
+    const all = (await this.all<StoredTrack>("tracks")).sort(
+      (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
+    );
     const map = new Map<string, import("../types").CatalogGroup>();
     for (const t of all) {
       const title = kind === "albums" ? t.album : t.artist;
@@ -280,18 +319,14 @@ export class BrowserMusic implements MusicApi {
     limit = 60,
     options: import("../types").LibraryOptions = {},
   ) {
+    await this.ensureAlbumOrder();
     const q = query.toLowerCase();
     const tracks = (await this.all<StoredTrack>("tracks"))
       .filter((t) =>
         (t.title + " " + t.artist + " " + t.album).toLowerCase().includes(q),
       )
       .filter((t) => !options.favoriteOnly || t.favorite)
-      .sort(
-        (a, b) =>
-          a[options.sort ?? "title"].localeCompare(
-            b[options.sort ?? "title"],
-          ) || a.title.localeCompare(b.title),
-      );
+      .sort((a, b) => compareCatalogTracks(a, b, options.sort ?? "title"));
     return {
       tracks: tracks.slice(offset, offset + limit).map((t) => this.present(t)),
       total: tracks.length,
@@ -336,6 +371,8 @@ export class BrowserMusic implements MusicApi {
         album = "",
         genre = "",
         durationMs = 0,
+        trackNumber: number | undefined,
+        discNumber: number | undefined,
         cover: Blob | undefined;
       try {
         const m = await parseBlob(file, { duration: true });
@@ -344,6 +381,8 @@ export class BrowserMusic implements MusicApi {
         album = m.common.album || "";
         genre = m.common.genre?.join(", ") || "";
         durationMs = Math.round((m.format.duration || 0) * 1000);
+        trackNumber = m.common.track.no || undefined;
+        discNumber = m.common.disk.no || undefined;
         const p = m.common.picture?.[0];
         if (p && p.data.byteLength <= 8 * 1024 * 1024) {
           try {
@@ -370,6 +409,9 @@ export class BrowserMusic implements MusicApi {
         album,
         genre,
         durationMs,
+        trackNumber,
+        discNumber,
+        orderMetadataRead: true,
         sourceUri: "browser-file:" + id,
         favorite: existing?.favorite ?? false,
         available: true,

@@ -35,7 +35,12 @@ import {
 import TrackList from "./TrackList";
 import { api, native } from "./api";
 import { en, es } from "./i18n";
-import { coverUrl, localDate, localMidnight } from "./domain";
+import {
+  compareCatalogTracks,
+  coverUrl,
+  localDate,
+  localMidnight,
+} from "./domain";
 import { exportCard, exportJson } from "./export";
 import {
   Cover,
@@ -338,12 +343,11 @@ export default function App() {
     }).format(new Date(s));
   const visible = useMemo(
     () =>
-      (group ? groupTracks : tracks)
-        .filter((x) => group || !onlyFavorites || x.favorite)
-        .sort(
-          (a, b) =>
-            a[sort].localeCompare(b[sort]) || a.title.localeCompare(b.title),
-        ),
+      group
+        ? groupTracks
+        : tracks
+            .filter((x) => !onlyFavorites || x.favorite)
+            .sort((a, b) => compareCatalogTracks(a, b, sort)),
     [tracks, groupTracks, onlyFavorites, group, sort],
   );
   const rows = (

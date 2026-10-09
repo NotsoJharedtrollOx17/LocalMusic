@@ -313,8 +313,8 @@ test("import publishes ten tracks before the remaining files finish", async ({
   await expect(page.getByText("11 songs", { exact: true })).toBeVisible();
 });
 
-function taggedWav(title: string, marker: number) {
-  const base = wav(1);
+function taggedWav(title: string, marker: number, seconds = 1) {
+  const base = wav(seconds);
   base.writeInt16LE(marker, 44);
   const chunk = (kind: string, value: string) => {
     const bytes = Buffer.from(value + "\0");
@@ -418,4 +418,146 @@ test("artist and album details stay populated as import batches arrive", async (
     page.getByRole("button", { name: "Play Final", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("13 songs", { exact: true })).toBeVisible();
+});
+
+function numberedWav(
+  title: string,
+  trackNumber: number,
+  discNumber: number,
+  marker: number,
+) {
+  const base = taggedWav(title, marker, 40);
+  const frames = Buffer.concat(
+    [
+      ["TIT2", title],
+      ["TPE1", "Fixture Artist"],
+      ["TALB", "Fixture Album"],
+      ["TRCK", String(trackNumber) + "/12"],
+      ["TPOS", String(discNumber) + "/2"],
+    ].map(([name, value]) => {
+      const body = Buffer.concat([Buffer.from([0]), Buffer.from(value)]);
+      const header = Buffer.alloc(10);
+      header.write(name);
+      header.writeUInt32BE(body.length, 4);
+      return Buffer.concat([header, body]);
+    }),
+  );
+  const id3 = Buffer.alloc(10);
+  id3.write("ID3");
+  id3[3] = 3;
+  for (let i = 0; i < 4; i++)
+    id3[6 + i] = (frames.length >>> (7 * (3 - i))) & 127;
+  const content = Buffer.concat([id3, frames]);
+  const chunk = Buffer.alloc(8);
+  chunk.write("id3 ");
+  chunk.writeUInt32LE(content.length, 4);
+  const result = Buffer.concat([
+    base,
+    chunk,
+    content,
+    Buffer.alloc(content.length % 2),
+  ]);
+  result.writeUInt32LE(result.length - 8, 4);
+  return result;
+}
+
+test("album disc order is preserved in views, queue and legacy library migration", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const expected = [
+    "Zulu opener",
+    "Middle song",
+    "Alpha finale",
+    "Disc two opener",
+  ];
+  const files = [
+    { title: "Alpha finale", track: 10, disc: 1 },
+    { title: "Disc two opener", track: 1, disc: 2 },
+    { title: "Middle song", track: 2, disc: 1 },
+    { title: "Zulu opener", track: 1, disc: 1 },
+  ];
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles(
+      files.map((f, i) => ({
+        name: f.title + ".wav",
+        mimeType: "audio/wav",
+        buffer: numberedWav(f.title, f.track, f.disc, i + 100),
+      })),
+    );
+  await expect(page.locator(".toast")).toContainText("4 tracks imported");
+  await page.locator(".sort-select select").selectOption("album");
+  await expect(page.locator(".library-page .track-copy strong")).toHaveText(
+    expected,
+  );
+  await page.getByRole("tab", { name: "Albums" }).click();
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Album" })
+    .click();
+  await expect(page.locator(".library-page .track-copy strong")).toHaveText(
+    expected,
+  );
+  await page
+    .getByRole("button", { name: "Play Zulu opener", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await page.locator(".mini-track").click();
+  await page
+    .locator(".full-player")
+    .getByRole("button", { name: "Queue", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog").locator(".track-copy strong"),
+  ).toHaveText(expected);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.locator(".group-back").click();
+  await page.getByRole("tab", { name: "Artists" }).click();
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Artist" })
+    .click();
+  await expect(page.locator(".library-page .track-copy strong")).toHaveText(
+    expected,
+  );
+  // Simulate the previous catalog format; retained audio blobs must restore the tags.
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("local-music-v1", 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("tracks", "readwrite");
+      const request = tx.objectStore("tracks").openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const value = cursor.value;
+        delete value.trackNumber;
+        delete value.discNumber;
+        delete value.orderMetadataRead;
+        value.favorite = true;
+        cursor.update(value);
+        cursor.continue();
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  });
+  await page.reload();
+  await page.getByRole("tab", { name: "Albums" }).click();
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Album" })
+    .click();
+  await expect(page.locator(".library-page .track-copy strong")).toHaveText(
+    expected,
+  );
+  await expect(
+    page.locator(".library-page .track-row .icon-button[aria-pressed=true]"),
+  ).toHaveCount(4);
 });

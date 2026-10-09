@@ -11,6 +11,9 @@ fn track(id: &str, artist: &str) -> Track {
         duration_ms: 60000,
         source_uri: format!("/private/{id}"),
         artwork_url: None,
+        track_number: None,
+        disc_number: None,
+        order_metadata_read: true,
         favorite: false,
         available: true,
         demo: false,
@@ -183,12 +186,19 @@ fn catalog_filters_and_groups_span_pages() {
     );
     assert_eq!(db.groups("artists", 60, 60).unwrap().groups.len(), 60);
     assert_eq!(db.groups("albums", 0, 60).unwrap().groups[0].ids.len(), 1);
-    assert_eq!(db.group_ids("artists", "Artist 124", "").unwrap(), vec!["track-124"]);
+    assert_eq!(
+        db.group_ids("artists", "Artist 124", "").unwrap(),
+        vec!["track-124"]
+    );
     let mut another = track("track-125", "Artist 124");
     another.album = "Another Album".into();
     db.upsert_track(&another).unwrap();
     assert_eq!(db.group_ids("artists", "Artist 124", "").unwrap().len(), 2);
-    assert_eq!(db.group_ids("albums", "Another Album", "Artist 124").unwrap(), vec!["track-125"]);
+    assert_eq!(
+        db.group_ids("albums", "Another Album", "Artist 124")
+            .unwrap(),
+        vec!["track-125"]
+    );
     assert!(db.group_ids("invalid", "Artist 124", "").is_err());
     assert!(db
         .tracks_with_options("", 0, 60, false, "title;DROP TABLE tracks")
@@ -232,4 +242,62 @@ fn unavailable_track_update_does_not_steal_reassigned_alias() {
     db.upsert_track(&old).unwrap();
     assert!(db.source_uris("old").unwrap().is_empty());
     assert_eq!(db.source_uris("new").unwrap(), vec!["/same/file"]);
+}
+
+#[test]
+fn album_order_survives_grouping_and_catalog_pagination() {
+    let mut db = Store::open(":memory:").unwrap();
+    for (id, number, disc) in [
+        ("Zulu opener", Some(1), None),
+        ("Alpha finale", Some(10), Some(1)),
+        ("Bonus", None, None),
+        ("Disc two opener", Some(1), Some(2)),
+        ("Disc two end", Some(2), Some(2)),
+    ] {
+        let mut t = track(id, "Artist");
+        t.track_number = number;
+        t.disc_number = disc;
+        db.upsert_track(&t).unwrap();
+    }
+    let expected = vec![
+        "Zulu opener",
+        "Alpha finale",
+        "Bonus",
+        "Disc two opener",
+        "Disc two end",
+    ];
+    assert_eq!(db.group_ids("albums", "Album", "Artist").unwrap(), expected);
+    assert_eq!(db.group_ids("artists", "Artist", "").unwrap(), expected);
+    assert_eq!(db.groups("albums", 0, 60).unwrap().groups[0].ids, expected);
+    for sort in ["album", "artist"] {
+        for (offset, id) in expected.iter().enumerate() {
+            let page = db.tracks_with_options("", offset, 1, false, sort).unwrap();
+            assert_eq!(page.tracks[0].id, *id);
+        }
+    }
+    assert_eq!(
+        db.tracks_with_options("", 0, 1, false, "title")
+            .unwrap()
+            .tracks[0]
+            .id,
+        "Alpha finale"
+    );
+    let mut other = track("Other album", "Artist");
+    other.album = "A preceding album".into();
+    db.upsert_track(&other).unwrap();
+    assert_eq!(
+        db.group_ids("artists", "Artist", "").unwrap()[0],
+        "Other album"
+    );
+}
+#[test]
+fn old_track_records_remain_readable_without_order_tags() {
+    let mut raw = serde_json::to_value(track("legacy", "Artist")).unwrap();
+    for key in ["trackNumber", "discNumber", "orderMetadataRead"] {
+        raw.as_object_mut().unwrap().remove(key);
+    }
+    let legacy: Track = serde_json::from_value(raw).unwrap();
+    assert!(legacy.track_number.is_none());
+    assert!(legacy.disc_number.is_none());
+    assert!(!legacy.order_metadata_read);
 }

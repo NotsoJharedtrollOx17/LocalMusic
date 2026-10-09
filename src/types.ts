@@ -4,6 +4,9 @@ export interface Track {
   artist: string;
   album: string;
   genre: string;
+  trackNumber?: number | null;
+  discNumber?: number | null;
+  orderMetadataRead?: boolean;
   durationMs: number;
   artworkUrl?: string;
   sourceUri: string;

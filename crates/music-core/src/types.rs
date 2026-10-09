@@ -7,6 +7,12 @@ pub struct Track {
     pub artist: String,
     pub album: String,
     pub genre: String,
+    #[serde(default)]
+    pub track_number: Option<u32>,
+    #[serde(default)]
+    pub disc_number: Option<u32>,
+    #[serde(default)]
+    pub order_metadata_read: bool,
     pub duration_ms: u64,
     pub source_uri: String,
     #[serde(default)]

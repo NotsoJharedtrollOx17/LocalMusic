@@ -41,11 +41,19 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
    retriever.setDataSource(context,uri)
    fun put(key:String,metadata:Int){retriever.extractMetadata(metadata)?.takeIf{it.isNotBlank()}?.let{result.put(key,it)}}
    put("title",MediaMetadataRetriever.METADATA_KEY_TITLE);put("artist",MediaMetadataRetriever.METADATA_KEY_ARTIST);put("album",MediaMetadataRetriever.METADATA_KEY_ALBUM);put("genre",MediaMetadataRetriever.METADATA_KEY_GENRE)
+   applyAlbumOrder(result,retriever)
    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.let{result.put("durationMs",it)}
    retriever.embeddedPicture?.takeIf{it.size<=8*1024*1024}?.let{bytes->cachePicture(bytes)?.let{result.put("artworkUrl",it)}}
   }catch(_:Exception){}finally{retriever.release()}
+  result.put("orderMetadataRead",true)
   return result
  }
+ private fun applyAlbumOrder(result:JSONObject,retriever:MediaMetadataRetriever){
+  fun number(key:String,metadata:Int){retriever.extractMetadata(metadata)?.substringBefore('/')?.trim()?.toIntOrNull()?.takeIf{it>0}?.let{result.put(key,it)}}
+  number("trackNumber",MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
+  number("discNumber",MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
+ }
+ fun albumOrder(uri:Uri):JSONObject {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);JSONObject().also{applyAlbumOrder(it,retriever)}}finally{retriever.release()}}
  fun artwork(uri:Uri):String? {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);retriever.embeddedPicture?.takeIf{it.size<=8*1024*1024}?.let{cachePicture(it)}}catch(_:Exception){null}finally{retriever.release()}}
  private fun pruneCache(keep:String?=null){val files=File(context.dataDir,"artwork").listFiles()?.filter{it.isFile&&it.extension=="png"}?.sortedBy{it.lastModified()}?:return;var bytes=files.sumOf{it.length()};for(file in files){if(bytes<=128L*1024*1024)break;if(keep!=null&&file.name.startsWith(keep))continue;val size=file.length();if(file.delete())bytes-=size};cacheBytes=bytes}
  private fun cachePicture(bytes:ByteArray):String? {

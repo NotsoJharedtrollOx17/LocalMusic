@@ -8,6 +8,33 @@ import type {
 } from "./types";
 export const key = (value: string) =>
   value.trim().normalize("NFKC").toLocaleLowerCase("en-US");
+// Missing disc tags mean disc one; unnumbered tracks follow numbered tracks.
+export function compareAlbumTracks(a: Track, b: Track): number {
+  const positive = (n: number | null | undefined) =>
+    n && n > 0 ? n : undefined;
+  return (
+    (positive(a.discNumber) ?? 1) - (positive(b.discNumber) ?? 1) ||
+    (positive(a.trackNumber) ?? Number.MAX_SAFE_INTEGER) -
+      (positive(b.trackNumber) ?? Number.MAX_SAFE_INTEGER) ||
+    a.title.localeCompare(b.title) ||
+    a.id.localeCompare(b.id)
+  );
+}
+export function compareCatalogTracks(
+  a: Track,
+  b: Track,
+  sort: "title" | "artist" | "album",
+): number {
+  if (sort === "title")
+    return a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
+  return (
+    a[sort].localeCompare(b[sort]) ||
+    (sort === "album"
+      ? a.artist.localeCompare(b.artist)
+      : a.album.localeCompare(b.album)) ||
+    compareAlbumTracks(a, b)
+  );
+}
 export function hash(value: string): string {
   let h = 2166136261;
   for (const c of value) h = Math.imul(h ^ c.charCodeAt(0), 16777619);

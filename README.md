@@ -83,8 +83,10 @@ On Windows without symbolic-link privileges, build-android.ps1 falls back to cop
 
 ## Development branches
 
-`dev` is the integration branch and now contains the live-import improvements. Artwork resolution work is on `dev.upscale-album-covers`; merge it into `dev` after review. The initial first draft remains on `master`.
+`dev` is the integration branch and contains the live-import and cover resolution improvements. Album sequencing work is on `dev.correct-album-song-order`; merge it into `dev` after review. The initial first draft remains on `master`.
 
 Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
 
 On Windows, the folder chooser owns the app window. Choose a folder to begin import; the progress counter then appears and artist/album detail views update as each batch is indexed. Canceling the chooser leaves the library view ready to use.
+
+Album detail follows disc number, then numeric track number. Artist detail groups songs by album and follows that order within each album. Library sorting by album or artist uses the same sequence, and playback from those views uses their ordered IDs. Missing disc tags mean disc one; unnumbered songs follow numbered songs on that disc, with a stable title/ID fallback. The first catalog read after upgrading backfills available local files or granted Android URIs without requiring a reimport. Manually arranged playlists and queues keep their saved order.

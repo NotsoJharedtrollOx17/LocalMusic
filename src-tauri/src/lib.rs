@@ -5,6 +5,7 @@ use std::sync::{
     Arc, Mutex,
 };
 use tauri::{Emitter, Manager, State};
+mod album_order;
 mod artwork;
 #[cfg(not(target_os = "android"))]
 mod catalog;
@@ -12,6 +13,7 @@ mod catalog;
 mod desktop;
 struct MusicState {
     core: Arc<Mutex<Store>>,
+    order_ready: Arc<Mutex<bool>>,
     snapshot: Arc<Mutex<PlaybackSnapshot>>,
     cancel: Arc<AtomicBool>,
     #[cfg(not(target_os = "android"))]
@@ -139,7 +141,9 @@ async fn list_tracks(
     sort: String,
 ) -> Result<LibraryPage> {
     let core = state.core.clone();
+    let order_ready = state.order_ready.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        album_order::backfill(&core, &order_ready, &app)?;
         let mut page = core
             .lock()
             .map_err(|e| e.to_string())?
@@ -179,17 +183,25 @@ async fn tracks_by_id(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-fn group_ids(
-    state: State<MusicState>,
+async fn group_ids(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
     kind: String,
     title: String,
     subtitle: String,
 ) -> Result<Vec<String>> {
-    state
-        .core
-        .lock()
-        .map_err(|e| e.to_string())?
-        .group_ids(&kind, &title, &subtitle)
+    let core = state.core.clone();
+    let order_ready = state.order_ready.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        album_order::backfill(&core, &order_ready, &app)?;
+        let result = core
+            .lock()
+            .map_err(|e| e.to_string())?
+            .group_ids(&kind, &title, &subtitle);
+        result
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 #[tauri::command]
 async fn list_groups(
@@ -199,7 +211,9 @@ async fn list_groups(
     offset: usize,
 ) -> Result<music_core::groups::GroupPage> {
     let core = state.core.clone();
+    let order_ready = state.order_ready.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        album_order::backfill(&core, &order_ready, &app)?;
         let mut page = core
             .lock()
             .map_err(|e| e.to_string())?
@@ -664,6 +678,7 @@ pub fn run() {
             let player = desktop::launch(app.handle().clone(), core.clone(), snapshot.clone());
             app.manage(MusicState {
                 core,
+                order_ready: Arc::new(Mutex::new(false)),
                 snapshot,
                 cancel: Arc::new(AtomicBool::new(false)),
                 #[cfg(not(target_os = "android"))]

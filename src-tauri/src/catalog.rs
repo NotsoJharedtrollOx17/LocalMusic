@@ -35,6 +35,9 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
         duration_ms: 0,
         source_uri: path.to_string_lossy().into(),
         artwork_url: None,
+        track_number: None,
+        disc_number: None,
+        order_metadata_read: true,
         favorite: false,
         available: true,
         demo: false,
@@ -52,6 +55,14 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
             t.artist = tag.artist().map(|v| v.into_owned()).unwrap_or_default();
             t.album = tag.album().map(|v| v.into_owned()).unwrap_or_default();
             t.genre = tag.genre().map(|v| v.into_owned()).unwrap_or_default();
+            t.track_number = tag
+                .track()
+                .or_else(|| tagged.tags().iter().find_map(|t| t.track()))
+                .filter(|n| *n > 0);
+            t.disc_number = tag
+                .disk()
+                .or_else(|| tagged.tags().iter().find_map(|t| t.disk()))
+                .filter(|n| *n > 0);
             if let Some(p) = tag.pictures().first() {
                 if let Ok(key) = crate::artwork::save_embedded(p.data(), cache) {
                     t.artwork_url = Some(key);

@@ -10,9 +10,15 @@ impl Store {
         sort: &str,
     ) -> Result<LibraryPage, String> {
         let order = match sort {
-            "title" => "title",
-            "artist" => "artist",
-            "album" => "album",
+            "title" => "title COLLATE NOCASE,id".to_string(),
+            "artist" => format!(
+                "artist COLLATE NOCASE,album COLLATE NOCASE,{}",
+                groups::ALBUM_TRACK_ORDER
+            ),
+            "album" => format!(
+                "album COLLATE NOCASE,artist COLLATE NOCASE,{}",
+                groups::ALBUM_TRACK_ORDER
+            ),
             _ => return Err("Invalid sort order".into()),
         };
         let q = query
@@ -29,7 +35,12 @@ impl Store {
                 |r| r.get(0),
             )
             .map_err(|e| e.to_string())?;
-        let mut st=self.connection.prepare(&format!("SELECT data FROM tracks WHERE {predicate} ORDER BY {order} COLLATE NOCASE,title COLLATE NOCASE,id LIMIT ?2 OFFSET ?3")).map_err(|e|e.to_string())?;
+        let mut st = self
+            .connection
+            .prepare(&format!(
+                "SELECT data FROM tracks WHERE {predicate} ORDER BY {order} LIMIT ?2 OFFSET ?3"
+            ))
+            .map_err(|e| e.to_string())?;
         let rows = st
             .query_map(params![q, limit.min(100), offset, favorite_only], |r| {
                 r.get::<_, String>(0)
