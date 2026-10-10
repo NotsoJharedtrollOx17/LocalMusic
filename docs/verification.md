@@ -325,3 +325,11 @@ The final measured browser/layout journey passed again after the alignment and v
 The ARM64 native library and final Android debug APK rebuilt successfully through the file-copy packaging fallback. Apksigner verified the APK v2 signature. ADB reported no connected target. Windows artifact replacement remains pending closure of the running app; Android runtime and physical-device acceptance remain separate gates.
 
 After the user closed Local Music, the Windows portable debug executable rebuilt successfully with the preamp fader/full-profile changes from `212512b`. This resolves the preceding executable-lock package gate. Actual native headphone/output and Android runtime acceptance remain pending; no additional runtime or performance claim is made from this build.
+
+## v0.2.0 release integration - 10 October 2026
+
+Integrated `dev.sound-eq-adapt-sound` into `dev` and committed the original UX/UI guideline as `9af3cbb`. Updated npm/Tauri/native application versions to 0.2.0, refreshed the README and added `docs/releases/v0.2.0.md`. The previous `v0.1.0` tag remains the first baseline. `main` has a separate baseline-documentation commit; retain it through a merge commit and synchronize `dev` with the reviewed release afterward.
+
+The version update's production frontend build and 23 frontend tests passed, along with thirteen Rust core tests. Existing affected-browser, native Rust and Kotlin evidence is recorded above; this metadata/documentation pass is not a new complete browser or device acceptance run. The Windows v0.2.0 portable debug executable rebuilt successfully. Final Android/version/signature results follow below. There is no configured Git remote, so the requested release is a local annotated tag with source notes, not hosted publication. Development binaries remain ignored; Android runtime, physical headphones and production distribution signing remain separate gates.
+
+The ARM64 native library and v0.2.0 debug APK built successfully through the file-copy fallback. Apksigner verified the APK v2 signature, and aapt2 reported package `app.localmusic.year`, version name `0.2.0`, version code `2000`. Windows file/product version metadata both report `0.2.0`. ADB reported no connected target. These package checks do not change the pending runtime/device acceptance gates.

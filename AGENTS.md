@@ -13,4 +13,4 @@ Read docs/implementation-plan.md and the original .AGENTS development guide befo
 - Native acceptance requires actual builds and Android emulator checks. Physical-device and performance claims require separate measured evidence.
 - Keep build artifacts and development tools out of Git. Record actual results in docs/verification.md; never turn untested targets into completed claims.
 
-Branch workflow: dev is the integration branch and includes import, artwork, album sequencing, release-year labels, stabilized recap PNG exports, album loading/startup fixes and Playlists in the Library tabs. Start focused feature branches from dev and merge reviewed changes back into dev. Keep master as the first-draft baseline until an integration or release is requested.
+Branch workflow: dev is the integration branch and includes the Library/recap work, Phase 2 music flow and modularization, and Step 3 EQ/personal sound. Start focused feature branches from dev and merge reviewed changes back into dev. main holds reviewed release integrations; v0.1.0 retains the first baseline and v0.2.0 records the second. Create release tags from reviewed main commits.
