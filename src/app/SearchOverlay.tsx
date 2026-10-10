@@ -53,9 +53,9 @@ export default function SearchOverlay() {
               await api.play(ids, index);
             })
           }
-          onMore={(track, anchor) => {
+          onMore={(track, anchor, point) => {
             remember([track]);
-            setMenu({ track, anchor });
+            setMenu({ track, anchor, point });
           }}
         />
       )}

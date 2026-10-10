@@ -61,7 +61,16 @@ export default function TrackRows({
               )
             }
             onFavorite={() => void favorite(track)}
-            onMore={(e) => setMenu({ track, anchor: e.currentTarget })}
+            onMore={(e) =>
+              setMenu({
+                track,
+                anchor: e.currentTarget,
+                point:
+                  e.type === "contextmenu" && (e.clientX || e.clientY)
+                    ? { x: e.clientX, y: e.clientY }
+                    : undefined,
+              })
+            }
             edit={
               editable
                 ? {

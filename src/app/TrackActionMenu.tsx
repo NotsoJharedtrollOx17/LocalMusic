@@ -30,6 +30,7 @@ export default function TrackActionMenu() {
       {menu && (
         <ActionMenu
           anchor={menu.anchor}
+          point={menu.point}
           label={menu.track.title}
           onClose={() => setMenu(null)}
           items={[

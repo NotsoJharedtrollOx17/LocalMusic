@@ -47,7 +47,11 @@ export function SearchSurface({
   onGroup: (kind: "albums" | "artists", group: CatalogGroup) => void;
   onPlaylist: (p: Playlist) => void;
   onPlay: (ids: string[], index: number) => void;
-  onMore: (track: Track, anchor: HTMLElement) => void;
+  onMore: (
+    track: Track,
+    anchor: HTMLElement,
+    point?: { x: number; y: number },
+  ) => void;
   onFavorite: (track: Track) => Promise<boolean>;
 }) {
   const [query, setQuery] = useState(""),
@@ -181,7 +185,15 @@ export function SearchSurface({
                           );
                       })
                     }
-                    onMore={(e) => onMore(track, e.currentTarget)}
+                    onMore={(e) =>
+                      onMore(
+                        track,
+                        e.currentTarget,
+                        e.type === "contextmenu" && (e.clientX || e.clientY)
+                          ? { x: e.clientX, y: e.clientY }
+                          : undefined,
+                      )
+                    }
                   />
                 ))}
               </section>

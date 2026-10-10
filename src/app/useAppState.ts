@@ -119,6 +119,7 @@ export function useAppState(initialSettings?: Settings) {
   const [menu, setMenu] = useState<{
     track: Track;
     anchor: HTMLElement;
+    point?: { x: number; y: number };
   } | null>(null);
   const [sound, setSound] = useState<SoundCapabilities>(),
     [soundLoading, setSoundLoading] = useState(false);

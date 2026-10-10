@@ -6,6 +6,7 @@ mod catalog;
 mod commands;
 mod playback;
 mod state;
+mod webview_policy;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {

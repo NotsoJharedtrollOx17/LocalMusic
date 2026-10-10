@@ -137,6 +137,7 @@
   position: fixed;
   z-index: 240;
   width: 230px;
+  max-width: calc(100vw - 16px);
   max-height: calc(100dvh - 16px);
   overflow: auto;
   padding: 7px;

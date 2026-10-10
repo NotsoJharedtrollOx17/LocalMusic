@@ -16,6 +16,7 @@ pub(crate) struct MusicState {
 pub(crate) type Result<T> = std::result::Result<T, String>;
 
 pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    crate::webview_policy::configure(app)?;
     let dir = app.path().app_data_dir()?;
     std::fs::create_dir_all(&dir)?;
     let core = Arc::new(Mutex::new(

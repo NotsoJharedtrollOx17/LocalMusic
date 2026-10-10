@@ -1,4 +1,13 @@
 export const en = {
+  appActions: "App actions",
+  textActions: "Text actions",
+  openItem: "Open",
+  copyText: "Copy",
+  cutText: "Cut",
+  pasteText: "Paste",
+  selectAllText: "Select all text",
+  clipboardHint:
+    "Clipboard access is unavailable. Use the keyboard copy/paste shortcuts.",
   selectSongs: "Select songs",
   selected: "selected",
   selectAll: "Select visible songs",
@@ -189,6 +198,15 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  appActions: "Acciones de la app",
+  textActions: "Acciones de texto",
+  openItem: "Abrir",
+  copyText: "Copiar",
+  cutText: "Cortar",
+  pasteText: "Pegar",
+  selectAllText: "Seleccionar todo el texto",
+  clipboardHint:
+    "No se puede acceder al portapapeles. Usa los atajos de copiar y pegar del teclado.",
   selectSongs: "Seleccionar canciones",
   selected: "seleccionadas",
   selectAll: "Seleccionar canciones visibles",

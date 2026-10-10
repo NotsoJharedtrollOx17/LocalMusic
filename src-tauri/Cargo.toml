@@ -32,6 +32,10 @@ walkdir = "2"
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-native-music = { path = "plugins/native-music" }
 
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39.1"
+windows = { version = "0.62.2", features = ["Win32_UI_Input_KeyboardAndMouse"] }
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

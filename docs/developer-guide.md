@@ -16,6 +16,7 @@ This is the current code map for work based on `dev`. Read [AGENTS.md](../AGENTS
 | Recap image | `src/ShareRecap.tsx`, `src/export.ts` | Story/Feed preview, canvas rendering, privacy check and save feedback |
 | Startup, theme and language | `src/main.tsx`, `src/theme.ts`, `src/i18n.ts` | Preference hydration, theme application and UI strings |
 | Native entry and state | `src-tauri/src/lib.rs`, `src-tauri/src/state.rs` | Register platform plugins and command paths; initialize the catalog, shared state and player |
+| Native WebView policy | `src-tauri/src/webview_policy.rs`, `src/ux/nativeShortcuts.ts` | Suppress default Windows menus/devtools and selectively intercept reload/inspector shortcuts, preserving editing and zoom |
 | Native command boundary | `src-tauri/src/commands/` | Catalog, imports, playback, playlists, recap, settings, sharing, sound and window handlers |
 | Native playback bridge | `src-tauri/src/playback/mod.rs`, `src-tauri/src/playback/desktop.rs`, `src-tauri/src/playback/android.rs` | Dispatch operations to the Windows worker or Media3; import and acknowledge the Android journal |
 | Native import/artwork | `src-tauri/src/catalog.rs`, `src-tauri/src/artwork.rs`, `src-tauri/src/album_order.rs` | Metadata, cached cover variants and legacy tag backfill |
@@ -31,6 +32,10 @@ The frontend detects Tauri in `src/api/index.ts` and chooses `NativeMusic` or `B
 The command modules expose platform operations and delegate catalog, playlist and recap rules to `music-core`. `commands/catalog.rs` uses the playback command only to prune removed tracks from the current queue. Recap/history commands use the playback bridge to flush or clear listening. These explicit dependencies keep UI commands from becoming an alternative playback clock or journal owner. Existing domain files in `crates/music-core/src/` remain the owners of persistence and policies.
 
 For native-only refactors, run Rust core/native tests and builds for Windows and Android: desktop compilation does not check Android's conditional modules. A browser journey cannot exercise the Rust IPC handlers. Keep command names, arguments, serialized return values, event names and journal acknowledgement ordering stable during moves.
+
+Right-click actions use the shared `ActionMenu`: track rows open the same actions as the visible overflow button; `AppContextMenu` supplies navigation, card opening and text-editing actions. It captures text selections before focus moves and updates controlled editors through their native value setter/input event. Clipboard failures leave text intact and report keyboard alternatives. Menus constrain their position to the viewport, restore focus, and close on Escape, outside click, scroll, resize or window blur.
+
+Windows config disables devtools and the native policy disables default WebView menus. Its accelerator callback consumes F5/F12 and Ctrl+R (including Shift), leaving other keys to WebView and React. The frontend native-only capture guard also blocks equivalent reload/inspector combinations. Browser preview retains its normal developer shortcuts; a web page cannot guarantee control over browser chrome. Do not disable all browser accelerators: that also removes useful editing/zoom behavior.
 
 ## Data paths and invariants
 

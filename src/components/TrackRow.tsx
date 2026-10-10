@@ -32,7 +32,7 @@ export function TrackRow({
   playing?: boolean;
   onPlay: () => void;
   onFavorite?: () => void;
-  onMore?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onMore?: (event: MouseEvent<HTMLElement>) => void;
   onSelect?: (shift?: boolean) => void;
   selected?: boolean;
   selectionMode?: boolean;
@@ -60,6 +60,13 @@ export function TrackRow({
   useEffect(() => cancel, []);
   return (
     <div
+      onContextMenu={(event) => {
+        if (!onMore) return;
+        event.preventDefault();
+        event.stopPropagation();
+        cancel();
+        if (!held.current) onMore(event);
+      }}
       onPointerDown={(e) => {
         held.current = false;
         if (

@@ -1983,6 +1983,8 @@ dependencies = [
  "tauri-plugin-native-music",
  "uuid",
  "walkdir",
+ "webview2-com",
+ "windows",
 ]
 
 [[package]]

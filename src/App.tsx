@@ -9,6 +9,7 @@ import ImportInputs from "./app/ImportInputs";
 import AppFeedback from "./app/AppFeedback";
 import SearchOverlay from "./app/SearchOverlay";
 import TrackActionMenu from "./app/TrackActionMenu";
+import AppContextMenu from "./app/AppContextMenu";
 import RemoveLibraryDialog from "./app/RemoveLibraryDialog";
 import AddPlaylistDialog from "./app/AddPlaylistDialog";
 import SoundDialog from "./app/SoundDialog";
@@ -37,6 +38,7 @@ export default function App({
         <AppFeedback />
         <SearchOverlay />
         <TrackActionMenu />
+        <AppContextMenu />
         <RemoveLibraryDialog />
         <AddPlaylistDialog />
         <SoundDialog />
