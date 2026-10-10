@@ -55,7 +55,7 @@ impl Config {
         let name = |s: &String| !s.trim().is_empty() && s.chars().count() <= 60;
         if self.version != 1
             || !self.gains.iter().all(|v| range(*v, -12., 12.))
-            || !range(self.preamp, -12., 0.)
+            || !range(self.preamp, -12., 12.)
             || !range(self.strength, 0., 100.)
             || self.presets.len() > 100
             || self.profiles.len() > 100
@@ -63,7 +63,16 @@ impl Config {
             return Err("Invalid sound configuration".into());
         }
         let mut ids = std::collections::HashSet::new();
-        for id in ["flat", "pop", "rock", "jazz", "classical", "bass", "voice"] {
+        for id in [
+            "flat",
+            "pop",
+            "rock",
+            "jazz",
+            "classical",
+            "bass",
+            "treble",
+            "voice",
+        ] {
             ids.insert(id.to_string());
         }
         for p in &self.presets {
@@ -71,7 +80,7 @@ impl Config {
                 || !name(&p.name)
                 || !ids.insert(p.id.clone())
                 || !p.gains.iter().all(|v| range(*v, -12., 12.))
-                || !range(p.preamp, -12., 0.)
+                || !range(p.preamp, -12., 12.)
             {
                 return Err("Invalid sound preset".into());
             }

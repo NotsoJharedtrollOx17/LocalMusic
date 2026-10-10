@@ -39,7 +39,6 @@ export default function SoundPresetList({
                   enabled: true,
                   presetId: p.id,
                   gains: [...p.gains],
-                  preamp: p.preamp,
                 }))
               }
             >

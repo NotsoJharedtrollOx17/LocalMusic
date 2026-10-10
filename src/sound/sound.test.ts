@@ -27,6 +27,8 @@ describe("shared sound processing", () => {
   });
   it("validates persistence and rejects nonfinite, excessive and duplicate controls", () => {
     expect(validateSound(defaultSound()).enabled).toBe(false);
+    expect(validateSound({ ...defaultSound(), preamp: 12 }).preamp).toBe(12);
+    expect(() => validateSound({ ...defaultSound(), preamp: 12.5 })).toThrow();
     expect(() =>
       validateSound({ ...defaultSound(), gains: Array(10).fill(NaN) }),
     ).toThrow();

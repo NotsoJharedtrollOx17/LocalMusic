@@ -52,23 +52,36 @@ export default function EqualizerBands({
         ))}
       </div>
       <label className="sound-preamp">
-        {t.preamp} <output>{config.preamp} dB</output>
+        {t.preamp}{" "}
+        <output>
+          {config.preamp > 0 ? "+" : ""}
+          {config.preamp.toFixed(1)} dB
+        </output>
         <input
           type="range"
           aria-label={t.preamp}
-          aria-valuetext={`${config.preamp} dB`}
+          aria-valuetext={`${config.preamp > 0 ? "+" : ""}${config.preamp.toFixed(1)} dB`}
           min={-12}
-          max={0}
+          max={12}
           step={0.5}
           value={config.preamp}
           onChange={(e) => {
             const preamp = Number(e.target.value);
-            edit((c) => ({ ...c, preamp, presetId: "custom" }));
+            edit((c) => ({ ...c, preamp }));
           }}
           onPointerUp={flush}
           onKeyUp={flush}
         />
       </label>
+      <button
+        className="text-button"
+        onClick={() => {
+          edit((c) => ({ ...c, preamp: 0 }));
+          flush();
+        }}
+      >
+        {t.resetPreamp}
+      </button>
     </>
   );
 }

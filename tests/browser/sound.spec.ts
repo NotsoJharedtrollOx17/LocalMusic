@@ -408,3 +408,55 @@ test("missing native output keeps configuration editable and Retry updates runti
     sound.getByRole("button", { name: "Rock", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
 });
+
+test("presets preserve independent positive preamp and reset restores zero", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const sound = await openSound(page);
+  const preamp = sound.getByRole("slider", { name: "Preamp", exact: true });
+  await preamp.focus();
+  await page.keyboard.press("End");
+  await expect(preamp).toHaveValue("12");
+  for (const name of ["Treble boost", "Rock", "Flat"]) {
+    await sound.getByRole("button", { name, exact: true }).click();
+    await expect(preamp).toHaveValue("12");
+  }
+  await sound
+    .getByRole("button", { name: "Reset to Flat", exact: true })
+    .click();
+  await expect(preamp).toHaveValue("12");
+  await expect(preamp).toHaveAttribute("aria-valuetext", "+12.0 dB");
+  await sound
+    .getByRole("button", { name: "Save as preset", exact: true })
+    .click();
+  await sound
+    .getByRole("textbox", { name: "Name", exact: true })
+    .fill("Independent EQ");
+  await sound.getByRole("button", { name: "Save", exact: true }).click();
+  await sound
+    .getByRole("button", { name: "Reset preamp", exact: true })
+    .click();
+  await sound
+    .getByRole("button", { name: "Independent EQ", exact: true })
+    .click();
+  await expect(preamp).toHaveValue("0");
+  await preamp.focus();
+  await page.keyboard.press("End");
+  await expect(
+    sound.getByRole("button", { name: "Independent EQ", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(async () => (await preferences(page))?.preamp).toBe(12);
+  await page.reload();
+  const again = await openSound(page);
+  await expect(
+    again.getByRole("slider", { name: "Preamp", exact: true }),
+  ).toHaveValue("12");
+  await again
+    .getByRole("button", { name: "Reset preamp", exact: true })
+    .click();
+  await expect(
+    again.getByRole("slider", { name: "Preamp", exact: true }),
+  ).toHaveValue("0");
+  await expect.poll(async () => (await preferences(page))?.preamp).toBe(0);
+});

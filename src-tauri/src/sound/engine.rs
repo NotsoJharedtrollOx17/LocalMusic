@@ -25,6 +25,17 @@ pub struct Engine {
 mod tests {
     use super::*;
     #[test]
+    fn positive_preamp_is_independent_and_bounded() {
+        let engine = Engine::new(Config::default());
+        let mut c = Config::default();
+        c.enabled = true;
+        c.preamp = 12.;
+        engine.configure(c.clone()).unwrap();
+        assert!((engine.prepared.lock().unwrap().gain - 10f64.powf(12. / 20.)).abs() < 1e-9);
+        c.preamp = 12.5;
+        assert!(engine.configure(c).is_err());
+    }
+    #[test]
     fn configuration_remains_editable_without_an_output() {
         let engine = Engine::new(Config::default());
         let mut c = Config::default();

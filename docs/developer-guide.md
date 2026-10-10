@@ -82,3 +82,7 @@ Run Kotlin DSP tests using the installed Android Gradle environment (`:native-mu
 The browser preview, desktop startup checks and a built/signed ARM64 debug APK are recorded in the verification log. Android runtime acceptance has not completed on a connected emulator or phone; the x86_64 APK is older than the latest UI changes. Semantic playlist interpretation, online enrichment and model downloads remain deferred. Treat the original plan's JSON export and 1080 × 1920 card targets as superseded by its dated recap export revision.
 
 See [Phase 2](phase-two-ux-flow.md) for the motion/interaction contract and [verification](verification.md) for current results. Browser accessibility automation is separate from Narrator/TalkBack and native gesture acceptance.
+
+### Independent EQ/preamp controls
+
+Preamp bounds are -12 to +12 dB across TypeScript, Rust and Kotlin. EQ preset selection and Flat reset preserve preamp, while Reset preamp changes only preamp. Preamp edits preserve EQ preset identity. Existing preset records retain their legacy preamp field for storage compatibility, but selection ignores it. Treble boost is a reserved built-in ID (`treble`). Automatic EQ headroom is displayed separately and still varies with the combined frequency response; the limiter handles peaks from positive manual gain.

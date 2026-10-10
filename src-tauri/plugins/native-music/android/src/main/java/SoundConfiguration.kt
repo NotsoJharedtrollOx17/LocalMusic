@@ -14,21 +14,22 @@ class SoundConfiguration(val json: JSONObject) {
         require(
             json.getInt("version") == 1 &&
                 preamp.isFinite() &&
-                preamp in -12.0..0.0 &&
+                preamp in -12.0..12.0 &&
                 strength.isFinite() &&
                 strength in 0.0..100.0
         )
         val presets = json.getJSONArray("presets")
         val profiles = json.getJSONArray("profiles")
         require(presets.length() <= 100 && profiles.length() <= 100)
-        val ids = mutableSetOf("flat", "pop", "rock", "jazz", "classical", "bass", "voice")
+        val ids =
+            mutableSetOf("flat", "pop", "rock", "jazz", "classical", "bass", "treble", "voice")
         for (i in 0 until presets.length()) {
             val p = presets.getJSONObject(i)
             name(p.getString("id"))
             name(p.getString("name"))
             require(ids.add(p.getString("id")))
             curve(p.getJSONArray("gains"), -12.0, 12.0)
-            require(p.getDouble("preamp").isFinite() && p.getDouble("preamp") in -12.0..0.0)
+            require(p.getDouble("preamp").isFinite() && p.getDouble("preamp") in -12.0..12.0)
         }
         ids.clear()
         for (i in 0 until profiles.length()) {

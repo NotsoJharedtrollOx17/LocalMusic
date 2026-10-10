@@ -6,6 +6,7 @@ export const BUILT_INS: SoundPreset[] = [
   ["jazz", "Jazz", [2, 1, 0, -1, 0, 1, 2, 2, 1, 0]],
   ["classical", "Classical", [2, 1, 0, 0, -1, 0, 1, 1, 2, 2]],
   ["bass", "Bass boost", [4, 3, 2, 1, 0, 0, 0, 0, 0, 0]],
+  ["treble", "Treble boost", [0, 0, 0, 0, 0, 0, 1, 2, 3, 4]],
   ["voice", "Voice", [-2, -2, -1, 0, 2, 3, 2, 1, 0, -1]],
 ].map(([id, name, gains]) => ({
   id: id as string,
@@ -37,7 +38,7 @@ export function validateSound(c: SoundConfig) {
     !curve(c.gains, -12, 12) ||
     !Number.isFinite(c.preamp) ||
     c.preamp < -12 ||
-    c.preamp > 0 ||
+    c.preamp > 12 ||
     !Number.isFinite(c.strength) ||
     c.strength < 0 ||
     c.strength > 100 ||
@@ -59,7 +60,7 @@ export function validateSound(c: SoundConfig) {
       !curve(p.gains, -12, 12) ||
       !Number.isFinite(p.preamp) ||
       p.preamp < -12 ||
-      p.preamp > 0
+      p.preamp > 12
     )
       throw new Error("Invalid sound preset");
     ids.add(p.id);

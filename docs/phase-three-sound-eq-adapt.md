@@ -67,3 +67,7 @@ Defaults: global EQ, manually selected profiles; no per-track/age-based/clinical
 - [Core Audio events](https://learn.microsoft.com/en-us/windows/win32/coreaudio/device-events)
 - [Web Audio](https://www.w3.org/TR/webaudio/)
 - [WHO safe listening](https://www.who.int/news-room/questions-and-answers/item/deafness-and-hearing-loss-safe-listening)
+
+## EQ refinement - 10 October 2026
+
+The user's refinement supersedes the original preamp bounds: preamp is independently adjustable from -12 to +12 dB in 0.5 dB steps, with Reset preamp returning to 0.0 dB. Preset selection and Reset to Flat modify EQ bands only, preserving preamp. Preamp edits no longer change the selected EQ preset. Legacy preset preamp fields remain readable for compatibility but are ignored on selection. Treble boost uses the original curve 0,0,0,0,0,0,1,2,3,4. Automatic response-based headroom and the peak limiter remain separate from manual preamp; this change does not promise loudness-normalized presets.

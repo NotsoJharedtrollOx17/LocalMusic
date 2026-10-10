@@ -110,7 +110,6 @@ export default function SoundControls({
                   edit((c) => ({
                     ...c,
                     gains: Array(10).fill(0),
-                    preamp: 0,
                     presetId: "flat",
                   }))
                 }
