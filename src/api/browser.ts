@@ -1,3 +1,4 @@
+import { BrowserSound } from "../sound/BrowserSound";
 import type {
   MusicApi,
   Track,
@@ -16,7 +17,7 @@ import {
   compareAlbumTracks,
   compareCatalogTracks,
 } from "../domain";
-type StoredTrack = Track & { file: Blob; cover?: Blob };
+type StoredTrack = Track & { file: Blob; cover?: Blob; audioChannels?: number };
 const validReleaseYear = (year: number | undefined) =>
   year && Number.isInteger(year) && year >= 1000 && year <= 9999
     ? year
@@ -35,6 +36,7 @@ const initialPlayback = (): PlaybackSnapshot => ({
 export class BrowserMusic implements MusicApi {
   private db: Promise<IDBDatabase>;
   private audio = new Audio();
+  private sound: BrowserSound;
   private state = initialPlayback();
   private listeners = new Set<(s: PlaybackSnapshot) => void>();
   private urls = new Map<string, string>();
@@ -68,6 +70,15 @@ export class BrowserMusic implements MusicApi {
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });
+    this.sound = new BrowserSound(
+      this.audio,
+      () =>
+        this.get<import("../sound/types").SoundConfig>("settings", "sound-v1"),
+      (config) => this.put("settings", "sound-v1", config),
+      async () => {
+        this.audio.pause();
+      },
+    );
     this.ready = this.get<PlaybackSnapshot>("settings", "queue").then((v) => {
       if (v) {
         this.state = { ...v, playing: false, error: undefined };
@@ -450,17 +461,17 @@ export class BrowserMusic implements MusicApi {
     }
     return "download";
   }
-  async soundCapabilities() {
-    return {
-      equalizer: false,
-      systemPanel: false,
-      enabled: false,
-      preset: 0,
-      presets: [],
-    };
+  soundCapabilities() {
+    return this.sound.state();
   }
-  async setEqualizer(_enabled: boolean, _preset: number): Promise<void> {
-    throw new Error("Equalizer is unavailable in browser preview");
+  setSound(config: import("../sound/types").SoundConfig) {
+    return this.sound.configure(config);
+  }
+  soundAction(action: import("../sound/types").SoundAction) {
+    return this.sound.action(action);
+  }
+  personalAction(action: import("../sound/types").PersonalAction) {
+    return this.sound.personal(action);
   }
   async openSoundPanel(): Promise<void> {
     throw new Error("Device sound settings are unavailable in browser preview");
@@ -504,6 +515,7 @@ export class BrowserMusic implements MusicApi {
         album = "",
         genre = "",
         durationMs = 0,
+        audioChannels: number | undefined,
         releaseYear: number | undefined,
         trackNumber: number | undefined,
         discNumber: number | undefined,
@@ -515,6 +527,7 @@ export class BrowserMusic implements MusicApi {
         album = m.common.album || "";
         genre = m.common.genre?.join(", ") || "";
         durationMs = Math.round((m.format.duration || 0) * 1000);
+        audioChannels = m.format.numberOfChannels;
         releaseYear = validReleaseYear(m.common.year ?? m.common.originalyear);
         trackNumber = m.common.track.no || undefined;
         discNumber = m.common.disk.no || undefined;
@@ -544,6 +557,7 @@ export class BrowserMusic implements MusicApi {
         album,
         genre,
         durationMs,
+        audioChannels,
         trackNumber,
         discNumber,
         orderMetadataRead: true,
@@ -812,6 +826,18 @@ export class BrowserMusic implements MusicApi {
         this.urls.set(t.id, URL.createObjectURL(t.file));
       this.audio.src = this.urls.get(t.id)!;
       this.emit();
+      if (!t.audioChannels) {
+        try {
+          const { parseBlob } = await import("music-metadata");
+          t.audioChannels = (await parseBlob(t.file)).format.numberOfChannels;
+          await this.put("tracks", t.id, t);
+        } catch {
+          /* Unknown formats retain the browser's stereo output. */
+        }
+      }
+      this.sound.format(t.audioChannels ?? 2);
+      this.sound.reset();
+      await this.sound.activate();
       await this.audio.play();
     } catch (e) {
       this.state.error = String(e);
@@ -829,10 +855,13 @@ export class BrowserMusic implements MusicApi {
       await this.seek(ms);
       return;
     }
-    if (this.audio.paused) await this.audio.play();
-    else this.audio.pause();
+    if (this.audio.paused) {
+      await this.sound.activate();
+      await this.audio.play();
+    } else this.audio.pause();
   }
   async seek(ms: number) {
+    this.sound.reset();
     this.checkpoint();
     this.audio.currentTime =
       Math.max(0, Math.min(ms, this.state.durationMs)) / 1000;

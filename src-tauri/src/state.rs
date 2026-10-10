@@ -11,6 +11,8 @@ pub(crate) struct MusicState {
     pub(crate) snapshot: Arc<Mutex<PlaybackSnapshot>>,
     pub(crate) cancel: Arc<AtomicBool>,
     #[cfg(not(target_os = "android"))]
+    pub(crate) sound: Arc<crate::sound::engine::Engine>,
+    #[cfg(not(target_os = "android"))]
     pub(crate) player: std::sync::mpsc::Sender<desktop::Request>,
 }
 pub(crate) type Result<T> = std::result::Result<T, String>;
@@ -27,7 +29,19 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
         ..Default::default()
     }));
     #[cfg(not(target_os = "android"))]
-    let player = desktop::launch(app.handle().clone(), core.clone(), snapshot.clone());
+    let sound = Arc::new(crate::sound::engine::Engine::new(
+        core.lock()
+            .unwrap()
+            .get_setting("sound-v1")?
+            .unwrap_or_default(),
+    ));
+    #[cfg(not(target_os = "android"))]
+    let player = desktop::launch(
+        app.handle().clone(),
+        core.clone(),
+        snapshot.clone(),
+        sound.clone(),
+    );
     app.manage(MusicState {
         core,
         order_ready: Arc::new(Mutex::new(false)),
@@ -35,6 +49,8 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
         cancel: Arc::new(AtomicBool::new(false)),
         #[cfg(not(target_os = "android"))]
         player,
+        #[cfg(not(target_os = "android"))]
+        sound,
     });
     Ok(())
 }

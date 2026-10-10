@@ -29,8 +29,16 @@ class NativeMusic implements MusicApi {
   soundCapabilities() {
     return cmd<import("../types").SoundCapabilities>("sound_capabilities");
   }
-  setEqualizer(enabled: boolean, preset: number) {
-    return cmd<void>("set_equalizer", { enabled, preset });
+  setSound(config: import("../sound/types").SoundConfig) {
+    return cmd<import("../sound/types").SoundState>("set_sound", { config });
+  }
+  soundAction(action: import("../sound/types").SoundAction) {
+    return cmd<import("../sound/types").SoundState>("sound_action", { action });
+  }
+  personalAction(action: import("../sound/types").PersonalAction) {
+    return cmd<import("../sound/types").PersonalSession>("personal_action", {
+      action,
+    });
   }
   openSoundPanel() {
     return cmd<void>("open_sound_panel");

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class ImportArgs { var mode:String?=null }
 @InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
 @InvokeArg class ShareArgs { var uris:Array<String>?=null }
-@InvokeArg class EqualizerArgs { var enabled:Boolean=false; var preset:Int=0 }
+@InvokeArg class SoundPayloadArgs { var payload:String?=null }
 
 @TauriPlugin(permissions=[
  Permission(strings=[Manifest.permission.READ_MEDIA_AUDIO],alias="audio"),
@@ -62,10 +62,12 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  @Command fun timeZone(invoke:Invoke){invoke.resolve(JSObject().put("value",java.util.TimeZone.getDefault().id))}
  private fun soundIntent(service:PlaybackService)=Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).putExtra(AudioEffect.EXTRA_AUDIO_SESSION,service.player.audioSessionId).putExtra(AudioEffect.EXTRA_PACKAGE_NAME,activity.packageName).putExtra(AudioEffect.EXTRA_CONTENT_TYPE,AudioEffect.CONTENT_TYPE_MUSIC)
  @Command fun soundCapabilities(invoke:Invoke){withService(invoke){service->
-  val result=service.soundCapabilities();result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null)
+  val result=service.sound.state(service.player.isPlaying);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null)
   invoke.resolve(JSObject(result.toString()))
  }}
- @Command fun setEqualizer(invoke:Invoke){val args=invoke.parseArgs(EqualizerArgs::class.java);withService(invoke){it.setEqualizer(args.enabled,args.preset);invoke.resolve(JSObject())}}
+ @Command fun setSound(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val playing=service.player.isPlaying;worker.execute{try{service.sound.configure(JSONObject(args.payload?:"{}"));val result=service.sound.state(playing);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null);invoke.resolve(JSObject(result.toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound configuration failed")}}}}
+ @Command fun soundAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="retry"){service.player.pause();if(service.player.playerError!=null&&service.player.currentMediaItem!=null)service.player.prepare()};val playing=service.player.isPlaying;worker.execute{try{service.sound.action(action);invoke.resolve(JSObject(service.sound.state(playing).put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound action failed")}}}}
+ @Command fun personalAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="start")service.player.pause();worker.execute{try{invoke.resolve(JSObject(service.sound.personal(action).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound setup failed")}}}}
  @Command fun openSoundPanel(invoke:Invoke){withService(invoke){service->
   val intent=soundIntent(service);if(intent.resolveActivity(activity.packageManager)==null)invoke.reject("Device sound panel unavailable")else{activity.startActivity(intent);invoke.resolve(JSObject())}
  }}

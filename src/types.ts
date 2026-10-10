@@ -109,20 +109,22 @@ export interface SearchResults {
   artists: CatalogGroup[];
   playlists: Playlist[];
 }
-export interface SoundCapabilities {
-  equalizer: boolean;
-  systemPanel: boolean;
-  enabled: boolean;
-  preset: number;
-  presets: string[];
-}
+export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
   searchCatalog(query: string, limit?: number): Promise<SearchResults>;
   setLibraryVisibility(ids: string[], visible: boolean): Promise<void>;
   shareAudio(ids: string[]): Promise<ShareOutcome>;
   soundCapabilities(): Promise<SoundCapabilities>;
-  setEqualizer(enabled: boolean, preset: number): Promise<void>;
+  setSound(
+    config: import("./sound/types").SoundConfig,
+  ): Promise<SoundCapabilities>;
+  soundAction(
+    action: import("./sound/types").SoundAction,
+  ): Promise<SoundCapabilities>;
+  personalAction(
+    action: import("./sound/types").PersonalAction,
+  ): Promise<import("./sound/types").PersonalSession>;
   openSoundPanel(): Promise<void>;
   groupIds(
     kind: "albums" | "artists",

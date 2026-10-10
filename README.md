@@ -10,10 +10,11 @@ An offline local music player with a yearly recap based on actual listening. And
 - **Your Year:** Recaps aggregate listening intervals, qualified plays, active days, monthly listening, top music and a playable recap playlist. They follow the device time zone automatically, show actual history coverage and distinguish unobserved months. Frozen snapshots retain their original time zone. Save snapshots, preview an image and export a matching PNG in Story **2160 × 3840** or Feed **2160 × 2700** format. A successful save shows a confirmation popup. JSON export is not part of the current UI.
 - **Interface:** Light, dark and system themes, English/Spanish strings, responsive layouts and reduced-motion support. Desktop startup waits for the resolved theme; Library tabs keep separate loading and cached results, so switching tabs does not show another tab's cards or a premature empty state.
 - **Music flow:** Mobile tab swipes, centered selection and remembered tab scroll; desktop keyboard tabs; artist Songs/Albums switch; a growing player surface with the queue and transport in one place. Search groups songs, albums, artists and playlists while keeping the mini player available.
-- **Context actions:** Track menus and selection through long press, visible Select, mouse or keyboard. Play, favorite, add to playlists, share audio/save copies, and remove from Library with Undo. Removal preserves audio files and listening history; reimport restores visibility. Android sound controls appear according to playback-session/device capabilities; browser and Windows report their current availability.
+- **Sound:** Application-owned ten-band equalizer on Windows, Android and browser preview, with preamp, original built-in presets, saved custom presets and temporary bypass. Controls remain editable before playback or without an audio output. Runtime status distinguishes saved configuration from active processing and offers Retry when needed. Personal sound provides an experimental per-ear tone-response flow, named profiles, strength and loudness-matched comparison. Saving leaves the profile off; using it requires explicit headphone confirmation. Output changes disable personalization. This is a listening preference feature, not a hearing test or hearing protection; physical headphone acceptance remains pending.
+- **Context actions:** Track menus and selection through long press, visible Select, mouse or keyboard. Play, favorite, add to playlists, share audio/save copies, and remove from Library with Undo. Removal preserves audio files and listening history; reimport restores visibility. Resolvable Android system-effects panels remain separate from the app's equalizer.
   Right-click menus use the app's design, including text actions and keyboard navigation. The native shell blocks F5/F12 and reload/inspector shortcut variants; Windows retains editing and zoom controls. Browser preview keeps its developer shortcuts.
 
-The app works locally without an account, metadata service or downloaded model. Generated playlists use explicit filters; semantic AI is a future feature. Original sample tones are available only in the browser preview and are excluded from recap.
+The app works locally without an account, metadata service or downloaded model. Generated playlists use explicit filters; semantic AI is a future feature. Library demo tracks are available only in browser preview. Demos and personal setup tones/comparison samples are excluded from recap.
 
 ## Browser preview
 
@@ -84,9 +85,10 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 - [Architecture](docs/architecture.md): runtime ownership and data flow.
 - [Recap rules and privacy](docs/recap-methodology.md): time accounting, coverage, snapshots and export.
 - [Implementation plan](docs/implementation-plan.md): original plan and approved revisions.
+- [Step 3 sound plan](docs/phase-three-sound-eq-adapt.md): equalizer, personal profiles, processing and acceptance requirements.
 - [Verification evidence](docs/verification.md): what has actually been built and tested.
 - [Third-party notices](docs/third-party-notices.md) and [MIT license](LICENSE).
 
 Read [AGENTS.md](AGENTS.md) and the original `.AGENTS` development guide before substantial changes. Preserve the four reference images there as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch and now includes the playlist navigation move. `master` remains the first-draft baseline. Create focused feature branches from `dev` and merge reviewed work back into it.
+`dev` is the integration branch and includes Phase 2 music flow and modularization. `main` and `v0.1.0` preserve the preliminary baseline. Step 3 develops on `dev.sound-eq-adapt-sound`; merge reviewed work back into `dev`.

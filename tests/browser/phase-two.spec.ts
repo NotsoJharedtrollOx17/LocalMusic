@@ -249,8 +249,8 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await menu
     .getByRole("menuitem", { name: /Share audio|Save audio copies/ })
     .click();
-  expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
   await expect(page.locator(".toast")).toHaveText("Audio download started");
+  expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
   await page.getByRole("button", { name: "Select songs", exact: true }).click();
   await page.locator(".selection-check").click();
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
@@ -295,7 +295,7 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await expect(page.locator(".track-row")).toHaveCount(1);
 });
 
-test("mobile long press, sharing cancellation and unsupported sound controls", async ({
+test("mobile long press, sharing cancellation and editable sound controls", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -341,8 +341,11 @@ test("mobile long press, sharing cancellation and unsupported sound controls", a
     name: "Sound controls",
     exact: true,
   });
-  await expect(sound).toContainText("Audio effects are not available");
-  await expect(sound.getByRole("checkbox")).toHaveCount(0);
+  await expect(sound).not.toContainText("Audio effects are not available");
+  await expect(
+    sound.getByRole("checkbox", { name: "Enable equalizer" }),
+  ).toBeVisible();
+  await expect(sound.getByRole("slider")).toHaveCount(11);
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("dialog", { name: "Settings", exact: true }),

@@ -5,6 +5,7 @@ mod artwork;
 mod catalog;
 mod commands;
 mod playback;
+mod sound;
 mod state;
 mod webview_policy;
 
@@ -31,7 +32,9 @@ pub fn run() {
             commands::catalog::set_library_visibility,
             commands::sharing::share_audio,
             commands::sound::sound_capabilities,
-            commands::sound::set_equalizer,
+            commands::sound::set_sound,
+            commands::sound::sound_action,
+            commands::sound::personal_action,
             commands::sound::open_sound_panel,
             commands::window::show_main_window,
             commands::catalog::list_tracks,

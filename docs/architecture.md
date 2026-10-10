@@ -22,6 +22,20 @@ Startup reads persisted preferences before mounting React. A validated local the
 
 Catalog removal is visibility, with a separate SQLite table and a backwards-compatible browser flag. Source audio, source aliases, listening sessions, snapshots and playlist membership are retained. Browse/search/generation and new recap playback exclude hidden IDs; recap history retains its evidence. Reimport or Undo restores visibility.
 
-Android sound effects belong to the Media3 service and follow its audio session. Sharing grants temporary access to selected content URIs through the OS chooser. Desktop sharing saves source copies and browser sharing uses capability checks; outcomes distinguish opening a chooser from saving or cancellation.
+Android sound processing and private preferences belong to the Media3 service. Sharing grants temporary access to selected content URIs through the OS chooser. Desktop sharing saves source copies and browser sharing uses capability checks; outcomes distinguish opening a chooser from saving or cancellation.
 
 The native Rust shell is split into an entry point (`lib.rs`), shared startup state (`state.rs`), feature command modules (`commands/`) and a playback bridge (`playback/`). The bridge dispatches to the desktop worker or Android service, and its Android module imports the pending journal before acknowledging committed IDs. IPC names and serialized contracts remain independent of Rust module paths. `music-core` owns domain persistence and rules; the shell owns platform integration.
+
+## Sound processing
+
+React owns the equalizer/profile controls under `src/sound/`, including immediate slider drafts, serialized configuration updates and inline status. Backends acknowledge saved configuration independently of whether processing is active. Versioned sound data uses Windows SQLite settings, Android service-owned private preferences and browser IndexedDB; no profile data is included in recap display data or exports.
+
+Windows wraps each Rodio source with `sound/source.rs`; `sound/engine.rs` prepares immutable coefficient banks outside the audio callback. The playback worker handles configuration, output retry and finite setup playback. Core Audio notifications and stream errors signal output changes; the worker preserves the queue, stops setup and disables personalization. Retry recreates output without automatically resuming music.
+
+Android uses `SoundEngine`, `SoundAudioProcessor`, `SoundDsp` and a focused renderer/sink pair. The Media3 software PCM path uses PCM16 output with internal double precision. Float output, offload and encoded passthrough are disabled to keep audio in the application processor. This trades those output paths and potential offload power savings for consistent software effects; battery/latency impact has not been measured. Device effects remain separately discoverable.
+
+Browser playback uses one media-element source and AudioWorklet graph, resumed through user interaction. Initialization failure attempts an unprocessed graph and reports the limitation. Browser output notifications cannot reliably identify the selected physical output, so the setup UI states that limit.
+
+All three engines use RBJ peaking filters (Q=1.4), combined per-ear curves, response-based headroom, a linked peak limiter and a 20 ms configuration crossfade. Seeks/stream changes reset filter state. Effects off produces true bypass; mono is promoted to stereo and personal processing is unavailable on multichannel streams. The limiter controls digital peaks and is not hearing protection.
+
+Personal setup pauses music and uses a separate finite tone/sample player, never a catalog playback session. Backend session IDs, bounded amplitudes and a renewable foreground lease control setup playback. Blur/hide, output changes, interruption or expiry stop it. Only derived curves and completeness flags survive Save; raw responses are discarded. Enabling a profile requires explicit headphone confirmation against the current output generation. Saving or restarting the app leaves personalization off. Native headphone, routing and interruption acceptance is tracked separately in [verification](verification.md).
