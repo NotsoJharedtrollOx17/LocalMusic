@@ -54,10 +54,15 @@ mod tests {
         assert_eq!(c.curves(false, 2)[0], [3.; 10]);
         assert_eq!(c.curves(false, 2)[1], [0.; 10]);
         c.enabled = false;
-        engine.configure(c).unwrap();
+        engine.configure(c.clone()).unwrap();
         let p = engine.prepared.lock().unwrap();
         assert!(!p.bypass);
         assert!((p.gain - 10f64.powf((6. - p.attenuation) / 20.)).abs() < 1e-9);
+        let restored = Engine::new(c);
+        assert!(restored.config.lock().unwrap().personal_enabled);
+        let saved = restored.prepared.lock().unwrap();
+        assert!(!saved.bypass);
+        assert!((saved.gain - p.gain).abs() < 1e-9);
     }
     #[test]
     fn configuration_remains_editable_without_an_output() {
@@ -78,14 +83,20 @@ mod tests {
     }
 }
 impl Engine {
-    pub fn new(mut config: Config) -> Self {
-        config.personal_enabled = false;
+    pub fn new(config: Config) -> Self {
         let b = dsp::bank(config.curves(false, 2), 48000.);
         let attenuation = dsp::headroom(&b, 48000.);
         let p = Prepared {
             bank: b,
-            gain: 10f64.powf((if config.enabled { config.preamp } else { 0. } - attenuation) / 20.),
-            bypass: !config.enabled,
+            gain: 10f64.powf(
+                (if config.enabled || config.personal_enabled {
+                    config.preamp
+                } else {
+                    0.
+                } - attenuation)
+                    / 20.,
+            ),
+            bypass: !config.enabled && !config.personal_enabled,
             attenuation,
             generation: 1,
         };

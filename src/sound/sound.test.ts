@@ -4,8 +4,15 @@ import { coefficients, response, bank, headroom, SoundProcessor } from "./dsp";
 import { defaultSound, validateSound, effectiveCurves } from "./model";
 import { PersonalProtocol, tone, deriveCurve } from "./personal";
 import { renderComparison } from "./comparison";
+import { formatGain } from "./formatGain";
 afterEach(() => vi.restoreAllMocks());
 describe("shared sound processing", () => {
+  it("formats zero without a sign, including rounded attenuation and negative zero", () => {
+    for (const value of [0, -0, -0.01, 0.01])
+      expect(formatGain(value)).toBe("0.0 dB");
+    expect(formatGain(1)).toBe("+1.0 dB");
+    expect(formatGain(-1)).toBe("-1.0 dB");
+  });
   it("matches independent RBJ fixtures, including Nyquist", () => {
     const rows = readFileSync(
       new URL("../../tests/fixtures/sound-dsp.csv", import.meta.url),

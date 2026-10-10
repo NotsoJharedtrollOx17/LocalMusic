@@ -33,7 +33,7 @@ export class BrowserSound {
     private pause: () => Promise<void>,
   ) {
     this.ready = read().then((c) => {
-      if (c) this.config = { ...validateSound(c), personalEnabled: false };
+      if (c) this.config = validateSound(c);
     });
     const interrupt = () => {
       this.routeGeneration++;
@@ -287,16 +287,19 @@ export class BrowserSound {
           throw new Error("Invalid profile strength");
         session.state.strength = action.strength;
         const profile = session.profile(action.name);
-        await this.configure({
-          ...this.config,
-          profiles: [
-            ...this.config.profiles.filter((p) => p.id !== profile.id),
-            profile,
-          ],
-          profileId: profile.id,
-          personalEnabled: false,
-          strength: session.state.strength,
-        });
+        await this.configure(
+          {
+            ...this.config,
+            profiles: [
+              ...this.config.profiles.filter((p) => p.id !== profile.id),
+              profile,
+            ],
+            profileId: profile.id,
+            personalEnabled: true,
+            strength: session.state.strength,
+          },
+          true,
+        );
         this.stop();
         session.state.phase = "saved";
         session.discard();

@@ -184,13 +184,9 @@ impl DesktopPlayer {
                         c.profile_id = Some(profile.id.clone());
                         c.profiles.retain(|p| p.id != profile.id);
                         c.profiles.push(profile);
-                        c.personal_enabled = false;
+                        c.personal_enabled = true;
                         c.strength = p.view.strength;
                         c.validate()?;
-                        if c.personal_enabled && !self.sound.config.lock().unwrap().personal_enabled
-                        {
-                            return Err("Confirm headphones with Use profile first".into());
-                        }
                         self.core.lock().unwrap().set_setting("sound-v1", &c)?;
                         self.sound.configure(c)?;
                         p.view.phase = "saved".into();

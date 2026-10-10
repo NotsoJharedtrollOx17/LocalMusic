@@ -251,8 +251,20 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .getByRole("button", { name: "Use profile", exact: true })
     .click();
   await expect(
-    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+    personalSound.getByRole("button", { name: /^(Left ear|Right ear)$/ }),
+  ).toHaveCount(0);
+  await expect(
+    personalSound.getByRole("slider", {
+      name: "250 Hz gain Left",
+      exact: true,
+    }),
   ).toHaveValue("6");
+  await expect(
+    personalSound.getByRole("slider", {
+      name: "250 Hz gain Right",
+      exact: true,
+    }),
+  ).toHaveValue("0");
   await expect(
     personalSound.getByRole("button", { name: "Rock", exact: true }),
   ).toBeDisabled();
@@ -277,14 +289,22 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await page.keyboard.press("Home");
   for (let i = 0; i < 33; i++) await page.keyboard.press("ArrowRight");
   await expect(
-    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+    personalSound.getByRole("slider", {
+      name: "250 Hz gain Left",
+      exact: true,
+    }),
   ).toHaveValue("1.98");
-  await personalSound
-    .getByRole("button", { name: "Right ear", exact: true })
-    .click();
   await expect(
-    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+    personalSound.getByRole("slider", {
+      name: "250 Hz gain Right",
+      exact: true,
+    }),
   ).toHaveValue("0");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: "artifacts/personal-stereo-mobile.png" });
   await personalSound
     .getByRole("button", { name: "Disable profile", exact: true })
     .click();
@@ -295,7 +315,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .poll(async () => Math.abs((await balance(0)) - (await balance(1))))
     .toBeLessThan(1);
 });
-test("personal setup completes, requires explicit activation, cancels on blur and creates no listening history", async ({
+test("personal setup saves an active default, persists on restart, cancels on blur and creates no listening history", async ({
   page,
 }) => {
   await page.goto("/");
@@ -326,19 +346,25 @@ test("personal setup completes, requires explicit activation, cancels on blur an
   await sound
     .getByRole("button", { name: "Save profile", exact: true })
     .click();
-  await expect(sound).toContainText("Profile saved and switched off");
+  await expect(sound).toContainText("Profile saved as your default sound");
   await sound.getByRole("button", { name: "Done", exact: true }).click();
-  await expect(
-    sound.getByRole("button", { name: "Use profile", exact: true }),
-  ).toBeDisabled();
-  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
-  await sound.getByRole("button", { name: "Use profile", exact: true }).click();
   await expect(
     sound.getByRole("button", { name: "Disable profile", exact: true }),
   ).toBeVisible();
   await expect
     .poll(async () => (await preferences(page))?.personalEnabled)
     .toBe(true);
+  await page.reload();
+  const restored = await openSound(page);
+  await expect(
+    restored.getByRole("button", { name: "Disable profile", exact: true }),
+  ).toBeVisible();
+  await expect(
+    restored.getByRole("slider", { name: "250 Hz gain Left", exact: true }),
+  ).toBeVisible();
+  await expect(
+    restored.getByRole("slider", { name: "250 Hz gain Right", exact: true }),
+  ).toBeVisible();
   await sound
     .getByRole("button", { name: "Retest profile", exact: true })
     .click();
@@ -521,9 +547,7 @@ test("presets preserve independent positive preamp and reset restores zero", asy
     await sound.getByRole("button", { name, exact: true }).click();
     await expect(preamp).toHaveValue("12");
   }
-  await sound
-    .getByRole("button", { name: "Reset to Flat", exact: true })
-    .click();
+  await sound.getByRole("button", { name: "Reset", exact: true }).click();
   await expect(preamp).toHaveValue("12");
   await expect(preamp).toHaveAttribute("aria-valuetext", "+12.0 dB");
   await sound
@@ -534,7 +558,7 @@ test("presets preserve independent positive preamp and reset restores zero", asy
     .fill("Independent EQ");
   await sound.getByRole("button", { name: "Save", exact: true }).click();
   await sound
-    .getByRole("button", { name: "Reset preamp", exact: true })
+    .getByRole("button", { name: "Reset Preamp", exact: true })
     .click();
   await sound
     .getByRole("button", { name: "Independent EQ", exact: true })
@@ -552,7 +576,7 @@ test("presets preserve independent positive preamp and reset restores zero", asy
     again.getByRole("slider", { name: "Preamp", exact: true }),
   ).toHaveValue("12");
   await again
-    .getByRole("button", { name: "Reset preamp", exact: true })
+    .getByRole("button", { name: "Reset Preamp", exact: true })
     .click();
   await expect(
     again.getByRole("slider", { name: "Preamp", exact: true }),
@@ -591,7 +615,7 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   ).toBeEnabled();
   await sound.getByRole("button", { name: "Heard it", exact: true }).click();
   await expect(
-    sound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+    sound.getByRole("slider", { name: "250 Hz gain Left", exact: true }),
   ).toHaveValue("6");
   await expect(sound).toContainText("Provisional curve");
   await expect(
@@ -604,7 +628,7 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   }
   await expect(sound).toContainText("2 kHz");
   await expect(
-    sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
+    sound.getByRole("slider", { name: "1000 Hz gain Left", exact: true }),
   ).toHaveValue("0");
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(sound).toContainText("No partial profile was saved");

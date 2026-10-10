@@ -316,7 +316,6 @@ export default function PersonalWizard({
             right={session.right ?? Array(10).fill(0)}
             strength={session.phase === "compare" ? strength : 100}
             language={language}
-            ear={session.phase === "compare" ? undefined : session.ear}
           />
         </>
       )}

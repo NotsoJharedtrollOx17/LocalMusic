@@ -1,13 +1,12 @@
-import { useState } from "react";
-import EqualizerBands from "./EqualizerBands";
-import { defaultSound } from "./model";
+import PersonalCurveBand from "./PersonalCurveBand";
+import SoundPreamp from "./SoundPreamp";
+import { FREQUENCIES } from "./types";
 import { soundCopy } from "./copy";
 export default function PersonalCurveBands({
   left,
   right,
   strength,
   language,
-  ear,
   config,
   edit,
   flush,
@@ -18,7 +17,6 @@ export default function PersonalCurveBands({
   right: number[];
   strength: number;
   language: string;
-  ear?: number;
   config?: import("./types").SoundConfig;
   edit?: (
     f: (c: import("./types").SoundConfig) => import("./types").SoundConfig,
@@ -27,37 +25,34 @@ export default function PersonalCurveBands({
   inactive?: number[];
   provisional?: boolean;
 }) {
-  const [selected, setSelected] = useState(0);
-  const active = ear ?? selected;
   const t = soundCopy(language);
-  const gains = (active === 0 ? left : right).map((g) => (g * strength) / 100);
+  const curves = [left, right].map((curve) =>
+    curve.map((g) => (g * strength) / 100),
+  );
   return (
     <div className="personal-curve-bands">
       <p>{provisional ? t.provisional : t.curveHint}</p>
-      {ear === undefined && (
-        <div className="sound-actions">
-          {[t.left, t.right].map((label, i) => (
-            <button
-              key={label}
-              className="text-button"
-              aria-pressed={selected === i}
-              onClick={() => setSelected(i)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      <div className="personal-stereo-bands">
+        {FREQUENCIES.map((frequency, i) => (
+          <PersonalCurveBand
+            key={frequency}
+            frequency={frequency}
+            left={curves[0][i]}
+            right={curves[1][i]}
+            inactive={inactive.includes(i)}
+            language={language}
+          />
+        ))}
+      </div>
+      {config && edit && flush && (
+        <SoundPreamp
+          config={config}
+          edit={edit}
+          flush={flush}
+          language={language}
+        />
       )}
-      <EqualizerBands
-        config={{ ...(config ?? defaultSound()), gains }}
-        edit={edit ?? (() => {})}
-        flush={flush ?? (() => {})}
-        inactive={inactive}
-        language={language}
-        readOnly
-        showPreamp={!!config}
-      />
-      {!provisional && gains.every((g) => g === 0) && (
+      {!provisional && curves.every((curve) => curve.every((g) => g === 0)) && (
         <p role="status">{t.flatProfile}</p>
       )}
     </div>

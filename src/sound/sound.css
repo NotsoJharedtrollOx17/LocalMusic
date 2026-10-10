@@ -4,6 +4,60 @@
 .sound-controls {
   display: grid;
   gap: 22px;
+  --sound-control-radius: 7px;
+}
+.sound-controls button,
+.sound-controls .sound-name-form input {
+  border-radius: var(--sound-control-radius);
+}
+.sound-controls .text-button {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: 10px 14px;
+  min-height: 44px;
+}
+.sound-preamp-control {
+  display: grid;
+  gap: 10px;
+}
+.sound-preamp-control > button {
+  justify-self: start;
+}
+.personal-stereo-bands {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  margin: 24px 0;
+  padding: 18px 0;
+  border-block: 1px solid var(--rule);
+}
+.personal-curve-band {
+  display: grid;
+  gap: 12px;
+  text-align: center;
+  font-size: 12px;
+}
+.personal-ear-pair {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.sound-controls .personal-ear-pair label {
+  justify-items: center;
+  font-size: 11px;
+  gap: 8px;
+  min-width: 0;
+}
+.sound-controls .personal-ear-pair input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  height: 170px;
+  width: 22px;
+  min-height: 0;
+  accent-color: var(--accent);
+}
+.personal-curve-band.inactive {
+  opacity: 0.5;
 }
 .sound-controls section + section {
   border-top: 1px solid var(--rule);
@@ -64,7 +118,7 @@
 .sound-preset-grid button {
   background: var(--surface);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--sound-control-radius);
   padding: 10px 14px;
   min-height: 44px;
   max-width: 100%;
@@ -159,11 +213,37 @@
   width: 100%;
   padding: 12px;
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: var(--sound-control-radius);
   background: var(--surface);
   color: var(--ink);
 }
 @media (max-width: 650px) {
+  .personal-stereo-bands {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .personal-curve-band {
+    grid-template-columns: 65px minmax(0, 1fr);
+    align-items: center;
+  }
+  .personal-ear-pair {
+    display: grid;
+    gap: 8px;
+  }
+  .sound-controls .personal-ear-pair label {
+    grid-template-columns: 48px minmax(0, 1fr) 56px;
+    align-items: center;
+    justify-items: stretch;
+  }
+  .sound-controls .personal-ear-pair input[type="range"] {
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    width: 100%;
+    height: 30px;
+  }
+  .personal-curve-band small {
+    grid-column: 2;
+  }
   .equalizer-bands {
     grid-template-columns: 1fr;
     gap: 18px;

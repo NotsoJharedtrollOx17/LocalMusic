@@ -1,5 +1,7 @@
 import { FREQUENCIES, type SoundConfig } from "./types";
 import { soundCopy } from "./copy";
+import SoundPreamp from "./SoundPreamp";
+import { formatGain } from "./formatGain";
 export default function EqualizerBands({
   config,
   edit,
@@ -30,7 +32,7 @@ export default function EqualizerBands({
             <input
               type="range"
               aria-label={`${f} Hz ${t.gain}`}
-              aria-valuetext={`${config.gains[i]} dB`}
+              aria-valuetext={formatGain(config.gains[i])}
               disabled={inactive.includes(i) || readOnly}
               min={-12}
               max={12}
@@ -47,48 +49,18 @@ export default function EqualizerBands({
               onPointerUp={flush}
               onKeyUp={flush}
             />
-            <output>
-              {config.gains[i] > 0 ? "+" : ""}
-              {config.gains[i]} dB
-            </output>
+            <output>{formatGain(config.gains[i])}</output>
             {inactive.includes(i) && <small>{t.inactive}</small>}
           </label>
         ))}
       </div>
       {showPreamp && (
-        <>
-          <label className="sound-preamp">
-            {t.preamp}{" "}
-            <output>
-              {config.preamp > 0 ? "+" : ""}
-              {config.preamp.toFixed(1)} dB
-            </output>
-            <input
-              type="range"
-              aria-label={t.preamp}
-              aria-valuetext={`${config.preamp > 0 ? "+" : ""}${config.preamp.toFixed(1)} dB`}
-              min={-12}
-              max={12}
-              step={readOnly ? "any" : 0.5}
-              value={config.preamp}
-              onChange={(e) => {
-                const preamp = Number(e.target.value);
-                edit((c) => ({ ...c, preamp }));
-              }}
-              onPointerUp={flush}
-              onKeyUp={flush}
-            />
-          </label>
-          <button
-            className="text-button"
-            onClick={() => {
-              edit((c) => ({ ...c, preamp: 0 }));
-              flush();
-            }}
-          >
-            {t.resetPreamp}
-          </button>
-        </>
+        <SoundPreamp
+          config={config}
+          edit={edit}
+          flush={flush}
+          language={language}
+        />
       )}
     </>
   );

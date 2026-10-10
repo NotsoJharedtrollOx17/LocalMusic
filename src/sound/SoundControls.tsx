@@ -1,4 +1,5 @@
 import "./sound.css";
+import { formatGain } from "./formatGain";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import { useSoundController } from "./useSoundController";
@@ -157,7 +158,7 @@ export default function SoundControls({
               {!pending && state.status === "active" && !state.bypass && (
                 <>
                   {" "}
-                  · {t.applied}: −{state.attenuation.toFixed(1)} dB
+                  · {t.applied}: {formatGain(-state.attenuation)}
                 </>
               )}
             </p>

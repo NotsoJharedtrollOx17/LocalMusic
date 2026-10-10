@@ -17,9 +17,8 @@ class SoundEngine(private val context: Context) {
     private var config =
         SoundConfiguration(
             JSONObject(
-                    prefs.getString("sound-v1", null) ?: SoundConfiguration.defaults().toString()
-                )
-                .put("personalEnabled", false)
+                prefs.getString("sound-v1", null) ?: SoundConfiguration.defaults().toString()
+            )
         )
     @Volatile
     var rate = 48000
@@ -256,9 +255,9 @@ class SoundEngine(private val context: Context) {
                 next.put("profiles", retained.put(p))
                 next
                     .put("profileId", p.getString("id"))
-                    .put("personalEnabled", false)
+                    .put("personalEnabled", true)
                     .put("strength", s.view.getDouble("strength"))
-                configure(next)
+                configure(next, authorizePersonal = true)
                 output.stop()
                 s.view.put("phase", "saved")
                 s.discard()
@@ -335,9 +334,12 @@ class SoundEngine(private val context: Context) {
         }
     }
 
+    @Synchronized
     fun close() {
         handler.removeCallbacks(ticker)
         audio.unregisterAudioDeviceCallback(devices)
-        interrupt()
+        // Service shutdown is not an output change: retain the saved default.
+        session?.cancel()
+        output.stop()
     }
 }
