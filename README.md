@@ -1,23 +1,33 @@
 # Local Music + Your Year
 
-An offline music player with a recap built from actual listening. Android is the primary target; Windows is the development desktop. The first draft includes Library, Now Playing, explicit playlist filters, and Your Year in English and Spanish.
+An offline local music player with a yearly recap based on actual listening. Android is the primary target; Windows is the development desktop. The browser build is a separate preview backed by IndexedDB and an HTML audio element. The interface supports English and Spanish.
 
-## Start with the browser preview
+## Current features
 
-Install Node.js 24 LTS, then run from this repository:
+- **Library:** Songs, Albums, Artists and Playlists appear as Library tabs. Browse/search songs, open album and artist collections, mark favorites, and sort songs. Album playback follows disc and numeric track tags; artist collections group songs by album. Song rows include album and release year when tagged.
+- **Import and artwork:** Import audio through the browser file picker, a Windows folder chooser, or Android MediaStore/selected folders. Catalog changes appear during import in batches of ten processed audio files, with progress and completion feedback. Missing covers receive stable geometric artwork. Native grids request larger cached cover variants as they enter view.
+- **Playback and playlists:** Now Playing and the mini player support a persistent queue, play/pause, seek, skip, shuffle, repeat, queue editing and session exclusion. Create/edit playlists manually or generate them from visible metadata filters. Android playback is owned by a Media3 foreground service; Windows uses a Rust playback worker.
+- **Your Year:** Recaps aggregate listening intervals, qualified plays, active days, monthly listening, top music and a playable recap playlist. They show actual history coverage and distinguish unobserved months. Save snapshots, preview an image and export a matching PNG in Story **2160 × 3840** or Feed **2160 × 2700** format. A successful save shows a confirmation popup. JSON export is not part of the current UI.
+- **Interface:** Light, dark and system themes, English/Spanish strings, responsive layouts and reduced-motion support. Desktop startup waits for the resolved theme; Library tabs keep separate loading and cached results, so switching tabs does not show another tab's cards or a premature empty state.
+
+The app works locally without an account, metadata service or downloaded model. Generated playlists use explicit filters; semantic AI is a future feature. Original sample tones are available only in the browser preview and are excluded from recap.
+
+## Browser preview
+
+Install Node.js 24 LTS, then run from the repository root:
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
 ```
 
-Open http://127.0.0.1:1420. Import your own audio or explicitly choose the original sample tones. Samples never contribute to recap. Browser imports stay in this browser's IndexedDB; native imports reference files on the device. Browser playback does not establish Android background reliability.
+Open http://127.0.0.1:1420. Import your own audio or explicitly add the original sample tones. Browser imports and playback history stay in that browser's IndexedDB. Browser behavior does not establish Android background playback reliability.
 
 ## Native setup on Windows
 
-Preferred: Rust stable, Visual Studio Build Tools with Desktop development with C++, Windows SDK, WebView2, Java 17, and Android SDK/NDK. See [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
+The standard route uses Rust stable, Visual Studio Build Tools with Desktop development with C++, Windows SDK, WebView2, Java 17 and Android SDK/NDK. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
 
-This checkout also supports a portable toolchain under ignored `.tools/` when the Visual Studio SDK cannot be installed. The setup script downloads pinned LLVM MinGW, Java and Android command-line tools, verifies archive hashes, and asks the Android SDK manager for license acceptance. It needs Rustup and Node already installed, internet access, and several GB free space.
+This checkout also has an ignored portable toolchain under `.tools/`. Its setup script downloads pinned LLVM MinGW, Java and Android command-line tools and verifies archive hashes. It needs Rustup and Node already installed, internet access and several GB of disk space.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-portable.ps1
@@ -26,9 +36,9 @@ npm.cmd ci
 npm.cmd run doctor
 ```
 
-### Windows
+### Windows app
 
-Stop a separately running Vite server before starting Tauri, which starts its own server.
+Stop a separately running Vite server before starting Tauri; Tauri starts its own.
 
 ```powershell
 . ./scripts/env.ps1
@@ -36,26 +46,22 @@ npm.cmd run tauri -- dev
 ./scripts/build-desktop.ps1 -Debug
 ```
 
-The portable LLVM route builds a standalone executable without an installer. A standard MSVC environment can produce the configured NSIS installer. Music import uses a folder chooser.
+The portable LLVM route builds a standalone debug executable at `src-tauri/target/debug/local-music.exe`. When moving it, keep the copied runtime DLLs and `llvm-runtime.txt` beside it. The destination also needs WebView2 Runtime. A standard MSVC environment can produce the configured NSIS installer.
 
-For a debug build, run `./src-tauri/target/debug/local-music.exe`. Keep the copied runtime DLLs and `llvm-runtime.txt` beside the executable when moving it. WebView2 Runtime must be installed on the destination Windows machine.
+### Android app
 
-To check artwork on this branch, open that executable, inspect the Albums and Artists grids, then open a song detail, the full player and a recap with artwork. Covers should sharpen as their larger cached variant loads. Compare at your usual Windows display scale; an embedded image that is intrinsically small can still look soft.
-
-### Android
-
-The generated project is checked in under `src-tauri/gen/android`; do not rerun init during normal development. If recovering a deleted scaffold, run `npm.cmd run tauri -- android init` and reapply API 36, minimum API 26, and repository Gradle settings.
+The generated project is checked in at `src-tauri/gen/android`. Normal development does not require rerunning Android initialization. The configured minimum is API 26; compile/target setup uses API 36.
 
 ```powershell
 . ./scripts/env.ps1
 ./scripts/build-android.ps1 -Debug -Target x86_64 # emulator
-./scripts/build-android.ps1 -Debug -Target aarch64 # phone
+./scripts/build-android.ps1 -Debug -Target aarch64 # ARM64 phone
 npm.cmd run tauri -- android dev
 ```
 
-APK files are produced under `src-tauri/gen/android/app/build/outputs/apk`. Release distribution requires your signing key. MediaStore import requests audio permission; selected folders use persistent Android document grants. Media3 owns background playback and its durable journal independently of the WebView.
+Debug APKs are written under `src-tauri/gen/android/app/build/outputs/apk`: `x86_64/debug/app-x86_64-debug.apk` and `arm64/debug/app-arm64-debug.apk`. With a booted matching device, use `adb install -r <apk-path>`. Use `build-android.ps1` for a complete build; `package-android.ps1` only packages an already compiled native library. Release distribution requires your signing key.
 
-Debug artifacts are `x86_64/debug/app-x86_64-debug.apk` for the configured emulator and `arm64/debug/app-arm64-debug.apk` for an ARM64 phone. With a booted device connected, install the appropriate file using `adb install -r <apk-path>`. The current host has not completed an emulator boot; see the verification log before treating native runtime behavior as accepted.
+The latest recorded ARM64 debug APK was built and signature checked. The x86_64 APK was not refreshed for the latest UI changes, and no connected Android device/emulator completed runtime acceptance. See [verification evidence](docs/verification.md) before making native reliability claims.
 
 ## Checks
 
@@ -67,30 +73,17 @@ npx.cmd playwright install chromium
 npm.cmd run test:browser
 ```
 
-Browser tests launch an isolated server on port 1421 and save screenshots and failed traces under ignored `artifacts/`. Native background, audio-focus, battery and latency claims require separate device evidence.
+The browser suite uses an isolated server on port 1421 and writes screenshots/traces to ignored `artifacts/`. The verification log distinguishes builds, browser checks, Windows startup checks and remaining Android runtime work. A native build alone does not establish screen-off playback, audio focus, battery behavior or latency.
 
-## Project notes
+## For contributors
 
-- [Approved implementation plan](docs/implementation-plan.md)
-- [Architecture](docs/architecture.md)
-- [Recap rules and privacy](docs/recap-methodology.md)
-- [Verification evidence and remaining gates](docs/verification.md)
-- [Third-party notices](docs/third-party-notices.md)
+- [Developer guide](docs/developer-guide.md): current module map, data contracts, change workflow and test boundaries.
+- [Architecture](docs/architecture.md): runtime ownership and data flow.
+- [Recap rules and privacy](docs/recap-methodology.md): time accounting, coverage, snapshots and export.
+- [Implementation plan](docs/implementation-plan.md): original plan and approved revisions.
+- [Verification evidence](docs/verification.md): what has actually been built and tested.
+- [Third-party notices](docs/third-party-notices.md) and [MIT license](LICENSE).
 
-The original guide and four visual references remain in `.AGENTS/`. The application ships original geometry and self-hosted fonts. No account, enrichment service, model download or fabricated listening history is used. MIT license; dependency licenses are listed separately.
+Read [AGENTS.md](AGENTS.md) and the original `.AGENTS` development guide before substantial changes. Preserve the four reference images there as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-On Windows without symbolic-link privileges, build-android.ps1 falls back to copying the compiled native library and running Gradle packaging. package-android.ps1 is the packaging-only helper; it does not compile Rust. Use build-android.ps1 for a complete build.
-
-## Development branches
-
-`dev` is the integration branch and contains the import, artwork, album sequencing, release-year labels and yearly recap PNG exports. Album loading/startup corrections are integrated. Playlist navigation changes are on `dev.move-plalist-into-music`; merge them into `dev` after review. The initial first draft remains on `master`.
-
-Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
-
-On Windows, the folder chooser owns the app window. Choose a folder to begin import; the progress counter then appears and artist/album detail views update as each batch is indexed. Canceling the chooser leaves the library view ready to use.
-
-Album detail follows disc number, then numeric track number. Artist detail groups songs by album and follows that order within each album. Library sorting by album or artist uses the same sequence, and playback from those views uses their ordered IDs. Missing disc tags mean disc one; unnumbered songs follow numbered songs on that disc, with a stable title/ID fallback. The first catalog read after upgrading backfills available local files or granted Android URIs without requiring a reimport. Manually arranged playlists and queues keep their saved order.
-
-Song rows show a compact album name and tagged release year below the artist, including artist views, playlists and queues. Album cards also show the year when present. Existing library entries recover year metadata automatically; missing years are omitted.
-
-Your Year → Export image opens a preview with Story (2160×3840) and Feed (2160×2700) formats. Select a format, then Save PNG. The downloaded image matches the preview. Empty history cannot be exported; incomplete coverage and unobserved months are labeled. Saved snapshots stay frozen and cannot be shared after privacy exclusions change. JSON export buttons have been removed.
+`dev` is the integration branch and now includes the playlist navigation move. `master` remains the first-draft baseline. Create focused feature branches from `dev` and merge reviewed work back into it.

@@ -1,5 +1,9 @@
 # Verification evidence
 
+## Documentation integration — 9 October 2026
+
+Fast-forwarded the completed playlist navigation branch into `dev` at `36e5f53`. Refreshed README, architecture, implementation status, branch instructions and a developer code map against the current source and prior verification entries. Checked referenced local paths, package scripts and Android SDK configuration, and ran `git diff --check`. This documentation-only change did not rerun application tests or native builds; the prior feature results and Android runtime limits remain as recorded below.
+
 Recorded 8 October 2026 on Windows, AMD A8-7410, approximately 7 GB usable RAM. This file distinguishes passing checks from pending native acceptance.
 
 ## Passing checks

@@ -36,3 +36,7 @@ The user requested an image-focused functional recap and removal of JSON export 
 ## Playlist navigation revision — 9 October 2026
 
 Move Playlists into the Library tab row alongside Songs, Albums and Artists, as requested for a Samsung Music-style flow. Library and Your Year remain the main navigation entries. Keep playlist creation, explicit-filter generation, editing, manual selection and playback in the Library’s Playlists subtab.
+
+## Current state after integration — 9 October 2026
+
+The recap export, loading/startup and playlist navigation revisions above are integrated into `dev`. The original build sequence and acceptance list remain a record of the initial draft; the JSON and 1080 × 1920 export targets are superseded by the recap export revision. See [README](../README.md) for the current feature set, [developer guide](developer-guide.md) for code ownership, and [verification](verification.md) for actual checks and remaining Android acceptance gates.

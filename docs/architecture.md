@@ -1,8 +1,8 @@
 # Architecture
 
-The application has a React/TypeScript frontend and two runtime adapters. In Tauri, commands call the shared Rust core and the platform player. In a browser, a separate preview adapter stores user-selected audio blobs and a playback journal in IndexedDB. The browser preview has no Android background guarantees.
+The application has a React/TypeScript frontend and two runtime adapters. In Tauri, commands call the shared Rust core and the platform player. In a browser, a separate preview adapter stores user-selected audio blobs and a playback journal in IndexedDB and plays through an HTML audio element. The browser preview has no Android background guarantees.
 
-The music-core crate owns SQLite catalog/search, playlists, settings, history import and recap aggregation. Playback snapshots are separate from catalog pages. Lists are fetched in pages of 60; queue and playlist items resolve by stable track ID.
+The music-core crate owns SQLite catalog/search, playlists, settings, history import and recap aggregation. Playback snapshots are separate from catalog pages. Lists are fetched in pages of 60; queue and playlist items resolve by stable track ID. The React Library contains Songs, Albums, Artists and Playlists tabs; Your Year is the other primary navigation destination.
 
 Windows playback runs on a dedicated Rust worker with Rodio. Android playback lives in a Media3 foreground service, controlled through the native-music Tauri plugin. The service persists its queue and writes checkpoints to its own SQLite outbox while the WebView is suspended. Rust imports absolute session totals and intervals idempotently, then acknowledges committed outbox IDs.
 
@@ -12,7 +12,7 @@ Native audio identities use size and bounded content fingerprints, avoiding full
 
 The four supplied images guide typography, spacing, navigation and orange/charcoal motifs. Original seeded geometry fills missing artwork. The static recap orbit is decorative mathematics; it makes no acoustic or psychological claim.
 
-Setup and validation status are recorded in verification.md. See the approved implementation-plan.md for acceptance gates.
+Setup and validation status are recorded in [verification.md](verification.md). The [developer guide](developer-guide.md) maps the current code and change workflow; the [implementation plan](implementation-plan.md) preserves the original acceptance gates and approved revisions.
 
 Recap sharing uses one canvas renderer for both the preview and PNG download. The frontend waits for self-hosted fonts, lays out the selected aspect ratio and fits long music names. Live exports flush current listening first; saved snapshots retain their frozen metrics. Privacy revision is checked before preview and again before saving. Native export commands return a saved/canceled boolean, and the Windows save chooser is attached to the main window with a PNG filter.
 
