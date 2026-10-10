@@ -4,6 +4,7 @@ import { recapYears } from "../domain";
 import { Modal } from "../components";
 import { type Settings } from "../types";
 import { useMusicAppContext } from "./MusicAppContext";
+import TimeZoneField from "./TimeZoneField";
 
 export default function SettingsDialog() {
   const {
@@ -72,33 +73,11 @@ export default function SettingsDialog() {
                 ))}
               </select>
             </label>
-            <label>
-              {t.timeZone}
-              <select
-                aria-label={t.timeZone}
-                value={settings.timeZone}
-                onChange={(e) =>
-                  setSettings({ ...settings, timeZone: e.target.value })
-                }
-              >
-                {[
-                  ...new Set([
-                    settings.timeZone,
-                    "UTC",
-                    ...(typeof Intl.supportedValuesOf === "function"
-                      ? Intl.supportedValuesOf("timeZone")
-                      : [
-                          "UTC",
-                          "America/Los_Angeles",
-                          "America/New_York",
-                          "Europe/Madrid",
-                        ]),
-                  ]),
-                ].map((z) => (
-                  <option key={z}>{z}</option>
-                ))}
-              </select>
-            </label>
+            <TimeZoneField
+              value={settings.timeZone}
+              language={settings.language}
+              onChange={(timeZone) => setSettings({ ...settings, timeZone })}
+            />
             <div className="settings-history">
               <h3>{t.history}</h3>
               <p>

@@ -75,6 +75,9 @@ export const en = {
   light: "Light",
   dark: "Dark",
   timeZone: "Recap time zone",
+  localTime: "Local time",
+  timeZoneHint:
+    "UTC offsets shown for this year's standard/daylight time. Recap days and years follow this time zone.",
   history: "Listening history",
   deleteHistory: "Delete listening history",
   deleteWarning:
@@ -274,6 +277,9 @@ export const es: typeof en = {
   light: "Claro",
   dark: "Oscuro",
   timeZone: "Zona horaria del resumen",
+  localTime: "Hora local",
+  timeZoneHint:
+    "Desfases UTC del horario estándar/de verano de este año. Los días y años del resumen siguen esta zona horaria.",
   history: "Historial de escucha",
   deleteHistory: "Borrar historial",
   deleteWarning:

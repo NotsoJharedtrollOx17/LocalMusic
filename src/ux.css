@@ -147,6 +147,13 @@
   box-shadow: 0 12px 32px #0003;
   animation: music-enter 180ms var(--ease-music);
 }
+.settings-form .time-zone-note {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 .action-menu button {
   display: block;
   width: 100%;

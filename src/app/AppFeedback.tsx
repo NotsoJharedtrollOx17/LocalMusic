@@ -36,7 +36,19 @@ export default function AppFeedback() {
             <strong>{t.error}</strong>
             <span>{error}</span>
           </div>
-          <IconButton label={t.close} onClick={() => setError("")}>
+          <IconButton
+            label={t.close}
+            onClick={() => {
+              const focused = document.activeElement?.closest(".error-banner");
+              setError("");
+              if (focused)
+                document
+                  .querySelector<HTMLElement>(
+                    ".modal-scrim:not([inert]) .modal button,.player-scrim:not([inert]) button,.search-surface:not([inert]) input",
+                  )
+                  ?.focus({ preventScroll: true });
+            }}
+          >
             <X size={18} />
           </IconButton>
         </div>

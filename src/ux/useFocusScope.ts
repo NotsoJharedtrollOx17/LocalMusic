@@ -22,11 +22,10 @@ export function useFocusScope(
     background.forEach((el) => (el.inert = true));
     const scope = () => [
       node,
+      ...Array.from(document.querySelectorAll<HTMLElement>(".error-banner")),
       ...(keepPlayer
         ? Array.from(
-            document.querySelectorAll<HTMLElement>(
-              ".mini-player,.undo-banner,.error-banner",
-            ),
+            document.querySelectorAll<HTMLElement>(".mini-player,.undo-banner"),
           )
         : []),
     ];
@@ -47,6 +46,7 @@ export function useFocusScope(
     ).focus();
     const key = (event: KeyboardEvent) => {
       if (
+        node.closest("[inert]") ||
         event.key !== "Tab" ||
         !scope().some((el) => el.contains(document.activeElement))
       )

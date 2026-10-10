@@ -173,6 +173,7 @@ export function useMusicApp(initialSettings?: Settings) {
     [],
   );
   const catalog = useCatalogReads(state, act, remember);
+  const lastPlaybackError = useRef<string | null>(null);
   const {
     libraryRequest,
     groupRequest,
@@ -192,7 +193,8 @@ export function useMusicApp(initialSettings?: Settings) {
     void api
       .subscribe((s) => {
         setPlayer(s);
-        if (s.error) setError(s.error);
+        if (s.error && s.error !== lastPlaybackError.current) setError(s.error);
+        lastPlaybackError.current = s.error || null;
       })
       .then((u) => {
         if (disposed) u();
