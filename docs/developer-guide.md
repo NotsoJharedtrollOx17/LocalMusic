@@ -15,12 +15,22 @@ This is the current code map for work based on `dev`. Read [AGENTS.md](../AGENTS
 | Browser preview | `src/api/browser.ts` | IndexedDB catalog/journal, HTML audio playback and local import |
 | Recap image | `src/ShareRecap.tsx`, `src/export.ts` | Story/Feed preview, canvas rendering, privacy check and save feedback |
 | Startup, theme and language | `src/main.tsx`, `src/theme.ts`, `src/i18n.ts` | Preference hydration, theme application and UI strings |
-| Native command boundary | `src-tauri/src/lib.rs` | Tauri commands, import progress, desktop save dialog and platform dispatch |
-| Native import/artwork/playback | `src-tauri/src/catalog.rs`, `src-tauri/src/artwork.rs`, `src-tauri/src/desktop.rs`, `src-tauri/src/album_order.rs` | Metadata, cached cover variants, Windows worker and legacy tag backfill |
+| Native entry and state | `src-tauri/src/lib.rs`, `src-tauri/src/state.rs` | Register platform plugins and command paths; initialize the catalog, shared state and player |
+| Native command boundary | `src-tauri/src/commands/` | Catalog, imports, playback, playlists, recap, settings, sharing, sound and window handlers |
+| Native playback bridge | `src-tauri/src/playback/mod.rs`, `src-tauri/src/playback/desktop.rs`, `src-tauri/src/playback/android.rs` | Dispatch operations to the Windows worker or Media3; import and acknowledge the Android journal |
+| Native import/artwork | `src-tauri/src/catalog.rs`, `src-tauri/src/artwork.rs`, `src-tauri/src/album_order.rs` | Metadata, cached cover variants and legacy tag backfill |
 | Shared native domain | `crates/music-core/src/` | SQLite store, catalog queries, group order, playlist rules and recap aggregation |
 | Android integration | `src-tauri/plugins/native-music/` | MediaStore/document access, Media3 foreground service and durable pending journal |
 
 The frontend detects Tauri in `src/api/index.ts` and chooses `NativeMusic` or `BrowserMusic`. New cross-platform operations should extend `MusicApi`, implement both adapters, then add or update the Tauri command and native domain behavior. Browser tests validate the preview adapter; Rust tests validate native rules. One adapter is not evidence for the other's runtime behavior.
+
+## Rust module layout
+
+`src-tauri/src/lib.rs` is the application entry point. Keep startup state in `state.rs`, IPC handlers in the appropriate `commands/*.rs` feature module, and player dispatch/journal handling under `playback/`. Register each handler by its module path in `generate_handler!`; the frontend invokes its original function name. Handlers and shared state are crate-visible, rather than a public library API. Preserve the mobile entry-point attribute on `run`.
+
+The command modules expose platform operations and delegate catalog, playlist and recap rules to `music-core`. `commands/catalog.rs` uses the playback command only to prune removed tracks from the current queue. Recap/history commands use the playback bridge to flush or clear listening. These explicit dependencies keep UI commands from becoming an alternative playback clock or journal owner. Existing domain files in `crates/music-core/src/` remain the owners of persistence and policies.
+
+For native-only refactors, run Rust core/native tests and builds for Windows and Android: desktop compilation does not check Android's conditional modules. A browser journey cannot exercise the Rust IPC handlers. Keep command names, arguments, serialized return values, event names and journal acknowledgement ordering stable during moves.
 
 ## Data paths and invariants
 
