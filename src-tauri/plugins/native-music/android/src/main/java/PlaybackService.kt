@@ -2,6 +2,7 @@ package com.plugin.native_music
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.media.audiofx.Equalizer
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -23,6 +24,32 @@ class PlaybackService:MediaSessionService(){
  private val handler=Handler(Looper.getMainLooper())
  private val prefs by lazy {getSharedPreferences("playback",Context.MODE_PRIVATE)}
  private var ticks=0
+ private var equalizer:Equalizer?=null
+ private var effectSession=0
+ private fun attachEqualizer(){
+  val id=player.audioSessionId
+  if(id<=0){equalizer?.release();equalizer=null;effectSession=0;return}
+  if(id==effectSession&&equalizer!=null)return
+  equalizer?.release();equalizer=null;effectSession=id
+  try{equalizer=Equalizer(0,id);applyEqualizer()}catch(_:Exception){equalizer=null}
+ }
+ private fun applyEqualizer(){
+  equalizer?.let { eq ->
+   if(eq.numberOfPresets>0)eq.usePreset(prefs.getInt("eqPreset",0).coerceIn(0,eq.numberOfPresets.toInt()-1).toShort())
+   eq.enabled=prefs.getBoolean("eqEnabled",false)
+  }
+ }
+ fun soundCapabilities():JSONObject{
+  attachEqualizer();val presets=JSONArray();val eq=equalizer
+  if(eq!=null)for(i in 0 until eq.numberOfPresets.toInt())presets.put(eq.getPresetName(i.toShort()))
+  return JSONObject().put("equalizer",eq!=null&&eq.hasControl()&&presets.length()>0).put("presets",presets).put("enabled",eq?.enabled?:false).put("preset",prefs.getInt("eqPreset",0))
+ }
+ fun setEqualizer(enabled:Boolean,preset:Int){
+  attachEqualizer();val eq=equalizer?:throw IllegalStateException("Equalizer is unavailable for this audio output")
+  require(eq.hasControl()&&preset in 0 until eq.numberOfPresets.toInt())
+  eq.usePreset(preset.toShort());eq.enabled=enabled
+  prefs.edit().putBoolean("eqEnabled",enabled).putInt("eqPreset",preset).apply()
+ }
  private val ticker=object:Runnable{override fun run(){journal.tick(player.isPlaying);if(++ticks % 10 == 0)persist();handler.postDelayed(this,1000)}}
  companion object { @Volatile var instance:PlaybackService?=null }
  override fun onCreate(){
@@ -30,6 +57,7 @@ class PlaybackService:MediaSessionService(){
   journal=PlaybackJournal(applicationContext)
   player=ExoPlayer.Builder(this).setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true).setHandleAudioBecomingNoisy(true).setWakeMode(C.WAKE_MODE_LOCAL).build()
   player.addListener(object:Player.Listener{
+   override fun onAudioSessionIdChanged(audioSessionId:Int){attachEqualizer()}
    override fun onMediaItemTransition(item:MediaItem?,reason:Int){journal.transition(item?.mediaId,player.isPlaying,reason==Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT);persist()}
    override fun onIsPlayingChanged(playing:Boolean){journal.transition(player.currentMediaItem?.mediaId,playing)}
    override fun onPositionDiscontinuity(old:Player.PositionInfo,new:Player.PositionInfo,reason:Int){journal.setPlaying(player.isPlaying);persist()}
@@ -67,5 +95,5 @@ class PlaybackService:MediaSessionService(){
  fun snapshot():JSONObject{val q=JSONArray();for(i in 0 until player.mediaItemCount)q.put(player.getMediaItemAt(i).mediaId);return JSONObject().put("trackId",player.currentMediaItem?.mediaId?:JSONObject.NULL).put("playing",player.isPlaying).put("positionMs",player.currentPosition.coerceAtLeast(0)).put("durationMs",player.duration.coerceAtLeast(0)).put("queue",q).put("queueIndex",player.currentMediaItemIndex.coerceAtLeast(0)).put("shuffle",player.shuffleModeEnabled).put("repeat",when(player.repeatMode){Player.REPEAT_MODE_ALL->"all";Player.REPEAT_MODE_ONE->"one";else->"off"}).put("excluded",journal.excluded).put("error",player.playerError?.message?:JSONObject.NULL).put("unavailableTrackId",if(player.playerError?.errorCode in listOf(PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,PlaybackException.ERROR_CODE_IO_NO_PERMISSION))player.currentMediaItem?.mediaId?:JSONObject.NULL else JSONObject.NULL)}
  private fun persist(){if(!::player.isInitialized)return;val s=snapshot();val items=JSONArray();for(i in 0 until player.mediaItemCount){val item=player.getMediaItemAt(i);items.put(JSONObject().put("id",item.mediaId).put("sourceUri",item.localConfiguration?.uri.toString()).put("title",item.mediaMetadata.title?.toString()?:"").put("artist",item.mediaMetadata.artist?.toString()?:"").put("album",item.mediaMetadata.albumTitle?.toString()?:""))};s.put("items",items);prefs.edit().putString("queue",s.toString()).apply()}
  private fun itemsFromJson(items:JSONArray):List<MediaItem> =(0 until items.length()).map{val t=items.getJSONObject(it);MediaItem.Builder().setMediaId(t.getString("id")).setUri(t.getString("sourceUri")).setMediaMetadata(MediaMetadata.Builder().setTitle(t.optString("title")).setArtist(t.optString("artist")).setAlbumTitle(t.optString("album")).build()).build()}
- override fun onDestroy(){handler.removeCallbacks(ticker);persist();journal.close();session.release();player.release();instance=null;super.onDestroy()}
+ override fun onDestroy(){handler.removeCallbacks(ticker);persist();equalizer?.release();equalizer=null;journal.close();session.release();player.release();instance=null;super.onDestroy()}
 }

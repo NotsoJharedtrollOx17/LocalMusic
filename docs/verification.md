@@ -155,3 +155,32 @@ Production frontend build and nine frontend unit tests passed. Nine browser jour
 The portable Windows debug executable rebuilt successfully with the final navigation and contrast changes.
 
 The ARM64 Android debug APK also rebuilt successfully through the existing Windows file-copy packaging fallback, and apksigner verified its v2 signature. ADB reported no connected emulator/device, so Android runtime acceptance remains pending; x86_64 was not refreshed.
+
+## Phase 2 music flow and modularization — 10 October 2026
+
+Work is on `dev.ux-flow-step-two`, based on `dev` at `79e704c`. `main` and `v0.1.0` remain at `eb27174`. The approved behavioral plan is [phase-two-ux-flow.md](phase-two-ux-flow.md); the original reference images are preserved. The existing orange/charcoal visual language is retained.
+
+`App.tsx` now composes the UI in 52 nonblank lines. The former `components.tsx` has been replaced by individual component files and a barrel. Feature views and dialogs live in `src/app/`, shared controls in `src/components/`, and player/search/menu surfaces and interaction hooks in `src/ux/`. State, guarded catalog reads and actions have separate hooks; the coordinator contains no JSX. The developer guide documents the ownership boundaries.
+
+Implemented centered tap/swipe/keyboard Library tabs with scroll retention and a compact mobile heading; ready-only detail transitions and artist Tracks/Albums; a shared player/queue surface with anchored transport, nested dialog return and collapse gestures; grouped search with stale-read guards and Load more; anchored menus, long-press and explicit selection; persistent removal/Undo/reimport; capability-based sharing and Android sound effects. SQLite visibility is separate from listening records, so history and retained playlist membership survive removal. Browser sample restoration and playback/editing with hidden playlist members are covered by regressions.
+
+### Automated and visual checks
+
+- Production TypeScript/Vite build and all nine frontend unit tests passed. A separate TypeScript unused-local check passed after the module split.
+- Thirteen Rust core tests and three native Tauri tests passed. The new native regression covers persistent visibility, history preservation, grouped search, restoration and playlist membership.
+- A full sixteen-journey Chromium run passed fifteen journeys; the grouped-search fixture timed out while uploading its audio files, before feature interactions. That fixture used forty-second WAVs despite not playing them. It now uses one-second WAVs. The reported timeout interval spans a host clock/suspend discontinuity and is not an app performance measurement.
+- All six Phase 2 journeys passed on the final targeted rerun after reducing that fixture and adding the sample-restoration regression. This closes the upload failure; it is a targeted rerun, not a subsequent full sixteen-test run.
+- Browser coverage includes delayed catalog/import updates, album sequencing, recap/export, narrow and desktop layouts, touch tab/player gestures, keyboard/focus return, stale search results, dark mode, reduced motion, selection, share cancellation, removal/Undo/reimport and hidden playlist editing. Search/player accessibility scans use axe; the JavaScript Back bridge is exercised separately from Android's dispatcher.
+- Inspected desktop artist-Album and search screenshots, and the narrow dark player screenshot. Cards, detail artwork, search and anchored transport displayed without the earlier loading swap or clipping in those captures. These are browser observations with synthetic audio/catalog data.
+
+### Native builds
+
+The final portable Windows debug executable built successfully. The final ARM64 Rust library and Android debug APK built through the existing Windows file-copy packaging fallback; Gradle completed successfully and apksigner verified the APK v2 signature. A redirected Windows build invocation initially stopped because PowerShell 5.1 treated Tauri's stderr informational output as a terminating error. Running the normal build script without redirection completed successfully. This was a command-shell issue, not a compiler failure.
+
+The final Windows startup smoke check reached a responsive process, nonzero main-window handle and the `Local Music · Your Year` window title. The startup gate revealed the actual app window without a premature exit. Only the process launched by the check was then closed. This verifies startup availability, not pixel-level native motion, native file-picker behavior or a complete playback session.
+
+### Android runtime attempt and acceptance boundary
+
+ADB reported no connected device or emulator. The existing API 33 x86_64 AVD was available, but `emulator -accel-check` reported that the Android Emulator hypervisor driver is not installed. A separate software-mode launch (`-accel off`, SwiftShader, one core, 1536 MB, no window/audio/snapshot) initialized graphics and then exited with code 1 before an ADB connection. The exact software-launch failure cause was not established. No system driver or firmware settings were changed.
+
+Android native Back, system sharing/read grants, effects attachment, background playback and suspension behavior remain device/emulator acceptance gates. Browser tests and Kotlin compilation do not establish them. Narrator/TalkBack, interactive Windows file choosers, native zoom/font scaling, interruption under real playback, and measured motion/performance also remain separate acceptance checks. The older x86_64 APK was not refreshed.

@@ -31,7 +31,7 @@ impl Store {
         } else {
             ALBUM_TRACK_ORDER.to_string()
         };
-        let sql = format!("SELECT id FROM tracks WHERE {predicate} ORDER BY {order}");
+        let sql = format!("SELECT id FROM tracks WHERE id NOT IN (SELECT track_id FROM hidden_tracks) AND {predicate} ORDER BY {order}");
         let mut statement = self.connection.prepare(&sql).map_err(|e| e.to_string())?;
         let values = if kind == "artists" {
             vec![title]
@@ -53,13 +53,13 @@ impl Store {
             _ => return Err("Invalid library section".into()),
         };
         let count = format!(
-            "SELECT COUNT(*) FROM (SELECT 1 FROM tracks WHERE {where_clause} GROUP BY {group})"
+            "SELECT COUNT(*) FROM (SELECT 1 FROM tracks WHERE id NOT IN (SELECT track_id FROM hidden_tracks) AND {where_clause} GROUP BY {group})"
         );
         let total = self
             .connection
             .query_row(&count, [], |r| r.get(0))
             .map_err(|e| e.to_string())?;
-        let sql=format!("SELECT {title},{subtitle} FROM tracks WHERE {where_clause} GROUP BY {group} ORDER BY {title} COLLATE NOCASE LIMIT ?1 OFFSET ?2");
+        let sql=format!("SELECT {title},{subtitle} FROM tracks WHERE id NOT IN (SELECT track_id FROM hidden_tracks) AND {where_clause} GROUP BY {group} ORDER BY {title} COLLATE NOCASE LIMIT ?1 OFFSET ?2");
         let mut st = self.connection.prepare(&sql).map_err(|e| e.to_string())?;
         let rows = st
             .query_map(params![limit.min(60), offset], |r| {

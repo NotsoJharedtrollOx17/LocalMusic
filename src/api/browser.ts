@@ -12,7 +12,6 @@ import type {
 import {
   aggregate,
   generate,
-  hash,
   coverUrl,
   compareAlbumTracks,
   compareCatalogTracks,
@@ -279,6 +278,7 @@ export class BrowserMusic implements MusicApi {
   async groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
     await this.ensureAlbumOrder();
     return (await this.all<StoredTrack>("tracks"))
+      .filter((track) => !track.hidden)
       .filter((track) =>
         kind === "artists"
           ? track.artist === title
@@ -293,9 +293,11 @@ export class BrowserMusic implements MusicApi {
   }
   async groups(kind: "albums" | "artists", offset = 0) {
     await this.ensureAlbumOrder();
-    const all = (await this.all<StoredTrack>("tracks")).sort(
-      (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
-    );
+    const all = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden)
+      .sort(
+        (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
+      );
     const map = new Map<string, import("../types").CatalogGroup>();
     for (const t of all) {
       const title = kind === "albums" ? t.album : t.artist;
@@ -335,6 +337,7 @@ export class BrowserMusic implements MusicApi {
     await this.ensureAlbumOrder();
     const q = query.toLowerCase();
     const tracks = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden)
       .filter((t) =>
         (t.title + " " + t.artist + " " + t.album).toLowerCase().includes(q),
       )
@@ -344,6 +347,123 @@ export class BrowserMusic implements MusicApi {
       tracks: tracks.slice(offset, offset + limit).map((t) => this.present(t)),
       total: tracks.length,
     };
+  }
+  async searchCatalog(query: string, limit = 30) {
+    await this.ensureAlbumOrder();
+    const terms = query.trim().normalize("NFKC").toLowerCase().split(/\s+/);
+    const matches = (s: string) =>
+      terms.every((q) => s.normalize("NFKC").toLowerCase().includes(q));
+    const tracks = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden && matches(`${t.title} ${t.artist} ${t.album}`))
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map((t) => this.present(t));
+    const findGroups = async (kind: "albums" | "artists") => {
+      const found: import("../types").CatalogGroup[] = [];
+      let offset = 0;
+      for (;;) {
+        const page = await this.groups(kind, offset);
+        found.push(
+          ...page.groups.filter((g) => matches(`${g.title} ${g.subtitle}`)),
+        );
+        offset += page.groups.length;
+        if (found.length > limit || offset >= page.total) break;
+      }
+      return found;
+    };
+    const albums = await findGroups("albums"),
+      artists = await findGroups("artists"),
+      playlists = (await this.playlists()).filter((p) => matches(p.title));
+    return {
+      tracks: tracks.slice(0, limit),
+      albums: albums.slice(0, limit),
+      artists: artists.slice(0, limit),
+      playlists: playlists.slice(0, limit),
+      hasMore: [tracks, albums, artists, playlists].some(
+        (items) => items.length > limit,
+      ),
+    };
+  }
+  async setLibraryVisibility(ids: string[], visible: boolean) {
+    const db = await this.db;
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("tracks", "readwrite");
+      const store = tx.objectStore("tracks");
+      for (const id of new Set(ids)) {
+        const req = store.get(id);
+        req.onsuccess = () => {
+          if (req.result) store.put({ ...req.result, hidden: !visible }, id);
+        };
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    if (!visible && this.state.queue.length) {
+      const queue = this.state.queue.filter(
+        (id) => !ids.includes(id) || id === this.state.trackId,
+      );
+      this.state.queue = queue;
+      this.state.queueIndex = Math.max(0, queue.indexOf(this.state.trackId!));
+      this.emit();
+    }
+  }
+  async shareAudio(ids: string[]): Promise<import("../types").ShareOutcome> {
+    const files = await Promise.all(
+      ids.map(async (id) => {
+        const t = await this.get<StoredTrack>("tracks", id);
+        if (!t || !t.available) throw new Error("Audio source is unavailable");
+        const ext =
+          (
+            {
+              "audio/wav": "wav",
+              "audio/mpeg": "mp3",
+              "audio/flac": "flac",
+              "audio/ogg": "ogg",
+              "audio/mp4": "m4a",
+            } as Record<string, string>
+          )[t.file.type] ?? "audio";
+        return new File(
+          [t.file],
+          `${t.title.replace(/[\\/:*?"<>|]/g, "_")}.${ext}`,
+          { type: t.file.type },
+        );
+      }),
+    );
+    if (navigator.canShare?.({ files })) {
+      try {
+        await navigator.share({ files });
+        return "opened";
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError")
+          return "canceled";
+        throw e;
+      }
+    }
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    return "download";
+  }
+  async soundCapabilities() {
+    return {
+      equalizer: false,
+      systemPanel: false,
+      enabled: false,
+      preset: 0,
+      presets: [],
+    };
+  }
+  async setEqualizer(_enabled: boolean, _preset: number): Promise<void> {
+    throw new Error("Equalizer is unavailable in browser preview");
+  }
+  async openSoundPanel(): Promise<void> {
+    throw new Error("Device sound settings are unavailable in browser preview");
   }
   async importMusic(
     files: File[] = [],
@@ -457,7 +577,12 @@ export class BrowserMusic implements MusicApi {
     ];
     for (let i = 0; i < names.length; i++) {
       const id = "sample-" + i;
-      if (await this.get("tracks", id)) continue;
+      const existing = await this.get<StoredTrack>("tracks", id);
+      if (existing) {
+        if (existing.hidden)
+          await this.put("tracks", id, { ...existing, hidden: false });
+        continue;
+      }
       const rate = 16000,
         len = rate * 40,
         buffer = new ArrayBuffer(44 + len * 2),
@@ -648,11 +773,21 @@ export class BrowserMusic implements MusicApi {
       this.listeners.delete(cb);
     };
   }
-  async play(ids: string[], index = 0) {
+  async play(ids: string[], index?: number) {
     await this.ready;
     if (this.changing) return;
     this.changing = true;
     try {
+      const selected = index === undefined ? undefined : ids[index];
+      const visible = new Set(
+        (await this.all<StoredTrack>("tracks"))
+          .filter((t) => !t.hidden)
+          .map((t) => t.id),
+      );
+      ids = ids.filter((id) => visible.has(id));
+      index = index === undefined ? 0 : ids.indexOf(selected!);
+      if (!ids.length || index < 0)
+        throw new Error("Track was removed from Library.");
       this.audio.pause();
       this.finish("queue-transition");
       const t = await this.get<StoredTrack>("tracks", ids[index]);
@@ -675,7 +810,7 @@ export class BrowserMusic implements MusicApi {
       await this.audio.play();
     } catch (e) {
       this.state.error = String(e);
-      this.state.playing = false;
+      this.state.playing = !this.audio.paused;
       this.emit();
     } finally {
       this.changing = false;

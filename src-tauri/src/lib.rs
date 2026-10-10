@@ -247,6 +247,195 @@ async fn resolve_cover(
     .map_err(|e| e.to_string())?
 }
 #[tauri::command]
+async fn search_catalog(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
+    query: String,
+    limit: usize,
+) -> Result<music_core::search::SearchResults> {
+    let core = state.core.clone();
+    let ready = state.order_ready.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        album_order::backfill(&core, &ready, &app)?;
+        let mut result = core
+            .lock()
+            .map_err(|e| e.to_string())?
+            .search_catalog_limit(&query, limit)?;
+        let cache = artwork::cache_dir(&app)?;
+        for track in &mut result.tracks {
+            *track = artwork::decorate(track.clone(), &cache, &app);
+        }
+        for group in result.albums.iter_mut().chain(result.artists.iter_mut()) {
+            group.track = artwork::decorate(group.track.clone(), &cache, &app);
+        }
+        Ok(result)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn set_library_visibility(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
+    ids: Vec<String>,
+    visible: bool,
+) -> Result<()> {
+    if !visible {
+        let snapshot = playback_snapshot(app.clone(), state.clone()).await?;
+        if let Some(current) = snapshot.track_id {
+            let queue: Vec<_> = snapshot
+                .queue
+                .into_iter()
+                .filter(|id| !ids.contains(id) || *id == current)
+                .collect();
+            dispatch(app, &state, "reorder", json!({"ids":queue})).await?;
+        }
+    }
+    state
+        .core
+        .lock()
+        .map_err(|e| e.to_string())?
+        .set_library_visibility(&ids, visible)
+}
+#[tauri::command]
+async fn share_audio(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
+    ids: Vec<String>,
+) -> Result<String> {
+    let tracks = {
+        let store = state.core.lock().map_err(|e| e.to_string())?;
+        ids.iter()
+            .map(|id| {
+                store
+                    .track(id)?
+                    .filter(|t| t.available)
+                    .ok_or("Audio source unavailable".into())
+            })
+            .collect::<Result<Vec<_>>>()?
+    };
+    if tracks.is_empty() {
+        return Err("Select audio to share".into());
+    }
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            let value: serde_json::Value = app.native_music().call(
+                "shareAudio",
+                json!({"uris":tracks.iter().map(|t| &t.source_uri).collect::<Vec<_>>()}),
+            )?;
+            Ok(value["outcome"].as_str().unwrap_or("opened").to_string())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        use tauri_plugin_dialog::DialogExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            let mut dialog = app.dialog().file().set_title("Save audio copies");
+            if let Some(window) = app.get_webview_window("main") {
+                dialog = dialog.set_parent(&window);
+            }
+            let destination = if tracks.len() == 1 {
+                let name = std::path::Path::new(&tracks[0].source_uri)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("audio");
+                dialog.set_file_name(name).blocking_save_file()
+            } else {
+                dialog.blocking_pick_folder()
+            };
+            let Some(destination) = destination else {
+                return Ok("canceled".into());
+            };
+            let destination = destination.into_path().map_err(|e| e.to_string())?;
+            for (index, track) in tracks.iter().enumerate() {
+                let source = std::path::Path::new(&track.source_uri);
+                let target = if tracks.len() == 1 {
+                    destination.clone()
+                } else {
+                    let name = source
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("audio");
+                    let mut target = destination.join(name);
+                    if target.exists() {
+                        target = destination.join(format!("{}-{}", index + 1, name));
+                    }
+                    if target.exists() {
+                        return Err("Destination already exists; select another folder".into());
+                    }
+                    target
+                };
+                if source.canonicalize().ok() == target.canonicalize().ok() && target.exists() {
+                    return Err("Select a destination different from the original file".into());
+                }
+                std::fs::copy(source, target).map_err(|e| e.to_string())?;
+            }
+            Ok("saved".into())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+}
+#[tauri::command]
+async fn sound_capabilities(app: tauri::AppHandle) -> Result<serde_json::Value> {
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            app.native_music().call("soundCapabilities", json!({}))
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Ok(json!({"equalizer":false,"systemPanel":false,"enabled":false,"preset":0,"presets":[]}))
+    }
+}
+#[tauri::command]
+async fn set_equalizer(app: tauri::AppHandle, enabled: bool, preset: i32) -> Result<()> {
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            let _: serde_json::Value = app
+                .native_music()
+                .call("setEqualizer", json!({"enabled":enabled,"preset":preset}))?;
+            Ok(())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = (app, enabled, preset);
+        Err("Equalizer is unavailable on this platform".into())
+    }
+}
+#[tauri::command]
+async fn open_sound_panel(app: tauri::AppHandle) -> Result<()> {
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            let _: serde_json::Value = app.native_music().call("openSoundPanel", json!({}))?;
+            Ok(())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Err("Device sound panel is unavailable on this platform".into())
+    }
+}
+#[tauri::command]
 async fn import_music(
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
@@ -299,7 +488,8 @@ async fn import_music(
                     if let Some(old) = store.track(&track.id)? {
                         track.favorite = old.favorite;
                     }
-                    store.upsert_track(&track)
+                    store.upsert_track(&track)?;
+                    store.set_library_visibility(&[track.id.clone()], true)
                 });
                 if result.is_ok() {
                     n += 1;
@@ -358,6 +548,7 @@ async fn import_music(
                 t.favorite = old.favorite;
             }
             store.upsert_track(&t)?;
+            store.set_library_visibility(&[t.id.clone()], true)?;
             count += 1;
             drop(store);
             if count % 10 == 0 {
@@ -551,8 +742,32 @@ async fn play_queue(
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
     ids: Vec<String>,
-    index: usize,
+    index: Option<usize>,
 ) -> Result<()> {
+    let selected = match index {
+        Some(index) => Some(ids.get(index).ok_or("Select an available track")?.clone()),
+        None => None,
+    };
+    let ids: Vec<String> = {
+        let store = state.core.lock().map_err(|e| e.to_string())?;
+        ids.iter()
+            .filter_map(|id| match store.track(id) {
+                Ok(Some(t)) if !t.hidden => Some(Ok(id.clone())),
+                Ok(_) => None,
+                Err(e) => Some(Err(e)),
+            })
+            .collect::<Result<_>>()?
+    };
+    if ids.is_empty() {
+        return Err("Select an available track".into());
+    }
+    let index = match selected {
+        Some(selected) => ids
+            .iter()
+            .position(|id| id == &selected)
+            .ok_or("Track was removed from Library")?,
+        None => 0,
+    };
     #[cfg(target_os = "android")]
     {
         let tracks = {
@@ -719,6 +934,12 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            search_catalog,
+            set_library_visibility,
+            share_audio,
+            sound_capabilities,
+            set_equalizer,
+            open_sound_panel,
             show_main_window,
             list_tracks,
             list_groups,

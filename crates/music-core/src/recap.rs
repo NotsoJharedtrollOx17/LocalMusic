@@ -138,7 +138,10 @@ pub fn aggregate(
             .then_with(|| normalize(&a.name).cmp(&normalize(&b.name)))
             .then_with(|| normalize(&a.artist).cmp(&normalize(&b.artist)))
     });
-    let available: Vec<_> = top.iter().filter(|t| t.track.available).collect();
+    let available: Vec<_> = top
+        .iter()
+        .filter(|t| t.track.available && !t.track.hidden)
+        .collect();
     let cap = if available.len() < 10 { usize::MAX } else { 2 };
     let mut artist_counts: HashMap<String, usize> = HashMap::new();
     let mut ids = Vec::new();

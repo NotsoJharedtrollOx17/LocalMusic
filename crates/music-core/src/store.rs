@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS snapshots(id TEXT PRIMARY KEY,data TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_sessions_start ON sessions(started_utc);
 CREATE INDEX IF NOT EXISTS idx_intervals_start ON intervals(start_utc);
 CREATE INDEX IF NOT EXISTS idx_sources_track ON track_sources(track_id);
-PRAGMA user_version=1;
+CREATE TABLE IF NOT EXISTS hidden_tracks(track_id TEXT PRIMARY KEY REFERENCES tracks(id));
+PRAGMA user_version=2;
 "#;
 pub type Result<T> = std::result::Result<T, String>;
 impl Store {
@@ -57,41 +58,7 @@ impl Store {
         Ok(())
     }
     pub fn tracks(&self, query: &str, offset: usize, limit: usize) -> Result<LibraryPage> {
-        let limit = limit.min(100);
-        let q = query
-            .split_whitespace()
-            .map(|s| format!("\"{}\"*", s.replace('"', "\"\"")))
-            .collect::<Vec<_>>()
-            .join(" AND ");
-        let (count_sql, data_sql) = if q.is_empty() {
-            (
-                "SELECT COUNT(*) FROM tracks",
-                "SELECT data FROM tracks ORDER BY title COLLATE NOCASE,id LIMIT ?2 OFFSET ?3",
-            )
-        } else {
-            ("SELECT COUNT(*) FROM tracks WHERE id IN (SELECT id FROM tracks_fts WHERE tracks_fts MATCH ?1)","SELECT data FROM tracks WHERE id IN (SELECT id FROM tracks_fts WHERE tracks_fts MATCH ?1) ORDER BY title COLLATE NOCASE,id LIMIT ?2 OFFSET ?3")
-        };
-        let total: usize = if q.is_empty() {
-            self.connection.query_row(count_sql, [], |r| r.get(0))
-        } else {
-            self.connection.query_row(count_sql, [&q], |r| r.get(0))
-        }
-        .map_err(|e| e.to_string())?;
-        let mut st = self
-            .connection
-            .prepare(data_sql)
-            .map_err(|e| e.to_string())?;
-        let rows = st
-            .query_map(params![q, limit, offset], |r| r.get::<_, String>(0))
-            .map_err(|e| e.to_string())?;
-        let mut tracks = Vec::new();
-        for row in rows {
-            tracks.push(
-                serde_json::from_str(&row.map_err(|e| e.to_string())?)
-                    .map_err(|e| e.to_string())?,
-            );
-        }
-        Ok(LibraryPage { tracks, total })
+        self.tracks_with_options(query, offset, limit, false, "title")
     }
     pub fn source_uris(&self, id: &str) -> Result<Vec<String>> {
         let mut statement = self
@@ -105,7 +72,39 @@ impl Store {
             .map_err(|e| e.to_string())
     }
     pub fn all_tracks(&self) -> Result<Vec<Track>> {
-        self.json_rows("SELECT data FROM tracks")
+        let mut tracks: Vec<Track> = self.json_rows("SELECT data FROM tracks")?;
+        let hidden = self.hidden_ids()?;
+        for track in &mut tracks {
+            track.hidden = hidden.contains(&track.id);
+        }
+        Ok(tracks)
+    }
+    pub fn hidden_ids(&self) -> Result<std::collections::HashSet<String>> {
+        let mut st = self
+            .connection
+            .prepare("SELECT track_id FROM hidden_tracks")
+            .map_err(|e| e.to_string())?;
+        let rows = st
+            .query_map([], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        rows.collect::<rusqlite::Result<_>>()
+            .map_err(|e| e.to_string())
+    }
+    pub fn set_library_visibility(&mut self, ids: &[String], visible: bool) -> Result<()> {
+        let tx = self.connection.transaction().map_err(|e| e.to_string())?;
+        for id in ids {
+            if visible {
+                tx.execute("DELETE FROM hidden_tracks WHERE track_id=?1", [id])
+                    .map_err(|e| e.to_string())?;
+            } else {
+                tx.execute(
+                    "INSERT OR IGNORE INTO hidden_tracks SELECT id FROM tracks WHERE id=?1",
+                    [id],
+                )
+                .map_err(|e| e.to_string())?;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())
     }
     pub fn track(&self, id: &str) -> Result<Option<Track>> {
         let mut st = self
@@ -115,14 +114,25 @@ impl Store {
         let mut rows = st.query([id]).map_err(|e| e.to_string())?;
         if let Some(r) = rows.next().map_err(|e| e.to_string())? {
             let s: String = r.get(0).map_err(|e| e.to_string())?;
-            Ok(Some(serde_json::from_str(&s).map_err(|e| e.to_string())?))
+            let mut track: Track = serde_json::from_str(&s).map_err(|e| e.to_string())?;
+            track.hidden = self
+                .connection
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM hidden_tracks WHERE track_id=?1)",
+                    [id],
+                    |r| r.get(0),
+                )
+                .map_err(|e| e.to_string())?;
+            Ok(Some(track))
         } else {
             Ok(None)
         }
     }
     pub fn upsert_track(&mut self, t: &Track) -> Result<()> {
         let tx = self.connection.transaction().map_err(|e| e.to_string())?;
-        let json = serde_json::to_string(t).map_err(|e| e.to_string())?;
+        let mut stored = t.clone();
+        stored.hidden = false; // visibility is authoritative in hidden_tracks
+        let json = serde_json::to_string(&stored).map_err(|e| e.to_string())?;
         tx.execute("INSERT INTO tracks VALUES(?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET title=excluded.title,artist=excluded.artist,album=excluded.album,data=excluded.data",params![t.id,t.title,t.artist,t.album,json]).map_err(|e|e.to_string())?;
         tx.execute("DELETE FROM tracks_fts WHERE id=?1", [&t.id])
             .map_err(|e| e.to_string())?;

@@ -1,0 +1,570 @@
+import { audioShareLabel } from "../ux/sharing";
+import { useMusicActions } from "./useMusicActions";
+import { useAppState } from "./useAppState";
+import { useCatalogReads } from "./useCatalogReads";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import { useLibraryMotion, animateCover, type LibrarySection } from "../ux";
+import { useBackLayer } from "../navigation";
+import { api } from "../api";
+import { en, es } from "../i18n";
+import { compareCatalogTracks, recapYears } from "../domain";
+import { applyTheme } from "../theme";
+import { type Track, type Settings, type CatalogGroup } from "../types";
+
+export function useMusicApp(initialSettings?: Settings) {
+  const state = useAppState(initialSettings);
+  const {
+    tab,
+    setTab,
+    section,
+    setSection,
+    tracks,
+    total,
+    cache,
+    setCache,
+    query,
+    searchOpen,
+    setSearchOpen,
+    onlyFavorites,
+    setOnlyFavorites,
+    sort,
+    group,
+    setGroup,
+    groupTracks,
+    setGroupTracks,
+    setGroupLoading,
+    groupPages,
+    setGroupPages,
+    queueLimit,
+    settings,
+    setSettings,
+    player,
+    setPlayer,
+    selectedList,
+    setSelectedList,
+    generated,
+    recap,
+    setRecap,
+    shareRecap,
+    setRecapLoading,
+    recapRevision,
+    setRecapRevision,
+    snapshotMode,
+    setSnapshots,
+    year,
+    setYear,
+    notice,
+    setNotice,
+    setError,
+    modal,
+    setModal: setModalState,
+    setEditingList,
+    catalogRevision,
+    setCatalogRevision,
+    setSelectedIds,
+    selectionMode,
+    setSelectionMode,
+    menu,
+    setSound,
+    setSoundLoading,
+    artistView,
+    setArtistView,
+    coverOrigin,
+    detailHero,
+    groupScroll,
+    lastSelected,
+    groupStack,
+    soundOrigin,
+    latestQuery,
+    settingsWrite,
+    searchInput,
+  } = state;
+  type Dialog = typeof modal;
+  const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
+  function dismissModals() {
+    dialogHistory.current = [];
+    state.setPlayerParent(null);
+    setModalState(null);
+  }
+  function setModal(action: React.SetStateAction<Dialog>) {
+    const next = typeof action === "function" ? action(modal) : action;
+    if (next === modal) return;
+    if (next === "player" || next === "queue") {
+      dialogHistory.current = [];
+      state.setPlayerParent(null);
+      setModalState(next);
+      return;
+    }
+    if (next === null) {
+      if (modal === "player" || modal === "queue") {
+        dismissModals();
+        return;
+      }
+      const parent = dialogHistory.current.pop() ?? state.playerParent;
+      if (parent === "player" || parent === "queue")
+        state.setPlayerParent(null);
+      setModalState(parent ?? null);
+      return;
+    }
+    if (dialogHistory.current.at(-1) === next) dialogHistory.current.pop();
+    else if (modal === "player" || modal === "queue")
+      state.setPlayerParent(modal);
+    else if (modal) dialogHistory.current.push(modal);
+    setModalState(next);
+  }
+
+  const selectedGroupPage =
+    groupPages[section === "artists" ? "artists" : "albums"];
+  const catalogGroups = selectedGroupPage.groups,
+    groupsTotal = selectedGroupPage.total;
+
+  const motion = useLibraryMotion(section, (next: LibrarySection) => {
+    closeGroup();
+    setSection(next);
+    setOnlyFavorites(false);
+    setSelectionMode(false);
+    setSelectedIds([]);
+  });
+
+  latestQuery.current = query;
+
+  const t = settings?.language === "es" ? es : en;
+  const liveYears = settings
+    ? recapYears(settings)
+    : [new Date().getFullYear()];
+  const yearOptions =
+    snapshotMode && recap && !liveYears.includes(recap.year)
+      ? [...liveYears, recap.year].sort((a, b) => b - a)
+      : liveYears;
+  const calendarReady = useRef(false);
+  useEffect(() => {
+    if (!settings || snapshotMode) return;
+    if (!calendarReady.current) {
+      calendarReady.current = true;
+      setYear(liveYears[0]);
+    } else if (!liveYears.includes(year)) setYear(liveYears[0]);
+  }, [
+    settings?.timeZone,
+    liveYears[0],
+    liveYears[liveYears.length - 1],
+    year,
+    snapshotMode,
+  ]);
+  const act = useCallback(async (fn: () => Promise<unknown>) => {
+    setError("");
+    try {
+      return await fn();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+  const remember = useCallback(
+    (ts: Track[]) =>
+      setCache((c) => ({
+        ...c,
+        ...Object.fromEntries(ts.map((x) => [x.id, x])),
+      })),
+    [],
+  );
+  const catalog = useCatalogReads(state, act, remember);
+  const {
+    libraryRequest,
+    groupRequest,
+    refresh,
+    refreshGroup,
+    refreshGroups,
+    refreshLists,
+  } = catalog;
+  useEffect(() => {
+    void act(async () => {
+      setSettings(initialSettings ?? (await api.settings()));
+      await refresh();
+      await refreshLists();
+    });
+    let unsubscribe: (() => void) | undefined;
+    let disposed = false;
+    void api
+      .subscribe((s) => {
+        setPlayer(s);
+        if (s.error) setError(s.error);
+      })
+      .then((u) => {
+        if (disposed) u();
+        else unsubscribe = u;
+      })
+      .catch((e) => setError(String(e)));
+    return () => {
+      disposed = true;
+      unsubscribe?.();
+    };
+  }, [act, refresh, refreshLists]);
+  useEffect(() => {
+    const id = setTimeout(() => void act(() => refresh(query)), 180);
+    return () => clearTimeout(id);
+  }, [query, onlyFavorites, sort, refresh, act]);
+  useEffect(() => {
+    if (tab === "library" && (section === "albums" || section === "artists"))
+      void act(() => refreshGroups(section));
+  }, [tab, section, total, catalogRevision, act, refreshGroups]);
+  const groupIdentity = group
+    ? JSON.stringify([group.kind, group.title, group.subtitle])
+    : "";
+  const restoreGroupScroll = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (restoreGroupScroll.current !== null) {
+      window.scrollTo({ top: restoreGroupScroll.current, behavior: "instant" });
+      restoreGroupScroll.current = null;
+    }
+  }, [groupIdentity]);
+  useEffect(() => {
+    if (group)
+      void act(() => refreshGroup(group, Math.max(60, groupTracks.length)));
+  }, [catalogRevision, groupIdentity, refreshGroup, act]);
+  function closeGroup(restore?: number) {
+    restoreGroupScroll.current = restore ?? null;
+    groupStack.current = [];
+    ++groupRequest.current;
+    setGroup(null);
+    setGroupTracks([]);
+    setGroupLoading(false);
+  }
+  useEffect(() => {
+    if (searchOpen) searchInput.current?.focus();
+  }, [searchOpen]);
+  useEffect(() => {
+    if (settings) {
+      document.documentElement.lang = settings.language;
+      applyTheme(settings.theme);
+      settingsWrite.current = api.saveSettings(settings);
+      void act(() => settingsWrite.current);
+    }
+  }, [settings]);
+  useEffect(() => {
+    const ids = [
+      ...new Set([
+        ...(player.trackId ? [player.trackId] : []),
+        ...(modal === "queue" ? player.queue.slice(0, queueLimit) : []),
+        ...(tab === "year" && recap
+          ? recap.topTracks.map((item) => item.track.id)
+          : []),
+      ]),
+    ].filter((id) => !cache[id]);
+    if (ids.length) void act(async () => remember(await api.tracksById(ids)));
+  }, [
+    player.queue,
+    player.trackId,
+    cache,
+    modal,
+    queueLimit,
+    tab,
+    recap,
+    act,
+    remember,
+  ]);
+  const recapRequest = useRef(0);
+  useEffect(() => {
+    if (tab !== "year" || !settings || snapshotMode) return;
+    const version = ++recapRequest.current;
+    let active = true;
+    setRecapLoading(true);
+    void act(async () => {
+      try {
+        await settingsWrite.current;
+        const result = await api.recap(year);
+        const saved = await api.snapshots();
+        if (!active || version !== recapRequest.current) return;
+        setRecap(result);
+        setSnapshots(saved);
+      } finally {
+        if (active && version === recapRequest.current) setRecapLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [tab, year, settings, snapshotMode, recapRevision, player.playing, act]);
+  useEffect(() => {
+    if (tab !== "year" || snapshotMode || shareRecap) return;
+    const refresh = () => setRecapRevision((v) => v + 1);
+    window.addEventListener("focus", refresh);
+    const timer = player.playing
+      ? window.setInterval(refresh, 15000)
+      : undefined;
+    return () => {
+      window.removeEventListener("focus", refresh);
+      if (timer) window.clearInterval(timer);
+    };
+  }, [tab, snapshotMode, shareRecap, player.playing]);
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if (
+        /INPUT|SELECT|TEXTAREA|BUTTON|A/.test(
+          (e.target as HTMLElement).tagName,
+        ) ||
+        modal ||
+        menu ||
+        searchOpen ||
+        selectionMode ||
+        shareRecap
+      )
+        return;
+      if (e.code === "Space" && player.trackId) {
+        e.preventDefault();
+        void act(() => api.toggle());
+      }
+      if (e.key === "/") {
+        e.preventDefault();
+        setTab("library");
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, [modal, shareRecap, player.trackId, act, menu, searchOpen, selectionMode]);
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = setTimeout(() => setNotice(""), 4500);
+    return () => clearTimeout(timeout);
+  }, [notice]);
+  const current = player.trackId ? cache[player.trackId] : undefined;
+  function backGroup() {
+    const previous = groupStack.current.pop();
+    if (previous) {
+      restoreGroupScroll.current = previous.scroll;
+      setSection(previous.group.kind);
+      setArtistView(previous.artistView);
+      void act(async () => {
+        await refreshGroup(previous.group);
+      });
+    } else {
+      closeGroup(groupScroll.current);
+    }
+  }
+  useBackLayer(tab === "year" && !modal && !searchOpen && !menu, () =>
+    setTab("library"),
+  );
+  useBackLayer(
+    tab === "library" && !!group && !modal && !searchOpen && !menu,
+    backGroup,
+  );
+  useBackLayer(
+    tab === "library" &&
+      section === "playlists" &&
+      !!selectedList &&
+      !modal &&
+      !searchOpen &&
+      !menu &&
+      !selectionMode,
+    () => {
+      setSelectedList(null);
+      setEditingList(false);
+    },
+  );
+  useBackLayer(selectionMode && !modal && !menu, () => {
+    setSelectionMode(false);
+    setSelectedIds([]);
+  });
+  function toggleSelected(
+    id: string,
+    shift = false,
+    order = visible.map((t) => t.id),
+  ) {
+    if (!selectionMode) lastSelected.current = undefined;
+    setSelectionMode(true);
+    const a = lastSelected.current ? order.indexOf(lastSelected.current) : -1,
+      b = order.indexOf(id);
+    setSelectedIds((old) =>
+      shift && a >= 0 && b >= 0
+        ? [
+            ...new Set([
+              ...old,
+              ...order.slice(Math.min(a, b), Math.max(a, b) + 1),
+            ]),
+          ]
+        : old.includes(id)
+          ? old.filter((x) => x !== id)
+          : [...old, id],
+    );
+    lastSelected.current = id;
+  }
+  async function changeVisibility(ids: string[], visible: boolean) {
+    await api.setLibraryVisibility(ids, visible);
+    const changed = await api.tracksById(ids);
+    remember(changed);
+    setGroupTracks((old) =>
+      old.map((track) => changed.find((t) => t.id === track.id) ?? track),
+    );
+    if (!visible)
+      state.setArtistAlbums((old) =>
+        old
+          .map((g) => ({ ...g, ids: g.ids.filter((id) => !ids.includes(id)) }))
+          .filter((g) => g.ids.length),
+      );
+    await refresh(query);
+    setCatalogRevision((v) => v + 1);
+    setGroupPages({
+      albums: { groups: [], total: 0, status: "idle" },
+      artists: { groups: [], total: 0, status: "idle" },
+    });
+  }
+  const sharingActive = useRef(false);
+  const shareLabel = audioShareLabel(t);
+  async function share(ids: string[]) {
+    if (sharingActive.current) return;
+    sharingActive.current = true;
+    state.setSharing(true);
+    await act(async () => {
+      const result = await api.shareAudio(ids);
+      if (result !== "canceled")
+        setNotice(
+          result === "saved"
+            ? t.copiesSaved
+            : result === "download"
+              ? t.downloadStarted
+              : t.shareOpened,
+        );
+    }).finally(() => {
+      sharingActive.current = false;
+      state.setSharing(false);
+    });
+  }
+  function openGroup(
+    kind: "albums" | "artists",
+    g: CatalogGroup,
+    source?: HTMLElement,
+  ) {
+    restoreGroupScroll.current = null;
+    if (
+      group?.kind === kind &&
+      group.title === g.title &&
+      group.subtitle === g.subtitle
+    ) {
+      setArtistView("tracks");
+      window.scrollTo({ top: 0, behavior: "instant" });
+      return;
+    }
+    if (!group) groupScroll.current = window.scrollY;
+    else groupStack.current.push({ group, scroll: window.scrollY, artistView });
+    const image = source?.querySelector<HTMLImageElement>("img");
+    coverOrigin.current = image
+      ? { rect: image.getBoundingClientRect(), src: image.src }
+      : null;
+    setTab("library");
+    setSection(kind);
+    ++libraryRequest.current;
+    const opening = refreshGroup({
+      kind,
+      title: g.title,
+      subtitle: g.subtitle,
+      ids: g.ids,
+      coverTrack: g.track,
+    });
+    const version = groupRequest.current;
+    void act(async () => {
+      await opening;
+      if (version === groupRequest.current) {
+        setArtistView("tracks");
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+    });
+  }
+  useEffect(() => {
+    const origin = coverOrigin.current,
+      node = detailHero.current;
+    if (!group || !origin || !node) return;
+    coverOrigin.current = null;
+    return animateCover(origin.rect, node.getBoundingClientRect(), origin.src);
+  }, [group?.title, group?.kind]);
+  useEffect(() => {
+    if (group)
+      document
+        .querySelector<HTMLElement>(".library-page h1")
+        ?.focus({ preventScroll: true });
+  }, [group?.title, group?.kind]);
+  async function openSound() {
+    soundOrigin.current =
+      modal === "player" || modal === "queue" || modal === "settings"
+        ? modal
+        : soundOrigin.current;
+    setSound(undefined);
+    setSoundLoading(true);
+    setModal("sound");
+    await act(async () => {
+      try {
+        setSound(await api.soundCapabilities());
+      } finally {
+        setSoundLoading(false);
+      }
+    });
+  }
+  const formatMinutes = (ms: number) =>
+    ms > 0 && ms < 60000
+      ? "<1"
+      : Math.round(ms / 60000).toLocaleString(settings?.language);
+  const formatDate = (s: string, zone = settings?.timeZone) =>
+    new Intl.DateTimeFormat(settings?.language ?? "en", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: zone,
+    }).format(new Date(s));
+  const visible = useMemo(
+    () =>
+      group
+        ? groupTracks.filter((t) => !t.hidden)
+        : tracks
+            .filter((x) => !onlyFavorites || x.favorite)
+            .sort((a, b) => compareCatalogTracks(a, b, sort)),
+    [tracks, groupTracks, onlyFavorites, group, sort],
+  );
+  const actions = useMusicActions(state, {
+    act,
+    remember,
+    refresh,
+    refreshLists,
+    t,
+  });
+
+  const playlistTracks =
+    (selectedList ?? generated)?.trackIds
+      .map((id) => cache[id])
+      .filter((x): x is Track => !!x && !x.hidden) ?? [];
+  return {
+    ...state,
+    setModal,
+    dismissModals,
+    shareLabel,
+    ...catalog,
+    ...actions,
+    selectedGroupPage,
+    catalogGroups,
+    groupsTotal,
+    motion,
+    t,
+    liveYears,
+    yearOptions,
+    calendarReady,
+    act,
+    remember,
+    groupIdentity,
+    closeGroup,
+    recapRequest,
+    current,
+    backGroup,
+    toggleSelected,
+    changeVisibility,
+    share,
+    openGroup,
+    openSound,
+    formatMinutes,
+    formatDate,
+    visible,
+    playlistTracks,
+  };
+}

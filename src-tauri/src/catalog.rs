@@ -43,6 +43,7 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
         favorite: false,
         available: true,
         demo: false,
+        hidden: false,
     };
     if let Ok(tagged) = lofty::read_from_path(path) {
         t.release_year = crate::album_order::release_year(&tagged);

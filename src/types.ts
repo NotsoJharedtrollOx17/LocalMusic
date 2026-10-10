@@ -15,6 +15,7 @@ export interface Track {
   favorite: boolean;
   available: boolean;
   demo?: boolean;
+  hidden?: boolean;
 }
 export interface Playlist {
   id: string;
@@ -101,7 +102,28 @@ export interface ImportProgress {
   imported: number;
   failed: number;
 }
+export interface SearchResults {
+  hasMore: boolean;
+  tracks: Track[];
+  albums: CatalogGroup[];
+  artists: CatalogGroup[];
+  playlists: Playlist[];
+}
+export interface SoundCapabilities {
+  equalizer: boolean;
+  systemPanel: boolean;
+  enabled: boolean;
+  preset: number;
+  presets: string[];
+}
+export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  searchCatalog(query: string, limit?: number): Promise<SearchResults>;
+  setLibraryVisibility(ids: string[], visible: boolean): Promise<void>;
+  shareAudio(ids: string[]): Promise<ShareOutcome>;
+  soundCapabilities(): Promise<SoundCapabilities>;
+  setEqualizer(enabled: boolean, preset: number): Promise<void>;
+  openSoundPanel(): Promise<void>;
   groupIds(
     kind: "albums" | "artists",
     title: string,

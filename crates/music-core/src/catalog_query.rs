@@ -26,7 +26,7 @@ impl Store {
             .map(|s| format!("\"{}\"*", s.replace('"', "\"\"")))
             .collect::<Vec<_>>()
             .join(" AND ");
-        let predicate="(?4=0 OR json_extract(data,'$.favorite')=1) AND (?1='' OR id IN (SELECT id FROM tracks_fts WHERE tracks_fts MATCH ?1))";
+        let predicate="id NOT IN (SELECT track_id FROM hidden_tracks) AND (?4=0 OR json_extract(data,'$.favorite')=1) AND (?1='' OR id IN (SELECT id FROM tracks_fts WHERE tracks_fts MATCH ?1))";
         let total = self
             .connection
             .query_row(

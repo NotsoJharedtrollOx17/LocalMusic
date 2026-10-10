@@ -11,6 +11,7 @@ import "@fontsource/space-grotesk/latin-500.css";
 import "@fontsource/space-grotesk/latin-700.css";
 import App from "./App";
 import "./styles.css";
+import "./ux.css";
 async function start() {
   const settings = await api.settings().catch(() => undefined);
   if (settings) applyTheme(settings.theme);

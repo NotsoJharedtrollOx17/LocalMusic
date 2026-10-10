@@ -14,6 +14,27 @@ export const native = isTauri();
 const cmd = <T>(name: string, args?: Record<string, unknown>) =>
   invoke<T>(name, args);
 class NativeMusic implements MusicApi {
+  searchCatalog(query: string, limit = 30) {
+    return cmd<import("../types").SearchResults>("search_catalog", {
+      query,
+      limit,
+    });
+  }
+  setLibraryVisibility(ids: string[], visible: boolean) {
+    return cmd<void>("set_library_visibility", { ids, visible });
+  }
+  shareAudio(ids: string[]) {
+    return cmd<import("../types").ShareOutcome>("share_audio", { ids });
+  }
+  soundCapabilities() {
+    return cmd<import("../types").SoundCapabilities>("sound_capabilities");
+  }
+  setEqualizer(enabled: boolean, preset: number) {
+    return cmd<void>("set_equalizer", { enabled, preset });
+  }
+  openSoundPanel() {
+    return cmd<void>("open_sound_panel");
+  }
   groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
     return cmd<string[]>("group_ids", { kind, title, subtitle });
   }
@@ -130,8 +151,8 @@ class NativeMusic implements MusicApi {
       document.removeEventListener("visibilitychange", tick);
     };
   }
-  play(ids: string[], index = 0) {
-    return cmd<void>("play_queue", { ids, index });
+  play(ids: string[], index?: number) {
+    return cmd<void>("play_queue", { ids, index: index ?? null });
   }
   toggle() {
     return cmd<void>("toggle_playback");
