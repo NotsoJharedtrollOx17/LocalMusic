@@ -76,6 +76,10 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
   expect(image.readUInt32BE(20)).toBe(3840);
   await png.saveAs("artifacts/recap-story.png");
   await expect(share.getByRole("status")).toContainText("Image saved");
+  const confirmation = share.locator(".recap-save-toast");
+  await expect(confirmation).toBeInViewport();
+  await share.locator(".modal-head").scrollIntoViewIfNeeded();
+  await expect(confirmation).toBeInViewport();
   await share.getByRole("button", { name: "Feed · 4:5" }).click();
   await expect(
     share.getByRole("button", { name: "Save PNG", exact: true }),

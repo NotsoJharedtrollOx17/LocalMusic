@@ -2241,3 +2241,11 @@ input[type="range"] {
 .share-recap .full-width {
   width: 100%;
 }
+
+.recap-save-toast {
+  top: max(24px, env(safe-area-inset-top));
+  bottom: auto;
+  font-size: 14px;
+  border-left: 4px solid var(--accent);
+  width: max-content;
+}

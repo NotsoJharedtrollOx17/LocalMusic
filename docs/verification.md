@@ -107,3 +107,11 @@ The portable Windows debug executable rebuilt and passed a startup smoke check: 
 The year selector now uses the configured recap time zone, including near New Year. Clearing listening history resets the selected year and leaves snapshot mode, so the screen reflects the new empty history. Regressions cover both calendar boundaries and the deletion flow.
 
 Final artifacts were rebuilt after the calendar and history-reset changes. The Windows startup check again showed a responsive process with a nonzero main-window handle. The ARM64 Android debug APK rebuilt successfully through the existing file-copy packaging fallback, and apksigner verified its v2 signature. The x86_64 APK was not refreshed; Android save chooser, playback, and background behavior still require device acceptance.
+
+## Recap save confirmation correction — 9 October 2026
+
+The previous success text sat below the large image preview and could be offscreen. Successful PNG saves now show a fixed confirmation popup with a check icon above the preview, independent of modal scroll. It remains visible until another export action or closing the preview; canceled and failed native saves still do not report success. The browser export journey checks the popup is in the viewport both after saving and after scrolling back to the dialog header. Verification results follow below.
+
+Verification: production frontend build, all nine frontend unit tests, and all nine Chromium journeys passed, including the new popup visibility/scroll assertion. Rust rules and native save-result handling were unchanged. Android APKs were not refreshed for this UI correction. Windows rebuild results follow below.
+
+The portable Windows debug executable rebuilt successfully with this correction. Native save-dialog acceptance was not rerun for this presentation-only change.

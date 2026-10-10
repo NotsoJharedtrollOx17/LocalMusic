@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, LoaderCircle } from "lucide-react";
+import { CheckCircle2, Download, LoaderCircle } from "lucide-react";
 import { Modal } from "./components";
 import { en, es } from "./i18n";
 import {
@@ -131,9 +131,14 @@ export default function ShareRecap({
           {saving ? t.savingImage : t.downloadImage}
         </button>
         {saved && (
-          <p role="status" className="small-muted">
-            {t.imageSaved}
-          </p>
+          <div
+            role="status"
+            aria-live="polite"
+            className="toast recap-save-toast"
+          >
+            <CheckCircle2 size={24} aria-hidden="true" />
+            <strong>{t.imageSaved}</strong>
+          </div>
         )}
         <p className="method-note">{t.imagePrivacy}</p>
       </div>
