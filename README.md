@@ -86,4 +86,4 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [AGENTS.md](AGENTS.md) and the original `.AGENTS` development guide before substantial changes. Preserve the four reference images there as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch and now includes the playlist navigation move. `master` remains the first-draft baseline. Create focused feature branches from `dev` and merge reviewed work back into it.
+`dev` is the integration branch and includes the playlist navigation move. `main` is the preliminary release baseline; `v0.1.0` tags the current baseline. Create focused feature branches from `dev` and merge reviewed work back into it.
