@@ -887,6 +887,7 @@ export default function App() {
                       role="tab"
                       aria-selected={section === x}
                       onClick={() => {
+                        closeGroup();
                         setSection(x);
                         setOnlyFavorites(false);
                       }}
@@ -915,6 +916,16 @@ export default function App() {
                   </span>
                 </div>
                 <div className="toolbar-actions">
+                  {groupLoading && !group && (
+                    <span className="group-loading" role="status">
+                      <LoaderCircle
+                        size={18}
+                        className="spinner"
+                        aria-hidden="true"
+                      />
+                      {t.loading}
+                    </span>
+                  )}
                   {section === "songs" && !group && (
                     <>
                       <IconButton
@@ -1024,14 +1035,14 @@ export default function App() {
                         className="album-card"
                         onClick={() => {
                           ++libraryRequest.current;
-                          setGroupTracks([]);
-                          setGroupLoading(true);
-                          setGroup({
-                            kind: section,
-                            title: g.title,
-                            subtitle: g.subtitle,
-                            ids: g.ids,
-                          });
+                          void act(() =>
+                            refreshGroup({
+                              kind: section,
+                              title: g.title,
+                              subtitle: g.subtitle,
+                              ids: g.ids,
+                            }),
+                          );
                         }}
                       >
                         <Cover track={g.track} large />

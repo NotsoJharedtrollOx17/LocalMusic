@@ -83,7 +83,7 @@ On Windows without symbolic-link privileges, build-android.ps1 falls back to cop
 
 ## Development branches
 
-`dev` is the integration branch and contains the import, artwork, album sequencing and release-year label improvements. Yearly recap and social image export work is on `dev.-stable-year-recap`; merge it into `dev` after review. The initial first draft remains on `master`.
+`dev` is the integration branch and contains the import, artwork, album sequencing, release-year labels and yearly recap PNG exports. Album loading flash corrections are on `dev.weird-flickering-albums`; merge them into `dev` after review. The initial first draft remains on `master`.
 
 Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
 

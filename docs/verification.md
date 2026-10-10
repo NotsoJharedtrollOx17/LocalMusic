@@ -115,3 +115,13 @@ The previous success text sat below the large image preview and could be offscre
 Verification: production frontend build, all nine frontend unit tests, and all nine Chromium journeys passed, including the new popup visibility/scroll assertion. Rust rules and native save-result handling were unchanged. Android APKs were not refreshed for this UI correction. Windows rebuild results follow below.
 
 The portable Windows debug executable rebuilt successfully with this correction. Native save-dialog acceptance was not rerun for this presentation-only change.
+
+## Album loading flash correction — 9 October 2026
+
+Merged the completed recap branch into dev at 8132366 and created dev.weird-flickering-albums. Opening an album/artist previously replaced the grid with an empty detail screen before its catalog reads completed. The grid now remains visible with a small loading indicator until songs and group membership are ready, then the detail view commits together. Choosing another library section cancels the pending navigation. Existing detail rows remain visible during live refresh. Native high-resolution covers are decoded before replacing the displayed image; decoded cached covers are reused when cards remount. Failed upgrades retain their current image and can retry.
+
+A delayed IndexedDB read regression checks the album card remains visible while opening, then switches to Songs before releasing the read and checks the stale response cannot open the album. Browser verification does not establish native WebView rendering behavior; Windows visual acceptance and Android runtime acceptance remain interactive checks. Final build/test results follow below.
+
+Production frontend build, all nine frontend unit tests and all nine Chromium journeys passed, including delayed album opening/cancellation, live artist/album imports, and album order. Rust rules were unchanged. Android APKs were not refreshed for this UI correction. Windows build results follow below.
+
+The portable Windows debug executable rebuilt successfully with the group transition and cover decoding fixes. No native visual acceptance is claimed by the build alone.

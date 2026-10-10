@@ -418,6 +418,51 @@ test("artist and album details stay populated as import batches arrive", async (
   await expect(page.getByText("12 songs", { exact: true })).toBeVisible();
   await page.locator(".group-back").click();
   await page.getByRole("tab", { name: "Albums" }).click();
+  await expect(
+    page.locator(".album-card").filter({ hasText: "Fixture Album" }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const original = IDBObjectStore.prototype.getAll;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead =
+      release;
+    IDBObjectStore.prototype.getAll = function (...args) {
+      const request = original.apply(this, args);
+      if (this.name === "tracks") {
+        IDBObjectStore.prototype.getAll = original;
+        request.addEventListener(
+          "success",
+          (event) => {
+            event.stopImmediatePropagation();
+            void gate.then(() => request.onsuccess?.call(request, event));
+          },
+          { once: true },
+        );
+      }
+      return request;
+    };
+  });
+  await page
+    .locator(".album-card")
+    .filter({ hasText: "Fixture Album" })
+    .click();
+  await expect(page.locator(".group-loading")).toBeVisible();
+  await expect(
+    page.locator(".album-card").filter({ hasText: "Fixture Album" }),
+  ).toBeVisible();
+  await expect(page.locator(".group-back")).toHaveCount(0);
+  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  await page.evaluate(() =>
+    (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead(),
+  );
+  await expect(
+    page.getByRole("tab", { name: "Songs", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".group-back")).toHaveCount(0);
+  await page.getByRole("tab", { name: "Albums" }).click();
   await page
     .locator(".album-card")
     .filter({ hasText: "Fixture Album" })

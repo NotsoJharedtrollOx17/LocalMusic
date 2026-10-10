@@ -51,20 +51,26 @@ function largeCover(key: string, id: string): Promise<string> {
   if (cached) return Promise.resolve(cached);
   const pending = largeCoverRequests.get(key);
   if (pending) return pending;
-  const request = api.cover(id, 512).then(
-    (url) => {
-      largeCoverRequests.delete(key);
-      largeCoverCache.set(key, url);
-      while (largeCoverCache.size > 32) {
-        largeCoverCache.delete(largeCoverCache.keys().next().value!);
-      }
-      return url;
-    },
-    (error) => {
-      largeCoverRequests.delete(key);
-      throw error;
-    },
-  );
+  const request = api
+    .cover(id, 512)
+    .then(
+      async (url) => {
+        const decoded = new Image();
+        decoded.src = url;
+        await decoded.decode();
+        largeCoverRequests.delete(key);
+        largeCoverCache.set(key, url);
+        while (largeCoverCache.size > 32) {
+          largeCoverCache.delete(largeCoverCache.keys().next().value!);
+        }
+        return url;
+      },
+      (error) => {
+        largeCoverRequests.delete(key);
+        throw error;
+      },
+    )
+    .finally(() => largeCoverRequests.delete(key));
   largeCoverRequests.set(key, request);
   return request;
 }
@@ -120,7 +126,13 @@ export function Cover({
     <img
       ref={image}
       className={"cover " + className}
-      src={large && resolved?.key === key ? resolved.url : coverUrl(track)}
+      src={
+        large
+          ? ((resolved?.key === key
+              ? resolved.url
+              : largeCoverCache.get(key)) ?? coverUrl(track))
+          : coverUrl(track)
+      }
       alt=""
       loading="lazy"
       decoding="async"

@@ -2249,3 +2249,11 @@ input[type="range"] {
   border-left: 4px solid var(--accent);
   width: max-content;
 }
+
+.group-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
