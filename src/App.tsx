@@ -83,8 +83,10 @@ export default function App({
 }: {
   initialSettings?: Settings;
 }) {
-  const [tab, setTab] = useState<"library" | "playlists" | "year">("library"),
-    [section, setSection] = useState<"songs" | "albums" | "artists">("songs"),
+  const [tab, setTab] = useState<"library" | "year">("library"),
+    [section, setSection] = useState<
+      "songs" | "albums" | "artists" | "playlists"
+    >("songs"),
     [tracks, setTracks] = useState<Track[]>([]),
     [total, setTotal] = useState(0),
     [cache, setCache] = useState<Record<string, Track>>({}),
@@ -337,7 +339,7 @@ export default function App({
     return () => clearTimeout(id);
   }, [query, onlyFavorites, sort, refresh, act]);
   useEffect(() => {
-    if (tab === "library" && section !== "songs")
+    if (tab === "library" && (section === "albums" || section === "artists"))
       void act(() => refreshGroups(section));
   }, [tab, section, total, catalogRevision, act, refreshGroups]);
   const groupIdentity = group
@@ -635,13 +637,6 @@ export default function App({
         <span>{t.library}</span>
       </button>
       <button
-        className={tab === "playlists" ? "selected" : ""}
-        onClick={() => setTab("playlists")}
-      >
-        <ListMusic />
-        <span>{t.playlists}</span>
-      </button>
-      <button
         className={tab === "year" ? "selected" : ""}
         onClick={() => setTab("year")}
       >
@@ -930,585 +925,603 @@ export default function App({
                   role="tablist"
                   aria-label={t.library}
                 >
-                  {(["songs", "albums", "artists"] as const).map((x) => (
-                    <button
-                      key={x}
-                      role="tab"
-                      aria-selected={section === x}
-                      onClick={() => {
-                        closeGroup();
-                        setSection(x);
-                        setOnlyFavorites(false);
-                      }}
-                    >
-                      {t[x]}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="library-toolbar">
-                <div>
-                  <button
-                    className={
-                      "filter-button" + (!onlyFavorites ? " chosen" : "")
-                    }
-                    onClick={() => setOnlyFavorites(false)}
-                  >
-                    {t.allMusic}
-                  </button>
-                  <span className="count-dot">·</span>
-                  <span>
-                    {(group ? group.ids.length : total).toLocaleString(
-                      settings?.language,
-                    )}{" "}
-                    {t.songCount}
-                  </span>
-                </div>
-                <div className="toolbar-actions">
-                  {!group &&
-                    (groupLoading ||
-                      (section !== "songs" &&
-                        selectedGroupPage.status === "loading" &&
-                        catalogGroups.length > 0)) && (
-                      <span className="group-loading" role="status">
-                        <LoaderCircle
-                          size={18}
-                          className="spinner"
-                          aria-hidden="true"
-                        />
-                        {t.loading}
-                      </span>
-                    )}
-                  {section === "songs" && !group && (
-                    <>
-                      <IconButton
-                        label={t.favorites}
-                        active={onlyFavorites}
-                        onClick={() => setOnlyFavorites(!onlyFavorites)}
-                      >
-                        <Heart size={18} />
-                      </IconButton>
-                      <label className="sort-select">
-                        <SlidersHorizontal size={18} />
-                        <select
-                          aria-label={t.sort}
-                          value={sort}
-                          onChange={(e) =>
-                            setSort(e.target.value as typeof sort)
-                          }
-                        >
-                          <option value="title">{t.sort}</option>
-                          <option value="artist">{t.sortArtist}</option>
-                          <option value="album">{t.sortAlbum}</option>
-                        </select>
-                      </label>
-                    </>
-                  )}
-                  <IconButton
-                    label={t.import}
-                    disabled={busy}
-                    onClick={() =>
-                      native ? void doImport() : fileInput.current?.click()
-                    }
-                  >
-                    <Plus size={20} />
-                  </IconButton>
-                </div>
-              </div>
-
-              {libraryLoading && total === 0 ? (
-                <div className="catalog-loading" role="status">
-                  <LoaderCircle
-                    size={20}
-                    className="spinner"
-                    aria-hidden="true"
-                  />
-                  {t.loadingLibrary}
-                </div>
-              ) : total === 0 && !query ? (
-                <div className="empty-library">
-                  <div className="empty-art">
-                    <span />
-                    <span />
-                    <span />
-                    <Music2 size={28} />
-                  </div>
-                  <p className="eyebrow">A COLLECTION THAT IS YOURS</p>
-                  <h2>{t.emptyTitle}</h2>
-                  <p>{t.emptyBody}</p>
-                  <div className="empty-actions">
-                    <button
-                      className="button primary"
-                      disabled={busy}
-                      onClick={() =>
-                        native ? void doImport() : fileInput.current?.click()
-                      }
-                    >
-                      <Upload size={18} />
-                      {t.import}
-                    </button>
-                    <button
-                      className="button secondary"
-                      disabled={busy}
-                      onClick={() =>
-                        native
-                          ? void doImport(undefined, "folder")
-                          : folderInput.current?.click()
-                      }
-                    >
-                      <FolderOpen size={18} />
-                      {t.importFolder}
-                    </button>
-                  </div>
-                  <small>{t.emptyHint}</small>
-                  {!native && (
-                    <button
-                      className="text-button sample-link"
-                      disabled={busy}
-                      onClick={() => void samples()}
-                    >
-                      {t.sample}
-                      <ArrowUpRight size={16} />
-                    </button>
-                  )}
-                </div>
-              ) : section === "songs" || group ? (
-                <>
-                  {visible.length ? (
-                    rows(visible, group?.ids ?? visible.map((x) => x.id))
-                  ) : group && groupLoading ? (
-                    <div className="empty-small" role="status">
-                      {t.loading}
-                    </div>
-                  ) : (
-                    <div className="empty-small">
-                      <Search />
-                      <h3>{t.noResults}</h3>
-                      <p>{t.trySearch}</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div
-                  className="album-grid"
-                  aria-busy={selectedGroupPage.status === "loading"}
-                >
-                  {catalogGroups.length ? (
-                    catalogGroups.map((g) => (
+                  {(["songs", "albums", "artists", "playlists"] as const).map(
+                    (x) => (
                       <button
-                        key={JSON.stringify([g.title, g.subtitle])}
-                        className="album-card"
+                        key={x}
+                        role="tab"
+                        aria-selected={section === x}
                         onClick={() => {
-                          ++libraryRequest.current;
-                          void act(() =>
-                            refreshGroup({
-                              kind: section,
-                              title: g.title,
-                              subtitle: g.subtitle,
-                              ids: g.ids,
-                            }),
-                          );
+                          closeGroup();
+                          setSection(x);
+                          setOnlyFavorites(false);
                         }}
                       >
-                        <Cover track={g.track} large />
-                        <strong>{g.title}</strong>
-                        <span>
-                          {g.subtitle || g.ids.length + " " + t.tracks}
-                          {section === "albums" && g.track.releaseYear
-                            ? " · " + g.track.releaseYear
-                            : ""}
-                        </span>
+                        {t[x]}
                       </button>
-                    ))
-                  ) : selectedGroupPage.status === "idle" ||
-                    selectedGroupPage.status === "loading" ? (
-                    <>
-                      <span className="catalog-loading-label" role="status">
-                        {section === "albums"
-                          ? t.loadingAlbums
-                          : t.loadingArtists}
-                      </span>
-                      {Array.from({ length: 8 }, (_, index) => (
-                        <div
-                          className="album-placeholder"
-                          aria-hidden="true"
-                          key={index}
-                        >
-                          <div />
-                          <span />
-                          <span />
-                        </div>
-                      ))}
-                    </>
-                  ) : selectedGroupPage.status === "error" ? (
-                    <button
-                      className="button secondary"
-                      onClick={() =>
-                        void act(() =>
-                          refreshGroups(section as "albums" | "artists"),
-                        )
-                      }
-                    >
-                      {t.retry}
-                    </button>
-                  ) : (
-                    <p className="empty-small">
-                      {section === "albums" ? t.emptyAlbums : t.emptyArtists}
-                    </p>
+                    ),
                   )}
                 </div>
               )}
-              {(group
-                ? groupTracks.length < group.ids.length
-                : section === "songs"
-                  ? tracks.length < total
-                  : catalogGroups.length < groupsTotal) && (
-                <button
-                  className="button secondary load-more"
-                  onClick={() =>
-                    void act(async () => {
-                      if (group) {
-                        const version = groupRequest.current;
-                        const offset = groupTracks.length;
-                        const ts = await api.tracksById(
-                          group.ids.slice(offset, offset + 60),
-                        );
-                        if (version !== groupRequest.current) return;
-                        setGroupTracks((old) =>
-                          old.length === offset ? [...old, ...ts] : old,
-                        );
-                        remember(ts);
-                      } else if (section === "songs") {
-                        await refresh(query, tracks.length);
-                      } else {
-                        await refreshGroups(section, catalogGroups.length);
-                      }
-                    })
-                  }
-                >
-                  {t.loadMore}
-                </button>
-              )}
-            </section>
-          )}
-          {tab === "playlists" && (
-            <section className="playlists-page">
-              <div className="page-heading">
-                <div>
-                  <p className="eyebrow">{t.yourLibrary}</p>
-                  <h1>{selectedList ? selectedList.title : t.playlists}</h1>
-                </div>
-                <button
-                  className="button secondary"
-                  onClick={() => {
-                    setManualTitle("");
-                    setManualIds([]);
-                    setModal("manual");
-                  }}
-                >
-                  <Plus size={18} />
-                  {t.newPlaylist}
-                </button>
-              </div>
-              {selectedList ? (
-                <>
-                  <div className="playlist-detail-head">
+              {section === "playlists" ? (
+                <div className="playlists-page">
+                  <div className="page-heading">
+                    <div>
+                      <h2>{selectedList ? selectedList.title : t.playlists}</h2>
+                    </div>
                     <button
-                      className="text-button"
+                      className="button secondary"
                       onClick={() => {
-                        setSelectedList(null);
-                        setEditingList(false);
+                        setManualTitle("");
+                        setManualIds([]);
+                        setModal("manual");
                       }}
                     >
-                      <ArrowLeft size={18} />
-                      {t.playlists}
-                    </button>
-                    <span>
-                      {playlistTracks.length} {t.tracks} ·{" "}
-                      {Math.round(
-                        playlistTracks.reduce((s, x) => s + x.durationMs, 0) /
-                          60000,
-                      )}{" "}
-                      {t.minutes.toLowerCase()}
-                    </span>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        if (editingList) void saveList(selectedList);
-                        setEditingList(!editingList);
-                      }}
-                    >
-                      {editingList ? t.save : t.edit}
+                      <Plus size={18} />
+                      {t.newPlaylist}
                     </button>
                   </div>
-                  {rows(playlistTracks, selectedList.trackIds, editingList)}
-                  <div className="playlist-footer">
-                    <button
-                      className="button primary"
-                      disabled={!playlistTracks.length}
-                      onClick={() =>
-                        void act(() => api.play(selectedList.trackIds))
-                      }
+                  {selectedList ? (
+                    <>
+                      <div className="playlist-detail-head">
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            setSelectedList(null);
+                            setEditingList(false);
+                          }}
+                        >
+                          <ArrowLeft size={18} />
+                          {t.playlists}
+                        </button>
+                        <span>
+                          {playlistTracks.length} {t.tracks} ·{" "}
+                          {Math.round(
+                            playlistTracks.reduce(
+                              (s, x) => s + x.durationMs,
+                              0,
+                            ) / 60000,
+                          )}{" "}
+                          {t.minutes.toLowerCase()}
+                        </span>
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            if (editingList) void saveList(selectedList);
+                            setEditingList(!editingList);
+                          }}
+                        >
+                          {editingList ? t.save : t.edit}
+                        </button>
+                      </div>
+                      {rows(playlistTracks, selectedList.trackIds, editingList)}
+                      <div className="playlist-footer">
+                        <button
+                          className="button primary"
+                          disabled={!playlistTracks.length}
+                          onClick={() =>
+                            void act(() => api.play(selectedList.trackIds))
+                          }
+                        >
+                          <Play size={18} />
+                          {t.playMix}
+                        </button>
+                        <button
+                          className="text-button danger"
+                          onClick={() =>
+                            void act(async () => {
+                              if (
+                                confirm(
+                                  t.delete + " " + selectedList.title + "?",
+                                )
+                              ) {
+                                await api.deletePlaylist(selectedList.id);
+                                await refreshLists();
+                                setSelectedList(null);
+                              }
+                            })
+                          }
+                        >
+                          {t.delete}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="playlist-collection">
+                        {lists.map((p) => (
+                          <button
+                            key={p.id}
+                            className="playlist-tile"
+                            onClick={() => void openPlaylist(p)}
+                          >
+                            <div className="playlist-tile-art">
+                              <ListMusic size={35} />
+                              <span>
+                                {String(p.trackIds.length).padStart(2, "0")}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="eyebrow">
+                                {p.kind === "generated"
+                                  ? t.generated
+                                  : p.kind === "recap"
+                                    ? t.year
+                                    : t.manual}
+                              </p>
+                              <h3>{p.title}</h3>
+                              <span>
+                                {p.trackIds.length} {t.tracks}
+                              </span>
+                            </div>
+                            <ArrowUpRight size={22} />
+                          </button>
+                        ))}
+                      </div>
+                      <div className="generator">
+                        <div className="generator-title">
+                          <div>
+                            <p className="eyebrow">
+                              01 / {t.generate.toUpperCase()}
+                            </p>
+                            <h2>{t.makePlaylist}</h2>
+                            <p>{t.mixSubtitle}</p>
+                          </div>
+                          <span className="generator-mark">
+                            <Shuffle />
+                          </span>
+                        </div>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            void buildMix();
+                          }}
+                        >
+                          <div className="generator-fields">
+                            <label>
+                              {t.playlistName}
+                              <input
+                                value={request.title}
+                                placeholder={t.makePlaylist}
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    title: e.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label>
+                              {t.target}
+                              <div className="joined-input">
+                                <select
+                                  aria-label={t.target}
+                                  value={targetMode}
+                                  onChange={(e) => {
+                                    const mode = e.target
+                                      .value as typeof targetMode;
+                                    setTargetMode(mode);
+                                    setTarget(mode === "count" ? 25 : 45);
+                                  }}
+                                >
+                                  <option value="count">{t.trackCount}</option>
+                                  <option value="duration">{t.minutes}</option>
+                                </select>
+                                <input
+                                  aria-label={
+                                    targetMode === "count" ? t.count : t.minutes
+                                  }
+                                  type="number"
+                                  min="1"
+                                  max={targetMode === "count" ? 100 : 600}
+                                  value={target}
+                                  onChange={(e) =>
+                                    setTarget(Number(e.target.value))
+                                  }
+                                  required
+                                />
+                              </div>
+                            </label>
+                            <label>
+                              {t.genre}
+                              <input
+                                list="genres"
+                                value={request.genre}
+                                placeholder={t.anyGenre}
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    genre: e.target.value,
+                                  })
+                                }
+                              />
+                              <datalist id="genres">
+                                {[
+                                  ...new Set(
+                                    Object.values(cache)
+                                      .map((x) => x.genre)
+                                      .filter(Boolean),
+                                  ),
+                                ].map((g) => (
+                                  <option key={g} value={g} />
+                                ))}
+                              </datalist>
+                            </label>
+                            <label>
+                              {t.includeArtist}
+                              <input
+                                list="artists"
+                                value={request.includeArtist}
+                                placeholder={t.anyArtist}
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    includeArtist: e.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label>
+                              {t.excludeArtist}
+                              <input
+                                list="artists"
+                                value={request.excludeArtist}
+                                placeholder="—"
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    excludeArtist: e.target.value,
+                                  })
+                                }
+                              />
+                              <datalist id="artists">
+                                {[
+                                  ...new Set(
+                                    Object.values(cache)
+                                      .map((x) => x.artist)
+                                      .filter(Boolean),
+                                  ),
+                                ].map((g) => (
+                                  <option key={g} value={g} />
+                                ))}
+                              </datalist>
+                            </label>
+                          </div>
+                          <div className="generator-options">
+                            <label className="check-label">
+                              <input
+                                type="checkbox"
+                                checked={request.preferFavorites}
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    preferFavorites: e.target.checked,
+                                  })
+                                }
+                              />
+                              {t.preferFavorites}
+                            </label>
+                            <label className="check-label">
+                              <input
+                                type="checkbox"
+                                checked={request.avoidHeardToday}
+                                onChange={(e) =>
+                                  setRequest({
+                                    ...request,
+                                    avoidHeardToday: e.target.checked,
+                                  })
+                                }
+                              />
+                              {t.avoidToday}
+                            </label>
+                            <span className="small-muted">
+                              <Check size={15} />
+                              {t.noRepeats}
+                            </span>
+                          </div>
+                          <div className="generator-bottom">
+                            <span className="small-muted">
+                              <Shield size={16} />
+                              {t.filters}
+                            </span>
+                            <button
+                              className="button primary"
+                              disabled={busy || !total}
+                              type="submit"
+                            >
+                              {t.generate}
+                              <ArrowRight size={18} />
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                      {generated && (
+                        <div className="generated-result">
+                          <div className="result-heading">
+                            <div>
+                              <h2>{generated.title}</h2>
+                              <span>
+                                {playlistTracks.length} {t.tracks} ·{" "}
+                                {Math.round(
+                                  playlistTracks.reduce(
+                                    (s, x) => s + x.durationMs,
+                                    0,
+                                  ) / 60000,
+                                )}{" "}
+                                {t.minutes.toLowerCase()}
+                              </span>
+                            </div>
+                            <button
+                              className="text-button"
+                              onClick={() => void saveList(generated)}
+                            >
+                              <Plus size={17} />
+                              {t.save}
+                            </button>
+                          </div>
+                          {rows(playlistTracks, generated.trackIds)}
+                          <button
+                            className="button primary full-width"
+                            onClick={() =>
+                              void act(() => api.play(generated.trackIds))
+                            }
+                          >
+                            <Play size={18} />
+                            {t.playMix}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="library-toolbar">
+                    <div>
+                      <button
+                        className={
+                          "filter-button" + (!onlyFavorites ? " chosen" : "")
+                        }
+                        onClick={() => setOnlyFavorites(false)}
+                      >
+                        {t.allMusic}
+                      </button>
+                      <span className="count-dot">·</span>
+                      <span>
+                        {(group ? group.ids.length : total).toLocaleString(
+                          settings?.language,
+                        )}{" "}
+                        {t.songCount}
+                      </span>
+                    </div>
+                    <div className="toolbar-actions">
+                      {!group &&
+                        (groupLoading ||
+                          (section !== "songs" &&
+                            selectedGroupPage.status === "loading" &&
+                            catalogGroups.length > 0)) && (
+                          <span className="group-loading" role="status">
+                            <LoaderCircle
+                              size={18}
+                              className="spinner"
+                              aria-hidden="true"
+                            />
+                            {t.loading}
+                          </span>
+                        )}
+                      {section === "songs" && !group && (
+                        <>
+                          <IconButton
+                            label={t.favorites}
+                            active={onlyFavorites}
+                            onClick={() => setOnlyFavorites(!onlyFavorites)}
+                          >
+                            <Heart size={18} />
+                          </IconButton>
+                          <label className="sort-select">
+                            <SlidersHorizontal size={18} />
+                            <select
+                              aria-label={t.sort}
+                              value={sort}
+                              onChange={(e) =>
+                                setSort(e.target.value as typeof sort)
+                              }
+                            >
+                              <option value="title">{t.sort}</option>
+                              <option value="artist">{t.sortArtist}</option>
+                              <option value="album">{t.sortAlbum}</option>
+                            </select>
+                          </label>
+                        </>
+                      )}
+                      <IconButton
+                        label={t.import}
+                        disabled={busy}
+                        onClick={() =>
+                          native ? void doImport() : fileInput.current?.click()
+                        }
+                      >
+                        <Plus size={20} />
+                      </IconButton>
+                    </div>
+                  </div>
+
+                  {libraryLoading && total === 0 ? (
+                    <div className="catalog-loading" role="status">
+                      <LoaderCircle
+                        size={20}
+                        className="spinner"
+                        aria-hidden="true"
+                      />
+                      {t.loadingLibrary}
+                    </div>
+                  ) : total === 0 && !query ? (
+                    <div className="empty-library">
+                      <div className="empty-art">
+                        <span />
+                        <span />
+                        <span />
+                        <Music2 size={28} />
+                      </div>
+                      <p className="eyebrow">A COLLECTION THAT IS YOURS</p>
+                      <h2>{t.emptyTitle}</h2>
+                      <p>{t.emptyBody}</p>
+                      <div className="empty-actions">
+                        <button
+                          className="button primary"
+                          disabled={busy}
+                          onClick={() =>
+                            native
+                              ? void doImport()
+                              : fileInput.current?.click()
+                          }
+                        >
+                          <Upload size={18} />
+                          {t.import}
+                        </button>
+                        <button
+                          className="button secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            native
+                              ? void doImport(undefined, "folder")
+                              : folderInput.current?.click()
+                          }
+                        >
+                          <FolderOpen size={18} />
+                          {t.importFolder}
+                        </button>
+                      </div>
+                      <small>{t.emptyHint}</small>
+                      {!native && (
+                        <button
+                          className="text-button sample-link"
+                          disabled={busy}
+                          onClick={() => void samples()}
+                        >
+                          {t.sample}
+                          <ArrowUpRight size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ) : section === "songs" || group ? (
+                    <>
+                      {visible.length ? (
+                        rows(visible, group?.ids ?? visible.map((x) => x.id))
+                      ) : group && groupLoading ? (
+                        <div className="empty-small" role="status">
+                          {t.loading}
+                        </div>
+                      ) : (
+                        <div className="empty-small">
+                          <Search />
+                          <h3>{t.noResults}</h3>
+                          <p>{t.trySearch}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div
+                      className="album-grid"
+                      aria-busy={selectedGroupPage.status === "loading"}
                     >
-                      <Play size={18} />
-                      {t.playMix}
-                    </button>
+                      {catalogGroups.length ? (
+                        catalogGroups.map((g) => (
+                          <button
+                            key={JSON.stringify([g.title, g.subtitle])}
+                            className="album-card"
+                            onClick={() => {
+                              ++libraryRequest.current;
+                              void act(() =>
+                                refreshGroup({
+                                  kind: section,
+                                  title: g.title,
+                                  subtitle: g.subtitle,
+                                  ids: g.ids,
+                                }),
+                              );
+                            }}
+                          >
+                            <Cover track={g.track} large />
+                            <strong>{g.title}</strong>
+                            <span>
+                              {g.subtitle || g.ids.length + " " + t.tracks}
+                              {section === "albums" && g.track.releaseYear
+                                ? " · " + g.track.releaseYear
+                                : ""}
+                            </span>
+                          </button>
+                        ))
+                      ) : selectedGroupPage.status === "idle" ||
+                        selectedGroupPage.status === "loading" ? (
+                        <>
+                          <span className="catalog-loading-label" role="status">
+                            {section === "albums"
+                              ? t.loadingAlbums
+                              : t.loadingArtists}
+                          </span>
+                          {Array.from({ length: 8 }, (_, index) => (
+                            <div
+                              className="album-placeholder"
+                              aria-hidden="true"
+                              key={index}
+                            >
+                              <div />
+                              <span />
+                              <span />
+                            </div>
+                          ))}
+                        </>
+                      ) : selectedGroupPage.status === "error" ? (
+                        <button
+                          className="button secondary"
+                          onClick={() =>
+                            void act(() =>
+                              refreshGroups(section as "albums" | "artists"),
+                            )
+                          }
+                        >
+                          {t.retry}
+                        </button>
+                      ) : (
+                        <p className="empty-small">
+                          {section === "albums"
+                            ? t.emptyAlbums
+                            : t.emptyArtists}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {(group
+                    ? groupTracks.length < group.ids.length
+                    : section === "songs"
+                      ? tracks.length < total
+                      : catalogGroups.length < groupsTotal) && (
                     <button
-                      className="text-button danger"
+                      className="button secondary load-more"
                       onClick={() =>
                         void act(async () => {
-                          if (
-                            confirm(t.delete + " " + selectedList.title + "?")
-                          ) {
-                            await api.deletePlaylist(selectedList.id);
-                            await refreshLists();
-                            setSelectedList(null);
+                          if (group) {
+                            const version = groupRequest.current;
+                            const offset = groupTracks.length;
+                            const ts = await api.tracksById(
+                              group.ids.slice(offset, offset + 60),
+                            );
+                            if (version !== groupRequest.current) return;
+                            setGroupTracks((old) =>
+                              old.length === offset ? [...old, ...ts] : old,
+                            );
+                            remember(ts);
+                          } else if (section === "songs") {
+                            await refresh(query, tracks.length);
+                          } else {
+                            await refreshGroups(section, catalogGroups.length);
                           }
                         })
                       }
                     >
-                      {t.delete}
+                      {t.loadMore}
                     </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="playlist-collection">
-                    {lists.map((p) => (
-                      <button
-                        key={p.id}
-                        className="playlist-tile"
-                        onClick={() => void openPlaylist(p)}
-                      >
-                        <div className="playlist-tile-art">
-                          <ListMusic size={35} />
-                          <span>
-                            {String(p.trackIds.length).padStart(2, "0")}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="eyebrow">
-                            {p.kind === "generated"
-                              ? t.generated
-                              : p.kind === "recap"
-                                ? t.year
-                                : t.manual}
-                          </p>
-                          <h3>{p.title}</h3>
-                          <span>
-                            {p.trackIds.length} {t.tracks}
-                          </span>
-                        </div>
-                        <ArrowUpRight size={22} />
-                      </button>
-                    ))}
-                  </div>
-                  <div className="generator">
-                    <div className="generator-title">
-                      <div>
-                        <p className="eyebrow">
-                          01 / {t.generate.toUpperCase()}
-                        </p>
-                        <h2>{t.makePlaylist}</h2>
-                        <p>{t.mixSubtitle}</p>
-                      </div>
-                      <span className="generator-mark">
-                        <Shuffle />
-                      </span>
-                    </div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        void buildMix();
-                      }}
-                    >
-                      <div className="generator-fields">
-                        <label>
-                          {t.playlistName}
-                          <input
-                            value={request.title}
-                            placeholder={t.makePlaylist}
-                            onChange={(e) =>
-                              setRequest({ ...request, title: e.target.value })
-                            }
-                          />
-                        </label>
-                        <label>
-                          {t.target}
-                          <div className="joined-input">
-                            <select
-                              aria-label={t.target}
-                              value={targetMode}
-                              onChange={(e) => {
-                                const mode = e.target
-                                  .value as typeof targetMode;
-                                setTargetMode(mode);
-                                setTarget(mode === "count" ? 25 : 45);
-                              }}
-                            >
-                              <option value="count">{t.trackCount}</option>
-                              <option value="duration">{t.minutes}</option>
-                            </select>
-                            <input
-                              aria-label={
-                                targetMode === "count" ? t.count : t.minutes
-                              }
-                              type="number"
-                              min="1"
-                              max={targetMode === "count" ? 100 : 600}
-                              value={target}
-                              onChange={(e) =>
-                                setTarget(Number(e.target.value))
-                              }
-                              required
-                            />
-                          </div>
-                        </label>
-                        <label>
-                          {t.genre}
-                          <input
-                            list="genres"
-                            value={request.genre}
-                            placeholder={t.anyGenre}
-                            onChange={(e) =>
-                              setRequest({ ...request, genre: e.target.value })
-                            }
-                          />
-                          <datalist id="genres">
-                            {[
-                              ...new Set(
-                                Object.values(cache)
-                                  .map((x) => x.genre)
-                                  .filter(Boolean),
-                              ),
-                            ].map((g) => (
-                              <option key={g} value={g} />
-                            ))}
-                          </datalist>
-                        </label>
-                        <label>
-                          {t.includeArtist}
-                          <input
-                            list="artists"
-                            value={request.includeArtist}
-                            placeholder={t.anyArtist}
-                            onChange={(e) =>
-                              setRequest({
-                                ...request,
-                                includeArtist: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                        <label>
-                          {t.excludeArtist}
-                          <input
-                            list="artists"
-                            value={request.excludeArtist}
-                            placeholder="—"
-                            onChange={(e) =>
-                              setRequest({
-                                ...request,
-                                excludeArtist: e.target.value,
-                              })
-                            }
-                          />
-                          <datalist id="artists">
-                            {[
-                              ...new Set(
-                                Object.values(cache)
-                                  .map((x) => x.artist)
-                                  .filter(Boolean),
-                              ),
-                            ].map((g) => (
-                              <option key={g} value={g} />
-                            ))}
-                          </datalist>
-                        </label>
-                      </div>
-                      <div className="generator-options">
-                        <label className="check-label">
-                          <input
-                            type="checkbox"
-                            checked={request.preferFavorites}
-                            onChange={(e) =>
-                              setRequest({
-                                ...request,
-                                preferFavorites: e.target.checked,
-                              })
-                            }
-                          />
-                          {t.preferFavorites}
-                        </label>
-                        <label className="check-label">
-                          <input
-                            type="checkbox"
-                            checked={request.avoidHeardToday}
-                            onChange={(e) =>
-                              setRequest({
-                                ...request,
-                                avoidHeardToday: e.target.checked,
-                              })
-                            }
-                          />
-                          {t.avoidToday}
-                        </label>
-                        <span className="small-muted">
-                          <Check size={15} />
-                          {t.noRepeats}
-                        </span>
-                      </div>
-                      <div className="generator-bottom">
-                        <span className="small-muted">
-                          <Shield size={16} />
-                          {t.filters}
-                        </span>
-                        <button
-                          className="button primary"
-                          disabled={busy || !total}
-                          type="submit"
-                        >
-                          {t.generate}
-                          <ArrowRight size={18} />
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                  {generated && (
-                    <div className="generated-result">
-                      <div className="result-heading">
-                        <div>
-                          <h2>{generated.title}</h2>
-                          <span>
-                            {playlistTracks.length} {t.tracks} ·{" "}
-                            {Math.round(
-                              playlistTracks.reduce(
-                                (s, x) => s + x.durationMs,
-                                0,
-                              ) / 60000,
-                            )}{" "}
-                            {t.minutes.toLowerCase()}
-                          </span>
-                        </div>
-                        <button
-                          className="text-button"
-                          onClick={() => void saveList(generated)}
-                        >
-                          <Plus size={17} />
-                          {t.save}
-                        </button>
-                      </div>
-                      {rows(playlistTracks, generated.trackIds)}
-                      <button
-                        className="button primary full-width"
-                        onClick={() =>
-                          void act(() => api.play(generated.trackIds))
-                        }
-                      >
-                        <Play size={18} />
-                        {t.playMix}
-                      </button>
-                    </div>
                   )}
                 </>
               )}

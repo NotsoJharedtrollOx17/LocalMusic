@@ -32,3 +32,7 @@ The original .AGENTS guide and its four images remain design inputs. Natural-lan
 ## Recap export revision — 9 October 2026
 
 The user requested an image-focused functional recap and removal of JSON export buttons. The current export target supersedes the original JSON/1080×1920 UI requirement: provide a matching preview and PNG download at 2160×3840 for Story or 2160×2700 for Feed, using the supplied editorial/orbit design language. Retain honest coverage, privacy revision checks, immutable snapshots and playable recap queues. Native save cancellation must not report a successful export.
+
+## Playlist navigation revision — 9 October 2026
+
+Move Playlists into the Library tab row alongside Songs, Albums and Artists, as requested for a Samsung Music-style flow. Library and Your Year remain the main navigation entries. Keep playlist creation, explicit-filter generation, editing, manual selection and playback in the Library’s Playlists subtab.

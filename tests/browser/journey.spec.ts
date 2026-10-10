@@ -114,10 +114,18 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     path: "artifacts/library-mobile.png",
     fullPage: true,
   });
-  await page
-    .locator(".bottom-nav")
-    .getByRole("button", { name: "Playlists" })
-    .click();
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Library", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("tab", { name: "Playlists", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".bottom-nav").getByRole("button")).toHaveCount(2);
+  await page.screenshot({
+    path: "artifacts/playlists-tab-mobile.png",
+    fullPage: true,
+  });
   await page.getByLabel("Playlist name", { exact: true }).fill("Night mix");
   await page.getByLabel("Exclude artist", { exact: true }).fill("Field Notes");
   await page
@@ -268,10 +276,7 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
   await expect(
     page.getByRole("button", { name: "Play Fixture 120", exact: true }),
   ).toBeVisible();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Playlists", exact: true })
-    .click();
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page.getByRole("button", { name: "New playlist", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog

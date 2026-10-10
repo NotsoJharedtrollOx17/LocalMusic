@@ -164,7 +164,7 @@ input[type="range"] {
   color: #fff;
 }
 .button.primary:hover:not(:disabled) {
-  background: #df4e08;
+  background: #e65109;
 }
 .button.secondary {
   border: 1px solid var(--rule);
@@ -347,11 +347,14 @@ input[type="range"] {
   align-items: center;
 }
 .section-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
   display: flex;
   gap: 40px;
   border-bottom: 1px solid var(--rule);
 }
 .section-tabs button {
+  flex-shrink: 0;
   font-family: "Space Grotesk", Inter, sans-serif;
   font-size: 23px;
   color: var(--muted);
@@ -1635,10 +1638,10 @@ input[type="range"] {
     min-width: 38px;
   }
   .section-tabs {
-    gap: 31px;
+    gap: 14px;
   }
   .section-tabs button {
-    font-size: 23px;
+    font-size: 19px;
     padding-bottom: 16px;
   }
   .library-toolbar {
@@ -2286,4 +2289,12 @@ input[type="range"] {
 }
 .album-placeholder > span:last-child {
   width: 55%;
+}
+
+.library-page > .playlists-page {
+  padding-top: 26px;
+}
+.playlists-page > .page-heading h2 {
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: 28px;
 }

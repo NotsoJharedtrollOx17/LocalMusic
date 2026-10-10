@@ -139,3 +139,15 @@ Verification: production frontend build and nine frontend tests passed; all nine
 The portable Windows executable rebuilt and its startup smoke check passed: the startup gate revealed a responsive process with a nonzero main-window handle and no premature exit. This checks that hiding the initial window does not leave it inaccessible; pixel-level native startup acceptance is still separate.
 
 Android compilation initially caught a misplaced mobile entry-point annotation introduced with the window command; it was moved back to run, and desktop-only context mutation was scoped away from Android. The ARM64 debug APK then rebuilt through the existing Windows file-copy packaging fallback, and apksigner verified its v2 signature. Windows was rebuilt again after that correction. ADB reported no connected emulator or device, so no Android runtime acceptance is claimed; x86_64 was not refreshed.
+
+## Playlists inside Library — 9 October 2026
+
+Merged the accepted loading/startup branch into dev at da0a505 and created dev.move-plalist-into-music. Playlists now sits beside Songs, Albums and Artists in the Library tab row; the separate sidebar/bottom-navigation entry is removed. Main navigation is Library and Your Year. Playlist creation, explicit-filter generation, manual selection, editing and playback retain their existing state and commands. Album/Artist requests only run for their own tabs. The tab row fits normal mobile widths and can scroll within its own row at narrower widths instead of overflowing the page.
+
+Browser journeys now enter Playlists through its Library tab on desktop/mobile. The mobile journey checks Library remains the main heading, Playlists is selected and bottom navigation has two entries; existing generation/editing and manual-picker checks still run. The mobile accessibility scan includes the new Playlists subtab. Final results follow below.
+
+Production frontend build and nine frontend unit tests passed. Nine browser journeys passed in the full run, including mobile playlist generation/editing, desktop manual selection, mobile accessibility, album order and dark startup/tab loading. The recap accessibility scan then caught the existing primary-button hover color at 4.46:1 against its text. The hover shade was adjusted within the orange palette to 4.73:1; the complete recap journey passed on its targeted rerun. The mobile Playlists-tab screenshot was inspected. No Rust domain logic changed. Native builds follow below.
+
+The portable Windows debug executable rebuilt successfully with the final navigation and contrast changes.
+
+The ARM64 Android debug APK also rebuilt successfully through the existing Windows file-copy packaging fallback, and apksigner verified its v2 signature. ADB reported no connected emulator/device, so Android runtime acceptance remains pending; x86_64 was not refreshed.
