@@ -1,5 +1,4 @@
 import "./sound.css";
-import { formatGain } from "./formatGain";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import { useSoundController } from "./useSoundController";
@@ -155,12 +154,6 @@ export default function SoundControls({
             </div>
             <p className="sound-save-state" role="status">
               {pending ? t.saving : error ? "" : t.saved}
-              {!pending && state.status === "active" && !state.bypass && (
-                <>
-                  {" "}
-                  · {t.applied}: {formatGain(-state.attenuation)}
-                </>
-              )}
             </p>
           </section>
           <PersonalProfiles

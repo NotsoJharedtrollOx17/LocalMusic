@@ -75,7 +75,7 @@ mod tests {
         assert!(state.supported);
         assert_eq!(state.status, "output-unavailable");
         assert_eq!(state.config.gains[5], 6.);
-        assert!((state.attenuation - 7.).abs() < 0.01);
+        assert_eq!(state.attenuation, 0.);
         assert!(
             (engine.prepared.lock().unwrap().gain - 10f64.powf(-state.attenuation / 20.)).abs()
                 < 1e-9
@@ -85,7 +85,7 @@ mod tests {
 impl Engine {
     pub fn new(config: Config) -> Self {
         let b = dsp::bank(config.curves(false, 2), 48000.);
-        let attenuation = dsp::headroom(&b, 48000.);
+        let attenuation = 0.;
         let p = Prepared {
             bank: b,
             gain: 10f64.powf(
@@ -126,7 +126,7 @@ impl Engine {
         let c = self.config.lock().unwrap().clone();
         let bypass = self.bypass.load(Ordering::Relaxed);
         let b = dsp::bank(c.curves(bypass, channels), rate as f64);
-        let attenuation = dsp::headroom(&b, rate as f64);
+        let attenuation = 0.;
         let mut p = self.prepared.lock().unwrap();
         let generation = p.generation + 1;
         *p = Prepared {

@@ -1,5 +1,5 @@
 import processorUrl from "./processor.worklet.ts?worker&url";
-import { bank, headroom } from "./dsp";
+import { bank } from "./dsp";
 import { defaultSound, effectiveCurves, validateSound } from "./model";
 import { PersonalProtocol } from "./personal";
 import { renderComparison } from "./comparison";
@@ -156,7 +156,7 @@ export class BrowserSound {
       effectiveCurves(this.config, this.bypass, this.channels),
       this.context.sampleRate,
     );
-    this.attenuation = headroom(cs, this.context.sampleRate);
+    this.attenuation = 0;
     this.worklet.port.postMessage({
       bank: cs,
       gain:

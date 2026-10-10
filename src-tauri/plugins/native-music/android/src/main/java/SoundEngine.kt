@@ -82,7 +82,7 @@ class SoundEngine(private val context: Context) {
 
     private fun prepare(c: SoundConfiguration): PreparedSound {
         val bank = SoundMath.bank(c.curves(bypass, channels), rate.toDouble())
-        val attenuation = SoundMath.headroom(bank, rate.toDouble())
+        val attenuation = 0.0
         return PreparedSound(
             bank,
             10.0.pow(

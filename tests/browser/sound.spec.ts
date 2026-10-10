@@ -110,6 +110,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
         super(context, name, options);
         const analyser = context.createAnalyser();
         analyser.fftSize = 8192;
+        analyser.smoothingTimeConstant = 0;
         this.connect(analyser);
         (window as any).__soundAnalyser = analyser;
         (window as any).__soundRate = context.sampleRate;
@@ -119,6 +120,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
         (window as any).__ears = [0, 1].map((ch) => {
           const a = context.createAnalyser();
           a.fftSize = 8192;
+          a.smoothingTimeConstant = 0;
           splitter.connect(a, ch);
           return a;
         });
@@ -175,7 +177,25 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect.poll(measure).not.toBeNull();
   await expect
     .poll(async () => Math.abs((await measure()) ?? 100))
-    .toBeLessThan(3);
+    .toBeLessThan(0.5);
+  const bandLevel = (frequency: number, ear?: number) =>
+    page.evaluate(
+      ({ frequency, ear }) => {
+        const a = (
+          ear === undefined
+            ? (window as any).__soundAnalyser
+            : (window as any).__ears?.[ear]
+        ) as AnalyserNode;
+        if (!a) return -100;
+        const d = new Float32Array(a.frequencyBinCount);
+        a.getFloatFrequencyData(d);
+        return d[
+          Math.round((frequency * a.fftSize) / (window as any).__soundRate)
+        ];
+      },
+      { frequency, ear },
+    );
+  const unaffectedLevel = await bandLevel(250);
   const before = (await measure())!;
   const sound = await openSound(page);
   await sound.getByRole("checkbox", { name: "Enable equalizer" }).check();
@@ -185,6 +205,10 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect
     .poll(async () => ((await measure()) ?? 0) - before)
     .toBeGreaterThan(8);
+  await expect
+    .poll(async () => (await bandLevel(250)) - unaffectedLevel)
+    .toBeGreaterThan(-0.5);
+  await expect(sound).not.toContainText("Automatic EQ headroom");
   await expect(sound).toContainText("Processing active");
   await sound.getByRole("button", { name: "Bypass all", exact: true }).click();
   await expect
@@ -221,7 +245,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
     },
     {
       ...defaultSound(),
-      enabled: true,
+      enabled: false,
       presetId: "rock",
       gains: [3, 2, 1, -1, -2, -1, 1, 2, 3, 2],
       profileId: "fixture",
@@ -305,6 +329,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
   await page.screenshot({ path: "artifacts/personal-stereo-mobile.png" });
+  const personalRightLevel = await bandLevel(1000, 1);
   await personalSound
     .getByRole("button", { name: "Disable profile", exact: true })
     .click();
@@ -314,6 +339,10 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect
     .poll(async () => Math.abs((await balance(0)) - (await balance(1))))
     .toBeLessThan(1);
+  await expect
+    .poll(async () => Math.abs((await bandLevel(1000, 1)) - personalRightLevel))
+    .toBeLessThan(1);
+  await expect.poll(async () => (await preferences(page))?.preamp).toBe(0);
 });
 test("personal setup saves an active default, persists on restart, cancels on blur and creates no listening history", async ({
   page,
