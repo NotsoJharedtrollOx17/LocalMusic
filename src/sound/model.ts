@@ -97,7 +97,7 @@ export function effectiveCurves(
   return [p?.left, p?.right].map((personal) =>
     FREQUENCIES.map(
       (_, i) =>
-        (!bypass && c.enabled ? c.gains[i] : 0) +
+        (!bypass && c.enabled && !p ? c.gains[i] : 0) +
         ((personal?.[i] ?? 0) * c.strength) / 100,
     ),
   );

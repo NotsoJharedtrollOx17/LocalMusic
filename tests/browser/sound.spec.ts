@@ -114,6 +114,14 @@ test("library playback runs through the real AudioWorklet and band edits change 
         (window as any).__soundAnalyser = analyser;
         (window as any).__soundRate = context.sampleRate;
         (window as any).__soundWorklet = this;
+        const splitter = context.createChannelSplitter(2);
+        this.connect(splitter);
+        (window as any).__ears = [0, 1].map((ch) => {
+          const a = context.createAnalyser();
+          a.fftSize = 8192;
+          splitter.connect(a, ch);
+          return a;
+        });
       }
     }
     (window as any).AudioWorkletNode = Captured;
@@ -195,6 +203,97 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect
     .poll(async () => Math.abs(((await measure()) ?? 100) - before))
     .toBeLessThan(2);
+  await page.evaluate(
+    async (config) => {
+      await new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("local-music-v1", 1);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction("settings", "readwrite");
+          tx.objectStore("settings").put(config, "sound-v1");
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+      });
+    },
+    {
+      ...defaultSound(),
+      enabled: true,
+      presetId: "rock",
+      gains: [3, 2, 1, -1, -2, -1, 1, 2, 3, 2],
+      profileId: "fixture",
+      strength: 100,
+      profiles: [
+        {
+          id: "fixture",
+          name: "Measured fixture",
+          left: [0, 0, 0, 6, 0, 0, 0, 0, 0, 0],
+          right: Array(10).fill(0),
+          complete: Array(12).fill(true),
+        },
+      ],
+    },
+  );
+  await page.reload();
+  await page
+    .locator(".track-row")
+    .getByRole("button", { name: /Play/ })
+    .first()
+    .click();
+  const personalSound = await openSound(page);
+  await personalSound
+    .getByRole("checkbox", { name: /I am using headphones/ })
+    .check();
+  await personalSound
+    .getByRole("button", { name: "Use profile", exact: true })
+    .click();
+  await expect(
+    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+  ).toHaveValue("6");
+  await expect(
+    personalSound.getByRole("button", { name: "Rock", exact: true }),
+  ).toBeDisabled();
+  const balance = (ear: number) =>
+    page.evaluate((ear) => {
+      const a = (window as any).__ears?.[ear] as AnalyserNode;
+      if (!a) return -100;
+      const d = new Float32Array(a.frequencyBinCount);
+      a.getFloatFrequencyData(d);
+      const bin = (f: number) =>
+        Math.round((f * a.fftSize) / (window as any).__soundRate);
+      return d[bin(250)] - d[bin(1000)];
+    }, ear);
+  await expect
+    .poll(async () => (await balance(0)) - (await balance(1)))
+    .toBeGreaterThan(5);
+  const strength = personalSound.getByRole("slider", {
+    name: "Strength",
+    exact: true,
+  });
+  await strength.focus();
+  await page.keyboard.press("Home");
+  for (let i = 0; i < 33; i++) await page.keyboard.press("ArrowRight");
+  await expect(
+    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+  ).toHaveValue("1.98");
+  await personalSound
+    .getByRole("button", { name: "Right ear", exact: true })
+    .click();
+  await expect(
+    personalSound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+  ).toHaveValue("0");
+  await personalSound
+    .getByRole("button", { name: "Disable profile", exact: true })
+    .click();
+  await expect(
+    personalSound.getByRole("button", { name: "Rock", exact: true }),
+  ).toBeEnabled();
+  await expect
+    .poll(async () => Math.abs((await balance(0)) - (await balance(1))))
+    .toBeLessThan(1);
 });
 test("personal setup completes, requires explicit activation, cancels on blur and creates no listening history", async ({
   page,
@@ -483,11 +582,30 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
     sound.getByRole("button", { name: "Play tone", exact: true }),
   ).toBeEnabled();
   await sound.getByRole("button", { name: "Play tone", exact: true }).click();
+  for (let i = 0; i < 2; i++) {
+    await expect(missed).toBeEnabled();
+    await missed.click();
+  }
+  await expect(
+    sound.getByRole("button", { name: "Heard it", exact: true }),
+  ).toBeEnabled();
+  await sound.getByRole("button", { name: "Heard it", exact: true }).click();
+  await expect(
+    sound.getByRole("slider", { name: "250 Hz gain", exact: true }),
+  ).toHaveValue("6");
+  await expect(sound).toContainText("Provisional curve");
+  await expect(
+    sound.getByRole("button", { name: "Play tone", exact: true }),
+  ).toBeEnabled();
+  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
   for (let i = 0; i < 4; i++) {
     await expect(missed).toBeEnabled();
     await missed.click();
   }
-  await expect(sound).toContainText("500 Hz");
+  await expect(sound).toContainText("2 kHz");
+  await expect(
+    sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
+  ).toHaveValue("0");
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(sound).toContainText("No partial profile was saved");
   await sound

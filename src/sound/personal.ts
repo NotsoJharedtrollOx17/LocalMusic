@@ -34,6 +34,8 @@ export class PersonalProtocol {
     busyUntil: 0,
     message: "",
     strength: 50,
+    left: Array(10).fill(0),
+    right: Array(10).fill(0),
   };
   private values: (number | null)[][] = [
     Array(6).fill(null),
@@ -69,10 +71,10 @@ export class PersonalProtocol {
     this.heartbeat();
     if (this.state.phase !== "test" || performance.now() < this.nextPulse)
       throw new Error("Wait before playing another tone");
-    this.end = performance.now() + 800;
+    this.end = performance.now() + 3400;
     this.nextPulse = this.end + 500;
     this.state.awaiting = true;
-    this.state.busyUntil = Date.now() + 800;
+    this.state.busyUntil = Date.now() + 3400;
     return tone(this.state.frequency, this.state.level, this.state.ear);
   }
   respond(heard: boolean) {
@@ -104,6 +106,8 @@ export class PersonalProtocol {
       s.message = "reference-inconsistent";
       return;
     }
+    s.left = deriveCurve(this.values[0]);
+    s.right = deriveCurve(this.values[1]);
     if (s.step === 6) {
       if (s.ear === 1) {
         s.phase = "compare";
@@ -118,6 +122,8 @@ export class PersonalProtocol {
   retry() {
     this.heartbeat();
     this.values[this.state.ear] = Array(6).fill(null);
+    this.state.left = deriveCurve(this.values[0]);
+    this.state.right = deriveCurve(this.values[1]);
     Object.assign(this.state, {
       phase: "test",
       step: 0,
@@ -143,9 +149,13 @@ export class PersonalProtocol {
     this.state.phase = "cancelled";
     this.state.awaiting = false;
     this.values = [[], []];
+    this.state.left = Array(10).fill(0);
+    this.state.right = Array(10).fill(0);
   }
   discard() {
     this.values = [[], []];
+    this.state.left = Array(10).fill(0);
+    this.state.right = Array(10).fill(0);
   }
 }
 export function tone(
@@ -161,13 +171,19 @@ export function tone(
     rate <= frequency * 2
   )
     throw new Error("Invalid test tone");
-  const frames = Math.round(rate * 0.8),
+  const frames = Math.round(rate * 3.4),
     out = new Float32Array(frames * 2),
     amplitude = 10 ** (level / 20);
   for (let i = 0; i < frames; i++) {
-    const fade = Math.min(1, i / (rate * 0.1), (frames - 1 - i) / (rate * 0.1));
+    const local = i % Math.round(rate * 1.3);
+    if (local >= Math.round(rate * 0.8)) continue;
+    const fade = Math.min(
+      1,
+      local / (rate * 0.1),
+      (Math.round(rate * 0.8) - 1 - local) / (rate * 0.1),
+    );
     out[i * 2 + ear] =
-      Math.sin((2 * Math.PI * frequency * i) / rate) *
+      Math.sin((2 * Math.PI * frequency * local) / rate) *
       amplitude *
       Math.max(0, fade);
   }

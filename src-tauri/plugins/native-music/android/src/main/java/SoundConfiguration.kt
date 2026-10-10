@@ -58,7 +58,7 @@ class SoundConfiguration(val json: JSONObject) {
         return Array(2) { ch ->
             val personal = profile?.getJSONArray(if (ch == 0) "left" else "right")
             DoubleArray(10) { i ->
-                (if (enabled && !bypass) gains[i] else 0.0) +
+                (if (enabled && !bypass && profile == null) gains[i] else 0.0) +
                     (personal?.getDouble(i) ?: 0.0) * strength / 100.0
             }
         }

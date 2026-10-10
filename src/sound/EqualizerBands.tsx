@@ -6,12 +6,16 @@ export default function EqualizerBands({
   flush,
   inactive,
   language,
+  readOnly = false,
+  showPreamp = true,
 }: {
   config: SoundConfig;
   edit: (update: (c: SoundConfig) => SoundConfig) => void;
   flush: () => void;
   inactive: number[];
   language: string;
+  readOnly?: boolean;
+  showPreamp?: boolean;
 }) {
   const t = soundCopy(language);
   return (
@@ -27,10 +31,10 @@ export default function EqualizerBands({
               type="range"
               aria-label={`${f} Hz ${t.gain}`}
               aria-valuetext={`${config.gains[i]} dB`}
-              disabled={inactive.includes(i)}
+              disabled={inactive.includes(i) || readOnly}
               min={-12}
               max={12}
-              step={0.5}
+              step={readOnly ? "any" : 0.5}
               value={config.gains[i]}
               onChange={(e) => {
                 const value = Number(e.target.value);
@@ -51,37 +55,41 @@ export default function EqualizerBands({
           </label>
         ))}
       </div>
-      <label className="sound-preamp">
-        {t.preamp}{" "}
-        <output>
-          {config.preamp > 0 ? "+" : ""}
-          {config.preamp.toFixed(1)} dB
-        </output>
-        <input
-          type="range"
-          aria-label={t.preamp}
-          aria-valuetext={`${config.preamp > 0 ? "+" : ""}${config.preamp.toFixed(1)} dB`}
-          min={-12}
-          max={12}
-          step={0.5}
-          value={config.preamp}
-          onChange={(e) => {
-            const preamp = Number(e.target.value);
-            edit((c) => ({ ...c, preamp }));
-          }}
-          onPointerUp={flush}
-          onKeyUp={flush}
-        />
-      </label>
-      <button
-        className="text-button"
-        onClick={() => {
-          edit((c) => ({ ...c, preamp: 0 }));
-          flush();
-        }}
-      >
-        {t.resetPreamp}
-      </button>
+      {showPreamp && (
+        <>
+          <label className="sound-preamp">
+            {t.preamp}{" "}
+            <output>
+              {config.preamp > 0 ? "+" : ""}
+              {config.preamp.toFixed(1)} dB
+            </output>
+            <input
+              type="range"
+              aria-label={t.preamp}
+              aria-valuetext={`${config.preamp > 0 ? "+" : ""}${config.preamp.toFixed(1)} dB`}
+              min={-12}
+              max={12}
+              step={readOnly ? "any" : 0.5}
+              value={config.preamp}
+              onChange={(e) => {
+                const preamp = Number(e.target.value);
+                edit((c) => ({ ...c, preamp }));
+              }}
+              onPointerUp={flush}
+              onKeyUp={flush}
+            />
+          </label>
+          <button
+            className="text-button"
+            onClick={() => {
+              edit((c) => ({ ...c, preamp: 0 }));
+              flush();
+            }}
+          >
+            {t.resetPreamp}
+          </button>
+        </>
+      )}
     </>
   );
 }

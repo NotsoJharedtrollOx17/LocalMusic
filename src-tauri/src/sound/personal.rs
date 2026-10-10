@@ -18,6 +18,8 @@ pub struct View {
     pub busy_until: u64,
     pub message: String,
     pub strength: f64,
+    pub left: [f64; 10],
+    pub right: [f64; 10],
 }
 pub struct Protocol {
     pub replace_id: Option<String>,
@@ -42,6 +44,8 @@ impl Protocol {
                 busy_until: 0,
                 message: String::new(),
                 strength: 50.,
+                left: [0.; 10],
+                right: [0.; 10],
             },
             replace_id: None,
             values: [[None; 6]; 2],
@@ -66,9 +70,13 @@ impl Protocol {
         self.view.phase = "cancelled".into();
         self.view.awaiting = false;
         self.values = [[None; 6]; 2];
+        self.view.left = [0.; 10];
+        self.view.right = [0.; 10];
     }
     pub fn discard(&mut self) {
         self.values = [[None; 6]; 2];
+        self.view.left = [0.; 10];
+        self.view.right = [0.; 10];
     }
     pub fn pulse(&mut self) -> Result<Vec<f32>, String> {
         self.heartbeat()?;
@@ -76,14 +84,14 @@ impl Protocol {
         if self.view.phase != "test" || now < self.next {
             return Err("Wait before playing another tone".into());
         }
-        self.end = now + Duration::from_millis(800);
+        self.end = now + Duration::from_millis(3400);
         self.next = self.end + Duration::from_millis(500);
         self.view.awaiting = true;
         self.view.busy_until = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64
-            + 800;
+            + 3400;
         tone(self.view.frequency, self.view.level, self.view.ear)
     }
     pub fn respond(&mut self, heard: bool) -> Result<(), String> {
@@ -111,6 +119,8 @@ impl Protocol {
             s.message = "reference-inconsistent".into();
             return Ok(());
         }
+        s.left = derive(self.values[0]);
+        s.right = derive(self.values[1]);
         if s.step == 6 {
             if s.ear == 1 {
                 s.phase = "compare".into();
@@ -128,6 +138,8 @@ impl Protocol {
     pub fn retry(&mut self) -> Result<(), String> {
         self.heartbeat()?;
         self.values[self.view.ear] = [None; 6];
+        self.view.left = derive(self.values[0]);
+        self.view.right = derive(self.values[1]);
         self.view.phase = "test".into();
         self.view.step = 0;
         self.view.frequency = 1000;
@@ -186,13 +198,17 @@ pub fn tone(f: u32, level: i32, ear: usize) -> Result<Vec<f32>, String> {
     if !FREQ.contains(&f) || ![-54, -48, -42, -36].contains(&level) || ear > 1 {
         return Err("Invalid test tone".into());
     }
-    let frames = 38400;
+    let frames = 163200;
     let mut out = vec![0f32; frames * 2];
     for i in 0..frames {
-        let fade = (i as f64 / 4800.)
-            .min((frames - 1 - i) as f64 / 4800.)
+        let local = i % 62400;
+        if local >= 38400 {
+            continue;
+        }
+        let fade = (local as f64 / 4800.)
+            .min((38399 - local) as f64 / 4800.)
             .clamp(0., 1.);
-        out[i * 2 + ear] = ((2. * std::f64::consts::PI * f as f64 * i as f64 / 48000.).sin()
+        out[i * 2 + ear] = ((2. * std::f64::consts::PI * f as f64 * local as f64 / 48000.).sin()
             * 10f64.powf(level as f64 / 20.)
             * fade) as f32;
     }
@@ -244,6 +260,8 @@ mod tests {
     fn tone_cap_and_isolation() {
         assert!(tone(1000, -12, 0).is_err());
         let p = tone(1000, -36, 1).unwrap();
+        assert_eq!(p.len(), 326400);
+        assert!(p[76800..124800].iter().all(|x| *x == 0.));
         assert!(p
             .chunks(2)
             .all(|f| f[0] == 0. && f[1].abs() <= 10f32.powf(-36. / 20.) + 1e-6));

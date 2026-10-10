@@ -45,6 +45,8 @@ export interface SoundState {
   migrationNotice?: string;
 }
 export interface PersonalSession {
+  left?: number[];
+  right?: number[];
   id: string;
   phase: "test" | "retry" | "compare" | "saved" | "cancelled";
   ear: number;

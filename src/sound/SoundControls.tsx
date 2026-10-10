@@ -5,6 +5,7 @@ import { useSoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
 import EqualizerBands from "./EqualizerBands";
 import SoundPresetList from "./SoundPresetList";
+import PersonalCurveBands from "./PersonalCurveBands";
 import PersonalProfiles from "./PersonalProfiles";
 import PersonalWizard from "./PersonalWizard";
 import type { SoundState, PersonalProfile } from "./types";
@@ -25,6 +26,10 @@ export default function SoundControls({
     [setup, setSetup] = useState(false),
     [deviceError, setDeviceError] = useState("");
   const [replacement, setReplacement] = useState<PersonalProfile>();
+  const activeProfile =
+    draft.personalEnabled && state.personalAvailable
+      ? draft.profiles.find((p) => p.id === draft.profileId)
+      : undefined;
   const wasSetup = useRef(false);
   useEffect(() => {
     if (wasSetup.current && !setup)
@@ -86,6 +91,7 @@ export default function SoundControls({
               <label className="check-label">
                 <input
                   type="checkbox"
+                  disabled={!!activeProfile}
                   checked={draft.enabled}
                   onChange={(e) => {
                     const enabled = e.target.checked;
@@ -95,17 +101,37 @@ export default function SoundControls({
                 {t.on}
               </label>
             </div>
-            <SoundPresetList config={draft} edit={edit} language={language} />
-            <EqualizerBands
-              config={draft}
-              edit={edit}
-              flush={flush}
-              inactive={state.inactiveBands}
-              language={language}
-            />
+            <fieldset
+              disabled={!!activeProfile}
+              style={{ border: 0, padding: 0, margin: 0 }}
+            >
+              <SoundPresetList config={draft} edit={edit} language={language} />
+            </fieldset>
+            {activeProfile && <p role="status">{t.priority}</p>}
+            {activeProfile ? (
+              <PersonalCurveBands
+                left={activeProfile.left}
+                right={activeProfile.right}
+                strength={draft.strength}
+                config={draft}
+                edit={edit}
+                flush={flush}
+                inactive={state.inactiveBands}
+                language={language}
+              />
+            ) : (
+              <EqualizerBands
+                config={draft}
+                edit={edit}
+                flush={flush}
+                inactive={state.inactiveBands}
+                language={language}
+              />
+            )}
             <div className="sound-actions">
               <button
                 className="text-button"
+                disabled={!!activeProfile}
                 onClick={() =>
                   edit((c) => ({
                     ...c,

@@ -36,6 +36,30 @@ mod tests {
         assert!(engine.configure(c).is_err());
     }
     #[test]
+    fn personal_curve_overrides_presets_and_keeps_global_preamp() {
+        let engine = Engine::new(Config::default());
+        let mut c = Config::default();
+        c.enabled = true;
+        c.gains = [12.; 10];
+        c.preamp = 6.;
+        c.profiles.push(Profile {
+            id: "test".into(),
+            name: "Test".into(),
+            left: [6.; 10],
+            right: [0.; 10],
+            complete: [true; 12],
+        });
+        c.profile_id = Some("test".into());
+        c.personal_enabled = true;
+        assert_eq!(c.curves(false, 2)[0], [3.; 10]);
+        assert_eq!(c.curves(false, 2)[1], [0.; 10]);
+        c.enabled = false;
+        engine.configure(c).unwrap();
+        let p = engine.prepared.lock().unwrap();
+        assert!(!p.bypass);
+        assert!((p.gain - 10f64.powf((6. - p.attenuation) / 20.)).abs() < 1e-9);
+    }
+    #[test]
     fn configuration_remains_editable_without_an_output() {
         let engine = Engine::new(Config::default());
         let mut c = Config::default();
@@ -96,8 +120,14 @@ impl Engine {
         let generation = p.generation + 1;
         *p = Prepared {
             bank: b,
-            gain: 10f64
-                .powf((if c.enabled && !bypass { c.preamp } else { 0. } - attenuation) / 20.),
+            gain: 10f64.powf(
+                (if !bypass && (c.enabled || (c.personal_enabled && channels <= 2)) {
+                    c.preamp
+                } else {
+                    0.
+                } - attenuation)
+                    / 20.,
+            ),
             bypass: bypass || (!c.enabled && !c.personal_enabled) || (!c.enabled && channels > 2),
             attenuation,
             generation,

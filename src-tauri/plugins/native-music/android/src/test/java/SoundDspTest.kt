@@ -43,7 +43,7 @@ class SoundDspTest {
     @Test
     fun toneIsolationAndCap() {
         val tone = PersonalSoundSession.tone(1000, -36, 1)
-        assertEquals(76800, tone.size)
+        assertEquals(326400, tone.size)
         for (i in tone.indices step 2) {
             assertEquals(0f, tone[i], 0f)
             assertTrue(abs(tone[i + 1]) <= 10.0.pow(-36.0 / 20) + 1e-6)

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { soundCopy } from "./copy";
+import PersonalCurveBands from "./PersonalCurveBands";
 import { useBackLayer } from "../navigation";
 import type { PersonalAction, PersonalSession, PersonalProfile } from "./types";
 export default function PersonalWizard({
@@ -304,6 +305,19 @@ export default function PersonalWizard({
           <button className="button secondary" onClick={onDone}>
             {t.done}
           </button>
+        </>
+      )}
+      {session && ["test", "retry", "compare"].includes(session.phase) && (
+        <>
+          <p>{t.burst}</p>
+          <PersonalCurveBands
+            provisional={session.phase !== "compare"}
+            left={session.left ?? Array(10).fill(0)}
+            right={session.right ?? Array(10).fill(0)}
+            strength={session.phase === "compare" ? strength : 100}
+            language={language}
+            ear={session.phase === "compare" ? undefined : session.ear}
+          />
         </>
       )}
       {session && !["saved", "cancelled"].includes(session.phase) && (

@@ -161,7 +161,11 @@ export class BrowserSound {
       bank: cs,
       gain:
         10 **
-        (((!this.bypass && this.config.enabled ? this.config.preamp : 0) -
+        (((!this.bypass &&
+        (this.config.enabled ||
+          (this.config.personalEnabled && this.channels <= 2))
+          ? this.config.preamp
+          : 0) -
           this.attenuation) /
           20),
       bypass:

@@ -86,3 +86,7 @@ See [Phase 2](phase-two-ux-flow.md) for the motion/interaction contract and [ver
 ### Independent EQ/preamp controls
 
 Preamp bounds are -12 to +12 dB across TypeScript, Rust and Kotlin. EQ preset selection and Flat reset preserve preamp, while Reset preamp changes only preamp. Preamp edits preserve EQ preset identity. Existing preset records retain their legacy preamp field for storage compatibility, but selection ignores it. Treble boost is a reserved built-in ID (`treble`). Automatic EQ headroom is displayed separately and still varies with the combined frequency response; the limiter handles peaks from positive manual gain.
+
+### Personal profile ownership and curve display
+
+Active personal curves override ordinary EQ gains on all adapters. Keep the retained preset/config gains separate: the sliders display strength-scaled left/right curves without writing them into the base EQ, avoiding double application. Global preamp applies when either supported effect is active. `PersonalCurveBands.tsx` renders the per-ear display; `PersonalSession.left/right` are provisional derived curves only, cleared on cancellation/retest. Setup shows full-strength suggestions; comparison and active controls show selected strength. Three-beep bursts last 3400 ms, with 800 ms beeps and 500 ms gaps. Backend timing and foreground leases remain authoritative. A flat profile is a valid result and must be labeled as producing no frequency adjustment.

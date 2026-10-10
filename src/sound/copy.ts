@@ -1,4 +1,13 @@
 const en = {
+  provisional:
+    "Provisional curve: sliders update as answers arrive. This curve is not applied to test beeps or music.",
+  burst: "Three beeps per step, at the same test level.",
+  curveHint:
+    "Personal curve at the selected strength. Left and right ears are processed independently.",
+  priority:
+    "Personal sound takes priority over presets. Disable the profile to edit ordinary EQ.",
+  flatProfile:
+    "This curve is flat: these responses suggest no frequency boost. A flat profile will not change the sound.",
   equalizer: "Equalizer",
   personal: "Personal sound",
   on: "Enable equalizer",
@@ -82,6 +91,15 @@ const en = {
   },
 };
 const es: typeof en = {
+  provisional:
+    "Curva provisional: los deslizadores cambian con las respuestas. No se aplica a los pitidos ni a la m\u00fasica.",
+  burst: "Tres pitidos por paso, al mismo nivel de prueba.",
+  curveHint:
+    "Curva personal a la intensidad seleccionada. Cada o\u00eddo se procesa por separado.",
+  priority:
+    "El sonido personal tiene prioridad. Desactiva el perfil para editar el EQ normal.",
+  flatProfile:
+    "Esta curva es plana: las respuestas no sugieren refuerzo. Un perfil plano no cambia el sonido.",
   interrupted:
     "La configuraci\u00f3n se detuvo antes de terminar. No se guard\u00f3 un perfil parcial. Puedes reiniciarla.",
   restart: "Reiniciar configuraci\u00f3n",

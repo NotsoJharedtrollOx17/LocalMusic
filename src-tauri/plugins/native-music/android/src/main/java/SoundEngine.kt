@@ -86,7 +86,10 @@ class SoundEngine(private val context: Context) {
         val attenuation = SoundMath.headroom(bank, rate.toDouble())
         return PreparedSound(
             bank,
-            10.0.pow(((if (c.enabled && !bypass) c.preamp else 0.0) - attenuation) / 20),
+            10.0.pow(
+                ((if (!bypass && (c.enabled || (c.personalEnabled && channels <= 2))) c.preamp
+                else 0.0) - attenuation) / 20
+            ),
             bypass || (!c.enabled && !c.personalEnabled) || (!c.enabled && channels > 2),
             attenuation,
             0,

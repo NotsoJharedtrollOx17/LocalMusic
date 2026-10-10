@@ -117,7 +117,7 @@ impl Config {
         };
         for ch in 0..2 {
             for i in 0..10 {
-                out[ch][i] = if self.enabled && !bypass {
+                out[ch][i] = if self.enabled && !bypass && p.is_none() {
                     self.gains[i]
                 } else {
                     0.

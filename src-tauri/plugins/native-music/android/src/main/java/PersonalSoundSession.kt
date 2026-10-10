@@ -19,6 +19,8 @@ class PersonalSoundSession(private val replaceId: String? = null) {
             .put("busyUntil", 0)
             .put("message", "")
             .put("strength", 50)
+            .put("left", JSONArray(List(10) { 0.0 }))
+            .put("right", JSONArray(List(10) { 0.0 }))
     private val values = Array(2) { arrayOfNulls<Int>(6) }
     private var lease = SystemClock.elapsedRealtime() + 2000
     private var end = 0L
@@ -40,6 +42,7 @@ class PersonalSoundSession(private val replaceId: String? = null) {
 
     fun discard() {
         for (v in values) v.fill(null)
+        updateCurves()
     }
 
     fun pulse(): FloatArray {
@@ -48,9 +51,9 @@ class PersonalSoundSession(private val replaceId: String? = null) {
         check(view.getString("phase") == "test" && now >= next) {
             "Wait before playing another tone"
         }
-        end = now + 800
+        end = now + 3400
         next = end + 500
-        view.put("awaiting", true).put("busyUntil", System.currentTimeMillis() + 800)
+        view.put("awaiting", true).put("busyUntil", System.currentTimeMillis() + 3400)
         return tone(view.getInt("frequency"), view.getInt("level"), view.getInt("ear"))
     }
 
@@ -81,6 +84,7 @@ class PersonalSoundSession(private val replaceId: String? = null) {
             view.put("phase", "retry").put("message", "reference-inconsistent")
             return
         }
+        updateCurves()
         if (step == 6) {
             if (ear == 1) {
                 view.put("phase", "compare")
@@ -91,9 +95,16 @@ class PersonalSoundSession(private val replaceId: String? = null) {
         view.put("frequency", frequencies[view.getInt("step")]).put("level", -54)
     }
 
+    private fun updateCurves() {
+        view
+            .put("left", JSONArray(derive(values[0]).toList()))
+            .put("right", JSONArray(derive(values[1]).toList()))
+    }
+
     fun retry() {
         heartbeat()
         values[view.getInt("ear")].fill(null)
+        updateCurves()
         view
             .put("phase", "test")
             .put("step", 0)
@@ -148,11 +159,14 @@ class PersonalSoundSession(private val replaceId: String? = null) {
                     intArrayOf(-54, -48, -42, -36).contains(level) &&
                     ear in 0..1
             )
-            val out = FloatArray(76800)
-            for (i in 0 until 38400) {
-                val fade = min(1.0, min(i / 4800.0, (38399 - i) / 4800.0)).coerceAtLeast(0.0)
+            val out = FloatArray(326400)
+            for (i in 0 until 163200) {
+                val local = i % 62400
+                if (local >= 38400) continue
+                val fade =
+                    min(1.0, min(local / 4800.0, (38399 - local) / 4800.0)).coerceAtLeast(0.0)
                 out[i * 2 + ear] =
-                    (sin(2 * PI * f * i / 48000) * 10.0.pow(level / 20.0) * fade).toFloat()
+                    (sin(2 * PI * f * local / 48000) * 10.0.pow(level / 20.0) * fade).toFloat()
             }
             return out
         }

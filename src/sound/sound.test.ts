@@ -85,21 +85,26 @@ describe("shared sound processing", () => {
       personalEnabled: true,
       strength: 50,
     };
+    c.enabled = true;
+    c.gains = Array(10).fill(12);
     expect(effectiveCurves(c)[0][5]).toBe(3);
-    expect(effectiveCurves(c, false, 6)[0][5]).toBe(0);
+    expect(effectiveCurves(c, false, 6)[0][5]).toBe(12);
   });
 });
 describe("personal listening protocol", () => {
   it("limits amplitude, fades pulses and isolates the selected ear", () => {
     const samples = tone(1000, -36, 1);
-    expect(samples.length).toBe(76800);
+    expect(samples.length).toBe(326400);
     expect(samples[0]).toBe(0);
+    let leftPeak = 0,
+      rightPeak = 0;
     for (let i = 0; i < samples.length; i += 2) {
-      expect(samples[i]).toBe(0);
-      expect(Math.abs(samples[i + 1])).toBeLessThanOrEqual(
-        10 ** (-36 / 20) + 1e-9,
-      );
+      leftPeak = Math.max(leftPeak, Math.abs(samples[i]));
+      rightPeak = Math.max(rightPeak, Math.abs(samples[i + 1]));
     }
+    expect(leftPeak).toBe(0);
+    expect(rightPeak).toBeLessThanOrEqual(10 ** (-36 / 20) + 1e-9);
+    expect(samples.slice(76800, 124800).every((x) => x === 0)).toBe(true);
     expect(() => tone(1000, -12, 0)).toThrow();
   });
   it("enforces replay spacing, reference retry, lease and raw-data discard", () => {
@@ -115,7 +120,11 @@ describe("personal listening protocol", () => {
         time += 500;
         p.pulse();
       }
-      time += 800;
+      for (let j = 0; j < 3; j++) {
+        time += 1000;
+        p.heartbeat();
+      }
+      time += 400;
       p.respond(false);
     }
     expect(p.state.phase).toBe("retry");
@@ -131,7 +140,11 @@ describe("personal listening protocol", () => {
     const p = new PersonalProtocol();
     for (let i = 0; i < 14; i++) {
       p.pulse();
-      time += 800;
+      for (let j = 0; j < 3; j++) {
+        time += 1000;
+        p.heartbeat();
+      }
+      time += 400;
       p.respond(true);
       time += 500;
     }
