@@ -1,0 +1,88 @@
+use crate::state::{MusicState, Result};
+use music_core::{Settings, Store};
+use tauri::State;
+
+#[tauri::command]
+pub(crate) fn get_settings(
+    state: State<MusicState>,
+    default_time_zone: String,
+) -> Result<Settings> {
+    let store = state.core.lock().map_err(|e| e.to_string())?;
+    device_settings(&store, default_time_zone)
+}
+
+fn device_settings(store: &Store, default_time_zone: String) -> Result<Settings> {
+    let stored = store.get_setting::<Settings>("preferences")?;
+    let mut settings = stored.clone().unwrap_or_default();
+    // Live recaps follow the device; frozen snapshots retain their own zone.
+    if default_time_zone.parse::<chrono_tz::Tz>().is_ok() && settings.time_zone != default_time_zone
+    {
+        settings.time_zone = default_time_zone;
+    }
+    if stored.as_ref().map(|s| s.time_zone.as_str()) != Some(settings.time_zone.as_str()) {
+        store.set_setting("preferences", &settings)?;
+    }
+    Ok(settings)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn device_zone_replaces_old_override_without_changing_history_preferences() {
+        let store = Store::open(":memory:").unwrap();
+        let original = Settings {
+            time_zone: "America/Los_Angeles".into(),
+            language: "es".into(),
+            theme: "dark".into(),
+            ..Default::default()
+        };
+        store.set_setting("preferences", &original).unwrap();
+        store.set_setting("time-zone-initialized", &true).unwrap();
+        let updated = device_settings(&store, "America/New_York".into()).unwrap();
+        assert_eq!(updated.time_zone, "America/New_York");
+        assert_eq!(updated.language, original.language);
+        assert_eq!(updated.theme, original.theme);
+        assert_eq!(
+            updated.history_enabled_since,
+            original.history_enabled_since
+        );
+        assert_eq!(updated.privacy_revision, original.privacy_revision);
+        assert_eq!(
+            device_settings(&store, "invalid-zone".into())
+                .unwrap()
+                .time_zone,
+            updated.time_zone
+        );
+        assert_eq!(
+            store
+                .get_setting::<Settings>("preferences")
+                .unwrap()
+                .unwrap()
+                .time_zone,
+            updated.time_zone
+        );
+    }
+}
+
+#[tauri::command]
+pub(crate) fn save_settings(state: State<MusicState>, settings: Settings) -> Result<()> {
+    settings
+        .time_zone
+        .parse::<chrono_tz::Tz>()
+        .map_err(|_| "Invalid time zone")?;
+    if !["en", "es"].contains(&settings.language.as_str())
+        || !["light", "dark", "system"].contains(&settings.theme.as_str())
+    {
+        return Err("Invalid settings".into());
+    }
+    let store = state.core.lock().map_err(|e| e.to_string())?;
+    let mut next = settings;
+    let current = store
+        .get_setting::<Settings>("preferences")?
+        .unwrap_or_default();
+    next.history_enabled_since = current.history_enabled_since;
+    next.privacy_revision = current.privacy_revision;
+    store.set_setting("preferences", &next)
+}

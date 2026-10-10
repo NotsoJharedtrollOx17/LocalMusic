@@ -3,6 +3,11 @@ import android.Manifest
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
+import android.content.ClipData
+import android.media.audiofx.AudioEffect
+import android.net.Uri
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import android.os.Build
 import androidx.activity.result.ActivityResult
 import androidx.media3.session.MediaController
@@ -19,6 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class ArtworkArgs { var uri:String?=null }
 @InvokeArg class ImportArgs { var mode:String?=null }
 @InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
+@InvokeArg class ShareArgs { var uris:Array<String>?=null }
+@InvokeArg class SoundPayloadArgs { var payload:String?=null }
 
 @TauriPlugin(permissions=[
  Permission(strings=[Manifest.permission.READ_MEDIA_AUDIO],alias="audio"),
@@ -26,7 +33,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 ])
 class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  private var musicWebView:android.webkit.WebView?=null
- override fun load(webView:android.webkit.WebView){musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()}
+ override fun load(webView:android.webkit.WebView){
+  musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()
+  (activity as? ComponentActivity)?.onBackPressedDispatcher?.addCallback(activity,object:OnBackPressedCallback(true){
+   override fun handleOnBackPressed(){webView.evaluateJavascript("Boolean(window.__musicBack && window.__musicBack())"){handled->
+    if(handled!="true"){isEnabled=false;(activity as ComponentActivity).onBackPressedDispatcher.onBackPressed();isEnabled=true}
+   }}
+  })
+ }
  override fun onConfigurationChanged(newConfig:android.content.res.Configuration){musicWebView?.settings?.textZoom=(newConfig.fontScale*100).toInt()}
  private val worker=Executors.newSingleThreadExecutor()
  private val cancelled=AtomicBoolean(false)
@@ -46,6 +60,28 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  @Command fun snapshot(invoke:Invoke){withService(invoke){resolveSnapshot(invoke,it)}}
  @Command fun ack(invoke:Invoke){val args=invoke.parseArgs(AckArgs::class.java);withService(invoke){it.journal.ack(args.through?:0){invoke.resolve(JSObject())}}}
  @Command fun timeZone(invoke:Invoke){invoke.resolve(JSObject().put("value",java.util.TimeZone.getDefault().id))}
+ private fun soundIntent(service:PlaybackService)=Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).putExtra(AudioEffect.EXTRA_AUDIO_SESSION,service.player.audioSessionId).putExtra(AudioEffect.EXTRA_PACKAGE_NAME,activity.packageName).putExtra(AudioEffect.EXTRA_CONTENT_TYPE,AudioEffect.CONTENT_TYPE_MUSIC)
+ @Command fun soundCapabilities(invoke:Invoke){withService(invoke){service->
+  val result=service.sound.state(service.player.isPlaying);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null)
+  invoke.resolve(JSObject(result.toString()))
+ }}
+ @Command fun setSound(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val playing=service.player.isPlaying;worker.execute{try{service.sound.configure(JSONObject(args.payload?:"{}"));val result=service.sound.state(playing);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null);invoke.resolve(JSObject(result.toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound configuration failed")}}}}
+ @Command fun soundAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="retry"){service.player.pause();if(service.player.playerError!=null&&service.player.currentMediaItem!=null)service.player.prepare()};val playing=service.player.isPlaying;worker.execute{try{service.sound.action(action);invoke.resolve(JSObject(service.sound.state(playing).put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound action failed")}}}}
+ @Command fun personalAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="start")service.player.pause();worker.execute{try{invoke.resolve(JSObject(service.sound.personal(action).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound setup failed")}}}}
+ @Command fun openSoundPanel(invoke:Invoke){withService(invoke){service->
+  val intent=soundIntent(service);if(intent.resolveActivity(activity.packageManager)==null)invoke.reject("Device sound panel unavailable")else{activity.startActivity(intent);invoke.resolve(JSObject())}
+ }}
+ @Command fun shareAudio(invoke:Invoke){
+  val args=invoke.parseArgs(ShareArgs::class.java)
+  activity.runOnUiThread{try{
+   val uris=ArrayList((args.uris?:emptyArray()).map{Uri.parse(it)})
+   require(uris.isNotEmpty()&&uris.all{it.scheme=="content"}){"Audio source cannot be shared"}
+   val intent=Intent(if(uris.size==1)Intent.ACTION_SEND else Intent.ACTION_SEND_MULTIPLE).setType("audio/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+   if(uris.size==1)intent.putExtra(Intent.EXTRA_STREAM,uris[0])else intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,uris)
+   val clips=ClipData.newUri(activity.contentResolver,"Audio",uris[0]);for(uri in uris.drop(1))clips.addItem(ClipData.Item(uri));intent.clipData=clips
+   activity.startActivity(Intent.createChooser(intent,"Share audio"));invoke.resolve(JSObject().put("outcome","opened"))
+  }catch(e:Exception){invoke.reject(e.message?:"Audio could not be shared")}}
+ }
  @Command fun artwork(invoke:Invoke){val args=invoke.parseArgs(ArtworkArgs::class.java);worker.execute{try{val marker=MusicReader(activity.applicationContext,AtomicBoolean(false)).artwork(android.net.Uri.parse(args.uri?:""));invoke.resolve(JSObject().put("value",marker?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Artwork unavailable")}}}
  @Command fun albumOrder(invoke:Invoke){val args=invoke.parseArgs(ArtworkArgs::class.java);worker.execute{try{val order=MusicReader(activity.applicationContext,AtomicBoolean(false)).albumOrder(android.net.Uri.parse(args.uri?:""));invoke.resolve(JSObject().put("trackNumber",order.opt("trackNumber")?:JSONObject.NULL).put("discNumber",order.opt("discNumber")?:JSONObject.NULL).put("releaseYear",order.opt("releaseYear")?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Track order unavailable")}}}
  @Command fun cancelImport(invoke:Invoke){cancelled.set(true);invoke.resolve(JSObject())}

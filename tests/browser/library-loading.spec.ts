@@ -1,36 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-
-async function holdNextTrackRead(page: Page) {
-  await page.evaluate(() => {
-    const original = IDBObjectStore.prototype.getAll;
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    (window as unknown as { releaseCatalog: () => void }).releaseCatalog =
-      release;
-    IDBObjectStore.prototype.getAll = function (...args) {
-      const request = original.apply(this, args);
-      if (this.name === "tracks") {
-        IDBObjectStore.prototype.getAll = original;
-        request.addEventListener(
-          "success",
-          (event) => {
-            event.stopImmediatePropagation();
-            void gate.then(() => request.onsuccess?.call(request, event));
-          },
-          { once: true },
-        );
-      }
-      return request;
-    };
-  });
-}
-async function release(page: Page) {
-  await page.evaluate(() =>
-    (window as unknown as { releaseCatalog: () => void }).releaseCatalog(),
-  );
-}
+import { holdNextTrackRead, release } from "./catalog-gate";
+import { test, expect } from "@playwright/test";
 
 test("saved dark theme and library tabs never show unfinished or mismatched results", async ({
   page,
@@ -42,7 +11,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
     .locator(".sidebar")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
-  await page.getByLabel("Appearance", { exact: true }).selectOption("dark");
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("local-music-theme")))
     .toBe("dark");

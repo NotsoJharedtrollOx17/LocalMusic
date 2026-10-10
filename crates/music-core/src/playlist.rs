@@ -38,6 +38,7 @@ pub fn generate(
         .iter()
         .filter(|t| {
             t.available
+                && !t.hidden
                 && (excluded.is_empty() || normalize(&t.artist) != excluded)
                 && (included.is_empty() || normalize(&t.artist) == included)
                 && (genre.is_empty()

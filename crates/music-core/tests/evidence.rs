@@ -19,6 +19,7 @@ fn track(id: &str, artist: &str) -> Track {
         favorite: false,
         available: true,
         demo: false,
+        hidden: false,
     }
 }
 fn settings() -> Settings {
@@ -29,6 +30,60 @@ fn settings() -> Settings {
         history_enabled_since: "2025-01-01T00:00:00Z".into(),
         privacy_revision: 0,
     }
+}
+#[test]
+fn library_removal_preserves_history_and_restores_search() {
+    let mut db = Store::open(":memory:").unwrap();
+    let t = track("song", "Artist");
+    db.upsert_track(&t).unwrap();
+    let session = Session {
+        id: "session".into(),
+        track_id: t.id.clone(),
+        started_at_utc: "2025-06-01T00:00:00Z".into(),
+        played_ms: 40000,
+        excluded: false,
+        end_reason: None,
+    };
+    let interval = Interval {
+        session_id: session.id.clone(),
+        sequence: 0,
+        start_utc: session.started_at_utc.clone(),
+        played_ms: 40000,
+    };
+    db.ingest(&session, Some(&interval)).unwrap();
+    db.save_playlist(&Playlist {
+        id: "list".into(),
+        title: "My music".into(),
+        kind: "manual".into(),
+        track_ids: vec![t.id.clone()],
+    })
+    .unwrap();
+    db.set_library_visibility(&[t.id.clone()], false).unwrap();
+    assert_eq!(db.tracks("", 0, 60).unwrap().total, 0);
+    assert_eq!(db.groups("artists", 0, 60).unwrap().total, 0);
+    assert!(db.search_catalog("Artist").unwrap().tracks.is_empty());
+    assert!(db.track(&t.id).unwrap().unwrap().hidden);
+    let recap = recap::aggregate(
+        2025,
+        &settings(),
+        &db.all_tracks().unwrap(),
+        &db.sessions().unwrap(),
+        &db.intervals().unwrap(),
+        Utc.with_ymd_and_hms(2025, 6, 2, 0, 0, 0).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(recap.listened_ms, 40000);
+    assert_eq!(recap.top_tracks[0].track.id, t.id);
+    assert!(recap.track_ids.is_empty());
+    assert_eq!(db.playlists().unwrap()[0].track_ids, vec![t.id.clone()]);
+    db.upsert_track(&t).unwrap(); // migration/favorite updates cannot unhide a song
+    assert_eq!(db.tracks("", 0, 60).unwrap().total, 0);
+    db.set_library_visibility(&[t.id.clone()], true).unwrap();
+    let result = db.search_catalog("Artist").unwrap();
+    assert_eq!(result.tracks.len(), 1);
+    assert_eq!(result.albums.len(), 1);
+    assert_eq!(result.artists.len(), 1);
+    assert_eq!(db.sessions().unwrap()[0].played_ms, 40000);
 }
 #[test]
 fn journal_replay_is_idempotent() {

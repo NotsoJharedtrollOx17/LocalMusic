@@ -1,3 +1,4 @@
+import { BrowserSound } from "../sound/BrowserSound";
 import type {
   MusicApi,
   Track,
@@ -12,12 +13,11 @@ import type {
 import {
   aggregate,
   generate,
-  hash,
   coverUrl,
   compareAlbumTracks,
   compareCatalogTracks,
 } from "../domain";
-type StoredTrack = Track & { file: Blob; cover?: Blob };
+type StoredTrack = Track & { file: Blob; cover?: Blob; audioChannels?: number };
 const validReleaseYear = (year: number | undefined) =>
   year && Number.isInteger(year) && year >= 1000 && year <= 9999
     ? year
@@ -36,6 +36,7 @@ const initialPlayback = (): PlaybackSnapshot => ({
 export class BrowserMusic implements MusicApi {
   private db: Promise<IDBDatabase>;
   private audio = new Audio();
+  private sound: BrowserSound;
   private state = initialPlayback();
   private listeners = new Set<(s: PlaybackSnapshot) => void>();
   private urls = new Map<string, string>();
@@ -69,6 +70,15 @@ export class BrowserMusic implements MusicApi {
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });
+    this.sound = new BrowserSound(
+      this.audio,
+      () =>
+        this.get<import("../sound/types").SoundConfig>("settings", "sound-v1"),
+      (config) => this.put("settings", "sound-v1", config),
+      async () => {
+        this.audio.pause();
+      },
+    );
     this.ready = this.get<PlaybackSnapshot>("settings", "queue").then((v) => {
       if (v) {
         this.state = { ...v, playing: false, error: undefined };
@@ -279,6 +289,7 @@ export class BrowserMusic implements MusicApi {
   async groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
     await this.ensureAlbumOrder();
     return (await this.all<StoredTrack>("tracks"))
+      .filter((track) => !track.hidden)
       .filter((track) =>
         kind === "artists"
           ? track.artist === title
@@ -293,9 +304,11 @@ export class BrowserMusic implements MusicApi {
   }
   async groups(kind: "albums" | "artists", offset = 0) {
     await this.ensureAlbumOrder();
-    const all = (await this.all<StoredTrack>("tracks")).sort(
-      (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
-    );
+    const all = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden)
+      .sort(
+        (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
+      );
     const map = new Map<string, import("../types").CatalogGroup>();
     for (const t of all) {
       const title = kind === "albums" ? t.album : t.artist;
@@ -335,6 +348,7 @@ export class BrowserMusic implements MusicApi {
     await this.ensureAlbumOrder();
     const q = query.toLowerCase();
     const tracks = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden)
       .filter((t) =>
         (t.title + " " + t.artist + " " + t.album).toLowerCase().includes(q),
       )
@@ -344,6 +358,123 @@ export class BrowserMusic implements MusicApi {
       tracks: tracks.slice(offset, offset + limit).map((t) => this.present(t)),
       total: tracks.length,
     };
+  }
+  async searchCatalog(query: string, limit = 30) {
+    await this.ensureAlbumOrder();
+    const terms = query.trim().normalize("NFKC").toLowerCase().split(/\s+/);
+    const matches = (s: string) =>
+      terms.every((q) => s.normalize("NFKC").toLowerCase().includes(q));
+    const tracks = (await this.all<StoredTrack>("tracks"))
+      .filter((t) => !t.hidden && matches(`${t.title} ${t.artist} ${t.album}`))
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map((t) => this.present(t));
+    const findGroups = async (kind: "albums" | "artists") => {
+      const found: import("../types").CatalogGroup[] = [];
+      let offset = 0;
+      for (;;) {
+        const page = await this.groups(kind, offset);
+        found.push(
+          ...page.groups.filter((g) => matches(`${g.title} ${g.subtitle}`)),
+        );
+        offset += page.groups.length;
+        if (found.length > limit || offset >= page.total) break;
+      }
+      return found;
+    };
+    const albums = await findGroups("albums"),
+      artists = await findGroups("artists"),
+      playlists = (await this.playlists()).filter((p) => matches(p.title));
+    return {
+      tracks: tracks.slice(0, limit),
+      albums: albums.slice(0, limit),
+      artists: artists.slice(0, limit),
+      playlists: playlists.slice(0, limit),
+      hasMore: [tracks, albums, artists, playlists].some(
+        (items) => items.length > limit,
+      ),
+    };
+  }
+  async setLibraryVisibility(ids: string[], visible: boolean) {
+    const db = await this.db;
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("tracks", "readwrite");
+      const store = tx.objectStore("tracks");
+      for (const id of new Set(ids)) {
+        const req = store.get(id);
+        req.onsuccess = () => {
+          if (req.result) store.put({ ...req.result, hidden: !visible }, id);
+        };
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    if (!visible && this.state.queue.length) {
+      const queue = this.state.queue.filter(
+        (id) => !ids.includes(id) || id === this.state.trackId,
+      );
+      this.state.queue = queue;
+      this.state.queueIndex = Math.max(0, queue.indexOf(this.state.trackId!));
+      this.emit();
+    }
+  }
+  async shareAudio(ids: string[]): Promise<import("../types").ShareOutcome> {
+    const files = await Promise.all(
+      ids.map(async (id) => {
+        const t = await this.get<StoredTrack>("tracks", id);
+        if (!t || !t.available) throw new Error("Audio source is unavailable");
+        const ext =
+          (
+            {
+              "audio/wav": "wav",
+              "audio/mpeg": "mp3",
+              "audio/flac": "flac",
+              "audio/ogg": "ogg",
+              "audio/mp4": "m4a",
+            } as Record<string, string>
+          )[t.file.type] ?? "audio";
+        return new File(
+          [t.file],
+          `${t.title.replace(/[\\/:*?"<>|]/g, "_")}.${ext}`,
+          { type: t.file.type },
+        );
+      }),
+    );
+    if (navigator.canShare?.({ files })) {
+      try {
+        await navigator.share({ files });
+        return "opened";
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError")
+          return "canceled";
+        throw e;
+      }
+    }
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    return "download";
+  }
+  soundCapabilities() {
+    return this.sound.state();
+  }
+  setSound(config: import("../sound/types").SoundConfig) {
+    return this.sound.configure(config);
+  }
+  soundAction(action: import("../sound/types").SoundAction) {
+    return this.sound.action(action);
+  }
+  personalAction(action: import("../sound/types").PersonalAction) {
+    return this.sound.personal(action);
+  }
+  async openSoundPanel(): Promise<void> {
+    throw new Error("Device sound settings are unavailable in browser preview");
   }
   async importMusic(
     files: File[] = [],
@@ -384,6 +515,7 @@ export class BrowserMusic implements MusicApi {
         album = "",
         genre = "",
         durationMs = 0,
+        audioChannels: number | undefined,
         releaseYear: number | undefined,
         trackNumber: number | undefined,
         discNumber: number | undefined,
@@ -395,6 +527,7 @@ export class BrowserMusic implements MusicApi {
         album = m.common.album || "";
         genre = m.common.genre?.join(", ") || "";
         durationMs = Math.round((m.format.duration || 0) * 1000);
+        audioChannels = m.format.numberOfChannels;
         releaseYear = validReleaseYear(m.common.year ?? m.common.originalyear);
         trackNumber = m.common.track.no || undefined;
         discNumber = m.common.disk.no || undefined;
@@ -424,6 +557,7 @@ export class BrowserMusic implements MusicApi {
         album,
         genre,
         durationMs,
+        audioChannels,
         trackNumber,
         discNumber,
         orderMetadataRead: true,
@@ -457,7 +591,12 @@ export class BrowserMusic implements MusicApi {
     ];
     for (let i = 0; i < names.length; i++) {
       const id = "sample-" + i;
-      if (await this.get("tracks", id)) continue;
+      const existing = await this.get<StoredTrack>("tracks", id);
+      if (existing) {
+        if (existing.hidden)
+          await this.put("tracks", id, { ...existing, hidden: false });
+        continue;
+      }
       const rate = 16000,
         len = rate * 40,
         buffer = new ArrayBuffer(44 + len * 2),
@@ -551,6 +690,11 @@ export class BrowserMusic implements MusicApi {
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         historyEnabledSince: new Date().toISOString(),
       };
+      await this.put("settings", "preferences", s);
+    }
+    const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (s.timeZone !== deviceZone) {
+      s = { ...s, timeZone: deviceZone };
       await this.put("settings", "preferences", s);
     }
     return s;
@@ -648,11 +792,21 @@ export class BrowserMusic implements MusicApi {
       this.listeners.delete(cb);
     };
   }
-  async play(ids: string[], index = 0) {
+  async play(ids: string[], index?: number) {
     await this.ready;
     if (this.changing) return;
     this.changing = true;
     try {
+      const selected = index === undefined ? undefined : ids[index];
+      const visible = new Set(
+        (await this.all<StoredTrack>("tracks"))
+          .filter((t) => !t.hidden)
+          .map((t) => t.id),
+      );
+      ids = ids.filter((id) => visible.has(id));
+      index = index === undefined ? 0 : ids.indexOf(selected!);
+      if (!ids.length || index < 0)
+        throw new Error("Track was removed from Library.");
       this.audio.pause();
       this.finish("queue-transition");
       const t = await this.get<StoredTrack>("tracks", ids[index]);
@@ -672,10 +826,22 @@ export class BrowserMusic implements MusicApi {
         this.urls.set(t.id, URL.createObjectURL(t.file));
       this.audio.src = this.urls.get(t.id)!;
       this.emit();
+      if (!t.audioChannels) {
+        try {
+          const { parseBlob } = await import("music-metadata");
+          t.audioChannels = (await parseBlob(t.file)).format.numberOfChannels;
+          await this.put("tracks", t.id, t);
+        } catch {
+          /* Unknown formats retain the browser's stereo output. */
+        }
+      }
+      this.sound.format(t.audioChannels ?? 2);
+      this.sound.reset();
+      await this.sound.activate();
       await this.audio.play();
     } catch (e) {
       this.state.error = String(e);
-      this.state.playing = false;
+      this.state.playing = !this.audio.paused;
       this.emit();
     } finally {
       this.changing = false;
@@ -689,10 +855,13 @@ export class BrowserMusic implements MusicApi {
       await this.seek(ms);
       return;
     }
-    if (this.audio.paused) await this.audio.play();
-    else this.audio.pause();
+    if (this.audio.paused) {
+      await this.sound.activate();
+      await this.audio.play();
+    } else this.audio.pause();
   }
   async seek(ms: number) {
+    this.sound.reset();
     this.checkpoint();
     this.audio.currentTime =
       Math.max(0, Math.min(ms, this.state.durationMs)) / 1000;

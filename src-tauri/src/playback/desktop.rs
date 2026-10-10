@@ -1,4 +1,7 @@
+mod sound_control;
+use crate::sound::{engine::Engine, source::SoundSource};
 use music_core::*;
+use std::sync::atomic::Ordering;
 use std::{
     fs::File,
     sync::{mpsc, Arc, Mutex},
@@ -14,11 +17,21 @@ pub fn launch(
     app: AppHandle,
     core: Arc<Mutex<Store>>,
     state: Arc<Mutex<PlaybackSnapshot>>,
+    sound: Arc<Engine>,
 ) -> mpsc::Sender<Request> {
     let (tx, rx) = mpsc::channel::<Request>();
     std::thread::spawn(move || {
-        let device = rodio::DeviceSinkBuilder::open_default_sink().map_err(|e| e.to_string());
+        #[cfg(windows)]
+        let _output_monitor = crate::sound::output::monitor(sound.clone()).ok();
+        #[cfg(windows)]
+        sound
+            .route_monitoring
+            .store(_output_monitor.is_some(), Ordering::Relaxed);
+        let device = open_audio_device(sound.clone());
+        sound.available.store(device.is_ok(), Ordering::Relaxed);
         let mut p = DesktopPlayer {
+            sound,
+            tone: None,
             device: device.ok(),
             sink: None,
             core,
@@ -63,6 +76,7 @@ pub fn launch(
                     break;
                 }
             }
+            p.check_sound_interruptions();
             if p.snapshot.playing {
                 if p.sink.as_ref().is_some_and(|s| s.empty()) {
                     p.finish("completed");
@@ -90,6 +104,8 @@ pub fn launch(
     tx
 }
 struct DesktopPlayer {
+    sound: Arc<Engine>,
+    tone: Option<rodio::Player>,
     device: Option<rodio::MixerDeviceSink>,
     sink: Option<rodio::Player>,
     core: Arc<Mutex<Store>>,
@@ -133,6 +149,9 @@ impl DesktopPlayer {
         }
     }
     fn publish(&self) {
+        self.sound
+            .playing
+            .store(self.snapshot.playing, Ordering::Relaxed);
         *self.state.lock().unwrap() = self.snapshot.clone();
         let _ = self.app.emit("playback://snapshot", &self.snapshot);
     }
@@ -207,7 +226,7 @@ impl DesktopPlayer {
             .as_ref()
             .ok_or("No audio output device is available")?;
         let sink = rodio::Player::connect_new(device.mixer());
-        sink.append(source);
+        sink.append(SoundSource::new(source, self.sound.clone()));
         if position > 0 {
             sink.try_seek(Duration::from_millis(position))
                 .map_err(|e| e.to_string())?;
@@ -235,6 +254,12 @@ impl DesktopPlayer {
         Ok(())
     }
     fn command(&mut self, op: &str, v: serde_json::Value) -> Result<(), String> {
+        if self.sound_command(op, &v)? {
+            return Ok(());
+        }
+        if ["play", "toggle", "next", "previous"].contains(&op) {
+            self.cancel_personal();
+        }
         match op {
             "play" => {
                 let ids: Vec<String> =
@@ -363,4 +388,15 @@ impl DesktopPlayer {
         }
         Ok(())
     }
+}
+
+fn open_audio_device(sound: Arc<Engine>) -> Result<rodio::MixerDeviceSink, String> {
+    rodio::DeviceSinkBuilder::from_default_device()
+        .map_err(|e| e.to_string())?
+        .with_error_callback(move |_| {
+            sound.route_generation.fetch_add(1, Ordering::AcqRel);
+            sound.route_changed.store(true, Ordering::Release);
+        })
+        .open_sink_or_fallback()
+        .map_err(|e| e.to_string())
 }

@@ -27,6 +27,8 @@ pub struct Track {
     pub available: bool,
     #[serde(default)]
     pub demo: bool,
+    #[serde(default)]
+    pub hidden: bool,
 }
 fn yes() -> bool {
     true

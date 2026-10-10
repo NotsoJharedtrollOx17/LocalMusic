@@ -156,6 +156,7 @@ export function generate(
   const pool = tracks.filter(
     (t) =>
       t.available &&
+      !t.hidden &&
       (!excluded || key(t.artist) !== excluded) &&
       (!included || key(t.artist) === included) &&
       (!genre || key(t.genre).split(/[;,/]/).map(key).includes(genre)) &&
@@ -279,7 +280,9 @@ export function aggregate(
     [...m.values()].sort(
       (a, b) => b.plays - a.plays || key(a.name).localeCompare(key(b.name)),
     )[0];
-  const available = topTracks.filter((t) => t.track.available);
+  const available = topTracks.filter(
+    (t) => t.track.available && !t.track.hidden,
+  );
   const cap = available.length < 10 ? Infinity : 2;
   const artistCounts = new Map<string, number>();
   const ids = available

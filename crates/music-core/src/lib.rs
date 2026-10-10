@@ -2,6 +2,7 @@ pub mod catalog_query;
 pub mod groups;
 pub mod playlist;
 pub mod recap;
+pub mod search;
 pub mod store;
 pub mod types;
 pub use store::Store;

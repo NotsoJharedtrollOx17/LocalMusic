@@ -15,6 +15,7 @@ export interface Track {
   favorite: boolean;
   available: boolean;
   demo?: boolean;
+  hidden?: boolean;
 }
 export interface Playlist {
   id: string;
@@ -101,7 +102,30 @@ export interface ImportProgress {
   imported: number;
   failed: number;
 }
+export interface SearchResults {
+  hasMore: boolean;
+  tracks: Track[];
+  albums: CatalogGroup[];
+  artists: CatalogGroup[];
+  playlists: Playlist[];
+}
+export type SoundCapabilities = import("./sound/types").SoundState;
+export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  searchCatalog(query: string, limit?: number): Promise<SearchResults>;
+  setLibraryVisibility(ids: string[], visible: boolean): Promise<void>;
+  shareAudio(ids: string[]): Promise<ShareOutcome>;
+  soundCapabilities(): Promise<SoundCapabilities>;
+  setSound(
+    config: import("./sound/types").SoundConfig,
+  ): Promise<SoundCapabilities>;
+  soundAction(
+    action: import("./sound/types").SoundAction,
+  ): Promise<SoundCapabilities>;
+  personalAction(
+    action: import("./sound/types").PersonalAction,
+  ): Promise<import("./sound/types").PersonalSession>;
+  openSoundPanel(): Promise<void>;
   groupIds(
     kind: "albums" | "artists",
     title: string,

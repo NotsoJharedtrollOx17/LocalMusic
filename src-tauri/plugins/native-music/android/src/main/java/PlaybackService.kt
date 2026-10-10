@@ -23,15 +23,20 @@ class PlaybackService:MediaSessionService(){
  private val handler=Handler(Looper.getMainLooper())
  private val prefs by lazy {getSharedPreferences("playback",Context.MODE_PRIVATE)}
  private var ticks=0
+ lateinit var sound:SoundEngine
  private val ticker=object:Runnable{override fun run(){journal.tick(player.isPlaying);if(++ticks % 10 == 0)persist();handler.postDelayed(this,1000)}}
  companion object { @Volatile var instance:PlaybackService?=null }
  override fun onCreate(){
   super.onCreate();instance=this
   journal=PlaybackJournal(applicationContext)
-  player=ExoPlayer.Builder(this).setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true).setHandleAudioBecomingNoisy(true).setWakeMode(C.WAKE_MODE_LOCAL).build()
+  sound=SoundEngine(applicationContext)
+  player=ExoPlayer.Builder(this,SoundRenderersFactory(this,sound)).setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),true).setHandleAudioBecomingNoisy(true).setWakeMode(C.WAKE_MODE_LOCAL).build()
+  player.trackSelectionParameters=player.trackSelectionParameters.buildUpon().setAudioOffloadPreferences(androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences.Builder().setAudioOffloadMode(androidx.media3.common.TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED).build()).build()
   player.addListener(object:Player.Listener{
+   override fun onPlayerError(error:PlaybackException){if(error.errorCode in 5000..5999)sound.failed=error.message}
+   override fun onAudioSessionIdChanged(audioSessionId:Int){sound.migrateLegacy(audioSessionId)}
    override fun onMediaItemTransition(item:MediaItem?,reason:Int){journal.transition(item?.mediaId,player.isPlaying,reason==Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT);persist()}
-   override fun onIsPlayingChanged(playing:Boolean){journal.transition(player.currentMediaItem?.mediaId,playing)}
+   override fun onIsPlayingChanged(playing:Boolean){if(playing){sound.failed=null;sound.cancelSetup();};journal.transition(player.currentMediaItem?.mediaId,playing)}
    override fun onPositionDiscontinuity(old:Player.PositionInfo,new:Player.PositionInfo,reason:Int){journal.setPlaying(player.isPlaying);persist()}
   })
   session=MediaSession.Builder(this,player).setCallback(object:MediaSession.Callback{
@@ -67,5 +72,5 @@ class PlaybackService:MediaSessionService(){
  fun snapshot():JSONObject{val q=JSONArray();for(i in 0 until player.mediaItemCount)q.put(player.getMediaItemAt(i).mediaId);return JSONObject().put("trackId",player.currentMediaItem?.mediaId?:JSONObject.NULL).put("playing",player.isPlaying).put("positionMs",player.currentPosition.coerceAtLeast(0)).put("durationMs",player.duration.coerceAtLeast(0)).put("queue",q).put("queueIndex",player.currentMediaItemIndex.coerceAtLeast(0)).put("shuffle",player.shuffleModeEnabled).put("repeat",when(player.repeatMode){Player.REPEAT_MODE_ALL->"all";Player.REPEAT_MODE_ONE->"one";else->"off"}).put("excluded",journal.excluded).put("error",player.playerError?.message?:JSONObject.NULL).put("unavailableTrackId",if(player.playerError?.errorCode in listOf(PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,PlaybackException.ERROR_CODE_IO_NO_PERMISSION))player.currentMediaItem?.mediaId?:JSONObject.NULL else JSONObject.NULL)}
  private fun persist(){if(!::player.isInitialized)return;val s=snapshot();val items=JSONArray();for(i in 0 until player.mediaItemCount){val item=player.getMediaItemAt(i);items.put(JSONObject().put("id",item.mediaId).put("sourceUri",item.localConfiguration?.uri.toString()).put("title",item.mediaMetadata.title?.toString()?:"").put("artist",item.mediaMetadata.artist?.toString()?:"").put("album",item.mediaMetadata.albumTitle?.toString()?:""))};s.put("items",items);prefs.edit().putString("queue",s.toString()).apply()}
  private fun itemsFromJson(items:JSONArray):List<MediaItem> =(0 until items.length()).map{val t=items.getJSONObject(it);MediaItem.Builder().setMediaId(t.getString("id")).setUri(t.getString("sourceUri")).setMediaMetadata(MediaMetadata.Builder().setTitle(t.optString("title")).setArtist(t.optString("artist")).setAlbumTitle(t.optString("album")).build()).build()}
- override fun onDestroy(){handler.removeCallbacks(ticker);persist();journal.close();session.release();player.release();instance=null;super.onDestroy()}
+ override fun onDestroy(){handler.removeCallbacks(ticker);persist();sound.close();journal.close();session.release();player.release();instance=null;super.onDestroy()}
 }
