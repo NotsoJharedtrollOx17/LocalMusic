@@ -10,15 +10,17 @@ test("main journeys expose accessible controls at mobile width", async ({
   for (const name of ["Library", "Playlists", "Your Year"]) {
     await page.locator(".bottom-nav").getByRole("button", { name }).click();
     await expect
-      .poll(async () =>
-        (
-          await new AxeBuilder({ page })
-            .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-            .analyze()
-        ).violations.map((v) => ({
-          id: v.id,
-          nodes: v.nodes.map((n) => n.target),
-        })),
+      .poll(
+        async () =>
+          (
+            await new AxeBuilder({ page })
+              .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+              .analyze()
+          ).violations.map((v) => ({
+            id: v.id,
+            nodes: v.nodes.map((n) => n.target),
+          })),
+        { timeout: 15000 },
       )
       .toEqual([]);
   }

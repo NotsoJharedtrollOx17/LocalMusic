@@ -28,3 +28,7 @@ React consumes typed commands and native playback snapshots. Rust owns catalog, 
 ## Reference boundary
 
 The original .AGENTS guide and its four images remain design inputs. Natural-language playlist interpretation, enrichment, model downloads and animated symmetry are later features. Follow official Tauri mobile-plugin, Android Media3 and scoped-storage documentation.
+
+## Recap export revision — 9 October 2026
+
+The user requested an image-focused functional recap and removal of JSON export buttons. The current export target supersedes the original JSON/1080×1920 UI requirement: provide a matching preview and PNG download at 2160×3840 for Story or 2160×2700 for Feed, using the supplied editorial/orbit design language. Retain honest coverage, privacy revision checks, immutable snapshots and playable recap queues. Native save cancellation must not report a successful export.

@@ -5,6 +5,7 @@ import {
   safeRecap,
   coverSvg,
   localMidnight,
+  recapYears,
 } from "./domain";
 import type { Track, Settings, Session, Interval } from "./types";
 const track = (id: string, artist = "A"): Track => ({
@@ -102,6 +103,30 @@ describe("recap evidence", () => {
       localMidnight(2025, 2, 10, "America/Los_Angeles") -
         localMidnight(2025, 2, 9, "America/Los_Angeles"),
     ).toBe(23 * 3600000);
+  });
+  it("builds recap year choices in the configured time zone", () => {
+    const now = new Date("2026-01-01T01:00:00Z");
+    expect(recapYears(settings, now)).toEqual([2026, 2025]);
+    expect(
+      recapYears({ ...settings, timeZone: "America/Los_Angeles" }, now),
+    ).toEqual([2025, 2024]);
+  });
+  it("keeps completed-year display dates inside the selected year", () => {
+    for (const timeZone of ["UTC", "America/Los_Angeles"]) {
+      const recap = aggregate(
+        2025,
+        { ...settings, timeZone },
+        [],
+        [],
+        [],
+        new Date("2026-01-02T12:00:00Z"),
+      );
+      expect(recap.completeYear).toBe(true);
+      expect(safeRecap(recap).coverage).toMatchObject({
+        since: "2025-01-01",
+        through: "2025-12-31",
+      });
+    }
   });
   it("exports display data without paths, identifiers or exact times", () => {
     const r = aggregate(

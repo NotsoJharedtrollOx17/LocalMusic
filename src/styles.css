@@ -2194,3 +2194,50 @@ input[type="range"] {
 .chooser-shield svg {
   color: var(--accent-ink);
 }
+
+.share-recap {
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.image-formats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.image-formats .button {
+  flex: 1;
+}
+.image-size {
+  color: var(--muted);
+  font-size: 12px;
+}
+.recap-image-preview {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  align-self: center;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.image-loading {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.share-error {
+  color: var(--ink);
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.share-recap .full-width {
+  width: 100%;
+}

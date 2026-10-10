@@ -23,7 +23,6 @@ import {
   Headphones,
   FolderOpen,
   Upload,
-  Download,
   Share2,
   Check,
   X,
@@ -37,11 +36,13 @@ import { api, native } from "./api";
 import { en, es } from "./i18n";
 import {
   compareCatalogTracks,
+  coverageThrough,
+  recapYears,
   coverUrl,
   localDate,
   localMidnight,
 } from "./domain";
-import { exportCard, exportJson } from "./export";
+import ShareRecap from "./ShareRecap";
 import {
   Cover,
   TrackRow,
@@ -98,6 +99,9 @@ export default function App() {
     [selectedList, setSelectedList] = useState<Playlist | null>(null),
     [generated, setGenerated] = useState<Playlist | null>(null),
     [recap, setRecap] = useState<Recap>(),
+    [shareRecap, setShareRecap] = useState<Recap | null>(null),
+    [recapLoading, setRecapLoading] = useState(false),
+    [recapRevision, setRecapRevision] = useState(0),
     [snapshotMode, setSnapshotMode] = useState(false),
     [snapshots, setSnapshots] = useState<Recap[]>([]),
     [year, setYear] = useState(new Date().getFullYear()),
@@ -146,6 +150,27 @@ export default function App() {
     folderInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null);
   const t = settings?.language === "es" ? es : en;
+  const liveYears = settings
+    ? recapYears(settings)
+    : [new Date().getFullYear()];
+  const yearOptions =
+    snapshotMode && recap && !liveYears.includes(recap.year)
+      ? [...liveYears, recap.year].sort((a, b) => b - a)
+      : liveYears;
+  const calendarReady = useRef(false);
+  useEffect(() => {
+    if (!settings || snapshotMode) return;
+    if (!calendarReady.current) {
+      calendarReady.current = true;
+      setYear(liveYears[0]);
+    } else if (!liveYears.includes(year)) setYear(liveYears[0]);
+  }, [
+    settings?.timeZone,
+    liveYears[0],
+    liveYears[liveYears.length - 1],
+    year,
+    snapshotMode,
+  ]);
   const act = useCallback(async (fn: () => Promise<unknown>) => {
     setError("");
     try {
@@ -299,20 +324,46 @@ export default function App() {
     ].filter((id) => !cache[id]);
     if (ids.length) void act(async () => remember(await api.tracksById(ids)));
   }, [player.queue, player.trackId, cache, modal, queueLimit, act, remember]);
+  const recapRequest = useRef(0);
   useEffect(() => {
-    if (tab === "year" && settings)
-      void act(async () => {
+    if (tab !== "year" || !settings || snapshotMode) return;
+    const version = ++recapRequest.current;
+    let active = true;
+    setRecapLoading(true);
+    void act(async () => {
+      try {
         await settingsWrite.current;
-        setRecap(await api.recap(year));
-        setSnapshotMode(false);
-        setSnapshots(await api.snapshots());
-      });
-  }, [tab, year, settings, act]);
+        const result = await api.recap(year);
+        const saved = await api.snapshots();
+        if (!active || version !== recapRequest.current) return;
+        setRecap(result);
+        setSnapshots(saved);
+      } finally {
+        if (active && version === recapRequest.current) setRecapLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [tab, year, settings, snapshotMode, recapRevision, player.playing, act]);
+  useEffect(() => {
+    if (tab !== "year" || snapshotMode || shareRecap) return;
+    const refresh = () => setRecapRevision((v) => v + 1);
+    window.addEventListener("focus", refresh);
+    const timer = player.playing
+      ? window.setInterval(refresh, 15000)
+      : undefined;
+    return () => {
+      window.removeEventListener("focus", refresh);
+      if (timer) window.clearInterval(timer);
+    };
+  }, [tab, snapshotMode, shareRecap, player.playing]);
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       if (
         /INPUT|SELECT|TEXTAREA/.test((e.target as HTMLElement).tagName) ||
-        modal
+        modal ||
+        shareRecap
       )
         return;
       if (e.code === "Space" && player.trackId) {
@@ -327,13 +378,17 @@ export default function App() {
     };
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
-  }, [modal, player.trackId, act]);
+  }, [modal, shareRecap, player.trackId, act]);
   useEffect(() => {
     if (!notice) return;
     const timeout = setTimeout(() => setNotice(""), 4500);
     return () => clearTimeout(timeout);
   }, [notice]);
   const current = player.trackId ? cache[player.trackId] : undefined;
+  const formatMinutes = (ms: number) =>
+    ms > 0 && ms < 60000
+      ? "<1"
+      : Math.round(ms / 60000).toLocaleString(settings?.language);
   const formatDate = (s: string, zone = settings?.timeZone) =>
     new Intl.DateTimeFormat(settings?.language ?? "en", {
       month: "short",
@@ -1365,24 +1420,24 @@ export default function App() {
                   <select
                     aria-label={t.year}
                     value={year}
-                    onChange={(e) => setYear(Number(e.target.value))}
+                    onChange={(e) => {
+                      setSnapshotMode(false);
+                      setYear(Number(e.target.value));
+                    }}
                   >
-                    {Array.from(
-                      {
-                        length: Math.max(
-                          1,
-                          new Date().getFullYear() -
-                            new Date(
-                              settings?.historyEnabledSince ?? new Date(),
-                            ).getFullYear() +
-                            1,
-                        ),
-                      },
-                      (_, i) => new Date().getFullYear() - i,
-                    ).map((y) => (
+                    {yearOptions.map((y) => (
                       <option key={y}>{y}</option>
                     ))}
                   </select>
+                  <IconButton
+                    label={snapshotMode ? t.liveRecap : t.refreshRecap}
+                    onClick={() => {
+                      setSnapshotMode(false);
+                      setRecapRevision((v) => v + 1);
+                    }}
+                  >
+                    <Repeat size={20} />
+                  </IconButton>
                   <IconButton
                     label={t.savedSnapshots}
                     onClick={() => setModal("snapshots")}
@@ -1392,11 +1447,16 @@ export default function App() {
                 </div>
               </div>
               <OrbitPoster
-                year={recap?.year ?? year}
+                year={recap?.year === year ? recap.year : year}
                 seed={recap?.visualSeed ?? "ff6600"}
                 label={t.inSound}
               />
-              {recap && (
+              {recapLoading && (
+                <p role="status" className="small-muted">
+                  {t.loading}
+                </p>
+              )}
+              {recap && recap.year === year && (
                 <>
                   <div className="recap-coverage">
                     <span>
@@ -1409,15 +1469,14 @@ export default function App() {
                     <span>
                       {t.since} {formatDate(recap.coveredFrom, recap.timeZone)}{" "}
                       · {t.through}{" "}
-                      {formatDate(recap.coveredThrough, recap.timeZone)}
+                      {formatDate(
+                        coverageThrough(recap).toISOString(),
+                        recap.timeZone,
+                      )}
                     </span>
                   </div>
                   <div className="recap-total">
-                    <strong>
-                      {Math.round(recap.listenedMs / 60000).toLocaleString(
-                        settings?.language,
-                      )}
-                    </strong>
+                    <strong>{formatMinutes(recap.listenedMs)}</strong>
                     <div>
                       <span className="eyebrow">{t.minutesListened}</span>
                       <small>
@@ -1476,21 +1535,14 @@ export default function App() {
                     </button>
                     <button
                       className="button secondary"
-                      onClick={() =>
-                        void act(() =>
-                          exportCard(recap, settings?.language ?? "en"),
-                        )
-                      }
+                      disabled={!recap.listenedMs || recapLoading}
+                      onClick={() => {
+                        setModal(null);
+                        setShareRecap(recap);
+                      }}
                     >
                       <Share2 size={18} />
                       {t.shareCard}
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => void act(() => exportJson(recap))}
-                    >
-                      <Download size={17} />
-                      {t.exportJson}
                     </button>
                     <button
                       className="text-button"
@@ -1723,8 +1775,12 @@ export default function App() {
                   void act(async () => {
                     if (confirm(t.deleteWarning)) {
                       await api.deleteHistory();
-                      setSettings(await api.settings());
-                      setRecap(await api.recap(year));
+                      const nextSettings = await api.settings();
+                      const nextYear = recapYears(nextSettings)[0];
+                      setSettings(nextSettings);
+                      setSnapshotMode(false);
+                      setYear(nextYear);
+                      setRecap(await api.recap(nextYear));
                       setSnapshots([]);
                       setNotice(t.done);
                     }
@@ -2019,6 +2075,9 @@ export default function App() {
                 className="snapshot-row"
                 key={i}
                 onClick={() => {
+                  ++recapRequest.current;
+                  setYear(r.year);
+                  setRecapLoading(false);
                   setRecap(r);
                   setSnapshotMode(true);
                   remember(r.topTracks.map((x) => x.track));
@@ -2026,10 +2085,11 @@ export default function App() {
                 }}
               >
                 <span>
-                  {r.year} · {formatDate(r.coveredThrough, r.timeZone)}
+                  {r.year} ·{" "}
+                  {formatDate(coverageThrough(r).toISOString(), r.timeZone)}
                 </span>
                 <strong>
-                  {Math.round(r.listenedMs / 60000)} {t.minutes.toLowerCase()}
+                  {formatMinutes(r.listenedMs)} {t.minutes.toLowerCase()}
                 </strong>
                 <ArrowUpRight size={18} />
               </button>
@@ -2038,6 +2098,14 @@ export default function App() {
             <p className="empty-small">{t.noSnapshot}</p>
           )}
         </Modal>
+      )}
+      {shareRecap && (
+        <ShareRecap
+          recap={shareRecap}
+          frozen={snapshotMode}
+          language={settings?.language ?? "en"}
+          onClose={() => setShareRecap(null)}
+        />
       )}
       {modal === "story" && recap && (
         <Modal
@@ -2065,16 +2133,14 @@ export default function App() {
                 />
                 <h2>{t.year}</h2>
                 <p>
-                  {t.since} {formatDate(recap.coveredFrom)}
+                  {t.since} {formatDate(recap.coveredFrom, recap.timeZone)}
                 </p>
               </>
             ) : story === 1 ? (
               <>
                 <p className="eyebrow">{t.minutesListened}</p>
                 <strong className="story-number">
-                  {Math.round(recap.listenedMs / 60000).toLocaleString(
-                    settings?.language,
-                  )}
+                  {formatMinutes(recap.listenedMs)}
                 </strong>
                 <p>
                   {recap.activeDays} {t.listeningDays}
@@ -2118,11 +2184,11 @@ export default function App() {
                 </button>
                 <button
                   className="button secondary"
-                  onClick={() =>
-                    void act(() =>
-                      exportCard(recap, settings?.language ?? "en"),
-                    )
-                  }
+                  disabled={!recap.listenedMs || recapLoading}
+                  onClick={() => {
+                    setModal(null);
+                    setShareRecap(recap);
+                  }}
                 >
                   <Share2 size={18} />
                   {t.shareCard}

@@ -1,25 +1,27 @@
 import type { Recap } from "./types";
-import { safeRecap } from "./domain";
+import { safeRecap, localMidnight } from "./domain";
 import { native, api } from "./api";
-async function checkPrivacy(recap: Recap) {
-  await api.recap(recap.year); // Flush native journal before checking privacy changes.
+export async function checkPrivacy(recap: Recap, language: "en" | "es" = "en") {
+  const current = await api.recap(recap.year); // Flush native journal before checking privacy changes.
   if (
     (recap.privacyRevision ?? 0) !==
     ((await api.settings()).privacyRevision ?? 0)
   ) {
     throw new Error(
-      "History privacy changed. Open Your Year again and generate a new recap before sharing.",
+      language === "es"
+        ? "La privacidad del historial cambió. Abre Tu año y genera un resumen nuevo antes de compartir."
+        : "History privacy changed. Open Your Year again and generate a new recap before sharing.",
     );
   }
+  return current;
 }
 import { invoke } from "@tauri-apps/api/core";
 export async function saveBlob(blob: Blob, name: string) {
   if (native) {
-    await invoke("export_file", {
+    return await invoke<boolean>("export_file", {
       name,
       bytes: Array.from(new Uint8Array(await blob.arrayBuffer())),
     });
-    return;
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -27,6 +29,7 @@ export async function saveBlob(blob: Blob, name: string) {
   a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }
 export function drawOrbit(
   ctx: CanvasRenderingContext2D,
@@ -78,131 +81,224 @@ export function drawOrbit(
   }
   ctx.restore();
 }
-export async function exportCard(recap: Recap, language: "en" | "es") {
-  await checkPrivacy(recap);
-  await document.fonts.ready;
-  const c = document.createElement("canvas");
-  c.width = 1080;
-  c.height = 1920;
-  const ctx = c.getContext("2d")!;
-  ctx.fillStyle = "#faf8f4";
-  ctx.fillRect(0, 0, 1080, 1920);
-  drawOrbit(ctx, 48, 48, 984, 650, recap.visualSeed);
-  ctx.fillStyle = "#faf8f4";
-  ctx.font = '700 180px "Space Grotesk", sans-serif';
-  ctx.fillText(String(recap.year), 88, 245);
-  ctx.font = "500 29px Inter, sans-serif";
-  ctx.fillText(language === "es" ? "EN SONIDO" : "IN SOUND", 98, 300);
-  ctx.fillStyle = "#171717";
-  ctx.font = '700 170px "Space Grotesk", sans-serif';
-  ctx.fillText(
-    Math.round(recap.listenedMs / 60000).toLocaleString(language),
-    48,
-    930,
+
+export type CardFormat = "story" | "feed";
+export const cardDimensions = (format: CardFormat) => ({
+  width: 2160,
+  height: format === "story" ? 3840 : 2700,
+});
+
+export async function renderRecapCard(
+  recap: Recap,
+  language: "en" | "es",
+  format: CardFormat,
+): Promise<Blob> {
+  await Promise.all([
+    document.fonts.load('700 60px "Space Grotesk"'),
+    document.fonts.load("500 28px Inter"),
+  ]);
+  const dimensions = cardDimensions(format);
+  const canvas = document.createElement("canvas");
+  canvas.width = dimensions.width;
+  canvas.height = dimensions.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Image rendering unavailable");
+  ctx.scale(2, 2);
+  const h = dimensions.height / 2,
+    story = format === "story",
+    pad = 64,
+    w = 952;
+  const es = language === "es",
+    safe = safeRecap(recap);
+  const ink = "#17191a",
+    muted = "#5d615f",
+    paper = "#faf8f4",
+    accent = "#ff6816";
+  const text = (
+    value: string,
+    x: number,
+    y: number,
+    size: number,
+    maxWidth = w,
+    color = ink,
+    weight = 500,
+  ) => {
+    ctx.fillStyle = color;
+    let font = size;
+    ctx.font = `${weight} ${font}px ${weight === 700 ? '"Space Grotesk"' : "Inter"}, sans-serif`;
+    while (
+      ctx.measureText(value).width > maxWidth &&
+      font > Math.max(24, size * 0.7)
+    ) {
+      font--;
+      ctx.font = `${weight} ${font}px ${weight === 700 ? '"Space Grotesk"' : "Inter"}, sans-serif`;
+    }
+    const chars = Array.from(value);
+    if (ctx.measureText(value).width > maxWidth) {
+      while (
+        chars.length &&
+        ctx.measureText(chars.join("") + "…").width > maxWidth
+      )
+        chars.pop();
+      value = chars.join("") + "…";
+    }
+    ctx.fillText(value, x, y);
+  };
+  const label = (value: string, y: number) => text(value, pad, y, 25, w, muted);
+  ctx.fillStyle = paper;
+  ctx.fillRect(0, 0, 1080, h);
+  const heroHeight = story ? 560 : 300;
+  drawOrbit(ctx, 32, 32, 1016, heroHeight, recap.visualSeed);
+  text(String(recap.year), pad, 198, 156, 600, paper, 700);
+  text(es ? "EN SONIDO" : "IN SOUND", pad + 8, 251, 30, 600, paper);
+  text(
+    recap.completeYear
+      ? es
+        ? "AÑO COMPLETO"
+        : "COMPLETE YEAR"
+      : es
+        ? "ESCUCHA REGISTRADA"
+        : "RECORDED LISTENING",
+    pad + 8,
+    heroHeight - 10,
+    22,
+    850,
+    paper,
   );
-  ctx.font = "600 27px Inter, sans-serif";
-  ctx.fillText(
-    language === "es" ? "MINUTOS ESCUCHADOS" : "MINUTES LISTENED",
-    56,
-    984,
+  const totalY = heroHeight + (story ? 205 : 160);
+  text(
+    recap.listenedMs > 0 && recap.listenedMs < 60000
+      ? "<1"
+      : safe.minutesListened.toLocaleString(language),
+    pad,
+    totalY,
+    story ? 152 : 130,
+    w,
+    ink,
+    700,
   );
-  ctx.fillStyle = "#6a6a65";
-  ctx.font = "24px Inter, sans-serif";
-  const safe = safeRecap(recap);
-  ctx.fillText(
-    (language === "es" ? "Desde " : "Since ") +
-      safe.coverage.since +
-      " · " +
-      safe.coverage.through,
-    56,
-    1036,
+  label(es ? "MINUTOS ESCUCHADOS" : "MINUTES LISTENED", totalY + 48);
+  text(
+    `${safe.activeDays.toLocaleString(language)} ${es ? (safe.activeDays === 1 ? "día de escucha" : "días de escucha") : safe.activeDays === 1 ? "listening day" : "listening days"}  ·  ${safe.qualifiedPlays.toLocaleString(language)} ${es ? (safe.qualifiedPlays === 1 ? "reproducción" : "reproducciones") : safe.qualifiedPlays === 1 ? "qualified play" : "qualified plays"}`,
+    pad,
+    totalY + 97,
+    27,
+    w,
+    muted,
   );
-  const max = Math.max(...recap.months, 1);
+  const chartBottom = totalY + (story ? 325 : 225);
+  const max = Math.max(...recap.months, 1),
+    chartHeight = story ? 135 : 95;
   recap.months.forEach((ms, i) => {
-    ctx.fillStyle = "#ff6816";
-    ctx.fillRect(
-      60 + i * 80,
-      1260 - (ms / max) * 140,
-      30,
-      Math.max(1, (ms / max) * 140),
-    );
-    ctx.fillStyle = "#6a6a65";
-    ctx.font = "19px Inter,sans-serif";
-    ctx.fillText(
+    const observed =
+      Date.parse(recap.coveredFrom) <
+        localMidnight(recap.year, i + 1, 1, recap.timeZone) &&
+      Date.parse(recap.coveredThrough) >=
+        localMidnight(recap.year, i, 1, recap.timeZone);
+    const x = pad + i * (w / 12);
+    ctx.fillStyle = observed ? accent : "#d5d6d0";
+    const height = observed && ms ? Math.max(3, (ms / max) * chartHeight) : 2;
+    ctx.fillRect(x + 13, chartBottom - height, 36, height);
+    text(
       new Intl.DateTimeFormat(language, { month: "short", timeZone: "UTC" })
         .format(new Date(Date.UTC(2000, i, 1)))
+        .replace(/\.$/, "")
         .toUpperCase(),
-      50 + i * 80,
-      1297,
+      x + 5,
+      chartBottom + 35,
+      21,
+      76,
+      muted,
     );
   });
-  ctx.strokeStyle = "#cbc9c2";
+  text(
+    es ? "Gris: meses sin cobertura" : "Gray: months outside recorded history",
+    pad,
+    chartBottom + 75,
+    22,
+    w,
+    muted,
+  );
+  const highlightsY = chartBottom + 115;
+  ctx.strokeStyle = "#caccc5";
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(48, 1360);
-  ctx.lineTo(1032, 1360);
+  ctx.moveTo(pad, highlightsY);
+  ctx.lineTo(1016, highlightsY);
   ctx.stroke();
-  ctx.font = "24px Inter,sans-serif";
-  ctx.fillStyle = "#6a6a65";
-  ctx.fillText(
-    language === "es" ? "ARTISTA PRINCIPAL" : "TOP ARTIST",
-    56,
-    1432,
-  );
-  ctx.fillText(language === "es" ? "CANCIÓN PRINCIPAL" : "TOP TRACK", 56, 1598);
-  ctx.fillStyle = "#171717";
-  ctx.font = '700 59px "Space Grotesk",sans-serif';
-  const fit = (text: string, y: number) => {
-    let size = 59;
-    while (ctx.measureText(text).width > 960 && size > 25) {
-      size--;
-      ctx.font = "700 " + size + 'px "Space Grotesk",sans-serif';
-    }
-    const letters = Array.from(text);
-    while (ctx.measureText(letters.join("")).width > 960 && letters.length) {
-      letters.pop();
-    }
-    if (letters.length < Array.from(text).length) {
-      while (
-        ctx.measureText(letters.join("") + "…").width > 960 &&
-        letters.length
-      )
-        letters.pop();
-      text = letters.join("") + "…";
-    }
-    ctx.fillText(text, 56, y);
-    ctx.font = '700 59px "Space Grotesk",sans-serif';
+  const gap = story ? 155 : 125;
+  const highlight = (
+    heading: string,
+    value: string,
+    detail: string,
+    i: number,
+  ) => {
+    const y = highlightsY + 50 + gap * i;
+    label(heading, y);
+    text(value, pad, y + 53, story ? 53 : 45, w, ink, 700);
+    if (detail) text(detail, pad, y + 87, 23, w, muted);
   };
-  fit(
-    recap.topArtist?.name ||
-      (language === "es" ? "Aún sin datos" : "Still taking shape"),
-    1510,
+  const empty = es
+    ? "Aún sin reproducciones calificadas"
+    : "No qualified plays yet";
+  highlight(
+    es ? "01 / ARTISTA PRINCIPAL" : "01 / TOP ARTIST",
+    recap.topArtist?.name ?? empty,
+    recap.topArtist
+      ? `${recap.topArtist.plays} ${es ? "reproducciones" : "plays"}`
+      : "",
+    0,
   );
-  fit(
-    recap.topTracks[0]?.track.title ||
-      (language === "es" ? "Aún sin datos" : "Still taking shape"),
-    1676,
+  highlight(
+    es ? "02 / CANCIÓN PRINCIPAL" : "02 / TOP TRACK",
+    recap.topTracks[0]?.track.title ?? empty,
+    recap.topTracks[0]?.track.artist ?? "",
+    1,
   );
-  ctx.fillStyle = "#6a6a65";
-  ctx.font = "22px Inter,sans-serif";
-  ctx.fillText(
-    language === "es" ? "TU MÚSICA. TU AÑO." : "YOUR MUSIC. YOUR YEAR.",
-    56,
-    1830,
+  highlight(
+    es ? "03 / ÁLBUM PRINCIPAL" : "03 / TOP ALBUM",
+    recap.topAlbum?.name ?? (es ? "Sin álbum registrado" : "No album recorded"),
+    recap.topAlbum?.artist ?? "",
+    2,
   );
-  const blob = await new Promise<Blob>((resolve, reject) =>
-    c.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("Card export failed"))),
+  const date = (value: string) =>
+    new Intl.DateTimeFormat(language, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(value + "T12:00:00Z"));
+  text(
+    `${date(safe.coverage.since)} — ${date(safe.coverage.through)}`,
+    pad,
+    h - 117,
+    24,
+    w,
+    muted,
+  );
+  text(
+    es
+      ? "Solo escucha registrada en esta app."
+      : "Only listening recorded by this app.",
+    pad,
+    h - 79,
+    23,
+    w,
+    muted,
+  );
+  text(
+    es ? "local. / TU MÚSICA. TU AÑO." : "local. / YOUR MUSIC. YOUR YEAR.",
+    pad,
+    h - 38,
+    22,
+    w,
+    ink,
+  );
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("Image export failed")),
       "image/png",
     ),
-  );
-  await saveBlob(blob, "your-year-" + recap.year + ".png");
-}
-export async function exportJson(recap: Recap) {
-  await checkPrivacy(recap);
-  await saveBlob(
-    new Blob([JSON.stringify(safeRecap(recap), null, 2)], {
-      type: "application/json",
-    }),
-    "your-year-" + recap.year + ".json",
   );
 }

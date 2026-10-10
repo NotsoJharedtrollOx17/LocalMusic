@@ -621,7 +621,7 @@ async fn reorder_queue(
     dispatch(app, &state, "reorder", json!({"ids":ids})).await
 }
 #[tauri::command]
-async fn export_file(app: tauri::AppHandle, name: String, bytes: Vec<u8>) -> Result<()> {
+async fn export_file(app: tauri::AppHandle, name: String, bytes: Vec<u8>) -> Result<bool> {
     if name.contains(['/', '\\']) || bytes.len() > 20 * 1024 * 1024 {
         return Err("Invalid export".into());
     }
@@ -629,16 +629,20 @@ async fn export_file(app: tauri::AppHandle, name: String, bytes: Vec<u8>) -> Res
     {
         use tauri_plugin_dialog::DialogExt;
         tauri::async_runtime::spawn_blocking(move || {
-            if let Some(file) = app
+            let mut dialog = app
                 .dialog()
                 .file()
-                .set_file_name(&name)
-                .blocking_save_file()
-            {
+                .add_filter("PNG image", &["png"])
+                .set_file_name(&name);
+            if let Some(window) = app.get_webview_window("main") {
+                dialog = dialog.set_parent(&window);
+            }
+            if let Some(file) = dialog.blocking_save_file() {
                 let p = file.into_path().map_err(|e| e.to_string())?;
                 std::fs::write(p, bytes).map_err(|e| e.to_string())?;
+                return Ok(true);
             }
-            Ok(())
+            Ok(false)
         })
         .await
         .map_err(|e| e.to_string())?
@@ -647,10 +651,10 @@ async fn export_file(app: tauri::AppHandle, name: String, bytes: Vec<u8>) -> Res
     {
         use tauri_plugin_native_music::NativeMusicExt;
         tauri::async_runtime::spawn_blocking(move || {
-            let _: serde_json::Value = app
+            let value: serde_json::Value = app
                 .native_music()
                 .call("exportFile", json!({"name":name,"bytes":bytes}))?;
-            Ok(())
+            Ok(value["saved"].as_bool().unwrap_or(false))
         })
         .await
         .map_err(|e| e.to_string())?

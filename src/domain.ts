@@ -312,6 +312,22 @@ export function aggregate(
     visualSeed: hash(year + "|" + coveredFrom + "|" + total),
   };
 }
+export function recapYears(settings: Settings, now = new Date()): number[] {
+  const current = Number(localDate(now, settings.timeZone).slice(0, 4));
+  const since = Number(
+    localDate(new Date(settings.historyEnabledSince), settings.timeZone).slice(
+      0,
+      4,
+    ),
+  );
+  const first = Math.min(current, since);
+  return Array.from({ length: current - first + 1 }, (_, i) => current - i);
+}
+export function coverageThrough(recap: Recap): Date {
+  const end = localMidnight(recap.year + 1, 0, 1, recap.timeZone);
+  const through = Date.parse(recap.coveredThrough);
+  return new Date(through >= end ? end - 1 : through);
+}
 export function safeRecap(recap: Recap) {
   return {
     schemaVersion: recap.schemaVersion,
@@ -319,7 +335,7 @@ export function safeRecap(recap: Recap) {
     timeZone: recap.timeZone,
     coverage: {
       since: localDate(new Date(recap.coveredFrom), recap.timeZone),
-      through: localDate(new Date(recap.coveredThrough), recap.timeZone),
+      through: localDate(coverageThrough(recap), recap.timeZone),
       completeYear: recap.completeYear,
     },
     minutesListened: Math.round(recap.listenedMs / 60000),

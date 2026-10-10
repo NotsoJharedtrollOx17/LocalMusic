@@ -59,21 +59,36 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
     .getByRole("button", { name: "Your Year" })
     .click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
-  const jsonWait = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export JSON" }).click();
-  const json = await jsonWait;
-  const contents = JSON.parse(await readFile((await json.path())!, "utf8"));
-  expect(contents.qualifiedPlays).toBe(0);
-  expect(contents.minutesListened).toBeLessThan(1);
-  expect(JSON.stringify(contents)).not.toMatch(
-    /sourceUri|browser-file|T\d\d:|Original test tone.wav/,
+  await expect(page.getByRole("button", { name: /Export JSON/i })).toHaveCount(
+    0,
   );
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
+  const share = page.getByRole("dialog", { name: "Export image" });
+  await expect(share.locator(".recap-image-preview")).toBeVisible();
+  await expect(
+    share.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeEnabled();
   const pngWait = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Share card", exact: true }).click();
+  await share.getByRole("button", { name: "Save PNG", exact: true }).click();
   const png = await pngWait;
   const image = await readFile((await png.path())!);
-  expect(image.readUInt32BE(16)).toBe(1080);
-  expect(image.readUInt32BE(20)).toBe(1920);
+  expect(image.readUInt32BE(16)).toBe(2160);
+  expect(image.readUInt32BE(20)).toBe(3840);
+  await png.saveAs("artifacts/recap-story.png");
+  await expect(share.getByRole("status")).toContainText("Image saved");
+  await share.getByRole("button", { name: "Feed · 4:5" }).click();
+  await expect(
+    share.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeEnabled();
+  const feedWait = page.waitForEvent("download");
+  await share.getByRole("button", { name: "Save PNG", exact: true }).click();
+  const feed = await feedWait;
+  const feedImage = await readFile((await feed.path())!);
+  expect(feedImage.readUInt32BE(16)).toBe(2160);
+  expect(feedImage.readUInt32BE(20)).toBe(2700);
+  await feed.saveAs("artifacts/recap-feed.png");
+  await page.screenshot({ path: "artifacts/recap-export-preview.png" });
+  await share.getByRole("button", { name: "Close", exact: true }).click();
   await page
     .getByRole("button", { name: "Save snapshot", exact: true })
     .click();
@@ -204,7 +219,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     .click();
   await page.getByRole("dialog").locator(".snapshot-row").first().click();
   await expect(page.getByText("1 qualified plays")).toBeVisible();
-  await page.getByRole("button", { name: "Export JSON" }).click();
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(
     "History privacy changed",
   );

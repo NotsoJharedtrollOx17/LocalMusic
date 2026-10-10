@@ -83,7 +83,7 @@ On Windows without symbolic-link privileges, build-android.ps1 falls back to cop
 
 ## Development branches
 
-`dev` is the integration branch and contains the live-import and cover resolution improvements. Album sequencing work is on `dev.correct-album-song-order`; merge it into `dev` after review. The initial first draft remains on `master`.
+`dev` is the integration branch and contains the import, artwork, album sequencing and release-year label improvements. Yearly recap and social image export work is on `dev.-stable-year-recap`; merge it into `dev` after review. The initial first draft remains on `master`.
 
 Import shows a persistent spinner and counts immediately. Catalog updates appear every ten processed audio files, with a final update for the remaining files. Missing or unreadable artwork uses stable geometric covers drawn from the application palette; tracks in the same named album share a design.
 
@@ -92,3 +92,5 @@ On Windows, the folder chooser owns the app window. Choose a folder to begin imp
 Album detail follows disc number, then numeric track number. Artist detail groups songs by album and follows that order within each album. Library sorting by album or artist uses the same sequence, and playback from those views uses their ordered IDs. Missing disc tags mean disc one; unnumbered songs follow numbered songs on that disc, with a stable title/ID fallback. The first catalog read after upgrading backfills available local files or granted Android URIs without requiring a reimport. Manually arranged playlists and queues keep their saved order.
 
 Song rows show a compact album name and tagged release year below the artist, including artist views, playlists and queues. Album cards also show the year when present. Existing library entries recover year metadata automatically; missing years are omitted.
+
+Your Year → Export image opens a preview with Story (2160×3840) and Feed (2160×2700) formats. Select a format, then Save PNG. The downloaded image matches the preview. Empty history cannot be exported; incomplete coverage and unobserved months are labeled. Saved snapshots stay frozen and cannot be shared after privacy exclusions change. JSON export buttons have been removed.

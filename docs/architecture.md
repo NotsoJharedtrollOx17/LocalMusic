@@ -13,3 +13,5 @@ Native audio identities use size and bounded content fingerprints, avoiding full
 The four supplied images guide typography, spacing, navigation and orange/charcoal motifs. Original seeded geometry fills missing artwork. The static recap orbit is decorative mathematics; it makes no acoustic or psychological claim.
 
 Setup and validation status are recorded in verification.md. See the approved implementation-plan.md for acceptance gates.
+
+Recap sharing uses one canvas renderer for both the preview and PNG download. The frontend waits for self-hosted fonts, lays out the selected aspect ratio and fits long music names. Live exports flush current listening first; saved snapshots retain their frozen metrics. Privacy revision is checked before preview and again before saving. Native export commands return a saved/canceled boolean, and the Windows save chooser is attached to the main window with a PNG filter.

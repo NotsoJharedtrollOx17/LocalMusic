@@ -77,8 +77,8 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  }
  @ActivityCallback fun exportResult(invoke:Invoke,result:ActivityResult){
   val uri=result.data?.data
-  if(result.resultCode!=Activity.RESULT_OK||uri==null){invoke.resolve(JSObject());return}
+  if(result.resultCode!=Activity.RESULT_OK||uri==null){invoke.resolve(JSObject().put("saved",false));return}
   val args=invoke.parseArgs(ExportArgs::class.java)
-  worker.execute{try{activity.contentResolver.openOutputStream(uri)?.use{out->out.write((args.bytes?:emptyArray()).map{it.toByte()}.toByteArray())}?:throw IllegalStateException("Export destination unavailable");invoke.resolve(JSObject())}catch(e:Exception){invoke.reject(e.message?:"Export failed")}}
+  worker.execute{try{activity.contentResolver.openOutputStream(uri)?.use{out->out.write((args.bytes?:emptyArray()).map{it.toByte()}.toByteArray())}?:throw IllegalStateException("Export destination unavailable");invoke.resolve(JSObject().put("saved",true))}catch(e:Exception){invoke.reject(e.message?:"Export failed")}}
  }
 }

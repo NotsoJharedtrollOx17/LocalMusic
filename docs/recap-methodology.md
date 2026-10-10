@@ -10,7 +10,7 @@ Excluded sessions contribute neither time nor rankings. A toggle during a sessio
 
 Recaps show the real collection start. Months outside coverage are marked unobserved. Saved snapshots freeze metrics, names, track IDs and a visual seed. The recap playlist contains up to 25 available, actually qualified tracks, capped at two per artist; the cap is relaxed when fewer than ten tracks are available.
 
-Internal snapshots preserve playback references privately. Exported JSON includes only display metadata, calendar dates, rounded minutes and counts. PNG exports use a 1080×1920 static card. Neither format includes source paths, exact timestamps, private playlist names or excluded-session data.
+Internal snapshots preserve playback references privately. The user-facing export is PNG: Story at 2160×3840 (9:16), or Feed at 2160×2700 (4:5). The preview and download use the same rendered image. Cards show display metadata, calendar coverage dates, rounded minutes (or <1 for under one minute), counts and monthly listening. They exclude source paths, exact timestamps, private playlist names and excluded-session data. Months outside recorded history are marked separately; completed years display December 31 rather than the exclusive January 1 boundary.
 
 Snapshots retain immutable metrics. If session exclusions change after a snapshot was saved, sharing that snapshot is blocked by its internal privacy revision. Generate a new recap to share the corrected history. The revision is not exported.
 
