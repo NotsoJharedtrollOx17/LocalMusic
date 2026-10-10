@@ -76,6 +76,7 @@ export const en = {
   dark: "Dark",
   timeZone: "Recap time zone",
   localTime: "Local time",
+  followsDevice: "Follows device",
   timeZoneHint:
     "UTC offsets shown for this year's standard/daylight time. Recap days and years follow this time zone.",
   history: "Listening history",
@@ -278,6 +279,7 @@ export const es: typeof en = {
   dark: "Oscuro",
   timeZone: "Zona horaria del resumen",
   localTime: "Hora local",
+  followsDevice: "Sincronizado con el dispositivo",
   timeZoneHint:
     "Desfases UTC del horario estándar/de verano de este año. Los días y años del resumen siguen esta zona horaria.",
   history: "Historial de escucha",

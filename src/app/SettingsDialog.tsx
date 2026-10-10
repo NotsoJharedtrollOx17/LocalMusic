@@ -2,7 +2,6 @@ import { api, native } from "../api";
 
 import { recapYears } from "../domain";
 import { Modal } from "../components";
-import { type Settings } from "../types";
 import { useMusicAppContext } from "./MusicAppContext";
 import TimeZoneField from "./TimeZoneField";
 
@@ -38,45 +37,39 @@ export default function SettingsDialog() {
             >
               {t.soundControls}
             </button>
-            <label>
-              {t.language}
-              <select
-                aria-label={t.language}
-                value={settings.language}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    language: e.target.value as Settings["language"],
-                  })
-                }
-              >
-                <option value="en">English</option>
-                <option value="es">Español</option>
-              </select>
-            </label>
-            <label>
-              {t.theme}
-              <select
-                aria-label={t.theme}
-                value={settings.theme}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    theme: e.target.value as Settings["theme"],
-                  })
-                }
-              >
-                {(["system", "light", "dark"] as const).map((x) => (
-                  <option key={x} value={x}>
-                    {t[x]}
-                  </option>
+            <fieldset className="settings-choice">
+              <legend>{t.language}</legend>
+              <div>
+                {(["en", "es"] as const).map((language) => (
+                  <button
+                    key={language}
+                    type="button"
+                    aria-pressed={settings.language === language}
+                    onClick={() => setSettings({ ...settings, language })}
+                  >
+                    {language === "en" ? "English" : "Español"}
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </fieldset>
+            <fieldset className="settings-choice">
+              <legend>{t.theme}</legend>
+              <div>
+                {(["system", "light", "dark"] as const).map((theme) => (
+                  <button
+                    key={theme}
+                    type="button"
+                    aria-pressed={settings.theme === theme}
+                    onClick={() => setSettings({ ...settings, theme })}
+                  >
+                    {t[theme]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <TimeZoneField
               value={settings.timeZone}
               language={settings.language}
-              onChange={(timeZone) => setSettings({ ...settings, timeZone })}
             />
             <div className="settings-history">
               <h3>{t.history}</h3>

@@ -139,7 +139,7 @@ test("social recap preview is the saved image and snapshots select their own yea
     .locator(".mobile-brand")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
-  await page.getByLabel("Language", { exact: true }).selectOption("es");
+  await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page
     .getByRole("button", { name: "Exportar imagen", exact: true })

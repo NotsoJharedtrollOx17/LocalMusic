@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
+test.use({ timezoneId: "America/Los_Angeles" });
 
-test("readable time zones keep their identifiers and fit narrow Spanish settings", async ({
+test("recap follows the device at startup and resume without a dropdown", async ({
   page,
 }) => {
   await page.goto("/");
@@ -9,41 +10,67 @@ test("readable time zones keep their identifiers and fit narrow Spanish settings
     .first()
     .click();
   const dialog = page.getByRole("dialog", { name: "Settings", exact: true });
-  const zone = dialog.getByRole("combobox", { name: "Recap time zone" });
-  await zone.selectOption("America/Los_Angeles");
-  await expect(zone.locator("option:checked")).toContainText(
-    "Los Angeles — PST/PDT · UTC-08:00 / UTC-07:00",
-  );
-  await expect(dialog.locator("#time-zone-current")).toContainText(
-    /P[DS]T \(UTC-0[78]:00\)/,
-  );
-  await zone.selectOption("America/New_York");
-  await expect(zone.locator("option:checked")).toContainText("EST/EDT");
-  await page.reload();
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
+  await expect(dialog.getByRole("combobox")).toHaveCount(0);
   await expect(
-    page.getByRole("combobox", { name: "Recap time zone" }),
-  ).toHaveValue("America/New_York");
-  await page
-    .getByRole("combobox", { name: "Language", exact: true })
-    .selectOption("es");
+    dialog.getByText("Follows device", { exact: true }),
+  ).toBeVisible();
+  // Simulate the OS changing zones while the app is suspended.
+  await page.evaluate(() => {
+    const original = Intl.DateTimeFormat.prototype.resolvedOptions;
+    Intl.DateTimeFormat.prototype.resolvedOptions = function () {
+      return { ...original.call(this), timeZone: "America/New_York" };
+    };
+    window.dispatchEvent(new Event("focus"));
+  });
+  await expect(dialog.locator("#time-zone-current")).toContainText(/E[DS]T/);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<string>((resolve, reject) => {
+            const open = indexedDB.open("local-music-v1", 1);
+            open.onsuccess = () => {
+              const db = open.result;
+              const request = db
+                .transaction("settings")
+                .objectStore("settings")
+                .get("preferences");
+              request.onsuccess = () => {
+                resolve(request.result.timeZone);
+                db.close();
+              };
+              request.onerror = () => reject(request.error);
+            };
+            open.onerror = () => reject(open.error);
+          }),
+      ),
+    )
+    .toBe("America/New_York");
+  await dialog.getByRole("button", { name: "Dark", exact: true }).click();
+  await expect(
+    dialog.getByRole("button", { name: "Dark", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await dialog
+    .getByRole("button", { name: "Espa\u00f1ol", exact: true })
+    .click();
   await page.setViewportSize({ width: 390, height: 844 });
   const spanish = page.getByRole("dialog", { name: "Ajustes", exact: true });
-  await expect(spanish.locator("#time-zone-current")).toContainText(
-    "Hora local:",
-  );
   await expect(
-    spanish
-      .getByRole("combobox", { name: "Zona horaria del resumen" })
-      .locator("option:checked"),
-  ).not.toContainText("_");
+    spanish.getByText("Sincronizado con el dispositivo", { exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page.screenshot({ path: "artifacts/settings-time-zone-mobile.png" });
+  await page.screenshot({
+    path: "artifacts/settings-device-time-zone-mobile.png",
+  });
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Ajustes", exact: true })
+    .first()
+    .click();
+  // The previously synchronized New York value must give way to the current device zone.
+  await expect(page.locator("#time-zone-current")).toContainText(/P[DS]T/);
 });
 
 test("dismissed playback errors stay dismissed across native polls and recover", async ({

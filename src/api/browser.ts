@@ -678,6 +678,11 @@ export class BrowserMusic implements MusicApi {
       };
       await this.put("settings", "preferences", s);
     }
+    const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (s.timeZone !== deviceZone) {
+      s = { ...s, timeZone: deviceZone };
+      await this.put("settings", "preferences", s);
+    }
     return s;
   }
   private async updatePreferences(update: (current: Settings) => Settings) {

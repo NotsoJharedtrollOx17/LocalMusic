@@ -4,7 +4,7 @@ A play qualifies after 30 seconds of actual playing time within one session. Sho
 
 Native players measure elapsed playing time with monotonic clocks. Approximately every ten seconds and at transitions, they persist an interval anchored to UTC and its monotonic duration. Calendar allocation uses the interval's UTC anchor plus this duration; a wall-clock correction cannot increase listened time. A crash may lose the current uncheckpointed interval.
 
-Intervals are split at local month/year boundaries in the selected IANA zone. A qualified play belongs to the local year of the session start. Top tracks sort by qualified plays, then played milliseconds, then stable ID. Artists aggregate normalized artist labels; albums use artist plus album labels. This first version does not infer canonical artists, merge remasters or interpret acoustic meaning.
+Intervals are split at local month/year boundaries in the device IANA zone for live recaps. The app synchronizes that zone on startup, resume and periodic visible checks; existing manual overrides are replaced. Frozen snapshots retain their original zone and coverage. A qualified play belongs to the local year of the session start. Top tracks sort by qualified plays, then played milliseconds, then stable ID. Artists aggregate normalized artist labels; albums use artist plus album labels. This first version does not infer canonical artists, merge remasters or interpret acoustic meaning.
 
 Excluded sessions contribute neither time nor rankings. A toggle during a session excludes or includes the entire current session. Original sample audio is always excluded. History deletion also deletes saved snapshots and resets the coverage start, while retaining music and playlists.
 

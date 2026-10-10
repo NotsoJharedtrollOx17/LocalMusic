@@ -145,7 +145,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     .locator(".mobile-brand")
     .getByRole("button", { name: "Settings" })
     .click();
-  await page.getByLabel("Language", { exact: true }).selectOption("es");
+  await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Ajustes" })).toBeVisible();
   await page
     .getByRole("dialog")

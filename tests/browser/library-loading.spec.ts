@@ -11,7 +11,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
     .locator(".sidebar")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
-  await page.getByLabel("Appearance", { exact: true }).selectOption("dark");
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("local-music-theme")))
     .toBe("dark");

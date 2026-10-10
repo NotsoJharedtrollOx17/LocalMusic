@@ -135,6 +135,26 @@ export function useMusicApp(initialSettings?: Settings) {
   latestQuery.current = query;
 
   const t = settings?.language === "es" ? es : en;
+  useEffect(() => {
+    const sync = () => {
+      if (document.hidden) return;
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setSettings((current) =>
+        current && current.timeZone !== timeZone
+          ? { ...current, timeZone }
+          : current,
+      );
+    };
+    sync();
+    window.addEventListener("focus", sync);
+    document.addEventListener("visibilitychange", sync);
+    const timer = window.setInterval(sync, 60000);
+    return () => {
+      window.removeEventListener("focus", sync);
+      document.removeEventListener("visibilitychange", sync);
+      window.clearInterval(timer);
+    };
+  }, [setSettings, Boolean(settings)]);
   const liveYears = settings
     ? recapYears(settings)
     : [new Date().getFullYear()];

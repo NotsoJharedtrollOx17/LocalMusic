@@ -154,6 +154,52 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+.settings-choice {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.settings-choice legend {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 0 0 10px;
+}
+.settings-choice > div {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+.settings-choice button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.settings-choice button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #1b1b1a;
+  font-weight: 600;
+}
+.settings-choice button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.device-time-zone {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.device-time-zone strong {
+  color: var(--ink);
+  font-weight: 500;
+}
 .action-menu button {
   display: block;
   width: 100%;
