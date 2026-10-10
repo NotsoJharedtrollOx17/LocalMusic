@@ -43,6 +43,7 @@ import {
   localMidnight,
 } from "./domain";
 import ShareRecap from "./ShareRecap";
+import { applyTheme } from "./theme";
 import {
   Cover,
   TrackRow,
@@ -72,7 +73,16 @@ const blank: PlaybackSnapshot = {
   repeat: "off",
   excluded: false,
 };
-export default function App() {
+type GroupPage = {
+  groups: CatalogGroup[];
+  total: number;
+  status: "idle" | "loading" | "ready" | "error";
+};
+export default function App({
+  initialSettings,
+}: {
+  initialSettings?: Settings;
+}) {
   const [tab, setTab] = useState<"library" | "playlists" | "year">("library"),
     [section, setSection] = useState<"songs" | "albums" | "artists">("songs"),
     [tracks, setTracks] = useState<Track[]>([]),
@@ -90,10 +100,21 @@ export default function App() {
     } | null>(null);
   const [groupTracks, setGroupTracks] = useState<Track[]>([]),
     [groupLoading, setGroupLoading] = useState(false);
-  const [catalogGroups, setCatalogGroups] = useState<CatalogGroup[]>([]),
-    [groupsTotal, setGroupsTotal] = useState(0),
-    [queueLimit, setQueueLimit] = useState(60);
-  const [settings, setSettings] = useState<Settings>(),
+  const [groupPages, setGroupPages] = useState<
+    Record<"albums" | "artists", GroupPage>
+  >({
+    albums: { groups: [], total: 0, status: "idle" },
+    artists: { groups: [], total: 0, status: "idle" },
+  });
+  const selectedGroupPage =
+    groupPages[section === "artists" ? "artists" : "albums"];
+  const catalogGroups = selectedGroupPage.groups,
+    groupsTotal = selectedGroupPage.total;
+  const [libraryLoading, setLibraryLoading] = useState(true);
+  const [queueLimit, setQueueLimit] = useState(60);
+  const [settings, setSettings] = useState<Settings | undefined>(
+      initialSettings,
+    ),
     [player, setPlayer] = useState(blank),
     [lists, setLists] = useState<Playlist[]>([]),
     [selectedList, setSelectedList] = useState<Playlist | null>(null),
@@ -191,17 +212,22 @@ export default function App() {
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
   const libraryRequest = useRef(0);
   const groupRequest = useRef(0);
-  const groupsRequest = useRef(0);
+  const groupsRequest = useRef({ albums: 0, artists: 0 });
   const refresh = useCallback(
     async (q = "", offset = 0) => {
       const version = offset
         ? libraryRequest.current
         : ++libraryRequest.current;
-      const p = await api.listTracks(q, offset, 60, libraryOptions.current);
-      if (version !== libraryRequest.current) return;
-      setTracks((old) => (offset ? [...old, ...p.tracks] : p.tracks));
-      setTotal(p.total);
-      remember(p.tracks);
+      if (!offset) setLibraryLoading(true);
+      try {
+        const p = await api.listTracks(q, offset, 60, libraryOptions.current);
+        if (version !== libraryRequest.current) return;
+        setTracks((old) => (offset ? [...old, ...p.tracks] : p.tracks));
+        setTotal(p.total);
+        remember(p.tracks);
+      } finally {
+        if (version === libraryRequest.current) setLibraryLoading(false);
+      }
     },
     [remember],
   );
@@ -228,12 +254,35 @@ export default function App() {
   );
   const refreshGroups = useCallback(
     async (kind: "albums" | "artists", offset = 0) => {
-      const version = offset ? groupsRequest.current : ++groupsRequest.current;
-      const p = await api.groups(kind, offset);
-      if (version !== groupsRequest.current) return;
-      setCatalogGroups((old) => (offset ? [...old, ...p.groups] : p.groups));
-      setGroupsTotal(p.total);
-      remember(p.groups.map((g) => g.track));
+      const version = ++groupsRequest.current[kind];
+      setGroupPages((old) => ({
+        ...old,
+        [kind]: { ...old[kind], status: "loading" },
+      }));
+      try {
+        const p = await api.groups(kind, offset);
+        if (version !== groupsRequest.current[kind]) return;
+        setGroupPages((old) => ({
+          ...old,
+          [kind]: {
+            groups: offset
+              ? old[kind].groups.length === offset
+                ? [...old[kind].groups, ...p.groups]
+                : old[kind].groups
+              : p.groups,
+            total: p.total,
+            status: "ready",
+          },
+        }));
+        remember(p.groups.map((g) => g.track));
+      } catch (error) {
+        if (version === groupsRequest.current[kind])
+          setGroupPages((old) => ({
+            ...old,
+            [kind]: { ...old[kind], status: "error" },
+          }));
+        throw error;
+      }
     },
     [remember],
   );
@@ -262,7 +311,7 @@ export default function App() {
   );
   useEffect(() => {
     void act(async () => {
-      setSettings(await api.settings());
+      setSettings(initialSettings ?? (await api.settings()));
       await refresh();
       await refreshLists();
     });
@@ -310,7 +359,7 @@ export default function App() {
   useEffect(() => {
     if (settings) {
       document.documentElement.lang = settings.language;
-      document.documentElement.dataset.theme = settings.theme;
+      applyTheme(settings.theme);
       settingsWrite.current = api.saveSettings(settings);
       void act(() => settingsWrite.current);
     }
@@ -916,16 +965,20 @@ export default function App() {
                   </span>
                 </div>
                 <div className="toolbar-actions">
-                  {groupLoading && !group && (
-                    <span className="group-loading" role="status">
-                      <LoaderCircle
-                        size={18}
-                        className="spinner"
-                        aria-hidden="true"
-                      />
-                      {t.loading}
-                    </span>
-                  )}
+                  {!group &&
+                    (groupLoading ||
+                      (section !== "songs" &&
+                        selectedGroupPage.status === "loading" &&
+                        catalogGroups.length > 0)) && (
+                      <span className="group-loading" role="status">
+                        <LoaderCircle
+                          size={18}
+                          className="spinner"
+                          aria-hidden="true"
+                        />
+                        {t.loading}
+                      </span>
+                    )}
                   {section === "songs" && !group && (
                     <>
                       <IconButton
@@ -963,7 +1016,16 @@ export default function App() {
                 </div>
               </div>
 
-              {total === 0 && !query ? (
+              {libraryLoading && total === 0 ? (
+                <div className="catalog-loading" role="status">
+                  <LoaderCircle
+                    size={20}
+                    className="spinner"
+                    aria-hidden="true"
+                  />
+                  {t.loadingLibrary}
+                </div>
+              ) : total === 0 && !query ? (
                 <div className="empty-library">
                   <div className="empty-art">
                     <span />
@@ -1027,7 +1089,10 @@ export default function App() {
                   )}
                 </>
               ) : (
-                <div className="album-grid">
+                <div
+                  className="album-grid"
+                  aria-busy={selectedGroupPage.status === "loading"}
+                >
                   {catalogGroups.length ? (
                     catalogGroups.map((g) => (
                       <button
@@ -1055,6 +1120,37 @@ export default function App() {
                         </span>
                       </button>
                     ))
+                  ) : selectedGroupPage.status === "idle" ||
+                    selectedGroupPage.status === "loading" ? (
+                    <>
+                      <span className="catalog-loading-label" role="status">
+                        {section === "albums"
+                          ? t.loadingAlbums
+                          : t.loadingArtists}
+                      </span>
+                      {Array.from({ length: 8 }, (_, index) => (
+                        <div
+                          className="album-placeholder"
+                          aria-hidden="true"
+                          key={index}
+                        >
+                          <div />
+                          <span />
+                          <span />
+                        </div>
+                      ))}
+                    </>
+                  ) : selectedGroupPage.status === "error" ? (
+                    <button
+                      className="button secondary"
+                      onClick={() =>
+                        void act(() =>
+                          refreshGroups(section as "albums" | "artists"),
+                        )
+                      }
+                    >
+                      {t.retry}
+                    </button>
                   ) : (
                     <p className="empty-small">
                       {section === "albums" ? t.emptyAlbums : t.emptyArtists}

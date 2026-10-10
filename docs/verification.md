@@ -125,3 +125,17 @@ A delayed IndexedDB read regression checks the album card remains visible while 
 Production frontend build, all nine frontend unit tests and all nine Chromium journeys passed, including delayed album opening/cancellation, live artist/album imports, and album order. Rust rules were unchanged. Android APKs were not refreshed for this UI correction. Windows build results follow below.
 
 The portable Windows debug executable rebuilt successfully with the group transition and cover decoding fixes. No native visual acceptance is claimed by the build alone.
+
+## Recording follow-up: startup theme and library tab state — 9 October 2026
+
+Inspected the supplied 56-second OBS recording using extracted frames. Around 5–8 seconds the native window is blank/light before the dark interface; around 9 seconds an empty-library message precedes catalog rows. Around 41 seconds Albums displays an empty-tag message before cards; around 45.5 and 48 seconds the newly selected tab still shows the other tab’s cards. These are separate startup and data-ownership issues from album-detail loading.
+
+The HTML entry restores a validated theme hint synchronously; persisted settings are read and applied before mounting React. Windows stays hidden until the themed React shell has committed, then a desktop-only native command reveals it. Actual settings remain authoritative; storage failure falls back to normal settings loading. Album and artist results now have separate caches, request generations, loading/error states and pagination. First reads show static, non-shimmering card placeholders; only completed empty results show empty messaging. Cached cards retain their own metadata during refresh, and errors provide retry. Initial library loading also waits before displaying the empty-library onboarding.
+
+A new browser regression holds catalog reads during dark-mode reopening and initial Albums/Artists loads, checks the first React shell uses the saved dark theme, verifies no premature empty messages, and rapidly switches cached tabs with one response held. Native window presentation still needs an actual startup check. Final results follow below.
+
+Verification: production frontend build and nine frontend tests passed; all nine existing Chromium journeys passed. The new startup/tab regression passed after correcting its sample fixture expectation from eight groups to four, and passed again after matching the native background to the resolved theme. Twelve Rust core tests and three native Tauri tests passed. The dark Albums screenshot was inspected. Native package/startup results follow below.
+
+The portable Windows executable rebuilt and its startup smoke check passed: the startup gate revealed a responsive process with a nonzero main-window handle and no premature exit. This checks that hiding the initial window does not leave it inaccessible; pixel-level native startup acceptance is still separate.
+
+Android compilation initially caught a misplaced mobile entry-point annotation introduced with the window command; it was moved back to run, and desktop-only context mutation was scoped away from Android. The ARM64 debug APK then rebuilt through the existing Windows file-copy packaging fallback, and apksigner verified its v2 signature. Windows was rebuilt again after that correction. ADB reported no connected emulator or device, so no Android runtime acceptance is claimed; x86_64 was not refreshed.

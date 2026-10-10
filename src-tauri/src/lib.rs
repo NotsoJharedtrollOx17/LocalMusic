@@ -660,8 +660,36 @@ async fn export_file(app: tauri::AppHandle, name: String, bytes: Vec<u8>) -> Res
         .map_err(|e| e.to_string())?
     }
 }
+#[tauri::command]
+fn show_main_window(app: tauri::AppHandle, dark: bool) -> Result<()> {
+    #[cfg(not(target_os = "android"))]
+    if let Some(window) = app.get_webview_window("main") {
+        let color = if dark {
+            tauri::window::Color(20, 22, 21, 255)
+        } else {
+            tauri::window::Color(250, 248, 244, 255)
+        };
+        window
+            .set_background_color(Some(color))
+            .map_err(|e| e.to_string())?;
+        window.show().map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "android")]
+    let _ = (app, dark);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let context = tauri::generate_context!();
+    #[cfg(not(target_os = "android"))]
+    let context = {
+        let mut context = context;
+        for window in &mut context.config_mut().app.windows {
+            window.visible = false;
+        }
+        context
+    };
     let builder = tauri::Builder::default();
     #[cfg(not(target_os = "android"))]
     let builder = builder.plugin(tauri_plugin_dialog::init());
@@ -691,6 +719,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            show_main_window,
             list_tracks,
             list_groups,
             group_ids,
@@ -721,6 +750,6 @@ pub fn run() {
             reorder_queue,
             export_file
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("Failed to run Local Music");
 }

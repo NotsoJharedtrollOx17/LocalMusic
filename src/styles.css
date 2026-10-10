@@ -1,7 +1,7 @@
 :root {
   font-family: Inter, system-ui, sans-serif;
   color: #1b1b1a;
-  background: #faf8f4;
+  background: var(--paper);
   font-synthesis: none;
   --paper: #faf8f4;
   --surface: #fffdf9;
@@ -2256,4 +2256,34 @@ input[type="range"] {
   gap: 8px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.catalog-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 0;
+  color: var(--muted);
+}
+.catalog-loading-label {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+}
+.album-placeholder > div {
+  aspect-ratio: 1;
+  background: var(--hover);
+  border-radius: 6px;
+  margin-bottom: 13px;
+}
+.album-placeholder > span {
+  display: block;
+  height: 12px;
+  width: 80%;
+  background: var(--hover);
+  margin-top: 8px;
+  border-radius: 3px;
+}
+.album-placeholder > span:last-child {
+  width: 55%;
 }
