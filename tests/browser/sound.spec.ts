@@ -460,3 +460,43 @@ test("presets preserve independent positive preamp and reset restores zero", asy
   ).toHaveValue("0");
   await expect.poll(async () => (await preferences(page))?.preamp).toBe(0);
 });
+
+test("Not heard replays a bounded higher tone and interrupted setup offers restart", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const sound = await openSound(page);
+  await sound
+    .getByRole("button", { name: "Create personal profile", exact: true })
+    .click();
+  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
+  await sound.getByRole("button", { name: "Begin", exact: true }).click();
+  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
+  const missed = sound.getByRole("button", { name: "Not heard", exact: true });
+  await expect(missed).toBeEnabled();
+  await missed.click();
+  await expect(sound).toContainText("-48 dBFS");
+  await expect(missed).toBeEnabled();
+  await sound.getByRole("button", { name: "Heard it", exact: true }).click();
+  await expect(sound).toContainText("250 Hz");
+  await expect(
+    sound.getByRole("button", { name: "Play tone", exact: true }),
+  ).toBeEnabled();
+  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
+  for (let i = 0; i < 4; i++) {
+    await expect(missed).toBeEnabled();
+    await missed.click();
+  }
+  await expect(sound).toContainText("500 Hz");
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(sound).toContainText("No partial profile was saved");
+  await sound
+    .getByRole("button", { name: "Restart setup", exact: true })
+    .click();
+  await expect(
+    sound.getByRole("button", { name: "Begin", exact: true }),
+  ).toBeDisabled();
+  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
+  await sound.getByRole("button", { name: "Begin", exact: true }).click();
+  await expect(sound).toContainText("Step 1/14");
+});

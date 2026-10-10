@@ -71,3 +71,7 @@ Defaults: global EQ, manually selected profiles; no per-track/age-based/clinical
 ## EQ refinement - 10 October 2026
 
 The user's refinement supersedes the original preamp bounds: preamp is independently adjustable from -12 to +12 dB in 0.5 dB steps, with Reset preamp returning to 0.0 dB. Preset selection and Reset to Flat modify EQ bands only, preserving preamp. Preamp edits no longer change the selected EQ preset. Legacy preset preamp fields remain readable for compatibility but are ignored on selection. Treble boost uses the original curve 0,0,0,0,0,0,1,2,3,4. Automatic response-based headroom and the peak limiter remain separate from manual preamp; this change does not promise loudness-normalized presets.
+
+## Personal setup interaction refinement - 10 October 2026
+
+A Not heard response triggers the next bounded pulse after the mandatory silence gap. The response click is the user trigger; limits and scheduling remain backend-enforced. At the ceiling, a non-reference frequency is recorded as unknown and advances without a guessed boost. An unheard reference still requires retry because a relative curve needs a baseline. The UI displays level/progress, blocks duplicate manual replay while a response-triggered pulse is queued, explains interruption and offers Restart with renewed headphone confirmation. Cancel, blur and unmount clear queued pulses; obsolete action/heartbeat responses cannot overwrite a restarted setup. No incomplete profile is saved or applied.

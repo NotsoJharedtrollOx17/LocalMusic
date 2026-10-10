@@ -36,6 +36,12 @@ const en = {
     "Browser output changes may not be detected. Stop if sound moves to a different output.",
   begin: "Begin",
   stop: "Stop setup",
+  interrupted:
+    "Setup stopped before completion. No partial profile was saved. Restart when you are ready.",
+  restart: "Restart setup",
+  toneLevel: "Test level",
+  nextTone:
+    "Not heard: trying the next bounded test level, or moving to the next frequency.",
   playTone: "Play tone",
   heard: "Heard it",
   notHeard: "Not heard",
@@ -76,6 +82,12 @@ const en = {
   },
 };
 const es: typeof en = {
+  interrupted:
+    "La configuraci\u00f3n se detuvo antes de terminar. No se guard\u00f3 un perfil parcial. Puedes reiniciarla.",
+  restart: "Reiniciar configuraci\u00f3n",
+  toneLevel: "Nivel de prueba",
+  nextTone:
+    "No se oy\u00f3: probando el siguiente nivel limitado o pasando a la siguiente frecuencia.",
   equalizer: "Ecualizador",
   personal: "Sonido personal",
   on: "Activar ecualizador",

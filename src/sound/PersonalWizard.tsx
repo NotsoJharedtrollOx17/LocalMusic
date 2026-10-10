@@ -19,27 +19,52 @@ export default function PersonalWizard({
     [confirmed, setConfirmed] = useState(false),
     [session, setSession] = useState<PersonalSession>(),
     [pending, setPending] = useState(false),
+    [replayQueued, setReplayQueued] = useState(false),
     [error, setError] = useState(""),
     [name, setName] = useState(replacement?.name ?? ""),
     [now, setNow] = useState(Date.now()),
     [strength, setStrength] = useState(50),
     [mode, setMode] = useState<string>();
   const current = useRef<PersonalSession | undefined>(undefined),
-    alive = useRef(true);
+    alive = useRef(true),
+    revision = useRef(0),
+    replay = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const act = async (action: PersonalAction) => {
+    if (action.op === "cancel" || action.op === "start") {
+      revision.current++;
+      clearTimeout(replay.current);
+      setReplayQueued(false);
+    }
+    const requested = revision.current;
     setPending(true);
     setError("");
     try {
       const next = await api.personalAction(action);
-      if (alive.current) {
+      if (alive.current && requested === revision.current) {
         current.current = next;
         setSession(next);
+        if (action.op === "respond" && !action.heard && next.phase === "test") {
+          clearTimeout(replay.current);
+          setReplayQueued(true);
+          replay.current = setTimeout(
+            () => {
+              if (alive.current) setReplayQueued(false);
+              if (
+                alive.current &&
+                current.current?.id === next.id &&
+                current.current.phase === "test"
+              )
+                void act({ op: "pulse", id: next.id });
+            },
+            Math.max(0, next.busyUntil + 550 - Date.now()),
+          );
+        }
       } else if (next.phase !== "saved")
         void api.personalAction({ op: "cancel", id: next.id }).catch(() => {});
     } catch (e) {
-      if (alive.current) setError(String(e));
+      if (alive.current && requested === revision.current) setError(String(e));
     } finally {
-      if (alive.current) setPending(false);
+      if (alive.current && requested === revision.current) setPending(false);
     }
   };
   useEffect(() => {
@@ -53,15 +78,20 @@ export default function PersonalWizard({
       void api
         .personalAction({ op: "heartbeat", id: s.id })
         .then((next) => {
-          if (alive.current && next.phase === "cancelled") {
+          if (
+            alive.current &&
+            current.current?.id === s.id &&
+            next.phase === "cancelled"
+          ) {
             setSession(next);
             current.current = next;
           }
         })
         .catch((e) => {
-          if (alive.current) {
+          if (alive.current && current.current?.id === s.id) {
             setError(String(e));
-            setSession((s) => (s ? { ...s, phase: "cancelled" } : s));
+            current.current = { ...s, phase: "cancelled" };
+            setSession(current.current);
           }
         })
         .finally(() => {
@@ -69,6 +99,12 @@ export default function PersonalWizard({
         });
     }, 500);
     const cancel = () => {
+      revision.current++;
+      clearTimeout(replay.current);
+      if (alive.current) {
+        setPending(false);
+        setReplayQueued(false);
+      }
       const s = current.current;
       if (s && !["saved", "cancelled"].includes(s.phase)) {
         void api.personalAction({ op: "cancel", id: s.id }).catch(() => {});
@@ -132,10 +168,14 @@ export default function PersonalWizard({
               ? `${session.frequency} Hz`
               : `${session.frequency / 1000} kHz`}
           </div>
+          <p role="status">
+            {t.toneLevel}: {session.level} dBFS
+            {!session.awaiting && session.level > -54 ? ` ? ${t.nextTone}` : ""}
+          </p>
           {[0, 6].includes(session.step) && <p>{t.reference}</p>}
           <button
             className="button secondary"
-            disabled={pending || now < session.busyUntil + 500}
+            disabled={pending || replayQueued || now < session.busyUntil + 500}
             onClick={() => void act({ op: "pulse", id: session.id })}
           >
             {t.playTone}
@@ -245,7 +285,22 @@ export default function PersonalWizard({
         </>
       ) : (
         <>
-          <p role="status">{t.stop}</p>
+          <p role="status">{t.interrupted}</p>
+          <button
+            className="button primary"
+            onClick={() => {
+              revision.current++;
+              clearTimeout(replay.current);
+              setReplayQueued(false);
+              setPending(false);
+              current.current = undefined;
+              setSession(undefined);
+              setConfirmed(false);
+              setError("");
+            }}
+          >
+            {t.restart}
+          </button>
           <button className="button secondary" onClick={onDone}>
             {t.done}
           </button>
