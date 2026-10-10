@@ -17,8 +17,9 @@ class SoundEngine(private val context: Context) {
     private var config =
         SoundConfiguration(
             JSONObject(
-                prefs.getString("sound-v1", null) ?: SoundConfiguration.defaults().toString()
-            )
+                    prefs.getString("sound-v1", null) ?: SoundConfiguration.defaults().toString()
+                )
+                .put("strength", 100)
         )
     @Volatile
     var rate = 48000
@@ -104,7 +105,7 @@ class SoundEngine(private val context: Context) {
 
     @Synchronized
     fun configure(json: JSONObject, authorizePersonal: Boolean = false) {
-        val next = SoundConfiguration(SoundConfiguration.copy(json))
+        val next = SoundConfiguration(SoundConfiguration.copy(json).put("strength", 100))
         check(!next.personalEnabled || config.personalEnabled || authorizePersonal) {
             "Confirm headphones with Use profile first"
         }

@@ -24,7 +24,7 @@ export const defaultSound = (): SoundConfig => ({
   profiles: [],
   profileId: null,
   personalEnabled: false,
-  strength: 50,
+  strength: 100,
 });
 const curve = (v: number[], min: number, max: number) =>
   Array.isArray(v) &&
@@ -83,7 +83,7 @@ export function validateSound(c: SoundConfig) {
     throw new Error("Unknown personal profile");
   if (c.personalEnabled && !c.profileId)
     throw new Error("Choose a personal profile first");
-  return structuredClone(c);
+  return { ...structuredClone(c), strength: 100 };
 }
 export function effectiveCurves(
   c: SoundConfig,

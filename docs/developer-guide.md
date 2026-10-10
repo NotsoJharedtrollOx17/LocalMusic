@@ -96,3 +96,5 @@ Active personal curves override ordinary EQ gains on all adapters. Keep the reta
 ### Manual playback gain
 
 Playback engines no longer compute response-based headroom attenuation. The runtime `attenuation` field is zero for compatibility; global gain follows manual preamp only, independently of preset/profile selection. Keep the peak limiter and bypass semantics intact. Headroom/RMS matching remains confined to the temporary setup comparison renderer, not catalog music playback. The dated plan revision supersedes earlier descriptions of automatic playback attenuation.
+
+Preamp is rendered inside the EQ grid as its eleventh fader, with Reset scoped to manual preamp. Personal curves remain displayed for both channels together. Strength controls are removed: adapters normalize legacy playback configurations to 100%, and setup compares/saves the full curve. Profile buttons activate directly; the headphone-confirmation path is reserved for setup or a detected output change. Retain legacy strength validation/fields for compatible reads and avoid changing manual preamp during normalization.

@@ -51,7 +51,7 @@ mod tests {
         });
         c.profile_id = Some("test".into());
         c.personal_enabled = true;
-        assert_eq!(c.curves(false, 2)[0], [3.; 10]);
+        assert_eq!(c.curves(false, 2)[0], [6.; 10]);
         assert_eq!(c.curves(false, 2)[1], [0.; 10]);
         c.enabled = false;
         engine.configure(c.clone()).unwrap();
@@ -83,7 +83,8 @@ mod tests {
     }
 }
 impl Engine {
-    pub fn new(config: Config) -> Self {
+    pub fn new(mut config: Config) -> Self {
+        config.strength = 100.;
         let b = dsp::bank(config.curves(false, 2), 48000.);
         let attenuation = 0.;
         let p = Prepared {
@@ -114,8 +115,9 @@ impl Engine {
             bypass: AtomicBool::new(false),
         }
     }
-    pub fn configure(&self, c: Config) -> Result<(), String> {
+    pub fn configure(&self, mut c: Config) -> Result<(), String> {
         c.validate()?;
+        c.strength = 100.;
         *self.config.lock().unwrap() = c;
         self.prepare();
         Ok(())

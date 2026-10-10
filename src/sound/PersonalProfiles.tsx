@@ -41,8 +41,18 @@ export default function PersonalProfiles({
             key={p.id}
             aria-pressed={config.profileId === p.id}
             onClick={() => {
-              setConfirmed(false);
-              edit((c) => ({ ...c, profileId: p.id, personalEnabled: false }));
+              if (!available) return;
+              if (
+                routeGeneration > 0 &&
+                !config.personalEnabled &&
+                !confirmed
+              ) {
+                edit((c) => ({
+                  ...c,
+                  profileId: p.id,
+                  personalEnabled: false,
+                }));
+              } else onUse(p.id);
             }}
           >
             {p.name}
@@ -51,17 +61,22 @@ export default function PersonalProfiles({
       </div>
       {selected && (
         <>
-          <label className="check-label">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
-            {t.headphones}
-          </label>
+          {routeGeneration > 0 && !config.personalEnabled && (
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+              />
+              {t.headphones}
+            </label>
+          )}
           <button
             className="button secondary"
-            disabled={!available || (!config.personalEnabled && !confirmed)}
+            disabled={
+              !available ||
+              (routeGeneration > 0 && !config.personalEnabled && !confirmed)
+            }
             onClick={() =>
               config.personalEnabled
                 ? edit((c) => ({ ...c, personalEnabled: false }))
@@ -70,20 +85,6 @@ export default function PersonalProfiles({
           >
             {config.personalEnabled ? t.disableProfile : t.useProfile}
           </button>
-          <label>
-            {t.strength} <output>{config.strength}%</output>
-            <input
-              type="range"
-              aria-label={t.strength}
-              min={0}
-              max={100}
-              value={config.strength}
-              onChange={(e) => {
-                const strength = Number(e.target.value);
-                edit((c) => ({ ...c, strength }));
-              }}
-            />
-          </label>
           <div className="sound-actions">
             <button
               className="text-button"

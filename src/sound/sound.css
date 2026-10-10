@@ -1,5 +1,44 @@
 .modal:has(.sound-controls) {
   width: min(880px, calc(100vw - 28px));
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.modal:has(.sound-controls)::-webkit-scrollbar {
+  width: 6px;
+}
+.modal:has(.sound-controls)::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 7px;
+}
+.modal:has(.sound-controls)::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.equalizer-bands.has-preamp,
+.personal-stereo-bands.has-preamp {
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+}
+.sound-preamp-control {
+  align-content: start;
+  justify-items: center;
+  min-width: 0;
+}
+.sound-controls .sound-preamp {
+  font-size: 12px;
+}
+.sound-controls .sound-preamp-control > button {
+  justify-self: center;
+  padding: 6px;
+  font-size: 11px;
+  min-height: 32px;
+}
+.sound-controls .sound-preamp input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 26px;
+  height: 170px;
+  min-height: 0;
 }
 .sound-controls {
   display: grid;
@@ -41,6 +80,13 @@
   display: flex;
   justify-content: center;
   gap: 4px;
+}
+.personal-ear-pair output {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.personal-stereo-bands .sound-preamp input[type="range"] {
+  margin-top: 28px;
 }
 .sound-controls .personal-ear-pair label {
   justify-items: center;
@@ -218,6 +264,25 @@
   color: var(--ink);
 }
 @media (max-width: 650px) {
+  .personal-stereo-bands .sound-preamp input[type="range"] {
+    margin-top: 0;
+  }
+  .equalizer-bands.has-preamp,
+  .personal-stereo-bands.has-preamp {
+    grid-template-columns: 1fr;
+  }
+  .sound-preamp-control {
+    justify-items: stretch;
+  }
+  .sound-controls .sound-preamp input[type="range"] {
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    width: 100%;
+    height: 32px;
+  }
+  .sound-controls .sound-preamp-control > button {
+    justify-self: end;
+  }
   .personal-stereo-bands {
     grid-template-columns: 1fr;
     gap: 18px;

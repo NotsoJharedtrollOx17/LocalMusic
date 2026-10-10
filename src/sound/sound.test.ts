@@ -13,6 +13,11 @@ describe("shared sound processing", () => {
     expect(formatGain(1)).toBe("+1.0 dB");
     expect(formatGain(-1)).toBe("-1.0 dB");
   });
+  it("upgrades legacy profile strength without changing manual preamp", () => {
+    const saved = validateSound({ ...defaultSound(), strength: 50, preamp: 3 });
+    expect(saved.strength).toBe(100);
+    expect(saved.preamp).toBe(3);
+  });
   it("matches independent RBJ fixtures, including Nyquist", () => {
     const rows = readFileSync(
       new URL("../../tests/fixtures/sound-dsp.csv", import.meta.url),

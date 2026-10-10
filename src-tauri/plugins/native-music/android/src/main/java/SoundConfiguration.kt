@@ -70,7 +70,7 @@ class SoundConfiguration(val json: JSONObject) {
 
         fun defaults() =
             JSONObject(
-                """{"version":1,"enabled":false,"gains":[0,0,0,0,0,0,0,0,0,0],"preamp":0,"presetId":"flat","presets":[],"profiles":[],"profileId":null,"personalEnabled":false,"strength":50}"""
+                """{"version":1,"enabled":false,"gains":[0,0,0,0,0,0,0,0,0,0],"preamp":0,"presetId":"flat","presets":[],"profiles":[],"profileId":null,"personalEnabled":false,"strength":100}"""
             )
 
         fun copy(json: JSONObject) = JSONObject(json.toString())

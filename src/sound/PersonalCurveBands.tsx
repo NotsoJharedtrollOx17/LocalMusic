@@ -32,7 +32,7 @@ export default function PersonalCurveBands({
   return (
     <div className="personal-curve-bands">
       <p>{provisional ? t.provisional : t.curveHint}</p>
-      <div className="personal-stereo-bands">
+      <div className={`personal-stereo-bands${config ? " has-preamp" : ""}`}>
         {FREQUENCIES.map((frequency, i) => (
           <PersonalCurveBand
             key={frequency}
@@ -43,15 +43,15 @@ export default function PersonalCurveBands({
             language={language}
           />
         ))}
+        {config && edit && flush && (
+          <SoundPreamp
+            config={config}
+            edit={edit}
+            flush={flush}
+            language={language}
+          />
+        )}
       </div>
-      {config && edit && flush && (
-        <SoundPreamp
-          config={config}
-          edit={edit}
-          flush={flush}
-          language={language}
-        />
-      )}
       {!provisional && curves.every((curve) => curve.every((g) => g === 0)) && (
         <p role="status">{t.flatProfile}</p>
       )}

@@ -15,8 +15,8 @@ export default function SoundPreamp({
   const t = soundCopy(language);
   return (
     <div className="sound-preamp-control">
-      <label className="sound-preamp">
-        {t.preamp} <output>{formatGain(config.preamp)}</output>
+      <label className="equalizer-band sound-preamp">
+        <span>{t.preamp}</span>
         <input
           type="range"
           aria-label={t.preamp}
@@ -32,6 +32,7 @@ export default function SoundPreamp({
           onPointerUp={flush}
           onKeyUp={flush}
         />
+        <output>{formatGain(config.preamp)}</output>
       </label>
       <button
         className="text-button"

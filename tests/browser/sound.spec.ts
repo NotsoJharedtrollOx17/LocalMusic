@@ -249,7 +249,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
       presetId: "rock",
       gains: [3, 2, 1, -1, -2, -1, 1, 2, 3, 2],
       profileId: "fixture",
-      strength: 100,
+      strength: 50,
       profiles: [
         {
           id: "fixture",
@@ -269,11 +269,25 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .click();
   const personalSound = await openSound(page);
   await personalSound
-    .getByRole("checkbox", { name: /I am using headphones/ })
-    .check();
-  await personalSound
-    .getByRole("button", { name: "Use profile", exact: true })
+    .getByRole("button", { name: "Measured fixture", exact: true })
     .click();
+  await expect(
+    personalSound.getByRole("slider", { name: "Strength", exact: true }),
+  ).toHaveCount(0);
+  await expect.poll(async () => (await preferences(page))?.strength).toBe(100);
+  const preamp = personalSound.getByRole("slider", {
+    name: "Preamp",
+    exact: true,
+  });
+  await expect(preamp).toHaveCSS("writing-mode", "vertical-lr");
+  await expect(
+    preamp.locator(
+      "xpath=ancestor::*[contains(@class, 'personal-stereo-bands')]",
+    ),
+  ).toHaveCount(1);
+  await page.screenshot({
+    path: "artifacts/sound-personal-preamp-desktop.png",
+  });
   await expect(
     personalSound.getByRole("button", { name: /^(Left ear|Right ear)$/ }),
   ).toHaveCount(0);
@@ -305,19 +319,12 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect
     .poll(async () => (await balance(0)) - (await balance(1)))
     .toBeGreaterThan(5);
-  const strength = personalSound.getByRole("slider", {
-    name: "Strength",
-    exact: true,
-  });
-  await strength.focus();
-  await page.keyboard.press("Home");
-  for (let i = 0; i < 33; i++) await page.keyboard.press("ArrowRight");
   await expect(
     personalSound.getByRole("slider", {
       name: "250 Hz gain Left",
       exact: true,
     }),
-  ).toHaveValue("1.98");
+  ).toHaveValue("6");
   await expect(
     personalSound.getByRole("slider", {
       name: "250 Hz gain Right",
@@ -368,6 +375,9 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     await heard.click();
   }
   await expect(sound).toContainText("Compare your sound");
+  await expect(
+    sound.getByRole("slider", { name: "Strength", exact: true }),
+  ).toHaveCount(0);
   await sound.getByRole("button", { name: "Personal", exact: true }).click();
   await sound
     .getByRole("textbox", { name: "Name", exact: true })
@@ -569,6 +579,10 @@ test("presets preserve independent positive preamp and reset restores zero", asy
   await page.goto("/");
   const sound = await openSound(page);
   const preamp = sound.getByRole("slider", { name: "Preamp", exact: true });
+  await expect(preamp).toHaveCSS("writing-mode", "vertical-lr");
+  await expect(
+    preamp.locator("xpath=ancestor::*[contains(@class, 'equalizer-bands')]"),
+  ).toHaveCount(1);
   await preamp.focus();
   await page.keyboard.press("End");
   await expect(preamp).toHaveValue("12");

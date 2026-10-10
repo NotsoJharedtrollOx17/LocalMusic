@@ -46,8 +46,9 @@ impl DesktopPlayer {
     ) -> Result<bool, String> {
         match op {
             "sound-config" => {
-                let c: Config = serde_json::from_value(v.clone()).map_err(|e| e.to_string())?;
+                let mut c: Config = serde_json::from_value(v.clone()).map_err(|e| e.to_string())?;
                 c.validate()?;
+                c.strength = 100.;
                 if c.personal_enabled && !self.sound.config.lock().unwrap().personal_enabled {
                     return Err("Confirm headphones with Use profile first".into());
                 }
@@ -86,6 +87,7 @@ impl DesktopPlayer {
                         return Err("Personal sound requires mono or stereo audio".into());
                     }
                     c.personal_enabled = true;
+                    c.strength = 100.;
                     c.validate()?;
                     self.core.lock().unwrap().set_setting("sound-v1", &c)?;
                     self.sound.configure(c)?;
@@ -185,7 +187,8 @@ impl DesktopPlayer {
                         c.profiles.retain(|p| p.id != profile.id);
                         c.profiles.push(profile);
                         c.personal_enabled = true;
-                        c.strength = p.view.strength;
+                        c.strength = 100.;
+                        c.strength = 100.;
                         c.validate()?;
                         self.core.lock().unwrap().set_setting("sound-v1", &c)?;
                         self.sound.configure(c)?;

@@ -45,7 +45,7 @@ impl Default for Config {
             profiles: vec![],
             profile_id: None,
             personal_enabled: false,
-            strength: 50.,
+            strength: 100.,
         }
     }
 }

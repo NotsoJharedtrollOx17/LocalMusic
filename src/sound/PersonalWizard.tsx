@@ -24,8 +24,8 @@ export default function PersonalWizard({
     [error, setError] = useState(""),
     [name, setName] = useState(replacement?.name ?? ""),
     [now, setNow] = useState(Date.now()),
-    [strength, setStrength] = useState(50),
     [mode, setMode] = useState<string>();
+  const strength = 100;
   const current = useRef<PersonalSession | undefined>(undefined),
     alive = useRef(true),
     revision = useRef(0),
@@ -221,17 +221,6 @@ export default function PersonalWizard({
         <>
           <h4>{t.compare}</h4>
           <p>{t.unknown}</p>
-          <label>
-            {t.strength} <output>{strength}%</output>
-            <input
-              aria-label={t.strength}
-              type="range"
-              min={0}
-              max={100}
-              value={strength}
-              onChange={(e) => setStrength(Number(e.target.value))}
-            />
-          </label>
           <div className="sound-actions">
             {(["original", "personal"] as const).map((m) => (
               <button

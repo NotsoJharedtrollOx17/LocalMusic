@@ -3,7 +3,7 @@ const en = {
     "Provisional curve: sliders update as answers arrive. This curve is not applied to test beeps or music.",
   burst: "Three beeps per step, at the same test level.",
   curveHint:
-    "Personal curve at the selected strength. Left and right ears are processed independently.",
+    "Your personal EQ balance. Left and right ears are processed independently.",
   priority:
     "Personal sound takes priority over presets. Disable the profile to edit ordinary EQ.",
   flatProfile:
@@ -40,7 +40,7 @@ const en = {
     "I am using headphones in a quiet setting at a comfortable volume",
   setup: "Personal sound setup",
   intro:
-    "Shape your music around how you listen with your headphones. Listen to short groups of beeps and tell us which ones you notice; we will build a subtle EQ balance for each channel. Then compare it with the original sound and choose your preferred strength. Use a quiet space and a comfortable, steady volume, with other sound enhancements off. Saving makes this your default music profile; you can disable it or adjust its strength anytime.",
+    "Shape your music around how you listen with your headphones. Listen to short groups of beeps and tell us which ones you notice; we will build a subtle EQ balance for each channel. Then compare your personal balance with the original sound. Use a quiet space and a comfortable, steady volume, with other sound enhancements off. Saving makes this your default music profile; you can switch it off anytime.",
   monitoring:
     "Browser output changes may not be detected. Stop if sound moves to a different output.",
   begin: "Begin",
@@ -97,7 +97,7 @@ const es: typeof en = {
     "Curva provisional: los deslizadores cambian con las respuestas. No se aplica a los pitidos ni a la m\u00fasica.",
   burst: "Tres pitidos por paso, al mismo nivel de prueba.",
   curveHint:
-    "Curva personal a la intensidad seleccionada. Cada o\u00eddo se procesa por separado.",
+    "Tu equilibrio personal del EQ. Cada o\u00eddo se procesa por separado.",
   priority:
     "El sonido personal tiene prioridad. Desactiva el perfil para editar el EQ normal.",
   flatProfile:
@@ -139,7 +139,7 @@ const es: typeof en = {
   headphones: "Uso auriculares en un lugar tranquilo y con un volumen cómodo",
   setup: "Configurar sonido personal",
   intro:
-    "Ajusta tu m\u00fasica a tu forma de escuchar con auriculares. Escucha grupos cortos de pitidos e indica cu\u00e1les notas; crearemos un equilibrio sutil del EQ para cada canal. Comp\u00e1ralo con el sonido original y elige la intensidad que prefieras. Busca un lugar tranquilo, mant\u00e9n un volumen c\u00f3modo y constante y desactiva otros efectos. Al guardar, este ser\u00e1 tu perfil musical predeterminado; puedes desactivarlo o cambiar su intensidad cuando quieras.",
+    "Ajusta tu m\u00fasica a tu forma de escuchar con auriculares. Escucha grupos cortos de pitidos e indica cu\u00e1les notas; crearemos un equilibrio sutil del EQ para cada canal. Compara tu equilibrio personal con el sonido original. Busca un lugar tranquilo, mant\u00e9n un volumen c\u00f3modo y constante y desactiva otros efectos. Al guardar, este ser\u00e1 tu perfil musical predeterminado; puedes desactivarlo cuando quieras.",
   monitoring:
     "El navegador puede no detectar cambios de salida. Detén la prueba si el sonido cambia de dispositivo.",
   begin: "Comenzar",

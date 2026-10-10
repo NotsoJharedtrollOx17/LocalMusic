@@ -91,3 +91,9 @@ Both channel curves are visible together at each frequency during setup, compari
 ## Manual gain without automatic headroom - 10 October 2026
 
 The user's correction supersedes automatic response-based attenuation for music playback. Windows, Android and browser now apply only the independently configured preamp as global gain: selecting EQ or a personal profile introduces no automatic dB reduction. Retain the stereo-linked peak limiter for instantaneous clipping control and true bypass when effects are off. The legacy runtime attenuation field remains zero for contract compatibility; remove the automatic-headroom label from sound controls. Preset and profile actions continue preserving manual preamp. The isolated setup comparison sample still matches original/personal loudness for comparison; its temporary normalization does not affect music playback or saved preamp.
+
+## Preamp fader and direct personal preset selection - 10 October 2026
+
+Preamp joins the ten frequency controls as an independent eleventh vertical desktop fader, including when both personal channel curves are displayed. Narrow layouts retain accessible horizontal faders in the same list. Remove the strength sliders from sound settings and setup comparison. Personal playback uses the full derived curve (100%); normalize legacy saved percentages in all playback adapters while preserving profile, preamp and enabled state. Keep the strength field readable for contract compatibility, with new defaults/saves normalized to 100. Temporary comparisons use the full curve.
+
+Selecting a personal preset activates it directly, with priority over ordinary EQ. Following a detected output change, retain headphone reconfirmation before activation. Setup still confirms headphones and leaves music paused until Resume. Give the sound modal a thin, styled scrollbar without arrow buttons.

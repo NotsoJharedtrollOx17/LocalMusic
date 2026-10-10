@@ -22,7 +22,7 @@ export default function EqualizerBands({
   const t = soundCopy(language);
   return (
     <>
-      <div className="equalizer-bands">
+      <div className={`equalizer-bands${showPreamp ? " has-preamp" : ""}`}>
         {FREQUENCIES.map((f, i) => (
           <label
             className={`equalizer-band${inactive.includes(i) ? " inactive" : ""}`}
@@ -53,15 +53,15 @@ export default function EqualizerBands({
             {inactive.includes(i) && <small>{t.inactive}</small>}
           </label>
         ))}
+        {showPreamp && (
+          <SoundPreamp
+            config={config}
+            edit={edit}
+            flush={flush}
+            language={language}
+          />
+        )}
       </div>
-      {showPreamp && (
-        <SoundPreamp
-          config={config}
-          edit={edit}
-          flush={flush}
-          language={language}
-        />
-      )}
     </>
   );
 }
