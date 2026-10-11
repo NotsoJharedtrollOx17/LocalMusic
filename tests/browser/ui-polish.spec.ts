@@ -271,3 +271,74 @@ test("search starts with guidance and playlist Save stays reachable while its li
     page.getByRole("heading", { name: "My listening list", exact: true }),
   ).toBeVisible();
 });
+
+test("Library orders recap last, groups actions below tabs and keeps EQ actions together", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  const tabs = page.locator(".section-tabs");
+  await expect(tabs.getByRole("tab")).toHaveText([
+    "Songs",
+    "Albums",
+    "Artists",
+    "Playlists",
+    "Your Year",
+  ]);
+  const importButton = page
+    .locator(".library-toolbar")
+    .getByRole("button", { name: "Import music", exact: true });
+  await expect(importButton).toBeVisible();
+  await expect(
+    page
+      .locator(".heading-actions")
+      .getByRole("button", { name: "Import music", exact: true }),
+  ).toHaveCount(0);
+  const tabBounds = (await tabs.boundingBox())!;
+  expect((await importButton.boundingBox())!.y).toBeGreaterThanOrEqual(
+    tabBounds.y + tabBounds.height,
+  );
+  await page.getByRole("tab", { name: "Songs", exact: true }).focus();
+  await page.keyboard.press("End");
+  await expect(
+    page.getByRole("tab", { name: "Your Year", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("tab", { name: "Your Year", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText("0 qualified plays")).toBeVisible();
+  await expect(page.locator(".sidebar nav").getByRole("button")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("tab", { name: "Songs", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await expect(
+    page.getByRole("menuitem", { name: "Select songs", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("menuitem", { name: "Favorites", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  const settings = await openSettings(page);
+  await settings
+    .getByRole("button", { name: "Sound controls", exact: true })
+    .click();
+  const sound = page.getByRole("dialog", {
+    name: "Sound controls",
+    exact: true,
+  });
+  await expect(sound.locator(".sound-preamp-control button")).toHaveCount(0);
+  await expect(sound.locator(".equalizer-bands")).toHaveCSS(
+    "border-bottom-width",
+    "0px",
+  );
+  await expect(sound.locator(".sound-fieldset + .sound-actions").getByRole("button")).toHaveText([
+    "Reset",
+    "Bypass all",
+  ]);
+  await page.screenshot({ path: "artifacts/library-eq-ordering-desktop.png" });
+});

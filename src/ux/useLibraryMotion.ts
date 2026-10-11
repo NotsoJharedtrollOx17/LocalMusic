@@ -13,6 +13,7 @@ export const librarySections = [
   "albums",
   "artists",
   "playlists",
+  "year",
 ] as const;
 export type LibrarySection = (typeof librarySections)[number];
 export function useLibraryMotion(

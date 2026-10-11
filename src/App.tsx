@@ -4,7 +4,6 @@ import { MusicAppContext } from "./app/MusicAppContext";
 import Sidebar from "./app/Sidebar";
 import AppContent from "./app/AppContent";
 import MiniPlayer from "./app/MiniPlayer";
-import BottomNavigation from "./app/BottomNavigation";
 import ImportInputs from "./app/ImportInputs";
 import AppFeedback from "./app/AppFeedback";
 import SearchOverlay from "./app/SearchOverlay";
@@ -33,7 +32,6 @@ export default function App({
         <Sidebar />
         <AppContent />
         <MiniPlayer />
-        <BottomNavigation />
         <ImportInputs />
         <AppFeedback />
         <SearchOverlay />

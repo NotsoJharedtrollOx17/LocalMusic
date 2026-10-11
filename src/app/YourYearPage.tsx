@@ -41,7 +41,7 @@ export default function YourYearPage() {
           <p className="eyebrow">
             {t.yearLabel} {year}
           </p>
-          <h1>{t.year}</h1>
+          <h2>{t.year}</h2>
         </div>
         <div className="year-controls">
           <select
@@ -190,12 +190,10 @@ export default function YourYearPage() {
               <p className="eyebrow">{t.yearTracks}</p>
               {
                 <TrackRows
-                  ts={recap.topTracks
-                    .slice(0, 25)
-                    .map((x) => ({
-                      ...x.track,
-                      hidden: cache[x.track.id]?.hidden ?? x.track.hidden,
-                    }))}
+                  ts={recap.topTracks.slice(0, 25).map((x) => ({
+                    ...x.track,
+                    hidden: cache[x.track.id]?.hidden ?? x.track.hidden,
+                  }))}
                   queueIds={recap.trackIds}
                 />
               }

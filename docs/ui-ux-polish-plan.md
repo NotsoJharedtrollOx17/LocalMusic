@@ -51,3 +51,12 @@ Implemented stacked channel banks with one independent preamp rail. Profile disp
 `SoundStateController` owns a serialized mutation queue and read revisions, with `useSoundController` at app scope. The player stays mounted but hidden/inert while a child surface owns focus and Back. Ordinary dialogs retain parent body scroll on return; header and body scrolling are separate. No DSP, MusicApi, catalog, history or storage schema changes.
 
 Native inspection uses the actual Windows WebView2 renderer and Rust adapter through a temporary localhost debugging connection. It does not establish audible output, physical screen-reader behavior or Android acceptance. See the dated verification entry for actual results and remaining gates.
+
+## Screenshot follow-up: Library and EQ ordering
+
+- Move the orange Import music action below Library tabs, replacing the duplicate plus shortcut. Move selection and Favorites filtering into the anchored Library actions menu.
+- Make Your Year the final Library tab, including swipe, keyboard navigation and per-tab scroll retention. Remove the separate recap destination and redundant mobile destination bar; keep the compact player at the bottom.
+- Remove the preamp-only Reset. Retain EQ Reset (bands only, preserving independent preamp) and Bypass all immediately below the faders without a separating rule. Keep the rule separating presets from faders.
+- Preserve recap history/export, personal-profile priority, DSP and persistence semantics. Verify desktop/mobile and bilingual navigation, menu access, independent preamp and existing browser journeys.
+
+- Follow-up regression: anchored menus ignore queued opener-reveal scroll events with unchanged bounds; actual anchor movement still dismisses them.

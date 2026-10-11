@@ -29,9 +29,8 @@ type GroupPage = {
 };
 
 export function useAppState(initialSettings?: Settings) {
-  const [tab, setTab] = useState<"library" | "year">("library"),
-    [section, setSection] = useState<
-      "songs" | "albums" | "artists" | "playlists"
+  const [section, setSection] = useState<
+      "songs" | "albums" | "artists" | "playlists" | "year"
     >("songs"),
     [tracks, setTracks] = useState<Track[]>([]),
     [total, setTotal] = useState(0),
@@ -151,8 +150,6 @@ export function useAppState(initialSettings?: Settings) {
     setPlayerParent,
     sharing,
     setSharing,
-    tab,
-    setTab,
     section,
     setSection,
     tracks,

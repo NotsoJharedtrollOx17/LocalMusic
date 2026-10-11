@@ -34,16 +34,6 @@ export default function SoundPreamp({
         />
         <output>{formatGain(config.preamp)}</output>
       </label>
-      <button
-        className="text-button"
-        aria-label={`${t.resetPreamp} ${t.preamp}`}
-        onClick={() => {
-          edit((c) => ({ ...c, preamp: 0 }));
-          flush();
-        }}
-      >
-        {t.resetPreamp}
-      </button>
     </div>
   );
 }

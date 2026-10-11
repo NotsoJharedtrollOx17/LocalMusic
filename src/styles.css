@@ -1603,7 +1603,7 @@ input[type="range"] {
     display: none;
   }
   .content-shell {
-    padding: 0 22px 178px;
+    padding: 0 22px 112px;
     margin: 0;
     width: 100%;
   }
@@ -1722,7 +1722,7 @@ input[type="range"] {
   .mini-player {
     left: 0;
     right: 0;
-    bottom: calc(66px + env(safe-area-inset-bottom));
+    bottom: env(safe-area-inset-bottom);
     height: 73px;
     padding: 10px 21px;
     gap: 12px;

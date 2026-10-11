@@ -21,8 +21,6 @@ import { type Track, type Settings, type CatalogGroup } from "../types";
 export function useMusicApp(initialSettings?: Settings) {
   const state = useAppState(initialSettings);
   const {
-    tab,
-    setTab,
     section,
     setSection,
     tracks,
@@ -243,9 +241,9 @@ export function useMusicApp(initialSettings?: Settings) {
     return () => clearTimeout(id);
   }, [query, onlyFavorites, sort, refresh, act]);
   useEffect(() => {
-    if (tab === "library" && (section === "albums" || section === "artists"))
+    if (section === "albums" || section === "artists")
       void act(() => refreshGroups(section));
-  }, [tab, section, total, catalogRevision, act, refreshGroups]);
+  }, [section, total, catalogRevision, act, refreshGroups]);
   const groupIdentity = group
     ? JSON.stringify([group.kind, group.title, group.subtitle])
     : "";
@@ -284,7 +282,7 @@ export function useMusicApp(initialSettings?: Settings) {
       ...new Set([
         ...(player.trackId ? [player.trackId] : []),
         ...(modal === "queue" ? player.queue.slice(0, queueLimit) : []),
-        ...(tab === "year" && recap
+        ...(section === "year" && recap
           ? recap.topTracks.map((item) => item.track.id)
           : []),
       ]),
@@ -296,14 +294,14 @@ export function useMusicApp(initialSettings?: Settings) {
     cache,
     modal,
     queueLimit,
-    tab,
+    section,
     recap,
     act,
     remember,
   ]);
   const recapRequest = useRef(0);
   useEffect(() => {
-    if (tab !== "year" || !settings || snapshotMode) return;
+    if (section !== "year" || !settings || snapshotMode) return;
     const version = ++recapRequest.current;
     let active = true;
     setRecapLoading(true);
@@ -322,9 +320,17 @@ export function useMusicApp(initialSettings?: Settings) {
     return () => {
       active = false;
     };
-  }, [tab, year, settings, snapshotMode, recapRevision, player.playing, act]);
+  }, [
+    section,
+    year,
+    settings,
+    snapshotMode,
+    recapRevision,
+    player.playing,
+    act,
+  ]);
   useEffect(() => {
-    if (tab !== "year" || snapshotMode || shareRecap) return;
+    if (section !== "year" || snapshotMode || shareRecap) return;
     const refresh = () => setRecapRevision((v) => v + 1);
     window.addEventListener("focus", refresh);
     const timer = player.playing
@@ -334,7 +340,7 @@ export function useMusicApp(initialSettings?: Settings) {
       window.removeEventListener("focus", refresh);
       if (timer) window.clearInterval(timer);
     };
-  }, [tab, snapshotMode, shareRecap, player.playing]);
+  }, [section, snapshotMode, shareRecap, player.playing]);
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       if (
@@ -354,7 +360,6 @@ export function useMusicApp(initialSettings?: Settings) {
       }
       if (e.key === "/") {
         e.preventDefault();
-        setTab("library");
         setSearchOpen(true);
       }
     };
@@ -380,16 +385,12 @@ export function useMusicApp(initialSettings?: Settings) {
       closeGroup(groupScroll.current);
     }
   }
-  useBackLayer(tab === "year" && !modal && !searchOpen && !menu, () =>
-    setTab("library"),
+  useBackLayer(section === "year" && !modal && !searchOpen && !menu, () =>
+    setSection("songs"),
   );
+  useBackLayer(!!group && !modal && !searchOpen && !menu, backGroup);
   useBackLayer(
-    tab === "library" && !!group && !modal && !searchOpen && !menu,
-    backGroup,
-  );
-  useBackLayer(
-    tab === "library" &&
-      section === "playlists" &&
+    section === "playlists" &&
       !!selectedList &&
       !modal &&
       !searchOpen &&
@@ -489,7 +490,6 @@ export function useMusicApp(initialSettings?: Settings) {
     coverOrigin.current = image
       ? { rect: image.getBoundingClientRect(), src: image.src }
       : null;
-    setTab("library");
     setSection(kind);
     ++libraryRequest.current;
     const opening = refreshGroup({

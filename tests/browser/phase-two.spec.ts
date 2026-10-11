@@ -251,7 +251,12 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
     .click();
   await expect(page.locator(".toast")).toHaveText("Audio download started");
   expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
-  await page.getByRole("button", { name: "Select songs", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Select songs", exact: true })
+    .click();
   await page.locator(".selection-check").click();
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
   await page
@@ -351,7 +356,12 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
     page.getByRole("dialog", { name: "Settings", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Select songs", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Select songs", exact: true })
+    .click();
   const selection = page.locator(".selection-toolbar");
   await selection
     .getByRole("button", { name: "Select visible songs", exact: true })

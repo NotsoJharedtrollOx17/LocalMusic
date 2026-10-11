@@ -604,9 +604,10 @@ test("presets preserve independent positive preamp and reset restores zero", asy
     .getByRole("textbox", { name: "Name", exact: true })
     .fill("Independent EQ");
   await sound.getByRole("button", { name: "Save", exact: true }).click();
-  await sound
-    .getByRole("button", { name: "Reset Preamp", exact: true })
-    .click();
+  await expect(
+    sound.getByRole("button", { name: "Reset Preamp", exact: true }),
+  ).toHaveCount(0);
+  await preamp.fill("0");
   await sound
     .getByRole("button", { name: "Independent EQ", exact: true })
     .click();
@@ -622,9 +623,7 @@ test("presets preserve independent positive preamp and reset restores zero", asy
   await expect(
     again.getByRole("slider", { name: "Preamp", exact: true }),
   ).toHaveValue("12");
-  await again
-    .getByRole("button", { name: "Reset Preamp", exact: true })
-    .click();
+  await again.getByRole("slider", { name: "Preamp", exact: true }).fill("0");
   await expect(
     again.getByRole("slider", { name: "Preamp", exact: true }),
   ).toHaveValue("0");

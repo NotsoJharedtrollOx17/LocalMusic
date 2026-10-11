@@ -73,10 +73,7 @@ test("social recap preview is the saved image and snapshots select their own yea
     db.close();
   }, lastYear);
   await page.reload();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Your Year", exact: true })
-    .click();
+  await page.getByRole("tab", { name: "Your Year", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Export image", exact: true }),
   ).toBeDisabled();

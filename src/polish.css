@@ -186,3 +186,24 @@
     bottom: 0;
   }
 }
+
+/* Library actions stay with the collection; recap is the final Library tab. */
+.library-toolbar {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.library-toolbar .toolbar-actions {
+  margin-left: auto;
+}
+.library-import {
+  white-space: nowrap;
+}
+.year-page > .page-heading h2 {
+  font-size: clamp(28px, 4vw, 42px);
+}
+@media (max-width: 760px) {
+  .library-import {
+    padding: 12px;
+    font-size: 12px;
+  }
+}

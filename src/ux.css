@@ -532,13 +532,13 @@
     padding: 8px 12px;
   }
   .search-surface {
-    inset: 0 0 calc(66px + env(safe-area-inset-bottom));
+    inset: 0 0 env(safe-area-inset-bottom);
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
   .app-shell:has(.mini-player) .search-surface {
-    bottom: calc(139px + env(safe-area-inset-bottom));
+    bottom: calc(73px + env(safe-area-inset-bottom));
   }
   .search-surface-head {
     padding: 12px;

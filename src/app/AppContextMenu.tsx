@@ -11,7 +11,7 @@ export default function AppContextMenu() {
   const {
     t,
     act,
-    setTab,
+    setSection,
     closeGroup,
     setSearchOpen,
     setModal,
@@ -70,7 +70,7 @@ export default function AppContextMenu() {
     setSelectionMode(false);
     setSelectedIds([]);
     closeGroup();
-    setTab(tab);
+    setSection(tab === "year" ? "year" : "songs");
   };
   const clipboard = async (operation: () => Promise<void>) => {
     try {

@@ -140,7 +140,7 @@
   gap: 8px;
   margin: 24px 0;
   padding: 18px 0;
-  border-block: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
 }
 .equalizer-bands.has-preamp {
   grid-template-columns: repeat(10, minmax(0, 1fr)) 112px;
@@ -186,17 +186,13 @@
   justify-items: center;
   min-width: 0;
 }
-.sound-controls .sound-preamp-control > button {
-  min-height: 44px;
-  font-size: 12px;
-}
 .personal-stereo-bands {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 26px;
   margin: 24px 0;
   padding: 18px 0;
-  border-block: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
 }
 .personal-stereo-bands.has-preamp {
   grid-template-columns: minmax(0, 1fr) 112px;

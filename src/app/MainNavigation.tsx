@@ -1,45 +1,28 @@
-import { Music2, ChartNoAxesColumn } from "lucide-react";
+import { Music2 } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function MainNavigation() {
   const {
-    tab,
-    setTab,
+    setSection,
     setSelectionMode,
     setSelectedIds,
-    query,
+    motion,
     t,
-    act,
-    refresh,
     closeGroup,
   } = useMusicAppContext();
-
   return (
-    <>
-      <button
-        className={tab === "library" ? "selected" : ""}
-        onClick={() => {
-          setSelectionMode(false);
-          setSelectedIds([]);
-          setTab("library");
-          closeGroup();
-          void act(() => refresh(query));
-        }}
-      >
-        <Music2 />
-        <span>{t.library}</span>
-      </button>
-      <button
-        className={tab === "year" ? "selected" : ""}
-        onClick={() => {
-          setSelectionMode(false);
-          setSelectedIds([]);
-          setTab("year");
-        }}
-      >
-        <ChartNoAxesColumn />
-        <span>{t.year}</span>
-      </button>
-    </>
+    <button
+      className="selected"
+      onClick={() => {
+        setSelectionMode(false);
+        setSelectedIds([]);
+        closeGroup();
+        motion.choose("songs");
+        setSection("songs");
+      }}
+    >
+      <Music2 />
+      <span>{t.library}</span>
+    </button>
   );
 }

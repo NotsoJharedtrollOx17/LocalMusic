@@ -1,11 +1,5 @@
-import {
-  LoaderCircle,
-  Search,
-  Plus,
-  ArrowLeft,
-  MoreHorizontal,
-} from "lucide-react";
-import { api, native } from "../api";
+import { LoaderCircle, Search, ArrowLeft } from "lucide-react";
+import { api } from "../api";
 import { Cover, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import TrackRows from "./TrackRows";
@@ -14,6 +8,8 @@ import LibraryToolbar from "./LibraryToolbar";
 import EmptyLibrary from "./EmptyLibrary";
 import SelectionToolbar from "./SelectionToolbar";
 import LibraryTabs from "./LibraryTabs";
+import LibraryActions from "./LibraryActions";
+import YourYearPage from "./YourYearPage";
 
 export default function LibraryPage() {
   const {
@@ -31,19 +27,13 @@ export default function LibraryPage() {
     catalogGroups,
     groupsTotal,
     libraryLoading,
-    busy,
-    setModal,
     selectionMode,
-    selectedList,
-    setSelectionMode,
-    setSelectedIds,
     artistView,
     setArtistView,
     artistAlbums,
     artistAlbumsLoading,
     detailHero,
     motion,
-    fileInput,
     t,
     formatMusicCount,
     act,
@@ -54,7 +44,6 @@ export default function LibraryPage() {
     backGroup,
     openGroup,
     visible,
-    doImport,
   } = useMusicAppContext();
 
   return (
@@ -80,32 +69,7 @@ export default function LibraryPage() {
           >
             <Search size={25} />
           </IconButton>
-          {(section === "songs" ||
-            (group && artistView === "tracks") ||
-            (section === "playlists" && selectedList)) && (
-            <button
-              className="text-button select-trigger"
-              onClick={() => {
-                setSelectionMode(!selectionMode);
-                setSelectedIds([]);
-              }}
-            >
-              {t.selectSongs}
-            </button>
-          )}
-          <button
-            className="button primary desktop-import"
-            onClick={() =>
-              native ? void doImport() : fileInput.current?.click()
-            }
-            disabled={busy}
-          >
-            <Plus size={18} />
-            {t.import}
-          </button>
-          <IconButton label={t.settings} onClick={() => setModal("settings")}>
-            <MoreHorizontal size={25} />
-          </IconButton>
+          <LibraryActions />
         </div>
       </div>
       {group ? (
@@ -147,7 +111,9 @@ export default function LibraryPage() {
           </div>
         )}
         {selectionMode && <SelectionToolbar />}
-        {section === "playlists" ? (
+        {section === "year" ? (
+          <YourYearPage />
+        ) : section === "playlists" ? (
           <PlaylistsPage />
         ) : (
           <>
@@ -292,7 +258,10 @@ export default function LibraryPage() {
                     } else if (section === "songs") {
                       await refresh(query, tracks.length);
                     } else {
-                      await refreshGroups(section, catalogGroups.length);
+                      await refreshGroups(
+                        section as "albums" | "artists",
+                        catalogGroups.length,
+                      );
                     }
                   })
                 }

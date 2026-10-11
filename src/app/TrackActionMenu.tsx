@@ -7,7 +7,6 @@ export default function TrackActionMenu() {
     setSearchOpen,
     setModal,
     dismissModals,
-    setTab,
     setSection,
     setDetail,
     setSelectedIds,
@@ -93,7 +92,6 @@ export default function TrackActionMenu() {
               action: () => {
                 dismissModals();
                 setSearchOpen(false);
-                setTab("library");
                 setSection("songs");
                 closeGroup();
                 setSelectionMode(true);

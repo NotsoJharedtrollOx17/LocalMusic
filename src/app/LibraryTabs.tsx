@@ -35,8 +35,11 @@ export default function LibraryTabs() {
                   e.key === "Home"
                     ? 0
                     : e.key === "End"
-                      ? 3
-                      : (i + (e.key === "ArrowRight" ? 1 : -1) + 4) % 4;
+                      ? librarySections.length - 1
+                      : (i +
+                          (e.key === "ArrowRight" ? 1 : -1) +
+                          librarySections.length) %
+                        librarySections.length;
               motion.tabs.current
                 ?.querySelectorAll<HTMLButtonElement>("button")
                 [next]?.focus();

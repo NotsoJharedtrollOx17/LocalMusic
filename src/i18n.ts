@@ -1,6 +1,7 @@
 export const en = {
   loadingSound: "Loading sound controls…",
   actions: "Track actions",
+  libraryActions: "Library actions",
   songSingular: "song",
   appActions: "App actions",
   textActions: "Text actions",
@@ -206,6 +207,7 @@ export const en = {
 };
 export const es: typeof en = {
   loadingSound: "Cargando controles de sonido…",
+  libraryActions: "Acciones de la biblioteca",
   actions: "Acciones de la canción",
   songSingular: "canción",
   appActions: "Acciones de la app",

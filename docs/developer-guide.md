@@ -36,7 +36,7 @@ The command modules expose platform operations and delegate catalog, playlist an
 
 For native-only refactors, run Rust core/native tests and builds for Windows and Android: desktop compilation does not check Android's conditional modules. A browser journey cannot exercise the Rust IPC handlers. Keep command names, arguments, serialized return values, event names and journal acknowledgement ordering stable during moves.
 
-Right-click actions use the shared `ActionMenu`: track rows open the same actions as the visible overflow button; `AppContextMenu` supplies navigation, card opening and text-editing actions. It captures text selections before focus moves and updates controlled editors through their native value setter/input event. Clipboard failures leave text intact and report keyboard alternatives. Menus constrain their position to the viewport, restore focus, and close on Escape, outside click, scroll, resize or window blur.
+Right-click actions use the shared `ActionMenu`: track rows open the same actions as the visible overflow button; `AppContextMenu` supplies navigation, card opening and text-editing actions. It captures text selections before focus moves and updates controlled editors through their native value setter/input event. Clipboard failures leave text intact and report keyboard alternatives. Menus constrain their position to the viewport, restore focus, and close on Escape, outside click, scrolling that moves the anchor, resize or window blur. Ignore queued opener-reveal scroll events that leave its bounds unchanged.
 
 Windows config disables devtools and the native policy disables default WebView menus. Its accelerator callback consumes F5/F12 and Ctrl+R (including Shift), leaving other keys to WebView and React. The frontend native-only capture guard also blocks equivalent reload/inspector combinations. Browser preview retains its normal developer shortcuts; a web page cannot guarantee control over browser chrome. Do not disable all browser accelerators: that also removes useful editing/zoom behavior.
 
@@ -85,7 +85,7 @@ See [Phase 2](phase-two-ux-flow.md) for the motion/interaction contract and [ver
 
 ### Independent EQ/preamp controls
 
-Preamp bounds are -12 to +12 dB across TypeScript, Rust and Kotlin. EQ preset selection and Flat reset preserve preamp, while Reset preamp changes only preamp. Preamp edits preserve EQ preset identity. Existing preset records retain their legacy preamp field for storage compatibility, but selection ignores it. Treble boost is a reserved built-in ID (`treble`). Automatic EQ headroom is displayed separately and still varies with the combined frequency response; the limiter handles peaks from positive manual gain.
+Preamp bounds are -12 to +12 dB across TypeScript, Rust and Kotlin. EQ preset selection and Flat reset preserve preamp, and the preamp fader is adjusted independently (there is no separate preamp Reset button). Preamp edits preserve EQ preset identity. Existing preset records retain their legacy preamp field for storage compatibility, but selection ignores it. Treble boost is a reserved built-in ID (`treble`). Ordinary playback presets and personal profiles do not add automatic gain reduction; the limiter handles peaks from positive manual gain. Setup comparison samples retain their separate loudness matching.
 
 ### Personal profile ownership and curve display
 
@@ -104,3 +104,9 @@ Ordinary EQ renders preamp as its eleventh fader; personal EQ uses one shared pr
 `SoundStateController.ts` is a React-independent coordinator with one serialized write/action queue and revision-guarded reads. `useSoundController` owns it at app scope; dialogs only present its snapshot. Closing flushes edits and reverses temporary bypass, without abandoning pending writes. Language is presentation-only and must not create a second sound configuration. Native service/DSP ownership is unchanged.
 
 The visible overlay owns focus and Back. Suspend the retained player with hidden/inert flags and deactivate its focus/Back hooks while a child is open; CSS z-index alone is insufficient. `Modal` keeps its header outside the scrolling body. Navigation remembers ordinary dialog body scroll on return, while the mounted player retains its queue view and scroll. Profile management uses the existing anchored menu, and inactive ordinary presets use a disclosure. See [the polish plan](ui-ux-polish-plan.md) and [verification](verification.md).
+
+### Library ordering (screenshot follow-up)
+
+Library is the main destination. `LibrarySection` contains Songs, Albums, Artists, Playlists and Your Year in that order. Recap reads, playback caches and Back handling follow the selected section; do not introduce a second independent recap destination state. All five tabs share keyboard navigation, swipe handling and remembered scroll positions. Mobile no longer reserves space for a redundant destination bar.
+
+`LibraryToolbar` owns the orange Import music button below the tabs. `LibraryActions` provides selection, Favorites/All music filtering and Settings through the shared anchored menu. Keep track menus and long press as selection entry paths. EQ actions follow the faders without a bottom divider; Reset preserves independent preamp, and Bypass remains temporary.

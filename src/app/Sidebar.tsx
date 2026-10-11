@@ -5,7 +5,8 @@ import { useMusicAppContext } from "./MusicAppContext";
 import MainNavigation from "./MainNavigation";
 
 export default function Sidebar() {
-  const { setTab, settings, setModal, chooserOpen, t } = useMusicAppContext();
+  const { setSection, closeGroup, settings, setModal, chooserOpen, t } =
+    useMusicAppContext();
 
   return (
     <aside className="sidebar" inert={chooserOpen}>
@@ -14,7 +15,8 @@ export default function Sidebar() {
         className="brand"
         onClick={(e) => {
           e.preventDefault();
-          setTab("library");
+          closeGroup();
+          setSection("songs");
         }}
       >
         <span className="brand-mark">

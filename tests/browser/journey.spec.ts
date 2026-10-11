@@ -36,10 +36,7 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
   await page.waitForTimeout(1400);
   await dialog.getByRole("button", { name: "Pause", exact: true }).click();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Your Year" })
-    .click();
+  await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await expect(page.getByRole("button", { name: /Export JSON/i })).toHaveCount(
     0,
@@ -103,7 +100,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
   await expect(
     page.getByRole("tab", { name: "Playlists", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".bottom-nav").getByRole("button")).toHaveCount(2);
+  await expect(page.locator(".bottom-nav")).toHaveCount(0);
   await page.screenshot({
     path: "artifacts/playlists-tab-mobile.png",
     fullPage: true,
@@ -136,10 +133,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     .getByRole("button", { name: "Pause", exact: true })
     .click();
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
-  await page
-    .locator(".bottom-nav")
-    .getByRole("button", { name: "Your Year" })
-    .click();
+  await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await page
     .locator(".mobile-brand")
@@ -151,12 +145,10 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     .getByRole("dialog")
     .getByRole("button", { name: "Cerrar" })
     .click();
-  await expect(
-    page.locator(".bottom-nav").getByRole("button", { name: "Tu año" }),
-  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Tu año" })).toBeVisible();
   await page.reload();
   await expect(
-    page.locator(".bottom-nav").getByRole("button", { name: "Biblioteca" }),
+    page.getByRole("heading", { name: "Biblioteca", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("8 canciones", { exact: true })).toBeVisible();
 });
@@ -165,26 +157,61 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
   page,
 }) => {
   await page.goto("/");
-  await page.locator("input[type=file]").first().setInputFiles({
-    name: "Qualified tone.wav",
-    mimeType: "audio/wav",
-    buffer: wav(),
-  });
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles({
+      name: "Qualified tone.wav",
+      mimeType: "audio/wav",
+      buffer: wav(70),
+    });
   await expect(
     page.locator(".toast").filter({ hasText: "1 tracks imported" }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Play Qualified tone", exact: true })
     .click();
-  await page.waitForTimeout(31500);
+  // Wait for recorded listening evidence, not wall time since the click.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            new Promise<number>((resolve, reject) => {
+              const request = indexedDB.open("local-music-v1", 1);
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => {
+                const db = request.result;
+                const read = db
+                  .transaction("sessions")
+                  .objectStore("sessions")
+                  .getAll();
+                read.onsuccess = () => {
+                  resolve(
+                    Math.max(
+                      0,
+                      ...read.result.map(
+                        (session: { playedMs: number }) => session.playedMs,
+                      ),
+                    ),
+                  );
+                  db.close();
+                };
+                read.onerror = () => {
+                  db.close();
+                  reject(read.error);
+                };
+              };
+            }),
+        ),
+      { timeout: 50000, intervals: [500] },
+    )
+    .toBeGreaterThanOrEqual(30000);
   await page
     .locator(".mini-center")
     .getByRole("button", { name: "Pause", exact: true })
     .click();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Your Year" })
-    .click();
+  await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("1 qualified plays")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Qualified tone", exact: true }),
@@ -203,10 +230,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     .locator(".sidebar nav")
     .getByRole("button", { name: "Library" })
     .click();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Your Year" })
-    .click();
+  await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
@@ -218,10 +242,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     "History privacy changed",
   );
   await page.reload();
-  await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Your Year" })
-    .click();
+  await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
 });
 
@@ -257,7 +278,10 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     .getByRole("button", { name: "Close", exact: true })
     .last()
     .click();
-  await page.getByRole("button", { name: "Favorites", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Favorites", exact: true }).click();
   await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Play Fixture 120", exact: true }),

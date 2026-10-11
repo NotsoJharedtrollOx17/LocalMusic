@@ -1,6 +1,5 @@
-import { LoaderCircle, Plus, SlidersHorizontal, Heart } from "lucide-react";
+import { LoaderCircle, Plus, SlidersHorizontal } from "lucide-react";
 import { native } from "../api";
-import { IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function LibraryToolbar() {
@@ -30,7 +29,7 @@ export default function LibraryToolbar() {
           className={"filter-button" + (!onlyFavorites ? " chosen" : "")}
           onClick={() => setOnlyFavorites(false)}
         >
-          {t.allMusic}
+          {onlyFavorites ? t.favorites : t.allMusic}
         </button>
         <span className="count-dot">·</span>
         <span>{formatMusicCount(group ? group.ids.length : total, true)}</span>
@@ -48,13 +47,6 @@ export default function LibraryToolbar() {
           )}
         {section === "songs" && !group && (
           <>
-            <IconButton
-              label={t.favorites}
-              active={onlyFavorites}
-              onClick={() => setOnlyFavorites(!onlyFavorites)}
-            >
-              <Heart size={18} />
-            </IconButton>
             <label className="sort-select">
               <SlidersHorizontal size={18} />
               <select
@@ -69,15 +61,16 @@ export default function LibraryToolbar() {
             </label>
           </>
         )}
-        <IconButton
-          label={t.import}
+        <button
+          className="button primary library-import"
           disabled={busy}
           onClick={() =>
             native ? void doImport() : fileInput.current?.click()
           }
         >
-          <Plus size={20} />
-        </IconButton>
+          <Plus size={18} />
+          {t.import}
+        </button>
       </div>
     </div>
   );

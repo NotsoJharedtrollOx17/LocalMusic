@@ -15,11 +15,13 @@ export function ActionMenu({
   point?: { x: number; y: number };
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const anchorBounds = useRef<DOMRect | null>(null);
   const [pos, setPos] = useState({ left: 0, top: 0 });
   useBackLayer(true, onClose);
   useLayoutEffect(() => {
     const node = ref.current!,
       r = anchor.getBoundingClientRect();
+    anchorBounds.current = r;
     setPos({
       left: Math.max(
         8,
@@ -52,7 +54,18 @@ export function ActionMenu({
     };
     document.addEventListener("pointerdown", close);
     const scroll = (event: Event) => {
-      if (!ref.current?.contains(event.target as Node)) onClose();
+      if (ref.current?.contains(event.target as Node)) return;
+      const before = anchorBounds.current,
+        now = anchor.getBoundingClientRect();
+      // A queued scroll from revealing the opener may arrive after mounting.
+      // Dismiss anchored menus when the opener actually moves, not for that stale event.
+      if (
+        point ||
+        !before ||
+        Math.abs(now.top - before.top) > 0.5 ||
+        Math.abs(now.left - before.left) > 0.5
+      )
+        onClose();
     };
     window.addEventListener("resize", onClose);
     window.addEventListener("blur", onClose);
@@ -63,7 +76,7 @@ export function ActionMenu({
       window.removeEventListener("blur", onClose);
       document.removeEventListener("scroll", scroll, true);
     };
-  }, [onClose]);
+  }, [anchor, onClose, point]);
   return (
     <div
       ref={ref}

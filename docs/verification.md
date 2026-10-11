@@ -363,3 +363,22 @@ The final package rebuilt successfully after the parent-scroll/status refinement
 ### Remaining acceptance boundaries
 
 ADB device inventory was empty. Android runtime/Back, physical headphone audibility, hardware screen readers, manual maximized/system-zoom inspection and performance measurements remain pending. Native renderer checks establish Windows UI/configuration behavior, not listening quality or Android service reliability. The existing Android baseline package is not a new build of this polish branch.
+
+## Screenshot ordering follow-up ? 10 October 2026
+
+Implemented on `dev.ui-ux-polish`: orange Import music below Library tabs; selection and Favorites filtering in Library actions; Your Year as the fifth/final Library tab; one Library destination with no redundant mobile destination bar; compact player/search offsets updated. Removed the preamp-only Reset and the lower fader divider, preserving band-only Reset, independent preamp and temporary Bypass. DSP, tone limits, persistence and recap rules are unchanged.
+
+### Checks
+
+- Production build and all 28 frontend tests passed before browser testing.
+- Full Chromium run: 28/30 passed. The fixed 31.5-second listening wait recorded fewer than 30 seconds, and the localized profile menu dismissed on a queued opener-reveal scroll event. The listening journey now waits for at least 30 seconds of persisted actual listening evidence; the menu ignores stale scroll events with unchanged anchor bounds and still dismisses when its anchor moves.
+- Affected rerun: 4/4 passed (listening/recap privacy, context-menu behavior, grouped personal banks with exact EN/ES configuration parity, and the new Library/EQ ordering journey). Together these runs cover all 30 existing journeys plus the new ordering regression; they are not a single 31/31 run. Existing mobile swipes/Back, accessibility, search, imports, removal/Undo and recap PNG exports passed in the full run.
+- The new ordering regression checks five tabs in order, keyboard End/Enter to recap, Back to Songs, import placement below tabs, one desktop main destination, retained selection/favorites menu access, absence of preamp Reset and no lower EQ rule.
+
+### Actual Windows observations
+
+Rebuilt the portable debug Windows app and inspected its actual WebView2/Rust renderer. Library has one main destination and five tabs; the orange Import button is below the tabs. Recap opens inside Library. Selection and Favorites remain reachable through Library actions. Sound shows one shared preamp without a separate Reset and no lower fader rule. Settings/Sound and Queue/Sound return checks passed. Native screenshots of Library, recap and EQ were inspected; sound configuration was not changed. The existing native output-unavailable state remained visible; this session makes no new audio-quality claim.
+
+A final package/check pass is recorded below. Temporary native test processes and diagnostic artifacts are kept out of Git. Android runtime, physical headphone audibility, hardware screen readers and manual system zoom remain separate pending gates. No Rust/Kotlin source or processing contract changed in this follow-up; previous backend results above are not represented as new executions.
+
+Final pass: `npm.cmd run check` again passed the production build and all 28 tests. The final portable Windows package rebuilt successfully and its native Library/import/recap/menu/EQ ordering checks passed again. Only the agent-launched test instance was closed. `git diff --check` passed; source reference images and release branches/tags were preserved.
