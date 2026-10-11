@@ -10,7 +10,12 @@ export function ActionMenu({
 }: {
   anchor: HTMLElement;
   label: string;
-  items: Array<{ label: string; action: () => void; disabled?: boolean }>;
+  items: Array<{
+    label: string;
+    action: () => void;
+    disabled?: boolean;
+    checked?: boolean;
+  }>;
   onClose: () => void;
   point?: { x: number; y: number };
 }) {
@@ -110,7 +115,8 @@ export function ActionMenu({
       {items.map((item) => (
         <button
           key={item.label}
-          role="menuitem"
+          role={item.checked === undefined ? "menuitem" : "menuitemradio"}
+          aria-checked={item.checked}
           disabled={item.disabled}
           onClick={() => {
             onClose();

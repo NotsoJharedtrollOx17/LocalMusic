@@ -311,3 +311,15 @@
     margin-top: 8px;
   }
 }
+
+/* Recap now sits inside Library, without the old destination eyebrow. */
+.year-page > .page-heading {
+  margin: 20px 0 24px;
+}
+.library-toolbar .toolbar-actions {
+  gap: 8px !important;
+}
+.action-menu button[aria-checked="true"] {
+  background: var(--accent);
+  color: #1b1b1a;
+}

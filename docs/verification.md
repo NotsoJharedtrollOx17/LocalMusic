@@ -408,3 +408,15 @@ Removed the Bypass all button from Sound controls. Regular EQ now has a labeled 
 - Backend processing contracts and internal bypass lifecycle handling are retained. Native results follow below; Android runtime remains a separate pending gate.
 
 The portable Windows build succeeded. In the actual WebView2/Rust app, Bypass was absent and keyboard Space changed the saved EQ enabled state while preserving gains, preamp and preset ID. The switch screenshot was inspected. The complete original native sound configuration was restored, playback remained paused, and only the agent-launched test instance was closed. No new physical audio or Android runtime claim is made.
+
+
+## Recap label and toolbar spacing ? 10 October 2026
+
+Removed the obsolete recap destination eyebrow from the Library recap tab. Its heading uses a 20px top inset and 24px bottom spacing, while year selection and the poster year remain visible. Sorting moves into Library actions with checked menuitemradio options; the redundant adjacent sort icon/native selector is removed, leaving one menu beside Import music with an 8px gap.
+
+- `npm.cmd run check`: production build and 28 frontend tests passed.
+- Four affected Chromium journeys passed: mobile accessibility, context-menu keyboard behavior, recap PNG/snapshot export and updated Library ordering/sort-state coverage.
+- The ordering regression confirms the missing recap eyebrow, three checked sorting choices, changing the active sort and the absence of the old native sort selector.
+- Native Windows observations follow below. Catalog rules, DSP, recap aggregation and export data are unchanged; Android runtime remains a separate gate.
+
+The portable Windows build succeeded. Native WebView2 checks confirmed one toolbar menu, three sorting choices with the correct active selection, no old sort selector, no recap eyebrow and the exact 20px heading inset. Year selection and poster remained visible. Native screenshots were inspected, sorting was restored to title, playback remained paused and only the agent-launched test instance was closed.

@@ -308,6 +308,9 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     page.getByRole("tab", { name: "Your Year", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("0 qualified plays")).toBeVisible();
+  await expect(page.locator(".year-page > .page-heading .eyebrow")).toHaveCount(
+    0,
+  );
   await expect(page.locator(".sidebar")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(
@@ -322,6 +325,20 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
   await expect(
     page.getByRole("menuitem", { name: "Favorites", exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole("menuitemradio")).toHaveCount(3);
+  await expect(
+    page.getByRole("menuitemradio", { name: "Sort by title", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
+  await page
+    .getByRole("menuitemradio", { name: "Sort by artist", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await expect(
+    page.getByRole("menuitemradio", { name: "Sort by artist", exact: true }),
+  ).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator(".library-toolbar .sort-select")).toHaveCount(0);
   await page.keyboard.press("Escape");
   const settings = await openSettings(page);
   await settings

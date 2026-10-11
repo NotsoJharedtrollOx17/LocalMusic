@@ -11,6 +11,8 @@ export default function LibraryActions() {
     group,
     artistView,
     selectedList,
+    sort,
+    setSort,
     onlyFavorites,
     setOnlyFavorites,
     selectionMode,
@@ -54,6 +56,16 @@ export default function LibraryActions() {
                     label: onlyFavorites ? t.allMusic : t.favorites,
                     action: () => setOnlyFavorites(!onlyFavorites),
                   },
+                  ...(["title", "artist", "album"] as const).map((value) => ({
+                    label:
+                      value === "title"
+                        ? t.sort
+                        : value === "artist"
+                          ? t.sortArtist
+                          : t.sortAlbum,
+                    checked: sort === value,
+                    action: () => setSort(value),
+                  })),
                 ]
               : []),
           ]}

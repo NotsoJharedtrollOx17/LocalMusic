@@ -38,9 +38,6 @@ export default function YourYearPage() {
     <section className="year-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">
-            {t.yearLabel} {year}
-          </p>
           <h2>{t.year}</h2>
         </div>
         <div className="year-controls">

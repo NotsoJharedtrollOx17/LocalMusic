@@ -1,4 +1,4 @@
-import { LoaderCircle, Plus, SlidersHorizontal } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
 import LibraryActions from "./LibraryActions";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -9,13 +9,10 @@ export default function LibraryToolbar() {
     total,
     onlyFavorites,
     setOnlyFavorites,
-    sort,
-    setSort,
     group,
     groupLoading,
     selectedGroupPage,
     catalogGroups,
-    settings,
     busy,
     fileInput,
     t,
@@ -47,22 +44,6 @@ export default function LibraryToolbar() {
               {t.loading}
             </span>
           )}
-        {section === "songs" && !group && (
-          <>
-            <label className="sort-select">
-              <SlidersHorizontal size={18} />
-              <select
-                aria-label={t.sort}
-                value={sort}
-                onChange={(e) => setSort(e.target.value as typeof sort)}
-              >
-                <option value="title">{t.sort}</option>
-                <option value="artist">{t.sortArtist}</option>
-                <option value="album">{t.sortAlbum}</option>
-              </select>
-            </label>
-          </>
-        )}
         <button
           className="button primary library-import"
           disabled={busy}

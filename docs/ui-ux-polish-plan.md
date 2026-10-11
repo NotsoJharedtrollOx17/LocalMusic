@@ -69,3 +69,8 @@ Remove the sidebar and duplicate mobile header. Place the existing logo above Li
 ## EQ controls simplification
 
 Remove Bypass all from the sound UI. Replace the small regular EQ checkbox with a labeled orange switch, at least 44px high, with visible focus and native keyboard/screen-reader semantics. Persist the existing enabled flag immediately; switching off retains gains, preamp and selected preset. Personal-profile priority and activation continue through their existing controls. Retain backend bypass handling for internal lifecycle/processing compatibility.
+
+
+## Remaining labels and toolbar spacing
+
+Remove the redundant recap eyebrow while retaining its title, selected-year control and poster year. Set a consistent heading inset below the tabs. Consolidate sorting into Library actions, expose the selected sort with menuitemradio semantics, and use one compact menu/import pair with consistent spacing.
