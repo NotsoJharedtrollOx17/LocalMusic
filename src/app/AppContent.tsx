@@ -2,7 +2,7 @@ import { Shield } from "lucide-react";
 
 import { useMusicAppContext } from "./MusicAppContext";
 import LibraryPage from "./LibraryPage";
-import MobileHeader from "./MobileHeader";
+import LibraryBrand from "./LibraryBrand";
 import ImportStatus from "./ImportStatus";
 
 export default function AppContent() {
@@ -10,7 +10,7 @@ export default function AppContent() {
 
   return (
     <div className="content-shell" inert={chooserOpen}>
-      <MobileHeader />
+      <LibraryBrand />
       <main>
         {importProgress && <ImportStatus />}
         <LibraryPage />

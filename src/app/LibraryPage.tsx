@@ -1,4 +1,4 @@
-import { LoaderCircle, Search, ArrowLeft } from "lucide-react";
+import { LoaderCircle, Search, ArrowLeft, Settings2 } from "lucide-react";
 import { api } from "../api";
 import { Cover, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -8,7 +8,6 @@ import LibraryToolbar from "./LibraryToolbar";
 import EmptyLibrary from "./EmptyLibrary";
 import SelectionToolbar from "./SelectionToolbar";
 import LibraryTabs from "./LibraryTabs";
-import LibraryActions from "./LibraryActions";
 import YourYearPage from "./YourYearPage";
 
 export default function LibraryPage() {
@@ -19,6 +18,7 @@ export default function LibraryPage() {
     query,
     searchOpen,
     setSearchOpen,
+    setModal,
     group,
     groupTracks,
     setGroupTracks,
@@ -69,7 +69,9 @@ export default function LibraryPage() {
           >
             <Search size={25} />
           </IconButton>
-          <LibraryActions />
+          <IconButton label={t.settings} onClick={() => setModal("settings")}>
+            <Settings2 size={25} />
+          </IconButton>
         </div>
       </div>
       {group ? (

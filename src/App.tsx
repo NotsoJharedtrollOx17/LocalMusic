@@ -1,7 +1,6 @@
 import type { Settings } from "./types";
 import { useMusicApp } from "./app/useMusicApp";
 import { MusicAppContext } from "./app/MusicAppContext";
-import Sidebar from "./app/Sidebar";
 import AppContent from "./app/AppContent";
 import MiniPlayer from "./app/MiniPlayer";
 import ImportInputs from "./app/ImportInputs";
@@ -29,7 +28,6 @@ export default function App({
   return (
     <MusicAppContext.Provider value={model}>
       <div className="app-shell">
-        <Sidebar />
         <AppContent />
         <MiniPlayer />
         <ImportInputs />

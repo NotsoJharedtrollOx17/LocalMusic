@@ -25,7 +25,7 @@ test("main journeys expose accessible controls at mobile width", async ({
       .toEqual([]);
   }
   await page
-    .locator(".mobile-brand")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Settings" })
     .click();
   expect(

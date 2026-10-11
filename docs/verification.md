@@ -382,3 +382,17 @@ Rebuilt the portable debug Windows app and inspected its actual WebView2/Rust re
 A final package/check pass is recorded below. Temporary native test processes and diagnostic artifacts are kept out of Git. Android runtime, physical headphone audibility, hardware screen readers and manual system zoom remain separate pending gates. No Rust/Kotlin source or processing contract changed in this follow-up; previous backend results above are not represented as new executions.
 
 Final pass: `npm.cmd run check` again passed the production build and all 28 tests. The final portable Windows package rebuilt successfully and its native Library/import/recap/menu/EQ ordering checks passed again. Only the agent-launched test instance was closed. `git diff --check` passed; source reference images and release branches/tags were preserved.
+
+## Sidebar-free Library and square player artwork ? 10 October 2026
+
+Removed the sidebar and duplicate mobile header. The existing music-note logo appears above Library, alongside the localized shield motto and browser-preview indicator where applicable. The heading opens Settings directly through its Settings icon. Selection/Favorites remain in a toolbar menu, and playlist detail selection remains reachable.
+
+The player previously constrained artwork height separately from width. `usePlayerArtworkSize` now measures body height, padding and non-artwork content; a ResizeObserver adjusts one square size as the window or text changes. The footer/header stay anchored. Short windows use tighter spacing, with scrolling retained for extreme heights/long titles.
+
+- `npm.cmd run check`: production build and 28 frontend tests passed.
+- Six affected Chromium journeys passed: mobile accessibility, dark startup/loading, mobile swipe/Back/Reduce Motion, personal-profile EN/ES parity, Library ordering/Settings/menu access and new player resize coverage.
+- Player resize checks at 1000, 750 and 600px height confirmed square artwork, progressively smaller size, no body overflow for the fixture and visible playback controls. After the short-height spacing refinement, that resize journey passed again. Browser screenshots were inspected.
+- Native Windows packaging/runtime results follow below. This UI follow-up changes no Rust/Kotlin processing or catalog rules. Android runtime and physical audio acceptance remain separate gates.
+
+
+The final portable Windows build succeeded. Actual OS window resizing through the owned test window confirmed square artwork at outer heights 1000/750/600px (renderer heights 875/647/509px), reducing artwork to approximately 320/230/93px. After allowing two pixels for display-scaling rounding, the final native checks confirmed zero player-body overflow at all three sizes; screenshots were inspected. Header logo/motto visibility and direct Settings access passed in the native renderer. Playback stayed paused, and only the agent-launched test instance was closed. The final affected browser resize rerun also passed. `git diff --check` passed. All diagnostics/screenshots remain ignored artifacts.

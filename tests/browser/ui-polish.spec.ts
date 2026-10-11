@@ -308,7 +308,7 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     page.getByRole("tab", { name: "Your Year", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("0 qualified plays")).toBeVisible();
-  await expect(page.locator(".sidebar nav").getByRole("button")).toHaveCount(1);
+  await expect(page.locator(".sidebar")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
@@ -336,9 +336,54 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     "border-bottom-width",
     "0px",
   );
-  await expect(sound.locator(".sound-fieldset + .sound-actions").getByRole("button")).toHaveText([
-    "Reset",
-    "Bypass all",
-  ]);
+  await expect(
+    sound.locator(".sound-fieldset + .sound-actions").getByRole("button"),
+  ).toHaveText(["Reset", "Bypass all"]);
   await page.screenshot({ path: "artifacts/library-eq-ordering-desktop.png" });
+});
+
+test("player artwork remains square and fits above transport when height shrinks", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  await page
+    .locator(".track-row")
+    .first()
+    .getByRole("button", { name: /^Play / })
+    .click();
+  await page.locator(".mini-track").click();
+  const player = page.getByRole("dialog", { name: "Now playing", exact: true });
+  let previousSize = Infinity;
+  for (const height of [1000, 750, 600]) {
+    await page.setViewportSize({ width: 1000, height });
+    await expect
+      .poll(async () =>
+        player
+          .locator(".player-cover")
+          .evaluate((node) =>
+            Math.abs(
+              node.getBoundingClientRect().width -
+                node.getBoundingClientRect().height,
+            ),
+          ),
+      )
+      .toBeLessThan(1);
+    await expect
+      .poll(async () =>
+        player
+          .locator(".player-surface-body")
+          .evaluate((node) => node.scrollHeight - node.clientHeight),
+      )
+      .toBeLessThanOrEqual(2);
+    const bounds = (await player.locator(".player-cover").boundingBox())!;
+    expect(bounds.width).toBeLessThanOrEqual(previousSize);
+    previousSize = bounds.width;
+    await expect(
+      player
+        .locator(".player-surface-footer")
+        .getByRole("button", { name: "Pause", exact: true }),
+    ).toBeInViewport();
+    await page.screenshot({ path: `artifacts/player-height-${height}.png` });
+  }
 });

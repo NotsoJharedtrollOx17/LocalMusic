@@ -133,7 +133,7 @@ test("social recap preview is the saved image and snapshots select their own yea
     page.getByRole("button", { name: "Return to live recap", exact: true }),
   ).toBeVisible();
   await page
-    .locator(".mobile-brand")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
@@ -178,7 +178,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   expect(unexpectedDownloads).toBe(0);
   await spanish.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page
-    .locator(".mobile-brand")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Ajustes", exact: true })
     .click();
   page.once("dialog", async (dialog) => {

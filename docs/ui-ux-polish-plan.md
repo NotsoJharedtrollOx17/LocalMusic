@@ -60,3 +60,7 @@ Native inspection uses the actual Windows WebView2 renderer and Rust adapter thr
 - Preserve recap history/export, personal-profile priority, DSP and persistence semantics. Verify desktop/mobile and bilingual navigation, menu access, independent preamp and existing browser journeys.
 
 - Follow-up regression: anchored menus ignore queued opener-reveal scroll events with unchanged bounds; actual anchor movement still dismisses them.
+
+## Header and player resize follow-up
+
+Remove the sidebar and duplicate mobile header. Place the existing logo above Library, with the localized shield motto alongside it, and replace the heading overflow menu with the same Settings icon used previously in the sidebar. Keep selection/Favorites in a collection toolbar menu and playlist detail actions. Fit the square player artwork to measured remaining body height after the fixed header/transport/footer and title, observing resize and text changes. Preserve scroll access for extremely short windows and long titles.

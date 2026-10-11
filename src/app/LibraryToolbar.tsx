@@ -1,4 +1,5 @@
 import { LoaderCircle, Plus, SlidersHorizontal } from "lucide-react";
+import LibraryActions from "./LibraryActions";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
 
@@ -35,6 +36,7 @@ export default function LibraryToolbar() {
         <span>{formatMusicCount(group ? group.ids.length : total, true)}</span>
       </div>
       <div className="toolbar-actions">
+        <LibraryActions />
         {!group &&
           (groupLoading ||
             (section !== "songs" &&

@@ -136,7 +136,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
   await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await page
-    .locator(".mobile-brand")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Settings" })
     .click();
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
@@ -227,8 +227,8 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
   await page.getByLabel("Exclude from recap", { exact: true }).check();
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
   await page
-    .locator(".sidebar nav")
-    .getByRole("button", { name: "Library" })
+    .locator(".library-brand-header")
+    .getByRole("link", { name: "Library" })
     .click();
   await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();

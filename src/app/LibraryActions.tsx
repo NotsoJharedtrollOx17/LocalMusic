@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { ListFilter } from "lucide-react";
 import { IconButton } from "../components";
 import { ActionMenu } from "../ux";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -16,20 +16,20 @@ export default function LibraryActions() {
     selectionMode,
     setSelectionMode,
     setSelectedIds,
-    setModal,
     t,
   } = useMusicAppContext();
   const canSelect =
     section === "songs" ||
     (group && artistView === "tracks") ||
     (section === "playlists" && !!selectedList);
+  if (!canSelect) return null;
   return (
     <>
       <IconButton
         label={t.libraryActions}
         onClick={(e) => setAnchor(e.currentTarget)}
       >
-        <MoreHorizontal size={25} />
+        <ListFilter size={25} />
       </IconButton>
       {anchor && (
         <ActionMenu
@@ -56,7 +56,6 @@ export default function LibraryActions() {
                   },
                 ]
               : []),
-            { label: t.settings, action: () => setModal("settings") },
           ]}
         />
       )}

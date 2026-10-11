@@ -8,7 +8,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
   await page
-    .locator(".sidebar")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
   await page.getByRole("button", { name: "Dark", exact: true }).click();

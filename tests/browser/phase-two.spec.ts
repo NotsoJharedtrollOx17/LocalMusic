@@ -335,7 +335,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-toolbar")).toHaveCount(0);
   await page
-    .locator(".mobile-brand")
+    .locator(".heading-actions")
     .getByRole("button", { name: "Settings", exact: true })
     .click();
   await page

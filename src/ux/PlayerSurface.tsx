@@ -1,3 +1,4 @@
+import { usePlayerArtworkSize } from "./usePlayerArtworkSize";
 import { useFocusScope } from "./useFocusScope";
 import {
   useEffect,
@@ -40,6 +41,7 @@ export function PlayerSurface({
   const ref = useRef<HTMLDivElement>(null),
     closing = useRef(false),
     drag = useRef<{ y: number; t: number } | null>(null);
+  usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);

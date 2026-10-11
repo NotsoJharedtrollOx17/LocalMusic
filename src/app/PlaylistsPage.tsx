@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
+import LibraryActions from "./LibraryActions";
 import TrackRows from "./TrackRows";
 import PlaylistBuilder from "./PlaylistBuilder";
 import GeneratedPlaylist from "./GeneratedPlaylist";
@@ -25,17 +26,20 @@ export default function PlaylistsPage() {
         <div>
           <h2>{selectedList ? selectedList.title : t.playlists}</h2>
         </div>
-        <button
-          className="button secondary"
-          onClick={() => {
-            setManualTitle("");
-            setManualIds([]);
-            setModal("manual");
-          }}
-        >
-          <Plus size={18} />
-          {t.newPlaylist}
-        </button>
+        <div className="heading-actions">
+          <LibraryActions />
+          <button
+            className="button secondary"
+            onClick={() => {
+              setManualTitle("");
+              setManualIds([]);
+              setModal("manual");
+            }}
+          >
+            <Plus size={18} />
+            {t.newPlaylist}
+          </button>
+        </div>
       </div>
       {selectedList ? (
         <>
