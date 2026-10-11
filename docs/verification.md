@@ -396,3 +396,15 @@ The player previously constrained artwork height separately from width. `usePlay
 
 
 The final portable Windows build succeeded. Actual OS window resizing through the owned test window confirmed square artwork at outer heights 1000/750/600px (renderer heights 875/647/509px), reducing artwork to approximately 320/230/93px. After allowing two pixels for display-scaling rounding, the final native checks confirmed zero player-body overflow at all three sizes; screenshots were inspected. Header logo/motto visibility and direct Settings access passed in the native renderer. Playback stayed paused, and only the agent-launched test instance was closed. The final affected browser resize rerun also passed. `git diff --check` passed. All diagnostics/screenshots remain ignored artifacts.
+
+
+## EQ switch and Bypass removal ? 10 October 2026
+
+Removed the Bypass all button from Sound controls. Regular EQ now has a labeled native checkbox with `role="switch"`, a 52x30px orange track, a 44px minimum activation area, visible keyboard focus, disabled feedback and Reduce Motion support. Enable changes flush through the existing serialized controller and preserve gains/preamp/preset. Active personal-profile priority remains separate through its existing controls.
+
+- `npm.cmd run check`: production build and all 28 frontend tests passed.
+- Five affected Chromium journeys passed: mobile sound access, offline preset persistence/narrow dark Spanish UI, actual AudioWorklet spectral response, exact personal-profile EN/ES parity and the updated action layout.
+- Keyboard Space toggles saved EQ enabled state without changing gains or preamp. The real audio graph returns to its original spectral level when the switch is off. No Bypass button remains; Reset is the sole ordinary EQ action below the faders.
+- Backend processing contracts and internal bypass lifecycle handling are retained. Native results follow below; Android runtime remains a separate pending gate.
+
+The portable Windows build succeeded. In the actual WebView2/Rust app, Bypass was absent and keyboard Space changed the saved EQ enabled state while preserving gains, preamp and preset ID. The switch screenshot was inspected. The complete original native sound configuration was restored, playback remained paused, and only the agent-launched test instance was closed. No new physical audio or Android runtime claim is made.

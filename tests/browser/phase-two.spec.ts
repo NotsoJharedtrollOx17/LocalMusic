@@ -348,7 +348,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   });
   await expect(sound).not.toContainText("Audio effects are not available");
   await expect(
-    sound.getByRole("checkbox", { name: "Enable equalizer" }),
+    sound.getByRole("switch", { name: "Enable equalizer" }),
   ).toBeVisible();
   await expect(sound.getByRole("slider")).toHaveCount(11);
   await page.keyboard.press("Escape");

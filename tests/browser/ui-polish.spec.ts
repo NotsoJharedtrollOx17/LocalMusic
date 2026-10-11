@@ -338,7 +338,7 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
   );
   await expect(
     sound.locator(".sound-fieldset + .sound-actions").getByRole("button"),
-  ).toHaveText(["Reset", "Bypass all"]);
+  ).toHaveText(["Reset"]);
   await page.screenshot({ path: "artifacts/library-eq-ordering-desktop.png" });
 });
 

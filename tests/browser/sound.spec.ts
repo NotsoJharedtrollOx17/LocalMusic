@@ -42,8 +42,24 @@ test("sound settings work before playback and custom presets persist in narrow d
   await expect(sound.getByRole("combobox")).toHaveCount(0);
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
-    sound.getByRole("checkbox", { name: "Enable equalizer" }),
+    sound.getByRole("switch", { name: "Enable equalizer" }),
   ).toBeChecked();
+  const toggle = sound.getByRole("switch", { name: "Enable equalizer" });
+  await expect(
+    sound.getByRole("button", { name: "Bypass all", exact: true }),
+  ).toHaveCount(0);
+  await expect
+    .poll(async () => (await preferences(page))?.presetId)
+    .toBe("rock");
+  const selected = await preferences(page);
+  await toggle.focus();
+  await page.keyboard.press("Space");
+  await expect(toggle).not.toBeChecked();
+  await expect.poll(async () => (await preferences(page))?.enabled).toBe(false);
+  expect((await preferences(page))?.gains).toEqual(selected.gains);
+  expect((await preferences(page))?.preamp).toBe(selected.preamp);
+  await page.keyboard.press("Space");
+  await expect(toggle).toBeChecked();
   const band = sound.getByRole("slider", { name: "1000 Hz gain", exact: true });
   await band.focus();
   await page.keyboard.press("End");
@@ -198,7 +214,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
   const unaffectedLevel = await bandLevel(250);
   const before = (await measure())!;
   const sound = await openSound(page);
-  await sound.getByRole("checkbox", { name: "Enable equalizer" }).check();
+  await sound.getByRole("switch", { name: "Enable equalizer" }).check();
   const band = sound.getByRole("slider", { name: "1000 Hz gain", exact: true });
   await band.focus();
   await page.keyboard.press("End");
@@ -210,7 +226,10 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .toBeGreaterThan(-0.5);
   await expect(sound).not.toContainText("Automatic EQ headroom");
   await expect(sound).toContainText("Processing active");
-  await sound.getByRole("button", { name: "Bypass all", exact: true }).click();
+  await expect(
+    sound.getByRole("button", { name: "Bypass all", exact: true }),
+  ).toHaveCount(0);
+  await sound.getByRole("switch", { name: "Enable equalizer" }).uncheck();
   await expect
     .poll(async () => Math.abs(((await measure()) ?? 100) - before))
     .toBeLessThan(2);
@@ -493,7 +512,7 @@ test("multichannel imports retain their processor channels and disable personal 
   ).toBeDisabled();
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
-    sound.getByRole("checkbox", { name: "Enable equalizer" }),
+    sound.getByRole("switch", { name: "Enable equalizer" }),
   ).toBeChecked();
 });
 
@@ -566,7 +585,7 @@ test("missing native output keeps configuration editable and Retry updates runti
   await expect(sound.getByRole("slider")).toHaveCount(11);
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
-    sound.getByRole("checkbox", { name: "Enable equalizer" }),
+    sound.getByRole("switch", { name: "Enable equalizer" }),
   ).toBeChecked();
   await sound
     .getByRole("button", { name: "Retry audio output", exact: true })

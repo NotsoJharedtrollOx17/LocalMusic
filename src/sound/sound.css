@@ -355,3 +355,70 @@
     background-size: 100% 6px;
   }
 }
+
+.sound-controls .sound-eq-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.sound-eq-switch input[type="checkbox"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.sound-switch-track {
+  display: inline-flex;
+  align-items: center;
+  width: 52px;
+  height: 30px;
+  padding: 3px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--muted);
+  background: var(--surface);
+  transition:
+    background 150ms,
+    border-color 150ms;
+}
+.sound-switch-track > span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 150ms;
+}
+.sound-eq-switch input:checked + .sound-switch-track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.sound-eq-switch input:checked + .sound-switch-track > span {
+  transform: translateX(22px);
+  background: #1b1b1a;
+}
+.sound-eq-switch:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--sound-control-radius);
+}
+.sound-eq-switch:has(input:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+.sound-eq-switch input:disabled {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sound-switch-track,
+  .sound-switch-track > span {
+    transition: none;
+  }
+}

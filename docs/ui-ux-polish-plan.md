@@ -64,3 +64,8 @@ Native inspection uses the actual Windows WebView2 renderer and Rust adapter thr
 ## Header and player resize follow-up
 
 Remove the sidebar and duplicate mobile header. Place the existing logo above Library, with the localized shield motto alongside it, and replace the heading overflow menu with the same Settings icon used previously in the sidebar. Keep selection/Favorites in a collection toolbar menu and playlist detail actions. Fit the square player artwork to measured remaining body height after the fixed header/transport/footer and title, observing resize and text changes. Preserve scroll access for extremely short windows and long titles.
+
+
+## EQ controls simplification
+
+Remove Bypass all from the sound UI. Replace the small regular EQ checkbox with a labeled orange switch, at least 44px high, with visible focus and native keyboard/screen-reader semantics. Persist the existing enabled flag immediately; switching off retains gains, preamp and selected preset. Personal-profile priority and activation continue through their existing controls. Retain backend bypass handling for internal lifecycle/processing compatibility.

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import type { SoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
+import EqualizerSwitch from "./EqualizerSwitch";
 import EqualizerBands from "./EqualizerBands";
 import SoundPresetSection from "./SoundPresetSection";
 import PersonalCurveBands from "./PersonalCurveBands";
@@ -89,18 +90,15 @@ export default function SoundControls({
             <div className="sound-heading">
               <h3>{t.equalizer}</h3>
               {!activeProfile && (
-                <label className="check-label">
-                  <input
-                    type="checkbox"
-                    disabled={!!activeProfile || controller.acting}
-                    checked={draft.enabled}
-                    onChange={(e) => {
-                      const enabled = e.target.checked;
-                      edit((c) => ({ ...c, enabled }));
-                    }}
-                  />
-                  {t.on}
-                </label>
+                <EqualizerSwitch
+                  label={t.on}
+                  enabled={draft.enabled}
+                  disabled={controller.acting}
+                  onChange={(enabled) => {
+                    edit((c) => ({ ...c, enabled }));
+                    flush();
+                  }}
+                />
               )}
             </div>
             <SoundPresetSection
@@ -132,8 +130,8 @@ export default function SoundControls({
                 />
               )}
             </fieldset>
-            <div className="sound-actions">
-              {!activeProfile && (
+            {!activeProfile && (
+              <div className="sound-actions">
                 <button
                   className="text-button"
                   disabled={controller.acting}
@@ -147,18 +145,8 @@ export default function SoundControls({
                 >
                   {t.flat}
                 </button>
-              )}
-              <button
-                className="text-button"
-                aria-pressed={state.bypass}
-                disabled={controller.acting}
-                onClick={() =>
-                  void action({ op: "bypass", value: !state.bypass })
-                }
-              >
-                {t.bypass}
-              </button>
-            </div>
+              </div>
+            )}
             <p className="sound-save-state" role="status">
               {pending ? t.saving : error ? "" : t.saved}
             </p>
