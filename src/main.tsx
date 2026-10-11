@@ -13,6 +13,7 @@ import "@fontsource/space-grotesk/latin-700.css";
 import App from "./App";
 import "./styles.css";
 import "./ux.css";
+import "./polish.css";
 installNativeShortcuts(native);
 async function start() {
   const settings = await api.settings().catch(() => undefined);

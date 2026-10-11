@@ -14,6 +14,7 @@ export default function RemoveLibraryDialog() {
     actionIds,
     setUndoIds,
     t,
+    formatMusicCount,
     act,
     changeVisibility,
   } = useMusicAppContext();
@@ -26,9 +27,7 @@ export default function RemoveLibraryDialog() {
           closeLabel={t.close}
           onClose={() => setModal(null)}
         >
-          <p>
-            {actionIds.length} {t.songs}
-          </p>
+          <p>{formatMusicCount(actionIds.length, true)}</p>
           <p className="operation-note">{t.removeLibraryHint}</p>
           <button
             className="button primary full-width"

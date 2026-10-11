@@ -35,6 +35,8 @@ export default function SearchOverlay() {
             loading: t.loadingLibrary,
             empty: t.searchEmpty,
             more: t.loadMore,
+            prompt: t.searchHint,
+            songSingular: t.songSingular,
           }}
           onClose={() => setSearchOpen(false)}
           onGroup={(kind, g) => {

@@ -1,0 +1,188 @@
+﻿/* Shared overlay geometry: headers stay reachable and only bodies scroll. */
+.player-scrim[hidden] {
+  display: none;
+}
+.modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+.modal-head {
+  flex-shrink: 0;
+  padding: 24px 30px 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+.modal-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.modal-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 30px 26px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+.modal-body::-webkit-scrollbar,
+.search-results::-webkit-scrollbar,
+.track-picker::-webkit-scrollbar {
+  width: 7px;
+}
+.modal-body::-webkit-scrollbar-thumb,
+.search-results::-webkit-scrollbar-thumb,
+.track-picker::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 7px;
+}
+.modal-body::-webkit-scrollbar-button,
+.search-results::-webkit-scrollbar-button,
+.track-picker::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+/* Chromium gives standard scrollbar properties priority over its pseudo
+   elements. Use the custom track there so Windows does not restore arrows. */
+@supports selector(::-webkit-scrollbar) {
+  .modal-body,
+  .search-results,
+  .track-picker {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+}
+.search-dismiss {
+  order: 3;
+  flex-shrink: 0;
+}
+.search-back-icon {
+  display: none;
+}
+.search-close-icon {
+  display: block;
+}
+.search-prompt {
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 36em;
+}
+.player-surface-head {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 110px;
+}
+.player-surface-head > .icon-button {
+  justify-self: start;
+}
+.player-surface-head > .text-button {
+  justify-self: end;
+}
+.player-surface .queue-content .row-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+}
+.player-surface .queue-content .icon-button {
+  width: 44px;
+  min-width: 44px;
+}
+.player-surface .queue-content .row-actions > :nth-child(1) {
+  grid-column: 1;
+}
+.player-surface .queue-content .row-actions > :nth-child(2) {
+  grid-column: 2;
+}
+.player-surface .queue-content .row-actions > :nth-child(3) {
+  grid-column: 3;
+}
+.modal:has(.manual-playlist-form) .modal-body {
+  display: flex;
+  overflow: hidden;
+}
+.manual-playlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+.manual-playlist-form > label {
+  flex-shrink: 0;
+}
+.manual-playlist-form .choose-tracks-label {
+  margin: 0;
+}
+.manual-playlist-form .track-picker {
+  min-height: 80px;
+  max-height: min(40dvh, 440px);
+  overflow: auto;
+  flex: 1 1 auto;
+  overscroll-behavior: contain;
+}
+.manual-playlist-form .track-picker label {
+  min-width: 0;
+}
+.manual-playlist-form .track-picker label span {
+  min-width: 0;
+}
+.manual-playlist-form .track-picker strong,
+.manual-playlist-form .track-picker small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.manual-playlist-form > button {
+  flex-shrink: 0;
+  margin: 0;
+}
+@media (max-width: 799px) {
+  .modal-head {
+    padding: 16px 20px;
+  }
+  .modal-body {
+    padding: 18px 20px 22px;
+  }
+  .search-dismiss {
+    order: 0;
+  }
+  .search-back-icon {
+    display: block;
+  }
+  .search-close-icon {
+    display: none;
+  }
+  .player-surface-head {
+    grid-template-columns: 64px minmax(0, 1fr) 100px;
+  }
+}
+@media (max-width: 480px) {
+  .player-surface .queue-content .track-row {
+    flex-wrap: wrap;
+    padding-block: 12px;
+  }
+  .player-surface .queue-content .track-hit {
+    flex-basis: calc(100% - 28px);
+  }
+  .player-surface .queue-content .row-actions {
+    margin-left: auto;
+  }
+  .player-surface .queue-content .track-duration {
+    margin-left: 58px;
+  }
+}
+@media (max-height: 520px) {
+  .modal:has(.manual-playlist-form) .modal-body {
+    display: block;
+    overflow: auto;
+  }
+  .manual-playlist-form .track-picker {
+    flex: none;
+    height: 140px;
+  }
+  .manual-playlist-form > button[type="submit"] {
+    position: sticky;
+    bottom: 0;
+  }
+}

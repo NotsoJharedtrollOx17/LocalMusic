@@ -1,4 +1,5 @@
 import { audioShareLabel } from "../ux/sharing";
+import { useSoundController } from "../sound/useSoundController";
 import { useMusicActions } from "./useMusicActions";
 import { useAppState } from "./useAppState";
 import { useCatalogReads } from "./useCatalogReads";
@@ -71,8 +72,6 @@ export function useMusicApp(initialSettings?: Settings) {
     selectionMode,
     setSelectionMode,
     menu,
-    setSound,
-    setSoundLoading,
     artistView,
     setArtistView,
     coverOrigin,
@@ -85,8 +84,16 @@ export function useMusicApp(initialSettings?: Settings) {
     settingsWrite,
     searchInput,
   } = state;
+  const soundController = useSoundController(modal === "sound");
   type Dialog = typeof modal;
   const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
+  const dialogScroll = useRef(new Map<NonNullable<Dialog>, number>());
+  useLayoutEffect(() => {
+    if (!modal) return;
+    const position = dialogScroll.current.get(modal);
+    const body = document.querySelector<HTMLElement>(".modal-body");
+    if (position !== undefined && body) body.scrollTop = position;
+  }, [modal]);
   function dismissModals() {
     dialogHistory.current = [];
     state.setPlayerParent(null);
@@ -95,6 +102,8 @@ export function useMusicApp(initialSettings?: Settings) {
   function setModal(action: React.SetStateAction<Dialog>) {
     const next = typeof action === "function" ? action(modal) : action;
     if (next === modal) return;
+    const body = document.querySelector<HTMLElement>(".modal-body");
+    if (modal && body) dialogScroll.current.set(modal, body.scrollTop);
     if (next === "player" || next === "queue") {
       dialogHistory.current = [];
       state.setPlayerParent(null);
@@ -115,7 +124,10 @@ export function useMusicApp(initialSettings?: Settings) {
     if (dialogHistory.current.at(-1) === next) dialogHistory.current.pop();
     else if (modal === "player" || modal === "queue")
       state.setPlayerParent(modal);
-    else if (modal) dialogHistory.current.push(modal);
+    else {
+      dialogScroll.current.delete(next);
+      if (modal) dialogHistory.current.push(modal);
+    }
     setModalState(next);
   }
 
@@ -513,22 +525,25 @@ export function useMusicApp(initialSettings?: Settings) {
     soundOrigin.current =
       modal === "player" || modal === "queue" || modal === "settings"
         ? modal
-        : soundOrigin.current;
-    setSound(undefined);
-    setSoundLoading(true);
+        : null;
     setModal("sound");
-    await act(async () => {
-      try {
-        setSound(await api.soundCapabilities());
-      } finally {
-        setSoundLoading(false);
-      }
-    });
   }
   const formatMinutes = (ms: number) =>
     ms > 0 && ms < 60000
       ? "<1"
       : Math.round(ms / 60000).toLocaleString(settings?.language);
+  const formatMusicCount = (count: number, songs = false) =>
+    `${count.toLocaleString(settings?.language)} ${
+      count === 1
+        ? settings?.language === "es"
+          ? t.songSingular
+          : songs
+            ? t.songSingular
+            : "track"
+        : songs
+          ? t.songCount
+          : t.tracks
+    }`;
   const formatDate = (s: string, zone = settings?.timeZone) =>
     new Intl.DateTimeFormat(settings?.language ?? "en", {
       month: "short",
@@ -559,6 +574,7 @@ export function useMusicApp(initialSettings?: Settings) {
       .filter((x): x is Track => !!x && !x.hidden) ?? [];
   return {
     ...state,
+    soundController,
     setModal,
     dismissModals,
     shareLabel,
@@ -585,6 +601,7 @@ export function useMusicApp(initialSettings?: Settings) {
     openGroup,
     openSound,
     formatMinutes,
+    formatMusicCount,
     formatDate,
     visible,
     playlistTracks,

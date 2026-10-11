@@ -23,6 +23,7 @@ export function PlayerSurface({
   children,
   footer,
   trackId,
+  active = true,
 }: {
   title: string;
   closeLabel: string;
@@ -34,6 +35,7 @@ export function PlayerSurface({
   children: ReactNode;
   footer: ReactNode;
   trackId: string;
+  active?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null),
     closing = useRef(false),
@@ -81,10 +83,14 @@ export function PlayerSurface({
       () => {},
     );
   };
-  useBackLayer(true, () => (view === "queue" ? onView("player") : collapse()));
-  useFocusScope(ref);
+  useBackLayer(active, () =>
+    view === "queue" ? onView("player") : collapse(),
+  );
+  useFocusScope(ref, false, active);
+  const entered = useRef(false);
   useLayoutEffect(() => {
-    if (view !== "player") return;
+    if (!active || view !== "player" || entered.current) return;
+    entered.current = true;
     const mini = document.querySelector<HTMLImageElement>(".mini-track .cover"),
       art = ref.current?.querySelector<HTMLImageElement>(".player-cover");
     if (mini && art)
@@ -93,7 +99,7 @@ export function PlayerSurface({
         art.getBoundingClientRect(),
         art.src,
       );
-  }, [trackId]);
+  }, [trackId, active]);
   const down = (e: ReactPointerEvent) => {
     if ((e.target as HTMLElement).closest("button,input,select,a")) return;
     drag.current = { y: e.clientY, t: performance.now() };
@@ -116,6 +122,8 @@ export function PlayerSurface({
   return (
     <div
       className="player-scrim"
+      hidden={!active}
+      inert={!active}
       onClick={(e) => {
         if (e.target === e.currentTarget) collapse();
       }}

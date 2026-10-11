@@ -258,7 +258,7 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     .last()
     .click();
   await page.getByRole("button", { name: "Favorites", exact: true }).click();
-  await expect(page.getByText("1 songs", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Play Fixture 120", exact: true }),
   ).toBeVisible();

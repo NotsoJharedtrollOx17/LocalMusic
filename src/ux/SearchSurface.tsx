@@ -2,7 +2,7 @@ import { useFocusScope } from "./useFocusScope";
 import { useEffect, useRef, useState } from "react";
 import { X, ArrowLeft, Search } from "lucide-react";
 import { api } from "../api";
-import { Cover, IconButton, TrackRow } from "../components";
+import { Cover, TrackRow } from "../components";
 import {
   type CatalogGroup,
   type Playlist,
@@ -42,6 +42,8 @@ export function SearchSurface({
     loading: string;
     empty: string;
     more: string;
+    prompt: string;
+    songSingular: string;
   };
   onClose: () => void;
   onGroup: (kind: "albums" | "artists", group: CatalogGroup) => void;
@@ -106,7 +108,10 @@ export function SearchSurface({
             <Cover track={g.track} />
             <span>
               <strong>{g.title}</strong>
-              <small>{g.subtitle || `${g.ids.length} ${labels.songs}`}</small>
+              <small>
+                {g.subtitle ||
+                  `${g.ids.length} ${g.ids.length === 1 ? labels.songSingular : labels.songs}`}
+              </small>
             </span>
           </button>
         ))}
@@ -120,9 +125,14 @@ export function SearchSurface({
       aria-label={labels.search}
     >
       <div className="search-surface-head">
-        <IconButton label={labels.close} onClick={onClose}>
-          <ArrowLeft />
-        </IconButton>
+        <button
+          className="icon-button search-dismiss"
+          aria-label={labels.close}
+          onClick={onClose}
+        >
+          <ArrowLeft className="search-back-icon" />
+          <X className="search-close-icon" />
+        </button>
         <Search size={20} />
         <input
           ref={input}
@@ -135,11 +145,9 @@ export function SearchSurface({
             setQuery(e.target.value);
           }}
         />
-        <IconButton label={labels.close} onClick={onClose}>
-          <X />
-        </IconButton>
       </div>
       <div className="search-results" aria-busy={status === "loading"}>
+        {!query.trim() && <p className="search-prompt">{labels.prompt}</p>}
         {status === "loading" && <p role="status">{labels.loading}</p>}
         {status === "error" && (
           <div role="alert">

@@ -174,21 +174,27 @@ export function TrackRow({
       </span>
       {edit ? (
         <div className="row-actions">
-          {edit.up && (
-            <IconButton label={labels.moveUp} onClick={edit.up}>
-              <ArrowUp size={18} />
-            </IconButton>
-          )}
-          {edit.down && (
-            <IconButton label={labels.moveDown} onClick={edit.down}>
-              <ArrowDown size={18} />
-            </IconButton>
-          )}
-          {edit.remove && (
-            <IconButton label={labels.remove} onClick={edit.remove}>
-              <Trash2 size={18} />
-            </IconButton>
-          )}
+          <IconButton
+            label={labels.moveUp}
+            disabled={!edit.up}
+            onClick={() => edit.up?.()}
+          >
+            <ArrowUp size={18} />
+          </IconButton>
+          <IconButton
+            label={labels.moveDown}
+            disabled={!edit.down}
+            onClick={() => edit.down?.()}
+          >
+            <ArrowDown size={18} />
+          </IconButton>
+          <IconButton
+            label={labels.remove}
+            disabled={!edit.remove}
+            onClick={() => edit.remove?.()}
+          >
+            <Trash2 size={18} />
+          </IconButton>
         </div>
       ) : (
         <>

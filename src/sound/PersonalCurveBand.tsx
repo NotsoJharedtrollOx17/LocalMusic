@@ -1,43 +1,42 @@
-import { soundCopy } from "./copy";
+﻿import { soundCopy } from "./copy";
 import { formatGain } from "./formatGain";
+import type { CSSProperties } from "react";
 export default function PersonalCurveBand({
   frequency,
-  left,
-  right,
+  gain,
+  channel,
   inactive,
   language,
 }: {
   frequency: number;
-  left: number;
-  right: number;
+  gain: number;
+  channel: string;
   inactive: boolean;
   language: string;
 }) {
   const t = soundCopy(language);
   return (
-    <div className={`personal-curve-band${inactive ? " inactive" : ""}`}>
+    <label
+      className={`equalizer-band personal-curve-band${inactive ? " inactive" : ""}`}
+    >
       <span>
         {frequency < 1000 ? `${frequency} Hz` : `${frequency / 1000} kHz`}
       </span>
-      <div className="personal-ear-pair">
-        {[left, right].map((gain, i) => (
-          <label key={i}>
-            <span>{i === 0 ? t.leftChannel : t.rightChannel}</span>
-            <input
-              type="range"
-              disabled
-              min={-12}
-              max={12}
-              step="any"
-              value={gain}
-              aria-label={`${frequency} Hz ${t.gain} ${i === 0 ? t.leftChannel : t.rightChannel}`}
-              aria-valuetext={formatGain(gain)}
-            />
-            <output>{formatGain(gain)}</output>
-          </label>
-        ))}
-      </div>
+      <input
+        type="range"
+        disabled
+        min={-12}
+        max={12}
+        step="any"
+        value={gain}
+        aria-label={`${frequency} Hz ${t.gain} ${channel}`}
+        aria-valuetext={formatGain(gain)}
+        style={
+          { "--gain-position": `${((gain + 12) / 24) * 100}%` } as CSSProperties
+        }
+      />
+      <output>{formatGain(gain)}</output>
       {inactive && <small>{t.inactive}</small>}
-    </div>
+    </label>
   );
 }

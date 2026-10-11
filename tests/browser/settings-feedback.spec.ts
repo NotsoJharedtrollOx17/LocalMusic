@@ -202,7 +202,7 @@ test("dismissed playback errors stay dismissed across native polls and recover",
   await page.locator(".mini-track").click();
   await page
     .locator(".player-options")
-    .getByRole("button", { name: "Track details", exact: true })
+    .getByRole("button", { name: "Track actions", exact: true })
     .click();
   await page
     .getByRole("menuitem", { name: "Track details", exact: true })

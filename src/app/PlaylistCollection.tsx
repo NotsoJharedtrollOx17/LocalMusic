@@ -2,7 +2,7 @@ import { ListMusic, ArrowUpRight } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistCollection() {
-  const { lists, t, openPlaylist } = useMusicAppContext();
+  const { lists, t, openPlaylist, formatMusicCount } = useMusicAppContext();
 
   return (
     <div className="playlist-collection">
@@ -25,9 +25,7 @@ export default function PlaylistCollection() {
                   : t.manual}
             </p>
             <h3>{p.title}</h3>
-            <span>
-              {p.trackIds.length} {t.tracks}
-            </span>
+            <span>{formatMusicCount(p.trackIds.length)}</span>
           </div>
           <ArrowUpRight size={22} />
         </button>

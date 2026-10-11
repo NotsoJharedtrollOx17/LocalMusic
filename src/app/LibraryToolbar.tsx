@@ -19,6 +19,7 @@ export default function LibraryToolbar() {
     busy,
     fileInput,
     t,
+    formatMusicCount,
     doImport,
   } = useMusicAppContext();
 
@@ -32,12 +33,7 @@ export default function LibraryToolbar() {
           {t.allMusic}
         </button>
         <span className="count-dot">·</span>
-        <span>
-          {(group ? group.ids.length : total).toLocaleString(
-            settings?.language,
-          )}{" "}
-          {t.songCount}
-        </span>
+        <span>{formatMusicCount(group ? group.ids.length : total, true)}</span>
       </div>
       <div className="toolbar-actions">
         {!group &&

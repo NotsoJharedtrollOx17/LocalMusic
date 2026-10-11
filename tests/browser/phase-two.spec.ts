@@ -171,7 +171,7 @@ test("mobile swipe tabs and player keep transport anchored, Back and reduced mot
   await expect(player).toBeVisible();
   await player.evaluate((el) => el.setAttribute("data-kept", "yes"));
   await player
-    .getByRole("button", { name: "Track details", exact: true })
+    .getByRole("button", { name: "Track actions", exact: true })
     .click();
   await page
     .getByRole("menuitem", { name: "Track details", exact: true })
@@ -239,7 +239,7 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   );
   const file = { name: "Original.wav", mimeType: "audio/wav", buffer };
   await page.locator("input[type=file]").first().setInputFiles(file);
-  await expect(page.getByText("1 songs", { exact: true })).toBeVisible();
+  await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await page
     .locator(".track-row")
     .getByRole("button", { name: "Track details", exact: true })

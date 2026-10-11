@@ -31,6 +31,7 @@ export default function ManualPlaylistDialog() {
           wide
         >
           <form
+            className="manual-playlist-form"
             onSubmit={(e) => {
               e.preventDefault();
               if (!manualIds.length) {
@@ -66,6 +67,9 @@ export default function ManualPlaylistDialog() {
               />
             </label>
             <div className="track-picker">
+              {pickerTracks.length === 0 && (
+                <p className="empty-small">{t.noResults}</p>
+              )}
               {pickerTracks.map((track) => (
                 <label key={track.id}>
                   <input
@@ -100,7 +104,11 @@ export default function ManualPlaylistDialog() {
                 {t.loadMore}
               </button>
             )}
-            <button className="button primary full-width" type="submit">
+            <button
+              className="button primary full-width"
+              type="submit"
+              disabled={!manualTitle.trim() || !manualIds.length}
+            >
               {t.save}
               <Check size={18} />
             </button>

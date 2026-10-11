@@ -1,4 +1,7 @@
 const en = {
+  ordinaryPresets: "Standard presets · inactive",
+  manageProfile: "Manage profile",
+  readOnlyCurve: "Profile gains · read only",
   provisional:
     "Provisional curve: sliders update as answers arrive. This curve is not applied to test beeps or music.",
   burst: "Three beeps per step, at the same test level.",
@@ -93,6 +96,9 @@ const en = {
   },
 };
 const es: typeof en = {
+  ordinaryPresets: "Preajustes estándar · inactivos",
+  manageProfile: "Gestionar perfil",
+  readOnlyCurve: "Ganancias del perfil · solo lectura",
   provisional:
     "Curva provisional: los deslizadores cambian con las respuestas. No se aplica a los pitidos ni a la m\u00fasica.",
   burst: "Tres pitidos por paso, al mismo nivel de prueba.",

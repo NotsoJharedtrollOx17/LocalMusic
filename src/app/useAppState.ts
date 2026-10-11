@@ -9,7 +9,6 @@ import {
   type Recap,
   type CatalogGroup,
   type ImportProgress,
-  type SoundCapabilities,
 } from "../types";
 
 const blank: PlaybackSnapshot = {
@@ -121,8 +120,6 @@ export function useAppState(initialSettings?: Settings) {
     anchor: HTMLElement;
     point?: { x: number; y: number };
   } | null>(null);
-  const [sound, setSound] = useState<SoundCapabilities>(),
-    [soundLoading, setSoundLoading] = useState(false);
   const [artistView, setArtistView] = useState<"tracks" | "albums">("tracks"),
     [artistAlbums, setArtistAlbums] = useState<CatalogGroup[]>([]),
     [artistAlbumsLoading, setArtistAlbumsLoading] = useState(false);
@@ -250,10 +247,6 @@ export function useAppState(initialSettings?: Settings) {
     setUndoIds,
     menu,
     setMenu,
-    sound,
-    setSound,
-    soundLoading,
-    setSoundLoading,
     artistView,
     setArtistView,
     artistAlbums,

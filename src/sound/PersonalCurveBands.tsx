@@ -1,6 +1,5 @@
-import PersonalCurveBand from "./PersonalCurveBand";
+import PersonalCurveBank from "./PersonalCurveBank";
 import SoundPreamp from "./SoundPreamp";
-import { FREQUENCIES } from "./types";
 import { soundCopy } from "./copy";
 export default function PersonalCurveBands({
   left,
@@ -32,17 +31,20 @@ export default function PersonalCurveBands({
   return (
     <div className="personal-curve-bands">
       <p>{provisional ? t.provisional : t.curveHint}</p>
+      <p>{t.readOnlyCurve}</p>
       <div className={`personal-stereo-bands${config ? " has-preamp" : ""}`}>
-        {FREQUENCIES.map((frequency, i) => (
-          <PersonalCurveBand
-            key={frequency}
-            frequency={frequency}
-            left={curves[0][i]}
-            right={curves[1][i]}
-            inactive={inactive.includes(i)}
-            language={language}
-          />
-        ))}
+        <PersonalCurveBank
+          curve={curves[0]}
+          channel={t.leftChannel}
+          inactive={inactive}
+          language={language}
+        />
+        <PersonalCurveBank
+          curve={curves[1]}
+          channel={t.rightChannel}
+          inactive={inactive}
+          language={language}
+        />
         {config && edit && flush && (
           <SoundPreamp
             config={config}

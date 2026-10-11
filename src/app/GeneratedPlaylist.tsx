@@ -4,7 +4,8 @@ import { useMusicAppContext } from "./MusicAppContext";
 import TrackRows from "./TrackRows";
 
 export default function GeneratedPlaylist() {
-  const { generated, t, act, saveList, playlistTracks } = useMusicAppContext();
+  const { generated, t, act, saveList, playlistTracks, formatMusicCount } =
+    useMusicAppContext();
 
   if (!generated) return null;
   return (
@@ -13,7 +14,7 @@ export default function GeneratedPlaylist() {
         <div>
           <h2>{generated.title}</h2>
           <span>
-            {playlistTracks.length} {t.tracks} ·{" "}
+            {formatMusicCount(playlistTracks.length)} ·{" "}
             {Math.round(
               playlistTracks.reduce((s, x) => s + x.durationMs, 0) / 60000,
             )}{" "}

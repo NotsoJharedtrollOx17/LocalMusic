@@ -34,6 +34,7 @@ export default function PlayerDialog() {
           queueLabel={t.queue}
           playerLabel={t.nowPlaying}
           view={view}
+          active={modal === "player" || modal === "queue"}
           trackId={current.id}
           onView={setModal}
           onClose={() => setModal(null)}
@@ -44,6 +45,7 @@ export default function PlayerDialog() {
               <div className="player-options">
                 <button
                   className="text-button"
+                  data-sound-trigger
                   onClick={() => void openSound()}
                 >
                   {t.soundControls}
@@ -54,7 +56,7 @@ export default function PlayerDialog() {
                     setMenu({ track: current, anchor: e.currentTarget })
                   }
                 >
-                  {t.details}
+                  {t.actions}
                 </button>
                 <PrivatePlaybackToggle />
               </div>

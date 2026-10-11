@@ -303,6 +303,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
       exact: true,
     }),
   ).toHaveValue("0");
+  await personalSound.locator("summary").click();
   await expect(
     personalSound.getByRole("button", { name: "Rock", exact: true }),
   ).toBeDisabled();
@@ -405,7 +406,10 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     restored.getByRole("slider", { name: "250 Hz gain Right", exact: true }),
   ).toBeVisible();
   await sound
-    .getByRole("button", { name: "Retest profile", exact: true })
+    .getByRole("button", { name: "Manage profile", exact: true })
+    .click();
+  await sound
+    .getByRole("menuitem", { name: "Retest profile", exact: true })
     .click();
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();

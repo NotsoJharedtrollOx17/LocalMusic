@@ -1,27 +1,25 @@
 import "./sound.css";
 import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
-import { useSoundController } from "./useSoundController";
+import type { SoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
 import EqualizerBands from "./EqualizerBands";
-import SoundPresetList from "./SoundPresetList";
+import SoundPresetSection from "./SoundPresetSection";
 import PersonalCurveBands from "./PersonalCurveBands";
 import PersonalProfiles from "./PersonalProfiles";
 import PersonalWizard from "./PersonalWizard";
 import type { SoundState, PersonalProfile } from "./types";
 export default function SoundControls({
-  initial,
-  onState,
+  controller,
   language,
   canResume,
 }: {
-  initial: SoundState;
-  onState: (s: SoundState) => void;
+  controller: SoundController & { state: SoundState };
   language: string;
   canResume: boolean;
 }) {
   const { state, draft, edit, flush, refresh, action, pending, error } =
-      useSoundController(initial, onState),
+      controller,
     t = soundCopy(language),
     [setup, setSetup] = useState(false),
     [deviceError, setDeviceError] = useState("");
@@ -38,13 +36,14 @@ export default function SoundControls({
         ?.focus({ preventScroll: true });
     wasSetup.current = setup;
   }, [setup]);
+  const effectsEnabled = draft.enabled || !!activeProfile;
   const status =
     state.status === "ready"
       ? t.ready
       : state.status === "active"
         ? state.bypass
           ? t.bypass
-          : !draft.enabled && !draft.personalEnabled
+          : !effectsEnabled
             ? t.off
             : t.active
         : state.status === "activation"
@@ -68,6 +67,7 @@ export default function SoundControls({
         <>
           <p className="sound-status" role="status">
             {status}
+            {state.status === "ready" && !effectsEnabled ? ` · ${t.off}` : ""}
           </p>
           {(error || state.reason || deviceError) && (
             <p className="sound-error" role="alert">
@@ -88,63 +88,70 @@ export default function SoundControls({
           <section aria-label={t.equalizer}>
             <div className="sound-heading">
               <h3>{t.equalizer}</h3>
-              <label className="check-label">
-                <input
-                  type="checkbox"
-                  disabled={!!activeProfile}
-                  checked={draft.enabled}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    edit((c) => ({ ...c, enabled }));
-                  }}
-                />
-                {t.on}
-              </label>
+              {!activeProfile && (
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    disabled={!!activeProfile || controller.acting}
+                    checked={draft.enabled}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      edit((c) => ({ ...c, enabled }));
+                    }}
+                  />
+                  {t.on}
+                </label>
+              )}
             </div>
-            <fieldset
-              disabled={!!activeProfile}
-              style={{ border: 0, padding: 0, margin: 0 }}
-            >
-              <SoundPresetList config={draft} edit={edit} language={language} />
+            <SoundPresetSection
+              config={draft}
+              edit={edit}
+              language={language}
+              profile={activeProfile}
+              busy={controller.acting}
+            />
+            <fieldset className="sound-fieldset" disabled={controller.acting}>
+              {activeProfile ? (
+                <PersonalCurveBands
+                  left={activeProfile.left}
+                  right={activeProfile.right}
+                  strength={draft.strength}
+                  config={draft}
+                  edit={edit}
+                  flush={flush}
+                  inactive={state.inactiveBands}
+                  language={language}
+                />
+              ) : (
+                <EqualizerBands
+                  config={draft}
+                  edit={edit}
+                  flush={flush}
+                  inactive={state.inactiveBands}
+                  language={language}
+                />
+              )}
             </fieldset>
-            {activeProfile && <p role="status">{t.priority}</p>}
-            {activeProfile ? (
-              <PersonalCurveBands
-                left={activeProfile.left}
-                right={activeProfile.right}
-                strength={draft.strength}
-                config={draft}
-                edit={edit}
-                flush={flush}
-                inactive={state.inactiveBands}
-                language={language}
-              />
-            ) : (
-              <EqualizerBands
-                config={draft}
-                edit={edit}
-                flush={flush}
-                inactive={state.inactiveBands}
-                language={language}
-              />
-            )}
             <div className="sound-actions">
-              <button
-                className="text-button"
-                disabled={!!activeProfile}
-                onClick={() =>
-                  edit((c) => ({
-                    ...c,
-                    gains: Array(10).fill(0),
-                    presetId: "flat",
-                  }))
-                }
-              >
-                {t.flat}
-              </button>
+              {!activeProfile && (
+                <button
+                  className="text-button"
+                  disabled={controller.acting}
+                  onClick={() =>
+                    edit((c) => ({
+                      ...c,
+                      gains: Array(10).fill(0),
+                      presetId: "flat",
+                    }))
+                  }
+                >
+                  {t.flat}
+                </button>
+              )}
               <button
                 className="text-button"
                 aria-pressed={state.bypass}
+                disabled={controller.acting}
                 onClick={() =>
                   void action({ op: "bypass", value: !state.bypass })
                 }
@@ -169,6 +176,7 @@ export default function SoundControls({
               })
             }
             routeGeneration={state.routeGeneration ?? 0}
+            busy={controller.acting}
             onSetup={(profile) => {
               setReplacement(profile);
               flush();

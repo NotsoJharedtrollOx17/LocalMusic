@@ -40,7 +40,7 @@ export function Modal({
             <X />
           </IconButton>
         </div>
-        {children}
+        <div className="modal-body">{children}</div>
       </div>
     </div>
   );

@@ -1,14 +1,27 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 /** Own focus and scroll for an overlay, restoring the previous layer on exit. */
 export function useFocusScope(
   ref: RefObject<HTMLElement | null>,
   keepPlayer = false,
+  active = true,
 ) {
+  const lastFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    if (!active) return;
     const node = ref.current;
     if (!node) return;
+    // A suspended parent's old scope may have restored this host's prior inert
+    // flag during the same commit. The active layer owns its availability.
+    const host = node.closest<HTMLElement>(
+      ".player-scrim,.modal-scrim,.search-surface",
+    );
+    if (host) host.inert = false;
     const previous = document.activeElement as HTMLElement | null;
+    const remember = (event: FocusEvent) => {
+      lastFocus.current = event.target as HTMLElement;
+    };
+    node.addEventListener("focusin", remember);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const background = Array.from(
@@ -41,6 +54,7 @@ export function useFocusScope(
         .filter((el) => el.getClientRects().length && !el.closest("[inert]"));
     (
       node.querySelector<HTMLElement>('input[type="search"]') ??
+      (lastFocus.current?.isConnected ? lastFocus.current : null) ??
       controls()[0] ??
       node
     ).focus();
@@ -67,8 +81,9 @@ export function useFocusScope(
       document.body.style.overflow = overflow;
       background.forEach((el, i) => (el.inert = prior[i]));
       document.removeEventListener("keydown", key);
+      node.removeEventListener("focusin", remember);
       if (previous?.isConnected && !previous.closest("[inert]"))
         previous.focus({ preventScroll: true });
     };
-  }, [ref, keepPlayer]);
+  }, [ref, keepPlayer, active]);
 }

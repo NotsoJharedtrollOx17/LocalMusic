@@ -8,6 +8,7 @@ export default function PlaylistDetailHeading() {
     editingList,
     setEditingList,
     t,
+    formatMusicCount,
     saveList,
     playlistTracks,
   } = useMusicAppContext();
@@ -26,7 +27,7 @@ export default function PlaylistDetailHeading() {
         {t.playlists}
       </button>
       <span>
-        {playlistTracks.length} {t.tracks} ·{" "}
+        {formatMusicCount(playlistTracks.length)} ·{" "}
         {Math.round(
           playlistTracks.reduce((s, x) => s + x.durationMs, 0) / 60000,
         )}{" "}

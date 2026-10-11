@@ -14,6 +14,7 @@ export default function RecapStoryDialog() {
     story,
     setStory,
     t,
+    formatMusicCount,
     act,
     formatMinutes,
     formatDate,
@@ -85,9 +86,7 @@ export default function RecapStoryDialog() {
             ) : (
               <>
                 <p className="eyebrow">{t.yearTracks}</p>
-                <h2>
-                  {recap.trackIds.length} {t.tracks}
-                </h2>
+                <h2>{formatMusicCount(recap.trackIds.length)}</h2>
                 <button
                   className="button primary"
                   disabled={!recap.trackIds.length}

@@ -3,18 +3,8 @@ import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function SoundDialog() {
-  const {
-    modal,
-    setModal,
-    sound,
-    settings,
-    player,
-    setSound,
-    soundLoading,
-    soundOrigin,
-    t,
-    openSound,
-  } = useMusicAppContext();
+  const { modal, setModal, soundController, settings, player, soundOrigin, t } =
+    useMusicAppContext();
 
   return (
     <>
@@ -22,24 +12,39 @@ export default function SoundDialog() {
         <Modal
           title={t.soundControls}
           closeLabel={t.close}
-          onClose={() => setModal(soundOrigin.current)}
+          onClose={() => {
+            setModal(soundOrigin.current);
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                document
+                  .querySelector<HTMLElement>(
+                    "[data-sound-trigger]:not([inert])",
+                  )
+                  ?.focus({ preventScroll: true });
+              }),
+            );
+          }}
         >
-          {soundLoading ? (
-            <p role="status">{t.loadingLibrary}</p>
-          ) : sound ? (
+          {soundController.state ? (
             <SoundControls
-              initial={sound}
-              onState={setSound}
+              controller={{ ...soundController, state: soundController.state }}
               language={settings?.language ?? "en"}
               canResume={!!player.trackId && !player.playing}
             />
+          ) : soundController.loading ? (
+            <p role="status">{t.loadingSound}</p>
           ) : (
-            <button
-              className="button secondary"
-              onClick={() => void openSound()}
-            >
-              {t.refresh}
-            </button>
+            <div>
+              {soundController.error && (
+                <p role="alert">{soundController.error}</p>
+              )}
+              <button
+                className="button secondary"
+                onClick={() => void soundController.refresh()}
+              >
+                {t.refresh}
+              </button>
+            </div>
           )}
         </Modal>
       )}

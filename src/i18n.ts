@@ -1,4 +1,7 @@
 export const en = {
+  loadingSound: "Loading sound controls…",
+  actions: "Track actions",
+  songSingular: "song",
   appActions: "App actions",
   textActions: "Text actions",
   openItem: "Open",
@@ -202,6 +205,9 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  loadingSound: "Cargando controles de sonido…",
+  actions: "Acciones de la canción",
+  songSingular: "canción",
   appActions: "Acciones de la app",
   textActions: "Acciones de texto",
   openItem: "Abrir",

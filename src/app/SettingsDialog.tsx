@@ -33,6 +33,7 @@ export default function SettingsDialog() {
           <div className="settings-form">
             <button
               className="button secondary"
+              data-sound-trigger
               onClick={() => void openSound()}
             >
               {t.soundControls}

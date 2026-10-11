@@ -333,3 +333,33 @@ Integrated `dev.sound-eq-adapt-sound` into `dev` and committed the original UX/U
 The version update's production frontend build and 23 frontend tests passed, along with thirteen Rust core tests. Existing affected-browser, native Rust and Kotlin evidence is recorded above; this metadata/documentation pass is not a new complete browser or device acceptance run. The Windows v0.2.0 portable debug executable rebuilt successfully. Final Android/version/signature results follow below. There is no configured Git remote, so the requested release is a local annotated tag with source notes, not hosted publication. Development binaries remain ignored; Android runtime, physical headphones and production distribution signing remain separate gates.
 
 The ARM64 native library and v0.2.0 debug APK built successfully through the file-copy fallback. Apksigner verified the APK v2 signature, and aapt2 reported package `app.localmusic.year`, version name `0.2.0`, version code `2000`. Windows file/product version metadata both report `0.2.0`. ADB reported no connected target. These package checks do not change the pending runtime/device acceptance gates.
+
+## UI/UX polish after v0.2.0 — 10 October 2026
+
+Branch: `dev.ui-ux-polish`, from integration baseline `342289f`. Plan: [UI/UX polish](ui-ux-polish-plan.md). The supplied Windows recording was inspected using extracted frames in ignored artifacts. No reference images, release tags, catalog/history rules, native DSP, persisted schema or public MusicApi contract changed.
+
+Implemented complete stacked Left/Right banks for saved and provisional curves, one independent preamp rail, aligned ordinary faders, readable read-only profile styling, inactive preset disclosure, profile management menu, fixed modal headers, exclusive visible overlays, retained parent scroll/focus, app-scoped serialized sound state, search guidance/dismissal, stable queue action columns and a bounded playlist picker. Language changes use the same stable sound IDs/configuration. The recording's original value discrepancy is not claimed to have a proven historical cause; concrete stale-response and overlapping-layer defects were corrected and parity was tested.
+
+### Automated results
+
+- `npm.cmd run check`: production build and 28 tests passed. Five added coordinator tests cover stale polls, delayed saves across close/reopen, activation after pending edits, rollback and bypass cancellation.
+- Full Chromium suite: 26/30 passed initially. Four failures were outdated expectations for `1 songs`, the renamed player action opener, and the newly collapsed inactive presets. After updating those expectations, all four plus three polish journeys passed in the seven-test affected rerun. All 30 journeys therefore have successful coverage across these runs; this is not a claim of a single 30/30 run.
+- After final parent-scroll and status-label refinements, all three polish journeys passed again. They cover Queue/Sound/focus/scroll return, exact EN/ES sound-data parity, grouped banks and unchanged preamp, long profile names, menu dismissal/focus, narrow dark Spanish layout, search states and reachable playlist Save. Existing journeys also passed import updates, delayed catalog tabs, recap export, keyboard/Back, Reduce Motion, processing measurement, setup cancellation and zero tone-created history. Axe checks passed in the affected surfaces.
+- Rust core: 13 tests passed. Windows native library: 14 tests passed, including per-channel processing, independent preamp, source metadata/seeking, bounded tones and device settings. These backend sources are unchanged by the polish.
+- Initial sandbox checks could not run the MSVC/LLVM tools correctly. Retrying with the repo's portable GNU LLVM environment outside the sandbox passed. A sandbox browser run was also interrupted; the reported browser results use the subsequent completed runs.
+
+### Actual Windows observations
+
+The portable debug Windows build succeeded using the validated frontend. Packaging skipped the redundant frontend build through a temporary ignored Tauri config, keeping the running browser fixtures' assets stable. Native UI inspection used the actual `http://tauri.localhost/` WebView2 renderer and Rust adapter, not the browser IndexedDB preview.
+
+UI Automation initially did not expose the content and a desktop screen capture failed. A temporary process-local localhost debugging connection, following [Microsoft's WebView2 debugging guidance](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/debug-visual-studio-code), allowed native-renderer inspection. No registry or product debugging settings were changed; probes/configuration/screenshots remain ignored artifacts.
+
+Observed native Settings → Sound → Settings and Queue → Sound → Queue with one visible dialog, restored focus, retained queue scrolling and reachable Close after body scrolling. Ordinary preamp matched the native configuration. Temporarily activating the existing saved profile showed ten Left gains followed by ten Right gains, matching Rust's saved curves exactly; preamp and automatic attenuation remained unchanged (0 dB attenuation). EN → ES preserved the complete active sound configuration and displayed gains. Original native sound configuration and language were restored afterward, with music kept paused throughout.
+
+Inspected native screenshots of ordinary EQ, both personal banks, localized profile display and scrolled fixed header. Also inspected Chromium desktop/mobile screenshots. Browser widths 1280, 640 and 390 had no page overflow; the 640px check is a responsive approximation for zoom, not a measured Windows 200% zoom result.
+
+The final package rebuilt successfully after the parent-scroll/status refinements. Its read-only native Settings/Sound and Queue/Sound return checks passed again, and the final screenshot shows the fixed close control and custom scrollbar without Windows arrow buttons. The temporary native test process was closed. A final frontend test run still passed all 28 tests; `git diff --check` passed with normal text-line-ending normalization. Generated native ACL build output was restored to the baseline.
+
+### Remaining acceptance boundaries
+
+ADB device inventory was empty. Android runtime/Back, physical headphone audibility, hardware screen readers, manual maximized/system-zoom inspection and performance measurements remain pending. Native renderer checks establish Windows UI/configuration behavior, not listening quality or Android service reliability. The existing Android baseline package is not a new build of this polish branch.

@@ -45,6 +45,7 @@ export default function LibraryPage() {
     motion,
     fileInput,
     t,
+    formatMusicCount,
     act,
     remember,
     groupRequest,
@@ -125,7 +126,9 @@ export default function LibraryPage() {
             <Cover imageRef={detailHero} track={group.coverTrack} large />
             <div>
               <strong>{group.title}</strong>
-              <span>{group.subtitle || group.ids.length + " " + t.tracks}</span>
+              <span>
+                {group.subtitle || formatMusicCount(group.ids.length)}
+              </span>
             </div>
           </div>
         )}
@@ -221,7 +224,7 @@ export default function LibraryPage() {
                       <Cover track={g.track} large />
                       <strong>{g.title}</strong>
                       <span>
-                        {g.subtitle || g.ids.length + " " + t.tracks}
+                        {g.subtitle || formatMusicCount(g.ids.length)}
                         {section === "albums" && g.track.releaseYear
                           ? " · " + g.track.releaseYear
                           : ""}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { soundCopy } from "./copy";
+import ProfileActions from "./ProfileActions";
 import type { SoundConfig, PersonalProfile } from "./types";
 export default function PersonalProfiles({
   config,
@@ -9,6 +10,7 @@ export default function PersonalProfiles({
   onSetup,
   onUse,
   routeGeneration,
+  busy = false,
 }: {
   config: SoundConfig;
   edit: (update: (c: SoundConfig) => SoundConfig) => void;
@@ -17,6 +19,7 @@ export default function PersonalProfiles({
   onSetup: (profile?: PersonalProfile) => void;
   onUse: (id: string) => void;
   routeGeneration: number;
+  busy?: boolean;
 }) {
   const t = soundCopy(language),
     [confirmed, setConfirmed] = useState(false),
@@ -39,6 +42,7 @@ export default function PersonalProfiles({
         {config.profiles.map((p) => (
           <button
             key={p.id}
+            disabled={!available || busy}
             aria-pressed={config.profileId === p.id}
             onClick={() => {
               if (!available) return;
@@ -71,50 +75,43 @@ export default function PersonalProfiles({
               {t.headphones}
             </label>
           )}
-          <button
-            className="button secondary"
-            disabled={
-              !available ||
-              (routeGeneration > 0 && !config.personalEnabled && !confirmed)
-            }
-            onClick={() =>
-              config.personalEnabled
-                ? edit((c) => ({ ...c, personalEnabled: false }))
-                : onUse(selected.id)
-            }
-          >
-            {config.personalEnabled ? t.disableProfile : t.useProfile}
-          </button>
-          <div className="sound-actions">
+          {!config.personalEnabled && (
             <button
-              className="text-button"
-              ref={renameButton}
-              onClick={() => {
-                setName(selected.name);
-                setRenaming(true);
-              }}
+              className="button secondary"
+              disabled={
+                !available ||
+                busy ||
+                (routeGeneration > 0 && !config.personalEnabled && !confirmed)
+              }
+              onClick={() =>
+                config.personalEnabled
+                  ? edit((c) => ({ ...c, personalEnabled: false }))
+                  : onUse(selected.id)
+              }
             >
-              {t.rename}
+              {config.personalEnabled ? t.disableProfile : t.useProfile}
             </button>
-            <button className="text-button" onClick={() => onSetup(selected)}>
-              {t.retestProfile}
-            </button>
-            <button
-              className="text-button danger"
-              onClick={() => {
-                setRenaming(false);
-                heading.current?.focus({ preventScroll: true });
-                edit((c) => ({
-                  ...c,
-                  profiles: c.profiles.filter((p) => p.id !== selected.id),
-                  profileId: null,
-                  personalEnabled: false,
-                }));
-              }}
-            >
-              {t.remove}
-            </button>
-          </div>
+          )}
+          <ProfileActions
+            buttonRef={renameButton}
+            language={language}
+            disabled={busy}
+            onRename={() => {
+              setName(selected.name);
+              setRenaming(true);
+            }}
+            onRetest={() => onSetup(selected)}
+            onDelete={() => {
+              setRenaming(false);
+              heading.current?.focus({ preventScroll: true });
+              edit((c) => ({
+                ...c,
+                profiles: c.profiles.filter((p) => p.id !== selected.id),
+                profileId: null,
+                personalEnabled: false,
+              }));
+            }}
+          />
           {renaming && (
             <form
               className="sound-name-form"
@@ -157,7 +154,7 @@ export default function PersonalProfiles({
       {!available && <p>{t.multi}</p>}
       <button
         className="button secondary"
-        disabled={!available}
+        disabled={!available || busy}
         onClick={() => onSetup()}
       >
         {t.newProfile}
