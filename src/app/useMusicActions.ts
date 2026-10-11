@@ -56,6 +56,7 @@ export function useMusicActions(
       setGroupTracks((ts) => ts.map((x) => (x.id === track.id ? next : x)));
       if (detail?.id === track.id) setDetail(next);
       if (onlyFavorites && !group) await refresh(query);
+      setCatalogRevision((v) => v + 1);
       saved = true;
     });
     return saved;

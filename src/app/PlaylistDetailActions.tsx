@@ -23,20 +23,22 @@ export default function PlaylistDetailActions() {
         <Play size={18} />
         {t.playMix}
       </button>
-      <button
-        className="text-button danger"
-        onClick={() =>
-          void act(async () => {
-            if (confirm(t.delete + " " + selectedList.title + "?")) {
-              await api.deletePlaylist(selectedList.id);
-              await refreshLists();
-              setSelectedList(null);
-            }
-          })
-        }
-      >
-        {t.delete}
-      </button>
+      {selectedList.kind !== "automatic" && (
+        <button
+          className="text-button danger"
+          onClick={() =>
+            void act(async () => {
+              if (confirm(t.delete + " " + selectedList.title + "?")) {
+                await api.deletePlaylist(selectedList.id);
+                await refreshLists();
+                setSelectedList(null);
+              }
+            })
+          }
+        >
+          {t.delete}
+        </button>
+      )}
     </div>
   );
 }

@@ -420,3 +420,22 @@ Removed the obsolete recap destination eyebrow from the Library recap tab. Its h
 - Native Windows observations follow below. Catalog rules, DSP, recap aggregation and export data are unchanged; Android runtime remains a separate gate.
 
 The portable Windows build succeeded. Native WebView2 checks confirmed one toolbar menu, three sorting choices with the correct active selection, no old sort selector, no recap eyebrow and the exact 20px heading inset. Year selection and poster remained visible. Native screenshots were inspected, sorting was restored to title, playback remained paused and only the agent-launched test instance was closed.
+
+## Automatic library playlists - 10 October 2026
+
+Added Recently added, Recently played, Most played and Favorites as derived collections inside Library > Playlists on `dev.ui-ux-polish`. They use stable IDs, localized labels, empty states and the existing detail/queue flow. Saved playlists remain editable and separate; automatic collections have no playlist Edit/Delete action. Visibility and availability apply to every collection; private sessions and demo audio are excluded from history-based collections. Recent additions retain first-import order after reimport. See [automatic-playlists.md](automatic-playlists.md) for eligibility and legacy browser ordering boundaries.
+
+- `npm.cmd run check`: production build and 30 frontend tests passed.
+- Rust core: all 15 integration tests passed, including shared TypeScript/Rust ordering/privacy fixtures, malformed history dates, first-import ordering, reimport, visibility and reserved collection IDs.
+- Native Rust: all 14 existing tests passed. The final Windows build also compiles the new command with its blocking catalog work on a worker.
+- Two new Chromium journeys passed: empty-state behavior; import/reimport ordering; live favorite membership; derived playback queue; persistence after reopening; real fixture audio continuing to accumulate listening time across automatic refresh; excluded/demo session filtering; recorded play ranking; Spanish detail membership parity; 390px mobile layout with no page overflow and no axe violations in the automatic collection surface.
+- Existing context-menu journeys (2) and the mobile manual/generated playlist editing journey (1) passed.
+- Browser checks found and fixed inherited small-count contrast and a new refresh checkpoint that needed to restart the browser's listening timer. Subsequent affected journeys passed. Screenshots of Spanish mobile and actual Windows collections were inspected.
+- Actual Windows WebView2/Rust inspection against the existing 160-song catalog returned 100 recent additions, 14 recently played songs, 5 most played songs and 0 favorites. All four cards and read-only detail opened correctly. Playback remained paused; no user catalog/history/favorites were altered. Only the agent-owned native test instance was closed.
+- Android: ARM64 development packaging results follow below. `adb devices -l` returned no connected devices/emulators; Android runtime/background acceptance remains pending and is not inferred from browser or compilation results.
+
+The initial uncached Android release build was stopped during dependency compilation in favor of the existing ARM64 development build cache. No release integration or tag is created for this feature.
+
+Final Windows bundle rebuilt successfully and was checked again through native IPC/UI with the same collection counts and paused playback. Android ARM64 native compilation and development APK packaging succeeded via `scripts/build-android.ps1 -Debug` and its file-copy fallback. Artifact: `src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk`. Signing verification is recorded below. Build artifacts and diagnostic screenshots remain ignored; source reference images, `main`, `dev` and release tags are preserved.
+
+`apksigner verify --verbose` passed for the new ARM64 APK: APK Signature Scheme v2 verified, one signer. This validates packaging/signing only; Android runtime and physical audio remain pending. `git diff --check` passed.

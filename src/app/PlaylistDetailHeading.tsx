@@ -33,15 +33,17 @@ export default function PlaylistDetailHeading() {
         )}{" "}
         {t.minutes.toLowerCase()}
       </span>
-      <button
-        className="text-button"
-        onClick={() => {
-          if (editingList) void saveList(selectedList);
-          setEditingList(!editingList);
-        }}
-      >
-        {editingList ? t.save : t.edit}
-      </button>
+      {selectedList.kind !== "automatic" && (
+        <button
+          className="text-button"
+          onClick={() => {
+            if (editingList) void saveList(selectedList);
+            setEditingList(!editingList);
+          }}
+        >
+          {editingList ? t.save : t.edit}
+        </button>
+      )}
     </div>
   );
 }

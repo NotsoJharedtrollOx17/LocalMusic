@@ -1,3 +1,4 @@
+pub mod automatic_playlists;
 pub mod catalog_query;
 pub mod groups;
 pub mod playlist;

@@ -45,6 +45,7 @@ pub fn run() {
             commands::imports::import_music,
             commands::imports::cancel_import,
             commands::catalog::set_favorite,
+            commands::playlists::automatic_playlists,
             commands::playlists::list_playlists,
             commands::playlists::save_playlist,
             commands::playlists::delete_playlist,

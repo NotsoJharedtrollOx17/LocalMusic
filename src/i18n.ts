@@ -1,4 +1,16 @@
 export const en = {
+  automaticPlaylists: "Made for your library",
+  recentlyAdded: "Recently added",
+  recentlyPlayed: "Recently played",
+  mostPlayed: "Most played",
+  recentlyAddedHint: "Your latest 100 additions",
+  recentlyPlayedHint: "The last 100 songs you listened to",
+  mostPlayedHint: "Your top 100 by recorded plays",
+  favoritesHint: "Every song you have marked with a heart",
+  automaticEmpty:
+    "This collection will fill as you add, favorite or listen to music.",
+  automaticPlaylistsError: "These collections could not be refreshed.",
+
   loadingSound: "Loading sound controls…",
   actions: "Track actions",
   libraryActions: "Library actions",
@@ -206,6 +218,18 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  automaticPlaylists: "Hechas para tu biblioteca",
+  recentlyAdded: "Agregadas recientemente",
+  recentlyPlayed: "Reproducidas recientemente",
+  mostPlayed: "Más reproducidas",
+  recentlyAddedHint: "Tus últimas 100 canciones agregadas",
+  recentlyPlayedHint: "Las últimas 100 canciones que escuchaste",
+  mostPlayedHint: "Las 100 canciones con más reproducciones",
+  favoritesHint: "Todas las canciones que marcaste con un corazón",
+  automaticEmpty:
+    "Esta lista se llenará cuando agregues, marques favoritas o escuches música.",
+  automaticPlaylistsError: "No se pudieron actualizar estas listas.",
+
   loadingSound: "Cargando controles de sonido…",
   libraryActions: "Acciones de la biblioteca",
   actions: "Acciones de la canción",

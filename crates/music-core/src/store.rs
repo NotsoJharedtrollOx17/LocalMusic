@@ -147,7 +147,8 @@ impl Store {
         tx.commit().map_err(|e| e.to_string())
     }
     pub fn save_playlist(&self, p: &Playlist) -> Result<()> {
-        if !["manual", "generated", "recap"].contains(&p.kind.as_str())
+        if p.id.starts_with("automatic:")
+            || !["manual", "generated", "recap"].contains(&p.kind.as_str())
             || p.title.trim().is_empty()
             || p.title.len() > 240
         {
@@ -162,6 +163,9 @@ impl Store {
         Ok(())
     }
     pub fn delete_playlist(&self, id: &str) -> Result<()> {
+        if id.starts_with("automatic:") {
+            return Err("Automatic collections cannot be deleted".into());
+        }
         self.connection
             .execute("DELETE FROM playlists WHERE id=?1", [id])
             .map_err(|e| e.to_string())?;

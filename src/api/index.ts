@@ -100,6 +100,9 @@ class NativeMusic implements MusicApi {
   setFavorite(id: string, favorite: boolean) {
     return cmd<void>("set_favorite", { id, favorite });
   }
+  automaticPlaylists() {
+    return cmd<Playlist[]>("automatic_playlists");
+  }
   playlists() {
     return cmd<Playlist[]>("list_playlists");
   }

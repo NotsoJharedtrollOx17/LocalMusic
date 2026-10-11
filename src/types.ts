@@ -20,7 +20,7 @@ export interface Track {
 export interface Playlist {
   id: string;
   title: string;
-  kind: "manual" | "generated" | "recap";
+  kind: "manual" | "generated" | "recap" | "automatic";
   trackIds: string[];
 }
 export interface PlaybackSnapshot {
@@ -151,6 +151,7 @@ export interface MusicApi {
   cancelImport(): Promise<void>;
   addSamples(): Promise<number>;
   setFavorite(id: string, favorite: boolean): Promise<void>;
+  automaticPlaylists(): Promise<Playlist[]>;
   playlists(): Promise<Playlist[]>;
   savePlaylist(playlist: Playlist): Promise<void>;
   deletePlaylist(id: string): Promise<void>;

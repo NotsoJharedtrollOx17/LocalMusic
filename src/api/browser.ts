@@ -1,3 +1,5 @@
+import { automaticPlaylists } from "../automaticPlaylists";
+import { ensureImportOrder, putImportedTrack } from "./browserImportOrder";
 import { BrowserSound } from "../sound/BrowserSound";
 import type {
   MusicApi,
@@ -17,7 +19,12 @@ import {
   compareAlbumTracks,
   compareCatalogTracks,
 } from "../domain";
-type StoredTrack = Track & { file: Blob; cover?: Blob; audioChannels?: number };
+type StoredTrack = Track & {
+  file: Blob;
+  cover?: Blob;
+  audioChannels?: number;
+  importSequence?: number;
+};
 const validReleaseYear = (year: number | undefined) =>
   year && Number.isInteger(year) && year >= 1000 && year <= 9999
     ? year
@@ -254,6 +261,7 @@ export class BrowserMusic implements MusicApi {
   }
   private async ensureAlbumOrder() {
     this.orderReady ??= (async () => {
+      await ensureImportOrder(await this.db);
       const { parseBlob } = await import("music-metadata");
       for (const old of await this.all<StoredTrack>("tracks")) {
         if ((old.orderMetadataRead && old.releaseMetadataRead) || old.demo)
@@ -484,6 +492,7 @@ export class BrowserMusic implements MusicApi {
     this.cancelled = false;
     let count = 0;
     onProgress?.({ imported: 0, failed: 0 });
+    await ensureImportOrder(await this.db);
     const { parseBlob } = await import("music-metadata");
     for (const file of files) {
       if (this.cancelled) break;
@@ -550,7 +559,7 @@ export class BrowserMusic implements MusicApi {
         /* filename metadata fallback */
       }
       const existing = await this.get<StoredTrack>("tracks", id);
-      await this.put("tracks", id, {
+      await putImportedTrack(await this.db, {
         id,
         title,
         artist,
@@ -579,6 +588,7 @@ export class BrowserMusic implements MusicApi {
     this.cancelled = true;
   }
   async addSamples() {
+    await ensureImportOrder(await this.db);
     const names = [
       "Signal in amber",
       "A quieter orbit",
@@ -631,7 +641,7 @@ export class BrowserMusic implements MusicApi {
           (0.7 + 0.3 * Math.sin(t * 0.7));
         v.setInt16(44 + j * 2, s * 32767, true);
       }
-      await this.put("tracks", id, {
+      await putImportedTrack(await this.db, {
         id,
         title: names[i],
         artist: [
@@ -656,13 +666,41 @@ export class BrowserMusic implements MusicApi {
     const t = await this.get<StoredTrack>("tracks", id);
     if (t) await this.put("tracks", id, { ...t, favorite });
   }
+  async automaticPlaylists() {
+    this.checkpoint();
+    if (!this.audio.paused && !this.audio.ended && this.audio.readyState >= 3) {
+      this.startedPosition = this.audio.currentTime;
+      this.startedMono = performance.now();
+      this.startedUtc = new Date().toISOString();
+    }
+    await this.writes;
+    const db = await this.db;
+    await ensureImportOrder(db);
+    const tracks = await this.all<StoredTrack>("tracks");
+    const added = [...tracks]
+      .sort(
+        (a, b) =>
+          (b.importSequence ?? -Infinity) - (a.importSequence ?? -Infinity),
+      )
+      .map((t) => t.id);
+    return automaticPlaylists(
+      tracks,
+      await this.all<Session>("sessions"),
+      await this.all<Interval>("intervals"),
+      added,
+    );
+  }
   async playlists() {
     return this.all<Playlist>("playlists");
   }
   async savePlaylist(p: Playlist) {
+    if (p.kind === "automatic" || p.id.startsWith("automatic:"))
+      throw new Error("Automatic collections cannot be edited");
     await this.put("playlists", p.id, p);
   }
   async deletePlaylist(id: string) {
+    if (id.startsWith("automatic:"))
+      throw new Error("Automatic collections cannot be deleted");
     await this.remove("playlists", id);
   }
   async generatePlaylist(request: PlaylistRequest) {

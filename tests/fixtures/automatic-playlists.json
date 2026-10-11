@@ -1,0 +1,206 @@
+{
+  "tracks": [
+    {
+      "id": "a",
+      "title": "Alpha",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/a",
+      "favorite": true,
+      "available": true,
+      "demo": false,
+      "hidden": false
+    },
+    {
+      "id": "b",
+      "title": "Beta",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/b",
+      "favorite": false,
+      "available": true,
+      "demo": false,
+      "hidden": false
+    },
+    {
+      "id": "c",
+      "title": "Gamma",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/c",
+      "favorite": false,
+      "available": true,
+      "demo": false,
+      "hidden": false
+    },
+    {
+      "id": "d",
+      "title": "Hidden",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/d",
+      "favorite": true,
+      "available": true,
+      "demo": false,
+      "hidden": true
+    },
+    {
+      "id": "e",
+      "title": "Unavailable",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/e",
+      "favorite": true,
+      "available": false,
+      "demo": false,
+      "hidden": false
+    },
+    {
+      "id": "demo",
+      "title": "Sample",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/demo",
+      "favorite": false,
+      "available": true,
+      "demo": true,
+      "hidden": false
+    },
+    {
+      "id": "bad",
+      "title": "Malformed date",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Rock",
+      "durationMs": 60000,
+      "sourceUri": "/private/bad",
+      "favorite": false,
+      "available": true,
+      "demo": false,
+      "hidden": false
+    }
+  ],
+  "sessions": [
+    {
+      "id": "s1",
+      "trackId": "a",
+      "playedMs": 31000,
+      "startedAtUtc": "2026-01-01T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s2",
+      "trackId": "a",
+      "playedMs": 30000,
+      "startedAtUtc": "2026-01-02T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s3",
+      "trackId": "b",
+      "playedMs": 90000,
+      "startedAtUtc": "2026-01-03T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s4",
+      "trackId": "c",
+      "playedMs": 1000,
+      "startedAtUtc": "2026-01-04T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s5",
+      "trackId": "d",
+      "playedMs": 90000,
+      "startedAtUtc": "2026-01-06T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s6",
+      "trackId": "e",
+      "playedMs": 90000,
+      "startedAtUtc": "2026-01-06T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s7",
+      "trackId": "demo",
+      "playedMs": 90000,
+      "startedAtUtc": "2026-01-06T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s8",
+      "trackId": "b",
+      "playedMs": 90000,
+      "startedAtUtc": "2026-01-06T00:00:00Z",
+      "excluded": true
+    },
+    {
+      "id": "s9",
+      "trackId": "c",
+      "playedMs": 0,
+      "startedAtUtc": "2026-01-06T00:00:00Z",
+      "excluded": false
+    },
+    {
+      "id": "s10",
+      "trackId": "bad",
+      "playedMs": 30000,
+      "startedAtUtc": "invalid",
+      "excluded": false
+    }
+  ],
+  "intervals": [
+    {
+      "sessionId": "s1",
+      "sequence": 1,
+      "startUtc": "2026-01-05T00:00:00Z",
+      "playedMs": 1000
+    }
+  ],
+  "addedIds": [
+    "e",
+    "d",
+    "demo",
+    "bad",
+    "c",
+    "b",
+    "a"
+  ],
+  "expected": [
+    [
+      "demo",
+      "bad",
+      "c",
+      "b",
+      "a"
+    ],
+    [
+      "a",
+      "c",
+      "b"
+    ],
+    [
+      "a",
+      "b",
+      "bad"
+    ],
+    [
+      "a"
+    ]
+  ]
+}

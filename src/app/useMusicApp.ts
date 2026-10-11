@@ -1,3 +1,4 @@
+import { useAutomaticPlaylists } from "./useAutomaticPlaylists";
 import { audioShareLabel } from "../ux/sharing";
 import { useSoundController } from "../sound/useSoundController";
 import { useMusicActions } from "./useMusicActions";
@@ -202,6 +203,22 @@ export function useMusicApp(initialSettings?: Settings) {
       })),
     [],
   );
+  const automatic = useAutomaticPlaylists(
+    section === "playlists",
+    catalogRevision,
+    `${player.trackId}|${player.playing}|${player.excluded}`,
+    remember,
+    setSelectedList,
+  );
+  useEffect(() => {
+    if (section !== "playlists" || selectedList?.kind !== "automatic") return;
+    const visible = new Set(selectedList.trackIds);
+    setSelectedIds((current) =>
+      current.some((id) => !visible.has(id))
+        ? current.filter((id) => visible.has(id))
+        : current,
+    );
+  }, [section, selectedList, setSelectedIds]);
   const catalog = useCatalogReads(state, act, remember);
   const lastPlaybackError = useRef<string | null>(null);
   const {
@@ -575,6 +592,7 @@ export function useMusicApp(initialSettings?: Settings) {
   return {
     ...state,
     soundController,
+    automatic,
     setModal,
     dismissModals,
     shareLabel,

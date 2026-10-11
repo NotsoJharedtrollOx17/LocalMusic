@@ -1,3 +1,5 @@
+import AutomaticPlaylistCollection from "./AutomaticPlaylistCollection";
+import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import { Plus } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import LibraryActions from "./LibraryActions";
@@ -24,7 +26,11 @@ export default function PlaylistsPage() {
     <div className="playlists-page">
       <div className="page-heading">
         <div>
-          <h2>{selectedList ? selectedList.title : t.playlists}</h2>
+          <h2>
+            {selectedList
+              ? automaticPlaylistLabel(selectedList, t)
+              : t.playlists}
+          </h2>
         </div>
         <div className="heading-actions">
           <LibraryActions />
@@ -48,13 +54,17 @@ export default function PlaylistsPage() {
             <TrackRows
               ts={playlistTracks}
               queueIds={selectedList.trackIds}
-              editable={editingList}
+              editable={editingList && selectedList.kind !== "automatic"}
             />
           }
+          {selectedList.kind === "automatic" && !playlistTracks.length && (
+            <p className="automatic-playlist-empty">{t.automaticEmpty}</p>
+          )}
           <PlaylistDetailActions />
         </>
       ) : (
         <>
+          <AutomaticPlaylistCollection />
           <PlaylistCollection />
           <PlaylistBuilder />
           {generated && <GeneratedPlaylist />}

@@ -51,3 +51,21 @@ pub(crate) async fn generate_playlist(
     .await
     .map_err(|e| e.to_string())?
 }
+
+#[tauri::command]
+pub(crate) async fn automatic_playlists(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
+) -> Result<Vec<Playlist>> {
+    crate::playback::dispatch(app, &state, "flush", serde_json::json!({})).await?;
+    let core = state.core.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        #[allow(unused_mut)]
+        let mut store = core.lock().map_err(|e| e.to_string())?;
+        #[cfg(not(target_os = "android"))]
+        catalog::reconcile(&mut store)?;
+        store.automatic_playlists()
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

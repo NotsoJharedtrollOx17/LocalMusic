@@ -114,3 +114,7 @@ Library is the main destination. `LibrarySection` contains Songs, Albums, Artist
 `usePlayerArtworkSize` observes the visible player body and its content to fit square artwork into the remaining height above transport controls. Non-artwork content and body padding are measured, so title wrapping and changes to the footer also affect sizing. Keep both artwork dimensions tied together and retain scroll access at extremely short heights. The queue remains independently scrollable.
 
 Recap omits its former destination eyebrow and uses a 20px inset below Library tabs. The collection toolbar uses one actions/sort menu alongside Import instead of adjacent menu icons.
+
+## Automatic playlists
+
+`MusicApi.automaticPlaylists()` returns four derived, read-only collections with fixed `automatic:` IDs. `crates/music-core/src/automatic_playlists.rs` owns native ordering/eligibility; the command flushes the native playback journal before querying. Browser preview mirrors those rules in `src/automaticPlaylists.ts` and tracks first-import order in `src/api/browserImportOrder.ts`. React localizes display labels and refreshes with stale-request protection through `useAutomaticPlaylists`. Shared fixtures and ordering definitions: [automatic-playlists.md](automatic-playlists.md). Saved manual playlists remain separate.
