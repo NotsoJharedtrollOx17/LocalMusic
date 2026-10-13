@@ -1,4 +1,5 @@
-import { LoaderCircle, Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
+import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryActions from "./LibraryActions";
 import { api } from "../api";
 import { Cover, IconButton } from "../components";
@@ -115,13 +116,8 @@ export default function LibraryPage() {
             <LibraryToolbar />
 
             {libraryLoading && total === 0 ? (
-              <div className="catalog-loading" role="status">
-                <LoaderCircle
-                  size={20}
-                  className="spinner"
-                  aria-hidden="true"
-                />
-                {t.loadingLibrary}
+              <div className="catalog-loading">
+                <LoadingIndicator label={t.loadingLibrary} />
               </div>
             ) : total === 0 && !query ? (
               <EmptyLibrary />
@@ -129,7 +125,7 @@ export default function LibraryPage() {
               <>
                 {group?.kind === "artists" && artistView === "albums" ? (
                   artistAlbumsLoading && !artistAlbums.length ? (
-                    <p role="status">{t.loadingAlbums}</p>
+                    <LoadingIndicator label={t.loadingAlbums} />
                   ) : (
                     <div className="album-grid" aria-busy={artistAlbumsLoading}>
                       {artistAlbums.map((album) => (
@@ -153,9 +149,7 @@ export default function LibraryPage() {
                     queueIds={group?.ids ?? visible.map((x) => x.id)}
                   />
                 ) : group && groupLoading ? (
-                  <div className="empty-small" role="status">
-                    {t.loading}
-                  </div>
+                  <LoadingIndicator label={t.loading} />
                 ) : (
                   <div className="empty-small">
                     <Search />
@@ -195,20 +189,24 @@ export default function LibraryPage() {
                 ) : selectedGroupPage.status === "idle" ||
                   selectedGroupPage.status === "loading" ? (
                   <>
-                    <span className="catalog-loading-label" role="status">
-                      {section === "albums"
-                        ? t.loadingAlbums
-                        : t.loadingArtists}
-                    </span>
+                    <span
+                      className="catalog-loading-label"
+                      role="status"
+                      aria-label={
+                        section === "albums"
+                          ? t.loadingAlbums
+                          : t.loadingArtists
+                      }
+                    />
                     {Array.from({ length: 8 }, (_, index) => (
                       <div
                         className="album-placeholder"
                         aria-hidden="true"
                         key={index}
                       >
-                        <div />
-                        <span />
-                        <span />
+                        <div>
+                          <LoadingIndicator label={t.loading} />
+                        </div>
                       </div>
                     ))}
                   </>
@@ -229,6 +227,14 @@ export default function LibraryPage() {
                   </p>
                 )}
               </div>
+            )}
+            {(group
+              ? groupLoading && visible.length > 0
+              : section === "songs"
+                ? libraryLoading && total > 0
+                : selectedGroupPage.status === "loading" &&
+                  catalogGroups.length > 0) && (
+              <LoadingIndicator label={t.loading} />
             )}
             {(group
               ? groupTracks.length < group.ids.length

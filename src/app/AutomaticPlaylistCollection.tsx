@@ -1,6 +1,7 @@
 import { Clock3, History, TrendingUp, Heart, ArrowUpRight } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
+import LoadingIndicator from "../components/LoadingIndicator";
 export default function AutomaticPlaylistCollection() {
   const { automatic, t, openPlaylist, formatMusicCount } = useMusicAppContext();
   const definitions = [
@@ -52,13 +53,13 @@ export default function AutomaticPlaylistCollection() {
               </div>
               <div>
                 <h4>{p ? automaticPlaylistLabel(p, t) : title}</h4>
-                <span>
-                  {p
-                    ? formatMusicCount(p.trackIds.length)
-                    : automatic.error
-                      ? t.unavailable
-                      : t.loading}
-                </span>
+                {p ? (
+                  <span>{formatMusicCount(p.trackIds.length)}</span>
+                ) : automatic.error ? (
+                  <span>{t.unavailable}</span>
+                ) : (
+                  <LoadingIndicator label={t.loading} compact />
+                )}
                 <p>{description}</p>
               </div>
               <ArrowUpRight size={20} />

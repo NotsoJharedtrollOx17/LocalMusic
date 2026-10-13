@@ -15,7 +15,7 @@ export default function SoundControls({
   language: string;
   view: "equalizer" | "adapt";
 }) {
-  const { state, refresh, action, pending, error } = controller;
+  const { state, refresh, action, error } = controller;
   const t = soundCopy(language);
   const [deviceError, setDeviceError] = useState("");
   const status =
@@ -56,11 +56,6 @@ export default function SoundControls({
         <EqualizerPanel controller={controller} language={language} />
       ) : (
         <AdaptSoundPanel controller={controller} language={language} />
-      )}
-      {pending && (
-        <p className="sound-save-state" role="status">
-          {t.saving}
-        </p>
       )}
       {state.systemPanel && (
         <>

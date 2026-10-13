@@ -67,6 +67,10 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   });
   await page.reload();
   await expect(page.locator(".catalog-loading")).toBeVisible();
+  await expect(
+    page.locator(".catalog-loading .loading-indicator svg"),
+  ).toBeVisible();
+  await expect(page.locator(".catalog-loading")).toHaveText("");
   expect(
     await page.evaluate(
       () => (window as unknown as { firstAppTheme: string }).firstAppTheme,
@@ -79,6 +83,23 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   await holdNextTrackRead(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
   await expect(page.locator(".album-placeholder")).toHaveCount(8);
+  await expect(
+    page.locator(".album-placeholder .loading-indicator"),
+  ).toHaveCount(8);
+  await expect(page.locator(".toolbar-actions")).not.toContainText("Loading");
+  await expect(page.locator(".catalog-loading-label")).toHaveAttribute(
+    "aria-label",
+    "Loading albums…",
+  );
+  await page.screenshot({ path: "artifacts/library-circular-loading.png" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(
+    await page
+      .locator(".album-placeholder svg")
+      .first()
+      .evaluate((node) => getComputedStyle(node).animationName),
+  ).toBe("none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await expect(page.locator(".album-card")).toHaveCount(0);
   await expect(
     page.getByText("Albums appear when imported music has album tags.", {

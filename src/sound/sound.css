@@ -252,11 +252,6 @@
   font-size: 13px;
   color: var(--muted);
 }
-.sound-save-state {
-  font-size: 12px;
-  color: var(--muted);
-  min-height: 18px;
-}
 .personal-profiles,
 .personal-wizard {
   display: grid;

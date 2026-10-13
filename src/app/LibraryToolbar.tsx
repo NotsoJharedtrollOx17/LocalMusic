@@ -1,18 +1,14 @@
-import { LoaderCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
 import LibraryFilters from "./LibraryFilters";
 
 export default function LibraryToolbar() {
   const {
-    section,
     total,
     onlyFavorites,
     setOnlyFavorites,
     group,
-    groupLoading,
-    selectedGroupPage,
-    catalogGroups,
     busy,
     fileInput,
     t,
@@ -34,16 +30,6 @@ export default function LibraryToolbar() {
       </div>
       <div className="toolbar-actions">
         <LibraryFilters />
-        {!group &&
-          (groupLoading ||
-            (section !== "songs" &&
-              selectedGroupPage.status === "loading" &&
-              catalogGroups.length > 0)) && (
-            <span className="group-loading" role="status">
-              <LoaderCircle size={18} className="spinner" aria-hidden="true" />
-              {t.loading}
-            </span>
-          )}
         <button
           className="button primary library-import"
           disabled={busy}

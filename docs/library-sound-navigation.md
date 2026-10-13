@@ -18,3 +18,7 @@ This revision supersedes the filter removal above. Restore the original Songs-on
 - Remove Resume music from Equalizer and Adapt Sound. Existing controller edits already apply live; profile activation remains explicit. Tone setup still pauses music, and exit leaves it paused until the user operates the player.
 - Use symmetric desktop player columns to center transport and progress in the window. Align the right-side actions vertically with transport; keep narrow mobile behavior and accessible controls.
 - Verify functional filtering/sorting, creation alignment, desktop player geometry, sound navigation and native Windows behavior. No catalog, DSP, storage or public API changes are needed.
+
+## Loading-label follow-up - 12 October 2026
+
+Replace visible Loading songs/albums/artists labels with circular indicators in the content being loaded, including initial artwork slots and automatic playlist counts. Keep cached cards visible during refresh. Remove the toolbar loading label and routine EQ Saving settings row; preserve localized accessible loading status, reduced-motion behavior, failures and Retry. Sound configuration continues to save and apply through the existing controller.

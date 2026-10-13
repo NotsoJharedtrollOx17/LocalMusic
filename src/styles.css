@@ -2253,42 +2253,44 @@ input[type="range"] {
   width: max-content;
 }
 
-.group-loading {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .catalog-loading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 36px 0;
-  color: var(--muted);
+  width: 100%;
 }
 .catalog-loading-label {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 12px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 .album-placeholder > div {
   aspect-ratio: 1;
   background: var(--hover);
   border-radius: 6px;
   margin-bottom: 13px;
+  display: grid;
+  place-items: center;
 }
-.album-placeholder > span {
-  display: block;
-  height: 12px;
-  width: 80%;
-  background: var(--hover);
-  margin-top: 8px;
-  border-radius: 3px;
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
+  width: 100%;
+  color: var(--accent-ink);
 }
-.album-placeholder > span:last-child {
-  width: 55%;
+.loading-indicator.is-compact {
+  min-height: 20px;
+  width: 20px;
+  margin: 6px 0;
+}
+.loading-indicator svg {
+  animation: import-spin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-indicator svg {
+    animation: none;
+  }
 }
 
 .library-page > .playlists-page {

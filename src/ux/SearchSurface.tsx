@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, ArrowLeft, Search } from "lucide-react";
 import { api } from "../api";
 import { Cover, TrackRow } from "../components";
+import LoadingIndicator from "../components/LoadingIndicator";
 import {
   type CatalogGroup,
   type Playlist,
@@ -148,7 +149,7 @@ export function SearchSurface({
       </div>
       <div className="search-results" aria-busy={status === "loading"}>
         {!query.trim() && <p className="search-prompt">{labels.prompt}</p>}
-        {status === "loading" && <p role="status">{labels.loading}</p>}
+        {status === "loading" && <LoadingIndicator label={labels.loading} />}
         {status === "error" && (
           <div role="alert">
             <p>{error}</p>
