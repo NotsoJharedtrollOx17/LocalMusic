@@ -1,4 +1,5 @@
-import { LoaderCircle, Search, ArrowLeft, Settings2 } from "lucide-react";
+import { LoaderCircle, Search, ArrowLeft } from "lucide-react";
+import LibraryActions from "./LibraryActions";
 import { api } from "../api";
 import { Cover, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -18,7 +19,6 @@ export default function LibraryPage() {
     query,
     searchOpen,
     setSearchOpen,
-    setModal,
     group,
     groupTracks,
     setGroupTracks,
@@ -57,11 +57,8 @@ export default function LibraryPage() {
       {...(!group && !selectionMode ? motion.swipe : {})}
       className={"library-page" + (motion.compact ? " is-compact" : "")}
     >
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">{t.local}</p>
-          <h1 tabIndex={-1}>{group?.title || t.library}</h1>
-        </div>
+      <div className="page-heading library-navigation">
+        {group ? <h1 tabIndex={-1}>{group.title}</h1> : <LibraryTabs />}
         <div className="heading-actions">
           <IconButton
             label={t.search}
@@ -69,9 +66,7 @@ export default function LibraryPage() {
           >
             <Search size={25} />
           </IconButton>
-          <IconButton label={t.settings} onClick={() => setModal("settings")}>
-            <Settings2 size={25} />
-          </IconButton>
+          <LibraryActions />
         </div>
       </div>
       {group ? (
@@ -79,9 +74,7 @@ export default function LibraryPage() {
           <ArrowLeft size={17} />
           {t.library}
         </button>
-      ) : (
-        <LibraryTabs />
-      )}
+      ) : null}
       <div
         id="library-content"
         role={!group ? "tabpanel" : undefined}

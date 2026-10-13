@@ -78,12 +78,13 @@ export function useMusicApp(initialSettings?: Settings) {
     groupScroll,
     lastSelected,
     groupStack,
-    soundOrigin,
     latestQuery,
     settingsWrite,
     searchInput,
   } = state;
-  const soundController = useSoundController(modal === "sound");
+  const soundController = useSoundController(
+    ["sound", "equalizer", "adapt"].includes(modal ?? ""),
+  );
   type Dialog = typeof modal;
   const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
   const dialogScroll = useRef(new Map<NonNullable<Dialog>, number>());
@@ -539,10 +540,6 @@ export function useMusicApp(initialSettings?: Settings) {
         ?.focus({ preventScroll: true });
   }, [group?.title, group?.kind]);
   async function openSound() {
-    soundOrigin.current =
-      modal === "player" || modal === "queue" || modal === "settings"
-        ? modal
-        : null;
     setModal("sound");
   }
   const formatMinutes = (ms: number) =>

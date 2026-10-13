@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { ListFilter } from "lucide-react";
-import { IconButton } from "../components";
+import { Settings2 } from "lucide-react";
 import { ActionMenu } from "../ux";
 import { useMusicAppContext } from "./MusicAppContext";
 
@@ -11,10 +10,8 @@ export default function LibraryActions() {
     group,
     artistView,
     selectedList,
-    sort,
-    setSort,
-    onlyFavorites,
-    setOnlyFavorites,
+    setModal,
+    openSound,
     selectionMode,
     setSelectionMode,
     setSelectedIds,
@@ -22,52 +19,37 @@ export default function LibraryActions() {
   } = useMusicAppContext();
   const canSelect =
     section === "songs" ||
-    (group && artistView === "tracks") ||
+    (group && (group.kind === "albums" || artistView === "tracks")) ||
     (section === "playlists" && !!selectedList);
-  if (!canSelect) return null;
   return (
     <>
-      <IconButton
-        label={t.libraryActions}
+      <button
+        className="icon-button"
+        type="button"
+        data-library-menu
+        aria-label={t.libraryActions}
+        aria-haspopup="menu"
+        aria-expanded={!!anchor}
         onClick={(e) => setAnchor(e.currentTarget)}
       >
-        <ListFilter size={25} />
-      </IconButton>
+        <Settings2 size={25} />
+      </button>
       {anchor && (
         <ActionMenu
           anchor={anchor}
           label={t.libraryActions}
           onClose={() => setAnchor(null)}
           items={[
-            ...(canSelect
-              ? [
-                  {
-                    label: t.selectSongs,
-                    action: () => {
-                      setSelectionMode(!selectionMode);
-                      setSelectedIds([]);
-                    },
-                  },
-                ]
-              : []),
-            ...(section === "songs" && !group
-              ? [
-                  {
-                    label: onlyFavorites ? t.allMusic : t.favorites,
-                    action: () => setOnlyFavorites(!onlyFavorites),
-                  },
-                  ...(["title", "artist", "album"] as const).map((value) => ({
-                    label:
-                      value === "title"
-                        ? t.sort
-                        : value === "artist"
-                          ? t.sortArtist
-                          : t.sortAlbum,
-                    checked: sort === value,
-                    action: () => setSort(value),
-                  })),
-                ]
-              : []),
+            {
+              label: t.edit,
+              disabled: !canSelect,
+              action: () => {
+                setSelectionMode(!selectionMode);
+                setSelectedIds([]);
+              },
+            },
+            { label: t.soundControls, action: () => void openSound() },
+            { label: t.settings, action: () => setModal("settings") },
           ]}
         />
       )}

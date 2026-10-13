@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 test("main journeys expose accessible controls at mobile width", async ({
@@ -24,10 +25,7 @@ test("main journeys expose accessible controls at mobile width", async ({
       )
       .toEqual([]);
   }
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Settings" })
-    .click();
+  await openSettings(page);
   expect(
     (
       await new AxeBuilder({ page })

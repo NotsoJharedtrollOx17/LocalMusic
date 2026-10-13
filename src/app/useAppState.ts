@@ -84,6 +84,8 @@ export function useAppState(initialSettings?: Settings) {
       | "remove"
       | "add"
       | "sound"
+      | "equalizer"
+      | "adapt"
       | null
     >(null),
     [detail, setDetail] = useState<Track | null>(null),
@@ -134,7 +136,6 @@ export function useAppState(initialSettings?: Settings) {
       artistView: "tracks" | "albums";
     }>
   >([]);
-  const soundOrigin = useRef<"player" | "queue" | "settings" | null>(null);
   const [chooserOpen, setChooserOpen] = useState(false);
   const [importProgress, setImportProgress] = useState<ImportProgress | null>(
     null,
@@ -256,7 +257,6 @@ export function useAppState(initialSettings?: Settings) {
     lastSelected,
     miniDrag,
     groupStack,
-    soundOrigin,
     chooserOpen,
     setChooserOpen,
     importProgress,

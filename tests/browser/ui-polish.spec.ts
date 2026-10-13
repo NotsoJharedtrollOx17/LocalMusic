@@ -1,13 +1,12 @@
 ﻿import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { defaultSound } from "../../src/sound/model";
-async function openSettings(page: Page) {
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
-  return page.getByRole("dialog", { name: "Settings", exact: true });
-}
+import {
+  openSettings,
+  openSound,
+  chooseSound,
+  closeSound,
+} from "./navigationHelpers";
 async function storedSound(page: Page) {
   return page.evaluate(
     () =>
@@ -49,12 +48,9 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     .locator(".player-surface-body")
     .evaluate((node) => node.scrollTop);
   await queue
-    .getByRole("button", { name: "Sound controls", exact: true })
+    .getByRole("button", { name: "Sound options", exact: true })
     .click();
-  const sound = page.getByRole("dialog", {
-    name: "Sound controls",
-    exact: true,
-  });
+  const sound = await chooseSound(page, "equalizer");
   await expect(
     sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toBeVisible();
@@ -77,9 +73,10 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     .locator(".modal-head")
     .getByRole("button", { name: "Close", exact: true })
     .click();
+  await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
   await expect(
-    queue.getByRole("button", { name: "Sound controls", exact: true }),
+    queue.getByRole("button", { name: "Sound options", exact: true }),
   ).toBeFocused();
   expect(
     await queue
@@ -87,11 +84,13 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
       .evaluate((node) => node.scrollTop),
   ).toBe(position);
   await queue
-    .getByRole("button", { name: "Sound controls", exact: true })
+    .getByRole("button", { name: "Sound options", exact: true })
     .click();
+  await chooseSound(page, "equalizer");
   await expect(
     sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toHaveValue(gain);
+  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
   await page.keyboard.press("Escape");
@@ -138,11 +137,7 @@ test("personal banks stay grouped and EN/ES preserve the exact same sound config
     config,
   );
   await page.reload();
-  let settings = await openSettings(page);
-  await settings
-    .getByRole("button", { name: "Sound controls", exact: true })
-    .click();
-  let sound = page.getByRole("dialog", { name: "Sound controls", exact: true });
+  let sound = await openSound(page, "adapt");
   await expect(
     sound.getByRole("button", { name: "Disable profile", exact: true }),
   ).toBeVisible();
@@ -156,24 +151,17 @@ test("personal banks stay grouped and EN/ES preserve the exact same sound config
   await expect(
     sound.getByRole("slider", { name: "Preamp", exact: true }),
   ).toHaveCount(0);
-  await sound.locator("summary").click();
   await expect(
-    sound.getByRole("button", { name: "Rock", exact: true }),
-  ).toBeDisabled();
+    sound.getByRole("button", { name: "Normal", exact: true }),
+  ).toHaveCount(0);
   await page.screenshot({ path: "artifacts/ui-polish-personal-desktop.png" });
   const baseline = await storedSound(page);
-  await page.keyboard.press("Escape");
-  settings = page.getByRole("dialog", { name: "Settings", exact: true });
+  await closeSound(page);
+  let settings = await openSettings(page);
   await settings.getByRole("button", { name: "Dark", exact: true }).click();
   await settings.getByRole("button", { name: "Español", exact: true }).click();
-  await page
-    .getByRole("dialog", { name: "Ajustes", exact: true })
-    .getByRole("button", { name: "Controles de sonido", exact: true })
-    .click();
-  sound = page.getByRole("dialog", {
-    name: "Controles de sonido",
-    exact: true,
-  });
+  await page.keyboard.press("Escape");
+  sound = await openSound(page, "adapt");
   await expect(
     sound.getByRole("slider", { name: "Preamplificador", exact: true }),
   ).toHaveCount(0);
@@ -212,14 +200,11 @@ test("personal banks stay grouped and EN/ES preserve the exact same sound config
     path: "artifacts/ui-polish-personal-spanish-mobile.png",
   });
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await closeSound(page);
+  settings = await openSettings(page);
+  await settings.getByRole("button", { name: "English", exact: true }).click();
   await page.keyboard.press("Escape");
-  await page
-    .getByRole("dialog", { name: "Ajustes", exact: true })
-    .getByRole("button", { name: "English", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Sound controls", exact: true })
-    .click();
+  await openSound(page, "adapt");
   await expect(
     page.getByRole("slider", { name: "250 Hz gain Left", exact: true }),
   ).toHaveValue("6");
@@ -317,34 +302,16 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     .getByRole("button", { name: "Library actions", exact: true })
     .click();
   await expect(
-    page.getByRole("menuitem", { name: "Select songs", exact: true }),
+    page.getByRole("menuitem", { name: "Edit", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("menuitem", { name: "Favorites", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("menuitemradio")).toHaveCount(3);
-  await expect(
-    page.getByRole("menuitemradio", { name: "Sort by title", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
-  await page
-    .getByRole("menuitemradio", { name: "Sort by artist", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Library actions", exact: true })
-    .click();
-  await expect(
-    page.getByRole("menuitemradio", { name: "Sort by artist", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
-  await expect(page.locator(".library-toolbar .sort-select")).toHaveCount(0);
+  await expect(page.getByRole("menuitem")).toHaveText([
+    "Edit",
+    "Sound options",
+    "Settings",
+  ]);
+  await expect(page.getByRole("menuitemradio")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  const settings = await openSettings(page);
-  await settings
-    .getByRole("button", { name: "Sound controls", exact: true })
-    .click();
-  const sound = page.getByRole("dialog", {
-    name: "Sound controls",
-    exact: true,
-  });
+  const sound = await openSound(page);
   await expect(sound.locator(".sound-preamp-control button")).toHaveCount(0);
   await expect(sound.locator(".equalizer-bands")).toHaveCSS(
     "border-bottom-width",

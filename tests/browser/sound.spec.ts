@@ -1,16 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import { defaultSound } from "../../src/sound/model";
-async function openSound(page: Page) {
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
-  await page
-    .getByRole("dialog", { name: "Settings", exact: true })
-    .getByRole("button", { name: "Sound controls", exact: true })
-    .click();
-  return page.getByRole("dialog", { name: "Sound controls", exact: true });
-}
+import {
+  openSound,
+  openSettings,
+  switchSound,
+  closeSound,
+} from "./navigationHelpers";
 async function preferences(page: Page) {
   return page.evaluate(
     () =>
@@ -98,20 +93,15 @@ test("Normal and automatic Custom persist in narrow dark Spanish UI", async ({
   ).toHaveValue("-10");
   await expect.poll(async () => (await preferences(page))?.enabled).toBe(true);
   expect((await preferences(page)).preamp).toBe(0);
-  await page.keyboard.press("Escape");
-  const settings = page.getByRole("dialog", { name: "Settings", exact: true });
+  await closeSound(page);
+  const settings = await openSettings(page);
   await settings.getByRole("button", { name: "Dark", exact: true }).click();
   await settings
     .getByRole("button", { name: "Espa\u00f1ol", exact: true })
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await page
-    .getByRole("button", { name: "Controles de sonido", exact: true })
-    .click();
-  sound = page.getByRole("dialog", {
-    name: "Controles de sonido",
-    exact: true,
-  });
+  await page.keyboard.press("Escape");
+  sound = await openSound(page);
   await expect(
     sound.getByRole("button", { name: "Personalizado", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -302,7 +292,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .getByRole("button", { name: /Play/ })
     .first()
     .click();
-  const personalSound = await openSound(page);
+  let personalSound = await openSound(page, "adapt");
   await personalSound
     .getByRole("button", { name: "Measured fixture", exact: true })
     .click();
@@ -332,6 +322,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
       exact: true,
     }),
   ).toHaveValue("0");
+  personalSound = await switchSound(page, "equalizer");
   await personalSound.locator("summary").click();
   await expect(
     personalSound.getByRole("button", { name: "Rock", exact: true }),
@@ -385,12 +376,12 @@ test("personal setup saves an active default, persists on restart, cancels on bl
   page,
 }) => {
   await page.goto("/");
-  const sound = await openSound(page);
+  const sound = await openSound(page, "adapt");
   await sound
     .getByRole("button", { name: "Create personal profile", exact: true })
     .click();
   await page.keyboard.press("Escape");
-  await expect(sound.getByRole("slider")).toHaveCount(9);
+  await expect(sound.getByRole("slider")).toHaveCount(0);
   await sound
     .getByRole("button", { name: "Create personal profile", exact: true })
     .click();
@@ -424,7 +415,7 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     .poll(async () => (await preferences(page))?.personalEnabled)
     .toBe(true);
   await page.reload();
-  const restored = await openSound(page);
+  const restored = await openSound(page, "adapt");
   await expect(
     restored.getByRole("button", { name: "Disable profile", exact: true }),
   ).toBeVisible();
@@ -515,11 +506,13 @@ test("multichannel imports retain their processor channels and disable personal 
   await expect
     .poll(() => page.evaluate(() => (window as any).__soundOutputChannels))
     .toBe(6);
-  const sound = await openSound(page);
-  await expect(sound.getByRole("slider")).toHaveCount(9);
+  let sound = await openSound(page, "adapt");
+  await expect(sound.getByRole("slider")).toHaveCount(0);
   await expect(
     sound.getByRole("button", { name: "Create personal profile", exact: true }),
   ).toBeDisabled();
+  sound = await switchSound(page, "equalizer");
+  await expect(sound.getByRole("slider")).toHaveCount(9);
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
     sound.getByRole("button", { name: "Rock", exact: true }),
@@ -668,7 +661,7 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   page,
 }) => {
   await page.goto("/");
-  const sound = await openSound(page);
+  const sound = await openSound(page, "adapt");
   await sound
     .getByRole("button", { name: "Create personal profile", exact: true })
     .click();

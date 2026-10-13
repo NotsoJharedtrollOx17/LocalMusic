@@ -362,3 +362,96 @@
   color: var(--ink);
   font-size: 11px;
 }
+
+/* Tabs and tools replace the redundant large Library title. */
+.library-brand-header {
+  margin-bottom: 20px;
+}
+.library-page > .library-navigation {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  overflow: visible;
+  flex-wrap: nowrap;
+  min-height: 0;
+}
+.library-navigation .section-tabs {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  border-bottom: 0;
+  overflow-x: auto;
+}
+.library-navigation > h1 {
+  flex: 1;
+  font-size: 30px;
+  margin: 16px 0;
+}
+.library-navigation .heading-actions {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+.sound-option-list {
+  display: grid;
+  gap: 12px;
+}
+.sound-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 76px;
+}
+.sound-option span {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.sound-option strong {
+  font-size: 18px;
+}
+.sound-option small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.settings-history .danger {
+  color: #a33123;
+}
+:root[data-theme="dark"] .settings-history .danger {
+  color: #ff9980;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .settings-history .danger {
+    color: #ff9980;
+  }
+}
+@media (max-width: 760px) {
+  .library-page > .library-navigation {
+    gap: 4px;
+  }
+  .library-navigation .heading-actions {
+    gap: 0;
+  }
+  .library-brand-header {
+    margin-bottom: 12px;
+  }
+  .library-navigation .section-tabs button {
+    font-size: 16px;
+  }
+}

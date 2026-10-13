@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { wav, taggedWav, numberedWav } from "./fixtures";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -95,7 +96,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
   });
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Library", exact: true }),
+    page.getByRole("tablist", { name: "Library", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("tab", { name: "Playlists", exact: true }),
@@ -135,10 +136,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
   await page.getByRole("tab", { name: "Your Year" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Settings" })
-    .click();
+  await openSettings(page);
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Ajustes" })).toBeVisible();
   await page
@@ -148,7 +146,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
   await expect(page.getByRole("tab", { name: "Tu año" })).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Biblioteca", exact: true }),
+    page.getByRole("tablist", { name: "Biblioteca", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("8 canciones", { exact: true })).toBeVisible();
 });
@@ -278,15 +276,15 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     .getByRole("button", { name: "Close", exact: true })
     .last()
     .click();
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page
-    .getByRole("button", { name: "Library actions", exact: true })
+    .locator(".automatic-playlist-tile")
+    .filter({ hasText: "Favorites" })
     .click();
-  await page.getByRole("menuitem", { name: "Favorites", exact: true }).click();
-  await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Play Fixture 120", exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page.getByRole("button", { name: "Playlists", exact: true }).click();
   await page.getByRole("button", { name: "New playlist", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog
@@ -501,9 +499,8 @@ test("album disc order is preserved in views, queue and legacy library migration
       })),
     );
   await expect(page.locator(".toast")).toContainText("4 tracks imported");
-  await page.locator(".sort-select select").selectOption("album");
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
-    expected,
+    [...expected].sort((a, b) => a.localeCompare(b)),
   );
   await page.getByRole("tab", { name: "Albums" }).click();
   await expect(

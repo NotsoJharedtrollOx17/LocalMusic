@@ -2,7 +2,6 @@ import AutomaticPlaylistCollection from "./AutomaticPlaylistCollection";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import { Plus } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
-import LibraryActions from "./LibraryActions";
 import TrackRows from "./TrackRows";
 import PlaylistBuilder from "./PlaylistBuilder";
 import GeneratedPlaylist from "./GeneratedPlaylist";
@@ -33,7 +32,6 @@ export default function PlaylistsPage() {
           </h2>
         </div>
         <div className="heading-actions">
-          <LibraryActions />
           <button
             className="button secondary"
             onClick={() => {

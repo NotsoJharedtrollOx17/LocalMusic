@@ -65,7 +65,6 @@ export function ActionMenu({
       // A queued scroll from revealing the opener may arrive after mounting.
       // Dismiss anchored menus when the opener actually moves, not for that stale event.
       if (
-        point ||
         !before ||
         Math.abs(now.top - before.top) > 0.5 ||
         Math.abs(now.left - before.left) > 0.5

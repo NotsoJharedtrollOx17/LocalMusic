@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 test.use({ timezoneId: "America/Los_Angeles" });
 
@@ -5,15 +6,10 @@ test("recap follows the device at startup and resume without a dropdown", async 
   page,
 }) => {
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
+  await openSettings(page);
   const dialog = page.getByRole("dialog", { name: "Settings", exact: true });
   await expect(dialog.getByRole("combobox")).toHaveCount(0);
-  await expect(
-    dialog.getByText("Follows device", { exact: true }),
-  ).toBeVisible();
+  await expect(dialog.locator("#time-zone-current")).toHaveCount(0);
   // Simulate the OS changing zones while the app is suspended.
   await page.evaluate(() => {
     const original = Intl.DateTimeFormat.prototype.resolvedOptions;
@@ -22,7 +18,7 @@ test("recap follows the device at startup and resume without a dropdown", async 
     };
     window.dispatchEvent(new Event("focus"));
   });
-  await expect(dialog.locator("#time-zone-current")).toContainText(/E[DS]T/);
+  await expect(dialog.locator("#time-zone-current")).toHaveCount(0);
   await expect
     .poll(() =>
       page.evaluate(
@@ -55,9 +51,7 @@ test("recap follows the device at startup and resume without a dropdown", async 
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
   const spanish = page.getByRole("dialog", { name: "Ajustes", exact: true });
-  await expect(
-    spanish.getByText("Sincronizado con el dispositivo", { exact: true }),
-  ).toBeVisible();
+  await expect(spanish.locator("#time-zone-current")).toHaveCount(0);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
@@ -65,12 +59,30 @@ test("recap follows the device at startup and resume without a dropdown", async 
     path: "artifacts/settings-device-time-zone-mobile.png",
   });
   await page.reload();
-  await page
-    .getByRole("button", { name: "Ajustes", exact: true })
-    .first()
-    .click();
+  await openSettings(page);
   // The previously synchronized New York value must give way to the current device zone.
-  await expect(page.locator("#time-zone-current")).toContainText(/P[DS]T/);
+  await expect(page.locator("#time-zone-current")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<string>((resolve) => {
+            const request = indexedDB.open("local-music-v1", 1);
+            request.onsuccess = () => {
+              const db = request.result,
+                read = db
+                  .transaction("settings")
+                  .objectStore("settings")
+                  .get("preferences");
+              read.onsuccess = () => {
+                resolve(read.result.timeZone);
+                db.close();
+              };
+            };
+          }),
+      ),
+    )
+    .toBe("America/Los_Angeles");
 });
 
 test("dismissed playback errors stay dismissed across native polls and recover", async ({
@@ -141,10 +153,7 @@ test("dismissed playback errors stay dismissed across native polls and recover",
     };
   });
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
+  await openSettings(page);
   await page.evaluate(() => {
     (window as unknown as { testError: string }).testError =
       "No audio output device is available";

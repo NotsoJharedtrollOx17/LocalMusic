@@ -1,3 +1,4 @@
+import { openSound, closeSound } from "./navigationHelpers";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
@@ -254,9 +255,7 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await page
     .getByRole("button", { name: "Library actions", exact: true })
     .click();
-  await page
-    .getByRole("menuitem", { name: "Select songs", exact: true })
-    .click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await page.locator(".selection-check").click();
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
   await page
@@ -334,34 +333,17 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   );
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-toolbar")).toHaveCount(0);
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Settings", exact: true })
-    .click();
-  await page
-    .getByRole("dialog", { name: "Settings", exact: true })
-    .getByRole("button", { name: "Sound controls", exact: true })
-    .click();
-  const sound = page.getByRole("dialog", {
-    name: "Sound controls",
-    exact: true,
-  });
+  const sound = await openSound(page);
   await expect(sound).not.toContainText("Audio effects are not available");
   await expect(
     sound.getByRole("button", { name: "Normal", exact: true }),
   ).toBeVisible();
   await expect(sound.getByRole("slider")).toHaveCount(9);
-  await page.keyboard.press("Escape");
-  await expect(
-    page.getByRole("dialog", { name: "Settings", exact: true }),
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
+  await closeSound(page);
   await page
     .getByRole("button", { name: "Library actions", exact: true })
     .click();
-  await page
-    .getByRole("menuitem", { name: "Select songs", exact: true })
-    .click();
+  await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   const selection = page.locator(".selection-toolbar");
   await selection
     .getByRole("button", { name: "Select visible songs", exact: true })

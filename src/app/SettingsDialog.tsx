@@ -3,7 +3,6 @@ import { api, native } from "../api";
 import { recapYears } from "../domain";
 import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
-import TimeZoneField from "./TimeZoneField";
 
 export default function SettingsDialog() {
   const {
@@ -18,7 +17,6 @@ export default function SettingsDialog() {
     setModal,
     t,
     act,
-    openSound,
     formatDate,
   } = useMusicAppContext();
 
@@ -31,13 +29,6 @@ export default function SettingsDialog() {
           onClose={() => setModal(null)}
         >
           <div className="settings-form">
-            <button
-              className="button secondary"
-              data-sound-trigger
-              onClick={() => void openSound()}
-            >
-              {t.soundControls}
-            </button>
             <fieldset className="settings-choice">
               <legend>{t.language}</legend>
               <div>
@@ -68,17 +59,13 @@ export default function SettingsDialog() {
                 ))}
               </div>
             </fieldset>
-            <TimeZoneField
-              value={settings.timeZone}
-              language={settings.language}
-            />
             <div className="settings-history">
               <h3>{t.history}</h3>
               <p>
                 {t.since} {formatDate(settings.historyEnabledSince)}
               </p>
               <button
-                className="text-button danger"
+                className="button secondary danger"
                 onClick={() =>
                   void act(async () => {
                     if (confirm(t.deleteWarning)) {

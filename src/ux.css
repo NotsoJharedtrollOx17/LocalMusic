@@ -147,13 +147,6 @@
   box-shadow: 0 12px 32px #0003;
   animation: music-enter 180ms var(--ease-music);
 }
-.settings-form .time-zone-note {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
 .settings-choice {
   border: 0;
   margin: 0;
@@ -189,16 +182,6 @@
 .settings-choice button:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
-}
-.device-time-zone {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-  color: var(--muted);
-}
-.device-time-zone strong {
-  color: var(--ink);
-  font-weight: 500;
 }
 .action-menu button {
   display: block;

@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { taggedWav } from "./fixtures";
@@ -200,7 +201,7 @@ test("automatic history ranking excludes private music and localizes without cha
   await expect(
     page.getByRole("button", { name: "Edit", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await openSettings(page);
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
   await page
     .getByRole("dialog")

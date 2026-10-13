@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
@@ -132,10 +133,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   await expect(
     page.getByRole("button", { name: "Return to live recap", exact: true }),
   ).toBeVisible();
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Settings", exact: true })
-    .click();
+  await openSettings(page);
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page
@@ -177,10 +175,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   );
   expect(unexpectedDownloads).toBe(0);
   await spanish.getByRole("button", { name: "Cerrar", exact: true }).click();
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Ajustes", exact: true })
-    .click();
+  await openSettings(page);
   page.once("dialog", async (dialog) => {
     await dialog.accept();
   });

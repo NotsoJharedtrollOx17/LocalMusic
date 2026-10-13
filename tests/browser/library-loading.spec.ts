@@ -1,3 +1,4 @@
+import { openSettings } from "./navigationHelpers";
 import { holdNextTrackRead, release } from "./catalog-gate";
 import { test, expect } from "@playwright/test";
 
@@ -7,10 +8,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
-  await page
-    .locator(".heading-actions")
-    .getByRole("button", { name: "Settings", exact: true })
-    .click();
+  await openSettings(page);
   await page.getByRole("button", { name: "Dark", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem("local-music-theme")))

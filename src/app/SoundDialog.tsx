@@ -1,53 +1,64 @@
 import SoundControls from "../sound/SoundControls";
+import SoundOptions from "./SoundOptions";
 import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function SoundDialog() {
-  const { modal, setModal, soundController, settings, player, soundOrigin, t } =
+  const { modal, setModal, soundController, settings, player, t } =
     useMusicAppContext();
-
+  if (modal !== "sound" && modal !== "equalizer" && modal !== "adapt")
+    return null;
   return (
-    <>
-      {modal === "sound" && (
-        <Modal
-          title={t.soundControls}
-          closeLabel={t.close}
-          onClose={() => {
-            setModal(soundOrigin.current);
-            requestAnimationFrame(() =>
-              requestAnimationFrame(() => {
-                document
-                  .querySelector<HTMLElement>(
-                    "[data-sound-trigger]:not([inert])",
-                  )
-                  ?.focus({ preventScroll: true });
-              }),
-            );
-          }}
-        >
-          {soundController.state ? (
-            <SoundControls
-              controller={{ ...soundController, state: soundController.state }}
-              language={settings?.language ?? "en"}
-              canResume={!!player.trackId && !player.playing}
-            />
-          ) : soundController.loading ? (
-            <p role="status">{t.loadingSound}</p>
-          ) : (
-            <div>
-              {soundController.error && (
-                <p role="alert">{soundController.error}</p>
-              )}
-              <button
-                className="button secondary"
-                onClick={() => void soundController.refresh()}
-              >
-                {t.refresh}
-              </button>
-            </div>
-          )}
-        </Modal>
+    <Modal
+      key={modal}
+      title={
+        modal === "sound"
+          ? t.soundControls
+          : modal === "equalizer"
+            ? t.equalizer
+            : t.adaptSound
+      }
+      closeLabel={t.close}
+      onClose={() => {
+        setModal(null);
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const selector =
+              modal === "sound"
+                ? "[data-sound-trigger]:not([inert]),[data-library-menu]"
+                : `[data-sound-view="${modal}"]`;
+            Array.from(document.querySelectorAll<HTMLElement>(selector))
+              .find((el) => !el.closest("[inert],[hidden]"))
+              ?.focus({ preventScroll: true });
+          }),
+        );
+      }}
+    >
+      {soundController.state ? (
+        modal === "sound" ? (
+          <SoundOptions />
+        ) : (
+          <SoundControls
+            key={modal}
+            view={modal}
+            controller={{ ...soundController, state: soundController.state }}
+            language={settings?.language ?? "en"}
+            canResume={!!player.trackId && !player.playing}
+          />
+        )
+      ) : soundController.loading ? (
+        <p role="status">{t.loadingSound}</p>
+      ) : (
+        <div>
+          {soundController.error && <p role="alert">{soundController.error}</p>}
+          <button
+            className="button secondary"
+            onClick={() => void soundController.refresh()}
+          >
+            {t.refresh}
+          </button>
+        </div>
       )}
-    </>
+    </Modal>
   );
 }

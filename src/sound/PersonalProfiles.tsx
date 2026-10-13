@@ -35,7 +35,7 @@ export default function PersonalProfiles({
   useEffect(() => setConfirmed(false), [routeGeneration]);
   return (
     <section className="personal-profiles">
-      <h3 ref={heading} tabIndex={-1}>
+      <h3 className="sound-sr-only" ref={heading} tabIndex={-1}>
         {t.personal}
       </h3>
       <div className="sound-preset-grid">
@@ -75,23 +75,21 @@ export default function PersonalProfiles({
               {t.headphones}
             </label>
           )}
-          {!config.personalEnabled && (
-            <button
-              className="button secondary"
-              disabled={
-                !available ||
-                busy ||
-                (routeGeneration > 0 && !config.personalEnabled && !confirmed)
-              }
-              onClick={() =>
-                config.personalEnabled
-                  ? edit((c) => ({ ...c, personalEnabled: false }))
-                  : onUse(selected.id)
-              }
-            >
-              {config.personalEnabled ? t.disableProfile : t.useProfile}
-            </button>
-          )}
+          <button
+            className="button secondary"
+            disabled={
+              busy ||
+              (!config.personalEnabled &&
+                (!available || (routeGeneration > 0 && !confirmed)))
+            }
+            onClick={() =>
+              config.personalEnabled
+                ? edit((c) => ({ ...c, personalEnabled: false }))
+                : onUse(selected.id)
+            }
+          >
+            {config.personalEnabled ? t.disableProfile : t.useProfile}
+          </button>
           <ProfileActions
             buttonRef={renameButton}
             language={language}

@@ -1,51 +1,30 @@
 import "./sound.css";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { api } from "../api";
 import type { SoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
-import EqualizerBands from "./EqualizerBands";
-import SoundPresetSection from "./SoundPresetSection";
-import PersonalCurveBands from "./PersonalCurveBands";
-import PersonalProfiles from "./PersonalProfiles";
-import PersonalWizard from "./PersonalWizard";
-import type { SoundState, PersonalProfile } from "./types";
+import EqualizerPanel from "./EqualizerPanel";
+import AdaptSoundPanel from "./AdaptSoundPanel";
+import type { SoundState } from "./types";
 export default function SoundControls({
   controller,
   language,
   canResume,
+  view,
 }: {
   controller: SoundController & { state: SoundState };
   language: string;
   canResume: boolean;
+  view: "equalizer" | "adapt";
 }) {
-  const { state, draft, edit, flush, refresh, action, pending, error } =
-      controller,
-    t = soundCopy(language),
-    [setup, setSetup] = useState(false),
-    [deviceError, setDeviceError] = useState("");
-  const [replacement, setReplacement] = useState<PersonalProfile>();
-  const activeProfile =
-    draft.personalEnabled && state.personalAvailable
-      ? draft.profiles.find((p) => p.id === draft.profileId)
-      : undefined;
-  const wasSetup = useRef(false);
-  useEffect(() => {
-    if (wasSetup.current && !setup)
-      document
-        .querySelector<HTMLElement>(".personal-profiles h3")
-        ?.focus({ preventScroll: true });
-    wasSetup.current = setup;
-  }, [setup]);
-  const effectsEnabled = draft.enabled || !!activeProfile;
+  const { state, refresh, action, pending, error } = controller;
+  const t = soundCopy(language);
+  const [deviceError, setDeviceError] = useState("");
   const status =
     state.status === "ready"
       ? t.ready
       : state.status === "active"
-        ? state.bypass
-          ? t.bypass
-          : !effectsEnabled
-            ? t.off
-            : t.active
+        ? t.active
         : state.status === "activation"
           ? t.activation
           : state.status === "output-unavailable"
@@ -53,123 +32,66 @@ export default function SoundControls({
             : t.failed;
   return (
     <div className="sound-controls">
-      {setup ? (
-        <PersonalWizard
-          language={language}
-          replacement={replacement}
-          routeMonitoring={state.routeMonitoring}
-          onDone={() => {
-            setSetup(false);
-            void refresh();
-          }}
-        />
+      <p
+        className={`sound-status${["ready", "active"].includes(state.status) ? " sound-sr-only" : ""}`}
+        role="status"
+      >
+        {status}
+      </p>
+      {(error || state.reason || deviceError) && (
+        <p className="sound-error" role="alert">
+          {error || state.reason || deviceError}
+        </p>
+      )}
+      {state.migrationNotice && <p>{state.migrationNotice}</p>}
+      {["activation", "output-unavailable", "failed"].includes(
+        state.status,
+      ) && (
+        <button
+          className="button secondary"
+          onClick={() => void action({ op: "retry" })}
+        >
+          {t.retry}
+        </button>
+      )}
+      {view === "equalizer" ? (
+        <EqualizerPanel controller={controller} language={language} />
       ) : (
+        <AdaptSoundPanel
+          controller={controller}
+          language={language}
+          canResume={canResume}
+        />
+      )}
+      {pending && (
+        <p className="sound-save-state" role="status">
+          {t.saving}
+        </p>
+      )}
+      {view === "equalizer" && canResume && (
+        <button
+          className="button secondary"
+          onClick={() =>
+            void api.toggle().catch((e) => setDeviceError(String(e)))
+          }
+        >
+          {t.resume}
+        </button>
+      )}
+      {state.systemPanel && (
         <>
-          <p
-            className={`sound-status${["ready", "active"].includes(state.status) ? " sound-sr-only" : ""}`}
-            role="status"
-          >
-            {status}
-            {state.status === "ready" && !effectsEnabled ? ` · ${t.off}` : ""}
-          </p>
-          {(error || state.reason || deviceError) && (
-            <p className="sound-error" role="alert">
-              {error || state.reason || deviceError}
-            </p>
-          )}
-          {state.migrationNotice && <p>{state.migrationNotice}</p>}
-          {["activation", "output-unavailable", "failed"].includes(
-            state.status,
-          ) && (
-            <button
-              className="button secondary"
-              onClick={() => void action({ op: "retry" })}
-            >
-              {t.retry}
-            </button>
-          )}
-          <section aria-label={t.equalizer}>
-            <div className="sound-heading">
-              <h3>{t.equalizer}</h3>
-            </div>
-            <SoundPresetSection
-              config={draft}
-              edit={edit}
-              language={language}
-              profile={activeProfile}
-              busy={controller.acting}
-            />
-            <fieldset className="sound-fieldset" disabled={controller.acting}>
-              {activeProfile ? (
-                <PersonalCurveBands
-                  left={activeProfile.left}
-                  right={activeProfile.right}
-                  strength={draft.strength}
-                  inactive={state.inactiveBands}
-                  language={language}
-                />
-              ) : (
-                <EqualizerBands
-                  config={draft}
-                  edit={edit}
-                  flush={flush}
-                  inactive={state.inactiveBands}
-                  language={language}
-                />
-              )}
-            </fieldset>
-            {pending && (
-              <p className="sound-save-state" role="status">
-                {t.saving}
-              </p>
-            )}
-          </section>
-          <PersonalProfiles
-            config={draft}
-            edit={edit}
-            language={language}
-            available={state.supported && state.personalAvailable}
-            onUse={(id) =>
-              void action({
-                op: "profile-use",
-                id,
-                routeGeneration: state.routeGeneration ?? 0,
-              })
+          <button
+            className="button secondary"
+            onClick={() =>
+              void api
+                .openSoundPanel()
+                .then(() => refresh())
+                .catch((e) => setDeviceError(String(e)))
             }
-            routeGeneration={state.routeGeneration ?? 0}
-            busy={controller.acting}
-            onSetup={(profile) => {
-              setReplacement(profile);
-              flush();
-              setSetup(true);
-            }}
-          />
-          {canResume && (
-            <button
-              className="button secondary"
-              onClick={() =>
-                void api.toggle().catch((e) => setDeviceError(String(e)))
-              }
-            >
-              {t.resume}
-            </button>
-          )}
-          {state.systemPanel && (
-            <>
-              <button
-                className="button secondary"
-                onClick={() =>
-                  void api
-                    .openSoundPanel()
-                    .then(() => refresh())
-                    .catch((e) => setDeviceError(String(e)))
-                }
-              >
-                {t.device}
-              </button>
-              <p className="operation-note">{t.deviceHint}</p>
-            </>
-          )}
+          >
+            {t.device}
+          </button>
+          <p className="operation-note">{t.deviceHint}</p>
         </>
       )}
     </div>
