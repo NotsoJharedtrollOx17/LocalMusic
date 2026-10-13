@@ -9,12 +9,10 @@ import type { SoundState } from "./types";
 export default function SoundControls({
   controller,
   language,
-  canResume,
   view,
 }: {
   controller: SoundController & { state: SoundState };
   language: string;
-  canResume: boolean;
   view: "equalizer" | "adapt";
 }) {
   const { state, refresh, action, pending, error } = controller;
@@ -57,26 +55,12 @@ export default function SoundControls({
       {view === "equalizer" ? (
         <EqualizerPanel controller={controller} language={language} />
       ) : (
-        <AdaptSoundPanel
-          controller={controller}
-          language={language}
-          canResume={canResume}
-        />
+        <AdaptSoundPanel controller={controller} language={language} />
       )}
       {pending && (
         <p className="sound-save-state" role="status">
           {t.saving}
         </p>
-      )}
-      {view === "equalizer" && canResume && (
-        <button
-          className="button secondary"
-          onClick={() =>
-            void api.toggle().catch((e) => setDeviceError(String(e)))
-          }
-        >
-          {t.resume}
-        </button>
       )}
       {state.systemPanel && (
         <>

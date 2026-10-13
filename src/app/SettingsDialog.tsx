@@ -61,6 +61,7 @@ export default function SettingsDialog() {
             </fieldset>
             <div className="settings-history">
               <h3>{t.history}</h3>
+              <p>{t.historyHint}</p>
               <p>
                 {t.since} {formatDate(settings.historyEnabledSince)}
               </p>

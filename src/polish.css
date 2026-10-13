@@ -455,3 +455,62 @@
     font-size: 16px;
   }
 }
+
+/* Matching collection actions and symmetric desktop playback geometry. */
+.playlist-toolbar h2 {
+  margin: 0;
+  font-size: 28px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 761px) {
+  .mini-player {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 560px)) minmax(
+        0,
+        1fr
+      );
+    column-gap: 20px;
+    grid-template-rows: 34px 3px;
+    row-gap: 12px;
+    align-content: center;
+  }
+  .mini-player .mini-track {
+    width: 100%;
+    max-width: 300px;
+    justify-self: start;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .mini-player .mini-center {
+    display: contents;
+  }
+  .mini-center .transport {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .mini-center .progress {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+  }
+  .mini-player .mini-actions {
+    justify-self: end;
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .mini-player .mini-actions .icon-button:last-child {
+    display: flex;
+  }
+  .mini-player .mini-track .cover {
+    flex-shrink: 0;
+  }
+}
+@media (min-width: 1550px) {
+  .mini-player {
+    grid-template-columns: minmax(0, 1fr) minmax(0, min(46vw, 630px)) minmax(
+        0,
+        1fr
+      );
+  }
+}

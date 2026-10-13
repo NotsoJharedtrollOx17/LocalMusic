@@ -4,22 +4,17 @@ import type { SoundState, PersonalProfile } from "./types";
 import PersonalProfiles from "./PersonalProfiles";
 import PersonalWizard from "./PersonalWizard";
 import PersonalCurveBands from "./PersonalCurveBands";
-import { api } from "../api";
-import { soundCopy } from "./copy";
 
 export default function AdaptSoundPanel({
   controller,
   language,
-  canResume,
 }: {
   controller: SoundController & { state: SoundState };
   language: string;
-  canResume: boolean;
 }) {
   const { state, draft, edit, flush, refresh, action } = controller;
   const [setup, setSetup] = useState(false);
   const [replacement, setReplacement] = useState<PersonalProfile>();
-  const [resumeError, setResumeError] = useState("");
   const wasSetup = useRef(false);
   useEffect(() => {
     if (wasSetup.current && !setup)
@@ -75,17 +70,6 @@ export default function AdaptSoundPanel({
           language={language}
         />
       )}
-      {canResume && (
-        <button
-          className="button secondary"
-          onClick={() =>
-            void api.toggle().catch((e) => setResumeError(String(e)))
-          }
-        >
-          {soundCopy(language).resume}
-        </button>
-      )}
-      {resumeError && <p role="alert">{resumeError}</p>}
     </>
   );
 }

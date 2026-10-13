@@ -1,0 +1,49 @@
+import { useState } from "react";
+import { ListFilter } from "lucide-react";
+import { ActionMenu } from "../ux";
+import { useMusicAppContext } from "./MusicAppContext";
+
+export default function LibraryFilters() {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const { section, group, onlyFavorites, setOnlyFavorites, sort, setSort, t } =
+    useMusicAppContext();
+  // Collection details keep their original album order; these are Library song filters.
+  if (section !== "songs" || group) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={t.libraryFilters}
+        aria-haspopup="menu"
+        aria-expanded={!!anchor}
+        onClick={(e) => setAnchor(e.currentTarget)}
+      >
+        <ListFilter size={25} />
+      </button>
+      {anchor && (
+        <ActionMenu
+          anchor={anchor}
+          label={t.libraryFilters}
+          onClose={() => setAnchor(null)}
+          items={[
+            {
+              label: onlyFavorites ? t.allMusic : t.favorites,
+              action: () => setOnlyFavorites(!onlyFavorites),
+            },
+            ...(["title", "artist", "album"] as const).map((value) => ({
+              label:
+                value === "title"
+                  ? t.sort
+                  : value === "artist"
+                    ? t.sortArtist
+                    : t.sortAlbum,
+              checked: sort === value,
+              action: () => setSort(value),
+            })),
+          ]}
+        />
+      )}
+    </>
+  );
+}

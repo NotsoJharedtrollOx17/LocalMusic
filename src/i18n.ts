@@ -14,6 +14,9 @@ export const en = {
   loadingSound: "Loading sound controls…",
   actions: "Track actions",
   libraryActions: "Library actions",
+  libraryFilters: "Filter and sort",
+  historyHint:
+    "Listening history powers Your Year, Recently played, and Most played.",
   songSingular: "song",
   appActions: "App actions",
   textActions: "Text actions",
@@ -234,6 +237,9 @@ export const es: typeof en = {
 
   loadingSound: "Cargando controles de sonido…",
   libraryActions: "Acciones de la biblioteca",
+  libraryFilters: "Filtrar y ordenar",
+  historyHint:
+    "El historial alimenta Tu año, Reproducidas recientemente y Más reproducidas.",
   actions: "Acciones de la canción",
   songSingular: "canción",
   appActions: "Acciones de la app",

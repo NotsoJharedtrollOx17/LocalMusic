@@ -4,7 +4,7 @@ import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function SoundDialog() {
-  const { modal, setModal, soundController, settings, player, t } =
+  const { modal, setModal, soundController, settings, t } =
     useMusicAppContext();
   if (modal !== "sound" && modal !== "equalizer" && modal !== "adapt")
     return null;
@@ -43,7 +43,6 @@ export default function SoundDialog() {
             view={modal}
             controller={{ ...soundController, state: soundController.state }}
             language={settings?.language ?? "en"}
-            canResume={!!player.trackId && !player.playing}
           />
         )
       ) : soundController.loading ? (

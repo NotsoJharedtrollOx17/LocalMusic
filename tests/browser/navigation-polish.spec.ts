@@ -8,7 +8,11 @@ test("compact Library menu separates EQ, Adapt Sound and ordinary settings", asy
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await expect(page.locator(".library-page > .page-heading h1")).toHaveCount(0);
-  await expect(page.locator(".library-toolbar .icon-button")).toHaveCount(0);
+  await expect(
+    page
+      .locator(".library-toolbar")
+      .getByRole("button", { name: "Filter and sort", exact: true }),
+  ).toHaveCount(1);
   const menu = page.getByRole("button", {
     name: "Library actions",
     exact: true,
