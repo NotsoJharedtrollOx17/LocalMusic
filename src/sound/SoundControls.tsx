@@ -65,7 +65,10 @@ export default function SoundControls({
         />
       ) : (
         <>
-          <p className="sound-status" role="status">
+          <p
+            className={`sound-status${["ready", "active"].includes(state.status) ? " sound-sr-only" : ""}`}
+            role="status"
+          >
             {status}
             {state.status === "ready" && !effectsEnabled ? ` · ${t.off}` : ""}
           </p>
@@ -115,9 +118,11 @@ export default function SoundControls({
                 />
               )}
             </fieldset>
-            <p className="sound-save-state" role="status">
-              {pending ? t.saving : error ? "" : t.saved}
-            </p>
+            {pending && (
+              <p className="sound-save-state" role="status">
+                {t.saving}
+              </p>
+            )}
           </section>
           <PersonalProfiles
             config={draft}

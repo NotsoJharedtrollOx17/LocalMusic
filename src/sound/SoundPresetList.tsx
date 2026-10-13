@@ -13,8 +13,7 @@ export default function SoundPresetList({
   const t = soundCopy(language);
   return (
     <div className="sound-presets">
-      <fieldset>
-        <legend>{t.presets}</legend>
+      <fieldset aria-label={t.presets}>
         <div className="sound-preset-grid">
           {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (
             <button

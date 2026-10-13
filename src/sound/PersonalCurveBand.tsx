@@ -19,9 +19,7 @@ export default function PersonalCurveBand({
     <label
       className={`equalizer-band personal-curve-band${inactive ? " inactive" : ""}`}
     >
-      <span>
-        {frequency < 1000 ? `${frequency} Hz` : `${frequency / 1000} kHz`}
-      </span>
+      <span>{frequency < 1000 ? frequency : `${frequency / 1000}k`}</span>
       <input
         type="range"
         disabled
@@ -35,7 +33,7 @@ export default function PersonalCurveBand({
           { "--gain-position": `${((gain + 10) / 20) * 100}%` } as CSSProperties
         }
       />
-      <output>{formatGain(gain)}</output>
+      <output className="sound-sr-only">{formatGain(gain)}</output>
       {inactive && <small>{t.inactive}</small>}
     </label>
   );

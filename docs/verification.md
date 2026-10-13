@@ -454,3 +454,15 @@ The user confirmed nine frequency labels: 63, 125, 250, 500 Hz and 1, 2, 4, 8, 1
 The final ARM64 native library and development APK rebuilt successfully using the file-copy fallback and sequential one-worker/in-process Gradle settings. All four Kotlin JVM tests passed (zero failures/skips). `adb devices -l` found no attached device/emulator. The updated Windows executable and ARM64 APK remain ignored development artifacts; release branches/tags and source reference images are unchanged. Signing verification follows below. `git diff --check` passed.
 
 Final `apksigner verify --verbose` passed: APK Signature Scheme v2 verified, one signer. This confirms packaging/signing only; Android runtime and physical-headphone acceptance remain pending.
+
+
+## Compact EQ grid - 12 October 2026
+
+Presentation-only revision on `dev.ui-ux-polish`: compact vertical nine-band chart on desktop/mobile, eleven shared lines at 2 dB intervals, shared +10/0/-10 dB markers, frequencies below, and matching personal Left/Right banks. Idle Ready/Active, Presets and Saved labels and repeated visible gain outputs are removed; accessible gain values, errors, Retry and in-progress saving remain. DSP/storage unchanged.
+
+- `npm.cmd run check`: production build and all 32 frontend tests passed. Final CSS contrast correction was production-built again successfully.
+- Affected browser journeys: 11 passed initially; two remaining checks passed after correcting a test-string encoding issue and zero-label contrast. Total 13 passing journeys, including real AudioWorklet changes, profile persistence/priority, setup cancellation/history exclusion, queue/modal focus and EN/ES parity with axe checks.
+- New chart geometry check passed at 1280, 640, 390 and 320 CSS-pixel viewport widths: nine aligned faders, 11 guide lines, three scale markers at end/center positions, readable non-overlapping frequency labels, no page-width overflow. 640px exercises a zoom-sized layout; physical browser zoom was not tested in this revision.
+- Inspected actual screenshots: `artifacts/eq-grid-1280.png`, `artifacts/eq-grid-320.png`, and Spanish dark mobile `artifacts/eq-simplified-mobile-dark-es.png`. Test screenshots and helper tools remain ignored.
+- Windows executable replacement and native observation pending: current Local Music process still locks the executable; closure requested. Existing binary contains the preceding revision until rebuilt.
+- No new Android package/runtime claims. This shared frontend layout was browser-tested; connected Android/physical headphone gates remain pending. Rust and Kotlin code are unchanged, so their preceding DSP checks were not rerun for this presentation edit.

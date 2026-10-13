@@ -37,7 +37,7 @@ test("Normal and automatic Custom persist in narrow dark Spanish UI", async ({
 }) => {
   await page.goto("/");
   let sound = await openSound(page);
-  await expect(sound).toContainText("Ready for playback");
+  await expect(sound.locator(".sound-status")).toHaveClass(/sound-sr-only/);
   await expect(sound.getByRole("slider")).toHaveCount(9);
   await expect(sound.getByRole("switch")).toHaveCount(0);
   await expect(
@@ -120,7 +120,7 @@ test("Normal and automatic Custom persist in narrow dark Spanish UI", async ({
   ).toHaveValue("-10");
   await expect(sound.getByRole("slider").first()).toHaveCSS(
     "writing-mode",
-    "horizontal-tb",
+    "vertical-lr",
   );
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
@@ -600,7 +600,7 @@ test("missing native output keeps configuration editable and Retry updates runti
   await sound
     .getByRole("button", { name: "Retry audio output", exact: true })
     .click();
-  await expect(sound).toContainText("Ready for playback");
+  await expect(sound.locator(".sound-status")).toHaveClass(/sound-sr-only/);
   await expect(
     sound.getByRole("button", { name: "Rock", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -721,4 +721,60 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
   await expect(sound).toContainText("Step 1/14");
+});
+
+test("compact EQ scale aligns at desktop, mobile and zoom-sized widths", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const sound = await openSound(page);
+  await expect(sound.locator(".sound-presets legend")).toHaveCount(0);
+  await expect(sound.locator(".sound-save-state")).toHaveCount(0);
+  for (const width of [1280, 640, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    const grid = sound.locator(".equalizer-grid");
+    await expect(grid.locator(".equalizer-level")).toHaveCount(11);
+    await expect(grid.locator(".equalizer-level > span")).toHaveText([
+      "+10 dB",
+      "0 dB",
+      "\u221210 dB",
+    ]);
+    const geometry = await grid.evaluate((root) => {
+      const sliders = [...root.querySelectorAll("input")].map((n) =>
+        n.getBoundingClientRect(),
+      );
+      const levels = [...root.querySelectorAll(".equalizer-level")].map(
+        (n) => n.getBoundingClientRect().y,
+      );
+      const labels = [...root.querySelectorAll(".equalizer-band > span")].map(
+        (n) => n.getBoundingClientRect(),
+      );
+      return {
+        tops: sliders.map((r) => r.y),
+        heights: sliders.map((r) => r.height),
+        centers: sliders.map((r) => r.x + r.width / 2),
+        top: levels[0] - sliders[0].y,
+        middle: levels[5] - sliders[0].y,
+        bottom: levels[10] - sliders[0].y,
+        labelsSeparated: labels.every(
+          (r, i) => i === 0 || labels[i - 1].right <= r.left,
+        ),
+      };
+    });
+    expect(new Set(geometry.tops).size).toBe(1);
+    expect(geometry.heights).toEqual(Array(9).fill(180));
+    expect(geometry.top).toBeCloseTo(8, 0);
+    expect(geometry.middle).toBeCloseTo(90, 0);
+    expect(geometry.bottom).toBeCloseTo(172, 0);
+    expect(geometry.labelsSeparated).toBe(true);
+    expect(
+      geometry.centers.every(
+        (x, i) => i === 0 || x - geometry.centers[i - 1] >= 20,
+      ),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: `artifacts/eq-grid-${width}.png` });
+  }
 });

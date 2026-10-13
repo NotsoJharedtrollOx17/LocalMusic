@@ -97,7 +97,7 @@ Active personal curves override ordinary EQ gains on all adapters. Keep retained
 
 Playback engines no longer compute response-based headroom attenuation. The runtime `attenuation` field is zero for compatibility; global gain remains unity, independently of preset/profile selection. Keep the peak limiter and bypass semantics intact. Headroom/RMS matching remains confined to the temporary setup comparison renderer, not catalog music playback. The dated plan revision supersedes earlier descriptions of automatic playback attenuation.
 
-Ordinary EQ renders nine faders; personal EQ renders nine Left above nine Right faders. Below 800px, faders use labeled horizontal rows. Strength controls are absent: adapters normalize legacy playback configurations to 100%, and setup compares/saves the full curve. Profile activation and route confirmation retain their existing checks. Removed component files: `SoundPreamp.tsx` and `EqualizerSwitch.tsx`. No preamp or switch styling remains.
+Ordinary EQ renders nine faders; personal EQ renders nine Left above nine Right faders. All viewport sizes use the compact vertical `EqualizerGrid`, with eleven shared level lines (2 dB intervals), +10/0/-10 dB scale labels, and frequencies below. Exact gains remain in accessible slider values; repeated visible gain outputs and idle status labels are omitted. Strength controls are absent: adapters normalize legacy playback configurations to 100%, and setup compares/saves the full curve. Profile activation and route confirmation retain their existing checks. Removed component files: `SoundPreamp.tsx` and `EqualizerSwitch.tsx`. No preamp or switch styling remains.
 
 ### UI polish ownership
 

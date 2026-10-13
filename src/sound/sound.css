@@ -134,38 +134,73 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
+/* The scale and grid use the thumb centers, including the range end stops. */
 .equalizer-bands {
-  display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 8px;
-  margin: 24px 0;
-  padding: 18px 0;
+  margin: 28px 0 12px;
+}
+.equalizer-grid {
+  position: relative;
+  max-width: 680px;
+  margin-inline: auto;
+  padding-left: 48px;
+}
+.equalizer-levels {
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 0;
+  height: 180px;
+  pointer-events: none;
+}
+.equalizer-level {
+  position: absolute;
+  left: 0;
+  right: 0;
   border-top: 1px solid var(--rule);
 }
-.sound-controls .equalizer-band {
+.equalizer-level.zero {
+  border-color: color-mix(in srgb, var(--muted) 65%, transparent);
+}
+.equalizer-level > span {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.equalizer-faders {
   display: grid;
-  grid-template-rows: 32px 170px 24px;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0;
+}
+.sound-controls .equalizer-band {
+  position: relative;
+  display: grid;
+  grid-template-rows: 180px 24px;
   align-items: center;
   align-content: start;
   justify-items: center;
   font-size: 12px;
-  gap: 12px;
+  gap: 10px;
   color: var(--ink);
   min-width: 0;
 }
 .equalizer-band > span {
+  grid-row: 2;
   text-align: center;
 }
-.equalizer-band output {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
 .sound-controls .equalizer-band input[type="range"] {
+  grid-row: 1;
   writing-mode: vertical-lr;
   direction: rtl;
-  height: 170px;
+  height: 180px;
   width: 26px;
   min-height: 0;
+  padding: 0;
+  margin: 0;
   touch-action: none;
   accent-color: var(--accent);
 }
@@ -175,6 +210,18 @@
 .equalizer-band small {
   text-align: center;
   font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.sound-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .personal-stereo-bands {
   display: grid;
@@ -194,9 +241,7 @@
   margin: 0 0 20px;
 }
 .personal-bank-faders {
-  display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 8px;
+  min-width: 0;
 }
 .personal-curve-band input:disabled {
   opacity: 1;
@@ -246,32 +291,19 @@
   background: var(--surface);
   color: var(--ink);
 }
-@media (max-width: 799px) {
-  .equalizer-bands,
-  .personal-bank-faders {
-    grid-template-columns: 1fr;
-    gap: 18px;
+@media (max-width: 420px) {
+  .equalizer-grid {
+    padding-left: 42px;
+  }
+  .equalizer-levels {
+    left: 42px;
+  }
+  .equalizer-level > span {
+    font-size: 10px;
+    right: calc(100% + 5px);
   }
   .sound-controls .equalizer-band {
-    grid-template-columns: 62px minmax(0, 1fr) 64px;
-    grid-template-rows: auto;
-    gap: 10px;
-    justify-items: stretch;
-  }
-  .sound-controls .equalizer-band input[type="range"] {
-    writing-mode: horizontal-tb;
-    direction: ltr;
-    width: 100%;
-    height: 32px;
-  }
-  .equalizer-band > span {
-    text-align: left;
-  }
-  .equalizer-band output {
-    text-align: right;
-  }
-  .equalizer-band small {
-    grid-column: 2;
+    font-size: 10px;
   }
 }
 /* Derived profiles use explicit visuals: disabled native sliders otherwise
@@ -283,7 +315,7 @@
     var(--accent) var(--gain-position),
     var(--ink) var(--gain-position)
   );
-  background-size: 6px 100%;
+  background-size: 6px calc(100% - 16px);
   background-position: center;
   background-repeat: no-repeat;
   border: 0;
@@ -291,29 +323,19 @@
 }
 .personal-curve-band input::-webkit-slider-thumb {
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border: 0;
   border-radius: 50%;
   background: var(--accent);
 }
 .personal-curve-band input::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border: 0;
   border-radius: 50%;
   background: var(--accent);
 }
 .personal-curve-band input::-moz-range-track {
   background: transparent;
-}
-@media (max-width: 799px) {
-  .sound-controls .personal-curve-band input[type="range"] {
-    background-image: linear-gradient(
-      to right,
-      var(--accent) var(--gain-position),
-      var(--ink) var(--gain-position)
-    );
-    background-size: 100% 6px;
-  }
 }
