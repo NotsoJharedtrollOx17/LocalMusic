@@ -32,86 +32,102 @@ async function preferences(page: Page) {
       }),
   );
 }
-test("sound settings work before playback and custom presets persist in narrow dark Spanish UI", async ({
+test("Normal and automatic Custom persist in narrow dark Spanish UI", async ({
   page,
 }) => {
   await page.goto("/");
   let sound = await openSound(page);
   await expect(sound).toContainText("Ready for playback");
-  await expect(sound.getByRole("slider")).toHaveCount(11);
-  await expect(sound.getByRole("combobox")).toHaveCount(0);
-  await sound.getByRole("button", { name: "Rock", exact: true }).click();
+  await expect(sound.getByRole("slider")).toHaveCount(9);
+  await expect(sound.getByRole("switch")).toHaveCount(0);
   await expect(
-    sound.getByRole("switch", { name: "Enable equalizer" }),
-  ).toBeChecked();
-  const toggle = sound.getByRole("switch", { name: "Enable equalizer" });
-  await expect(
-    sound.getByRole("button", { name: "Bypass all", exact: true }),
+    sound.getByRole("slider", { name: "Preamp", exact: true }),
   ).toHaveCount(0);
-  await expect
-    .poll(async () => (await preferences(page))?.presetId)
-    .toBe("rock");
-  const selected = await preferences(page);
-  await toggle.focus();
-  await page.keyboard.press("Space");
-  await expect(toggle).not.toBeChecked();
-  await expect.poll(async () => (await preferences(page))?.enabled).toBe(false);
-  expect((await preferences(page))?.gains).toEqual(selected.gains);
-  expect((await preferences(page))?.preamp).toBe(selected.preamp);
-  await page.keyboard.press("Space");
-  await expect(toggle).toBeChecked();
+  for (const name of [
+    "Bass boost",
+    "Treble boost",
+    "Voice",
+    "Save as preset",
+    "Reset",
+  ])
+    await expect(sound.getByRole("button", { name, exact: true })).toHaveCount(
+      0,
+    );
+  await expect(
+    sound.getByRole("button", { name: "Normal", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  const labels = await sound
+    .getByRole("slider")
+    .evaluateAll((nodes) => nodes.map((n) => n.getAttribute("aria-label")));
+  expect(labels).toEqual(
+    [63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000].map(
+      (f) => `${f} Hz gain`,
+    ),
+  );
   const band = sound.getByRole("slider", { name: "1000 Hz gain", exact: true });
   await band.focus();
   await page.keyboard.press("End");
-  await expect(band).toHaveValue("12");
-  await sound
-    .getByRole("button", { name: "Save as preset", exact: true })
-    .click();
-  await sound
-    .getByRole("textbox", { name: "Name", exact: true })
-    .fill("My headphones with a sufficiently long but readable name");
-  await sound.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(band).toHaveValue("10");
   await expect(
-    sound.getByRole("button", { name: "Save as preset", exact: true }),
-  ).toBeFocused();
+    sound.getByRole("button", { name: "Custom", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect
-    .poll(async () => (await preferences(page))?.presets.length)
-    .toBe(1);
+    .poll(
+      async () =>
+        (await preferences(page))?.presets.find((p: any) => p.id === "custom")
+          ?.gains[5],
+    )
+    .toBe(10);
+  await sound.getByRole("button", { name: "Normal", exact: true }).click();
+  expect(
+    await sound
+      .getByRole("slider")
+      .evaluateAll((nodes) => nodes.map((n) => (n as HTMLInputElement).value)),
+  ).toEqual(Array(9).fill("0"));
+  await sound.getByRole("button", { name: "Rock", exact: true }).click();
+  await sound.getByRole("button", { name: "Custom", exact: true }).click();
+  await expect(band).toHaveValue("10");
+  await band.focus();
+  await page.keyboard.press("Home");
+  await expect(band).toHaveValue("-10");
+  await expect.poll(async () => (await preferences(page))?.gains[5]).toBe(-10);
   await page.reload();
   sound = await openSound(page);
   await expect(
     sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
-  ).toHaveValue("12");
-  await expect(
-    sound.getByRole("button", { name: /My headphones/ }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await sound.getByRole("button", { name: "Rename", exact: true }).click();
-  await sound
-    .getByRole("textbox", { name: "Name", exact: true })
-    .fill("Headphones");
-  await sound.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(
-    sound.getByRole("button", { name: "Rename", exact: true }),
-  ).toBeFocused();
-  await expect(
-    sound.getByRole("button", { name: "Headphones", exact: true }),
-  ).toBeVisible();
+  ).toHaveValue("-10");
+  await expect.poll(async () => (await preferences(page))?.enabled).toBe(true);
+  expect((await preferences(page)).preamp).toBe(0);
   await page.keyboard.press("Escape");
   const settings = page.getByRole("dialog", { name: "Settings", exact: true });
   await settings.getByRole("button", { name: "Dark", exact: true }).click();
-  await settings.getByRole("button", { name: "Español", exact: true }).click();
+  await settings
+    .getByRole("button", { name: "Espa\u00f1ol", exact: true })
+    .click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole("button", { name: "Controles de sonido", exact: true })
     .click();
+  sound = page.getByRole("dialog", {
+    name: "Controles de sonido",
+    exact: true,
+  });
   await expect(
-    page.getByRole("button", { name: "Headphones", exact: true }),
-  ).toBeVisible();
+    sound.getByRole("button", { name: "Personalizado", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    sound.getByRole("slider", { name: "1000 Hz ganancia", exact: true }),
+  ).toHaveValue("-10");
+  await expect(sound.getByRole("slider").first()).toHaveCSS(
+    "writing-mode",
+    "horizontal-tb",
+  );
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page.screenshot({ path: "artifacts/sound-mobile-dark.png" });
+  await page.screenshot({ path: "artifacts/eq-simplified-mobile-dark-es.png" });
 });
+
 test("library playback runs through the real AudioWorklet and band edits change spectral balance", async ({
   page,
 }) => {
@@ -214,7 +230,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
   const unaffectedLevel = await bandLevel(250);
   const before = (await measure())!;
   const sound = await openSound(page);
-  await sound.getByRole("switch", { name: "Enable equalizer" }).check();
+  await sound.getByRole("button", { name: "Normal", exact: true }).click();
   const band = sound.getByRole("slider", { name: "1000 Hz gain", exact: true });
   await band.focus();
   await page.keyboard.press("End");
@@ -229,7 +245,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
   await expect(
     sound.getByRole("button", { name: "Bypass all", exact: true }),
   ).toHaveCount(0);
-  await sound.getByRole("switch", { name: "Enable equalizer" }).uncheck();
+  await sound.getByRole("button", { name: "Normal", exact: true }).click();
   await expect
     .poll(async () => Math.abs(((await measure()) ?? 100) - before))
     .toBeLessThan(2);
@@ -265,8 +281,8 @@ test("library playback runs through the real AudioWorklet and band edits change 
     {
       ...defaultSound(),
       enabled: false,
-      presetId: "rock",
-      gains: [3, 2, 1, -1, -2, -1, 1, 2, 3, 2],
+      presetId: "flat",
+      gains: Array(10).fill(0),
       profileId: "fixture",
       strength: 50,
       profiles: [
@@ -294,18 +310,12 @@ test("library playback runs through the real AudioWorklet and band edits change 
     personalSound.getByRole("slider", { name: "Strength", exact: true }),
   ).toHaveCount(0);
   await expect.poll(async () => (await preferences(page))?.strength).toBe(100);
-  const preamp = personalSound.getByRole("slider", {
-    name: "Preamp",
-    exact: true,
-  });
-  await expect(preamp).toHaveCSS("writing-mode", "vertical-lr");
   await expect(
-    preamp.locator(
-      "xpath=ancestor::*[contains(@class, 'personal-stereo-bands')]",
-    ),
-  ).toHaveCount(1);
+    personalSound.getByRole("slider", { name: "Preamp", exact: true }),
+  ).toHaveCount(0);
+  await expect(personalSound.getByRole("slider")).toHaveCount(18);
   await page.screenshot({
-    path: "artifacts/sound-personal-preamp-desktop.png",
+    path: "artifacts/sound-personal-nine-band-desktop.png",
   });
   await expect(
     personalSound.getByRole("button", { name: /^(Left ear|Right ear)$/ }),
@@ -380,7 +390,7 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     .getByRole("button", { name: "Create personal profile", exact: true })
     .click();
   await page.keyboard.press("Escape");
-  await expect(sound.getByRole("slider")).toHaveCount(11);
+  await expect(sound.getByRole("slider")).toHaveCount(9);
   await sound
     .getByRole("button", { name: "Create personal profile", exact: true })
     .click();
@@ -506,14 +516,14 @@ test("multichannel imports retain their processor channels and disable personal 
     .poll(() => page.evaluate(() => (window as any).__soundOutputChannels))
     .toBe(6);
   const sound = await openSound(page);
-  await expect(sound.getByRole("slider")).toHaveCount(11);
+  await expect(sound.getByRole("slider")).toHaveCount(9);
   await expect(
     sound.getByRole("button", { name: "Create personal profile", exact: true }),
   ).toBeDisabled();
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
-    sound.getByRole("switch", { name: "Enable equalizer" }),
-  ).toBeChecked();
+    sound.getByRole("button", { name: "Rock", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("missing native output keeps configuration editable and Retry updates runtime status", async ({
@@ -582,11 +592,11 @@ test("missing native output keeps configuration editable and Retry updates runti
   await expect(sound).toContainText(
     "Audio output unavailable. Your settings are saved.",
   );
-  await expect(sound.getByRole("slider")).toHaveCount(11);
+  await expect(sound.getByRole("slider")).toHaveCount(9);
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
   await expect(
-    sound.getByRole("switch", { name: "Enable equalizer" }),
-  ).toBeChecked();
+    sound.getByRole("button", { name: "Rock", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await sound
     .getByRole("button", { name: "Retry audio output", exact: true })
     .click();
@@ -596,57 +606,62 @@ test("missing native output keeps configuration editable and Retry updates runti
   ).toHaveAttribute("aria-pressed", "true");
 });
 
-test("presets preserve independent positive preamp and reset restores zero", async ({
+test("legacy disabled EQ and manual gain migrate without losing archived curves", async ({
   page,
 }) => {
   await page.goto("/");
-  const sound = await openSound(page);
-  const preamp = sound.getByRole("slider", { name: "Preamp", exact: true });
-  await expect(preamp).toHaveCSS("writing-mode", "vertical-lr");
-  await expect(
-    preamp.locator("xpath=ancestor::*[contains(@class, 'equalizer-bands')]"),
-  ).toHaveCount(1);
-  await preamp.focus();
-  await page.keyboard.press("End");
-  await expect(preamp).toHaveValue("12");
-  for (const name of ["Treble boost", "Rock", "Flat"]) {
-    await sound.getByRole("button", { name, exact: true }).click();
-    await expect(preamp).toHaveValue("12");
-  }
-  await sound.getByRole("button", { name: "Reset", exact: true }).click();
-  await expect(preamp).toHaveValue("12");
-  await expect(preamp).toHaveAttribute("aria-valuetext", "+12.0 dB");
-  await sound
-    .getByRole("button", { name: "Save as preset", exact: true })
-    .click();
-  await sound
-    .getByRole("textbox", { name: "Name", exact: true })
-    .fill("Independent EQ");
-  await sound.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(
-    sound.getByRole("button", { name: "Reset Preamp", exact: true }),
-  ).toHaveCount(0);
-  await preamp.fill("0");
-  await sound
-    .getByRole("button", { name: "Independent EQ", exact: true })
-    .click();
-  await expect(preamp).toHaveValue("0");
-  await preamp.focus();
-  await page.keyboard.press("End");
-  await expect(
-    sound.getByRole("button", { name: "Independent EQ", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect.poll(async () => (await preferences(page))?.preamp).toBe(12);
+  const legacy = {
+    ...defaultSound(),
+    enabled: false,
+    preamp: -8,
+    presetId: "user-old",
+    gains: [12, -12, 12, 0, 0, 0, 0, 0, 0, 0],
+    presets: [
+      {
+        id: "user-old",
+        name: "Old custom headphones",
+        gains: [12, -12, 12, 0, 0, 0, 0, 0, 0, 0],
+        preamp: -8,
+      },
+    ],
+  };
+  await page.evaluate(
+    (config) =>
+      new Promise<void>((resolve) => {
+        const request = indexedDB.open("local-music-v1", 1);
+        request.onsuccess = () => {
+          const db = request.result,
+            tx = db.transaction("settings", "readwrite");
+          tx.objectStore("settings").put(config, "sound-v1");
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+        };
+      }),
+    legacy,
+  );
   await page.reload();
-  const again = await openSound(page);
+  const sound = await openSound(page);
   await expect(
-    again.getByRole("slider", { name: "Preamp", exact: true }),
-  ).toHaveValue("12");
-  await again.getByRole("slider", { name: "Preamp", exact: true }).fill("0");
+    sound.getByRole("button", { name: "Custom", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    again.getByRole("slider", { name: "Preamp", exact: true }),
-  ).toHaveValue("0");
-  await expect.poll(async () => (await preferences(page))?.preamp).toBe(0);
+    sound.getByRole("slider", { name: "63 Hz gain", exact: true }),
+  ).toHaveValue("-10");
+  await expect(
+    sound.getByRole("slider", { name: "125 Hz gain", exact: true }),
+  ).toHaveValue("10");
+  const saved = await preferences(page);
+  expect(saved.enabled).toBe(true);
+  expect(saved.preamp).toBe(0);
+  expect(saved.gains[0]).toBe(0);
+  expect(saved.presets.find((p: any) => p.id === "user-old")).toEqual(
+    legacy.presets[0],
+  );
+  await expect(
+    sound.getByRole("button", { name: "Old custom headphones", exact: true }),
+  ).toHaveCount(0);
 });
 
 test("Not heard replays a bounded higher tone and interrupted setup offers restart", async ({

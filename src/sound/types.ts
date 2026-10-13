@@ -1,6 +1,11 @@
 export const FREQUENCIES = [
-  31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000,
+  31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000,
 ] as const;
+// Index zero is retained only for reading old ten-slot configurations.
+export const EQ_BANDS = FREQUENCIES.slice(1).map((frequency, offset) => ({
+  frequency,
+  index: offset + 1,
+}));
 export interface SoundPreset {
   id: string;
   name: string;

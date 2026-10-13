@@ -97,3 +97,7 @@ The user's correction supersedes automatic response-based attenuation for music 
 Preamp joins the ten frequency controls as an independent eleventh vertical desktop fader, including when both personal channel curves are displayed. Narrow layouts retain accessible horizontal faders in the same list. Remove the strength sliders from sound settings and setup comparison. Personal playback uses the full derived curve (100%); normalize legacy saved percentages in all playback adapters while preserving profile, preamp and enabled state. Keep the strength field readable for contract compatibility, with new defaults/saves normalized to 100. Temporary comparisons use the full curve.
 
 Selecting a personal preset activates it directly, with priority over ordinary EQ. Following a detected output change, retain headphone reconfirmation before activation. Setup still confirms headphones and leaves music paused until Resume. Give the sound modal a thin, styled scrollbar without arrow buttons.
+
+## EQ flow revision - 12 October 2026
+
+The original ordinary-EQ controls and gain bounds are superseded by [eq-simplification.md](eq-simplification.md): nine confirmed frequencies from 63 Hz through 16 kHz, -10 to +10 dB, always-enabled Normal/Custom flow, automatic Custom persistence and no visible preamp/enable/named-preset controls. Preserve personal-profile priority, tone/lease limits and the digital limiter. Version-one storage is normalized by all adapters without deleting archived named presets or profiles.

@@ -25,14 +25,14 @@ export default function PersonalCurveBand({
       <input
         type="range"
         disabled
-        min={-12}
-        max={12}
+        min={-10}
+        max={10}
         step="any"
         value={gain}
         aria-label={`${frequency} Hz ${t.gain} ${channel}`}
         aria-valuetext={formatGain(gain)}
         style={
-          { "--gain-position": `${((gain + 12) / 24) * 100}%` } as CSSProperties
+          { "--gain-position": `${((gain + 10) / 20) * 100}%` } as CSSProperties
         }
       />
       <output>{formatGain(gain)}</output>

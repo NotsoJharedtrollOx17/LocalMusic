@@ -1,0 +1,440 @@
+[
+  {
+    "name": "normal migrates off and manual preamp",
+    "input": {
+      "version": 1,
+      "enabled": false,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 6,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    },
+    "expected": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    }
+  },
+  {
+    "name": "removed preset becomes Custom and named records survive",
+    "input": {
+      "version": 1,
+      "enabled": false,
+      "gains": [
+        4,
+        3,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": -4,
+      "presetId": "bass",
+      "presets": [
+        {
+          "id": "user-old",
+          "name": "Archived headphones",
+          "gains": [
+            -12,
+            12,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 7
+        }
+      ],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    },
+    "expected": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        3,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "custom",
+      "presets": [
+        {
+          "id": "user-old",
+          "name": "Archived headphones",
+          "gains": [
+            -12,
+            12,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 7
+        },
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            0,
+            3,
+            2,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 0
+        }
+      ],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    }
+  },
+  {
+    "name": "legacy custom clamps bounds and drops dormant band",
+    "input": {
+      "version": 1,
+      "enabled": false,
+      "gains": [
+        12,
+        -12,
+        12,
+        -5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "custom",
+      "presets": [],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    },
+    "expected": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        -10,
+        10,
+        -5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "custom",
+      "presets": [
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            0,
+            -10,
+            10,
+            -5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 0
+        }
+      ],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    }
+  },
+  {
+    "name": "Normal retains saved Custom slot",
+    "input": {
+      "version": 1,
+      "enabled": false,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            2,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 0
+        }
+      ],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    },
+    "expected": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "preamp": 0
+        }
+      ],
+      "profiles": [],
+      "profileId": null,
+      "personalEnabled": false,
+      "strength": 100
+    }
+  },
+  {
+    "name": "personal metadata is preserved",
+    "input": {
+      "version": 1,
+      "enabled": false,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": [
+        {
+          "id": "ears",
+          "name": "My profile",
+          "left": [
+            0,
+            0,
+            0,
+            3,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "right": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "complete": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "profileId": "ears",
+      "personalEnabled": true,
+      "strength": 50
+    },
+    "expected": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": [
+        {
+          "id": "ears",
+          "name": "My profile",
+          "left": [
+            0,
+            0,
+            0,
+            3,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "right": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "complete": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "profileId": "ears",
+      "personalEnabled": true,
+      "strength": 100
+    }
+  }
+]

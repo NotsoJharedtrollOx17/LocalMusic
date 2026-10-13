@@ -34,6 +34,7 @@ export class BrowserSound {
   ) {
     this.ready = read().then((c) => {
       if (c) this.config = validateSound(c);
+      return this.write(this.config);
     });
     const interrupt = () => {
       this.routeGeneration++;
@@ -87,7 +88,7 @@ export class BrowserSound {
       channels: this.channels,
       attenuation: this.attenuation,
       bypass: this.bypass,
-      inactiveBands: [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+      inactiveBands: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
         .map((f, i) => (f >= rate / 2 ? i : -1))
         .filter((i) => i >= 0),
       personalAvailable: this.channels <= 2,

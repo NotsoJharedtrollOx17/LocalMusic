@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 pub const FREQUENCIES: [f64; 10] = [
-    31., 62., 125., 250., 500., 1000., 2000., 4000., 8000., 16000.,
+    31., 63., 125., 250., 500., 1000., 2000., 4000., 8000., 16000.,
 ];
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -37,7 +37,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             version: 1,
-            enabled: false,
+            enabled: true,
             gains: [0.; 10],
             preamp: 0.,
             preset_id: "flat".into(),
@@ -57,7 +57,7 @@ impl Config {
             || !self.gains.iter().all(|v| range(*v, -12., 12.))
             || !range(self.preamp, -12., 12.)
             || !range(self.strength, 0., 100.)
-            || self.presets.len() > 100
+            || self.presets.len() > 101
             || self.profiles.len() > 100
         {
             return Err("Invalid sound configuration".into());
@@ -106,6 +106,41 @@ impl Config {
         }
         Ok(())
     }
+    /// Upgrade the ordinary EQ flow without discarding archived preset/profile data.
+    pub fn normalized(mut self) -> Self {
+        self.enabled = true;
+        self.preamp = 0.;
+        self.strength = 100.;
+        let editable = |gains: &mut [f64; 10]| {
+            for (i, g) in gains.iter_mut().enumerate() {
+                *g = if i == 0 { 0. } else { g.clamp(-10., 10.) };
+            }
+        };
+        editable(&mut self.gains);
+        if let Some(p) = self.presets.iter_mut().find(|p| p.id == "custom") {
+            editable(&mut p.gains);
+            p.preamp = 0.;
+        }
+        let expected = match self.preset_id.as_str() {
+            "flat" => Some([0.; 10]),
+            "pop" => Some([0., 0., 1., 2., 2., 1., 0., 0., 1., 2.]),
+            "rock" => Some([0., 2., 1., -1., -2., -1., 1., 2., 3., 2.]),
+            "jazz" => Some([0., 1., 0., -1., 0., 1., 2., 2., 1., 0.]),
+            "classical" => Some([0., 1., 0., 0., -1., 0., 1., 1., 2., 2.]),
+            _ => None,
+        };
+        if expected != Some(self.gains) {
+            self.preset_id = "custom".into();
+            self.presets.retain(|p| p.id != "custom");
+            self.presets.push(Preset {
+                id: "custom".into(),
+                name: "Custom".into(),
+                gains: self.gains,
+                preamp: 0.,
+            });
+        }
+        self
+    }
     pub fn curves(&self, bypass: bool, channels: usize) -> [[f64; 10]; 2] {
         let mut out = [[0.; 10]; 2];
         let p = if self.personal_enabled && !bypass && channels <= 2 {
@@ -117,15 +152,19 @@ impl Config {
         };
         for ch in 0..2 {
             for i in 0..10 {
-                out[ch][i] = if self.enabled && !bypass && p.is_none() {
-                    self.gains[i]
-                } else {
+                out[ch][i] = if i == 0 {
                     0.
-                } + p
-                    .map(|p| if ch == 0 { p.left[i] } else { p.right[i] })
-                    .unwrap_or(0.)
-                    * self.strength
-                    / 100.;
+                } else {
+                    (if self.enabled && !bypass && p.is_none() {
+                        self.gains[i]
+                    } else {
+                        0.
+                    }) + p
+                        .map(|p| if ch == 0 { p.left[i] } else { p.right[i] })
+                        .unwrap_or(0.)
+                        * self.strength
+                        / 100.
+                };
             }
         }
         out
@@ -147,4 +186,28 @@ pub struct State {
     pub personal_available: bool,
     pub route_monitoring: bool,
     pub route_generation: usize,
+}
+
+#[cfg(test)]
+mod normalization_tests {
+    use super::*;
+    #[test]
+    fn shared_normalization_fixtures() {
+        let cases: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/sound-normalization.json"
+        ))
+        .unwrap();
+        for case in cases.as_array().unwrap() {
+            let config: Config = serde_json::from_value(case["input"].clone()).unwrap();
+            config.validate().unwrap();
+            let actual = serde_json::to_value(config.normalized()).unwrap();
+            let expected: Config = serde_json::from_value(case["expected"].clone()).unwrap();
+            assert_eq!(
+                actual,
+                serde_json::to_value(expected).unwrap(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
 }

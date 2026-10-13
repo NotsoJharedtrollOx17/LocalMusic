@@ -56,15 +56,15 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     exact: true,
   });
   await expect(
-    sound.getByRole("slider", { name: "Preamp", exact: true }),
+    sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".player-scrim")).toBeHidden();
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await sound.getByRole("button", { name: "Rock", exact: true }).click();
-  const preamp = sound.getByRole("slider", { name: "Preamp", exact: true });
-  await preamp.focus();
+  const band = sound.getByRole("slider", { name: "1000 Hz gain", exact: true });
+  await band.focus();
   await page.keyboard.press("ArrowUp");
-  const gain = await preamp.inputValue();
+  const gain = await band.inputValue();
   await sound.locator(".modal-body").evaluate((node) => {
     node.scrollTop = node.scrollHeight;
   });
@@ -90,7 +90,7 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     .getByRole("button", { name: "Sound controls", exact: true })
     .click();
   await expect(
-    sound.getByRole("slider", { name: "Preamp", exact: true }),
+    sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toHaveValue(gain);
   await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
@@ -148,17 +148,14 @@ test("personal banks stay grouped and EN/ES preserve the exact same sound config
   ).toBeVisible();
   const left = sound.getByRole("group", { name: "Left", exact: true }),
     right = sound.getByRole("group", { name: "Right", exact: true });
-  await expect(left.getByRole("slider")).toHaveCount(10);
-  await expect(right.getByRole("slider")).toHaveCount(10);
+  await expect(left.getByRole("slider")).toHaveCount(9);
+  await expect(right.getByRole("slider")).toHaveCount(9);
   expect((await left.boundingBox())!.y).toBeLessThan(
     (await right.boundingBox())!.y,
   );
   await expect(
     sound.getByRole("slider", { name: "Preamp", exact: true }),
-  ).toHaveCount(1);
-  await expect(
-    sound.getByRole("slider", { name: "Preamp", exact: true }),
-  ).toHaveValue("3.5");
+  ).toHaveCount(0);
   await sound.locator("summary").click();
   await expect(
     sound.getByRole("button", { name: "Rock", exact: true }),
@@ -179,7 +176,7 @@ test("personal banks stay grouped and EN/ES preserve the exact same sound config
   });
   await expect(
     sound.getByRole("slider", { name: "Preamplificador", exact: true }),
-  ).toHaveValue("3.5");
+  ).toHaveCount(0);
   await expect(
     sound.getByRole("slider", {
       name: "250 Hz ganancia Izquierdo",
@@ -355,7 +352,7 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
   );
   await expect(
     sound.locator(".sound-fieldset + .sound-actions").getByRole("button"),
-  ).toHaveText(["Reset"]);
+  ).toHaveCount(0);
   await page.screenshot({ path: "artifacts/library-eq-ordering-desktop.png" });
 });
 

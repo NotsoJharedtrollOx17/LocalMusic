@@ -1,6 +1,6 @@
-import { FREQUENCIES, type SoundConfig } from "./types";
+import { EQ_BANDS, type SoundConfig } from "./types";
 import { soundCopy } from "./copy";
-import SoundPreamp from "./SoundPreamp";
+import { saveCustom } from "./model";
 import { formatGain } from "./formatGain";
 export default function EqualizerBands({
   config,
@@ -9,7 +9,6 @@ export default function EqualizerBands({
   inactive,
   language,
   readOnly = false,
-  showPreamp = true,
 }: {
   config: SoundConfig;
   edit: (update: (c: SoundConfig) => SoundConfig) => void;
@@ -17,13 +16,12 @@ export default function EqualizerBands({
   inactive: number[];
   language: string;
   readOnly?: boolean;
-  showPreamp?: boolean;
 }) {
   const t = soundCopy(language);
   return (
     <>
-      <div className={`equalizer-bands${showPreamp ? " has-preamp" : ""}`}>
-        {FREQUENCIES.map((f, i) => (
+      <div className="equalizer-bands">
+        {EQ_BANDS.map(({ frequency: f, index: i }) => (
           <label
             className={`equalizer-band${inactive.includes(i) ? " inactive" : ""}`}
             key={f}
@@ -34,17 +32,18 @@ export default function EqualizerBands({
               aria-label={`${f} Hz ${t.gain}`}
               aria-valuetext={formatGain(config.gains[i])}
               disabled={inactive.includes(i) || readOnly}
-              min={-12}
-              max={12}
+              min={-10}
+              max={10}
               step={readOnly ? "any" : 0.5}
               value={config.gains[i]}
               onChange={(e) => {
                 const value = Number(e.target.value);
-                edit((c) => ({
-                  ...c,
-                  presetId: "custom",
-                  gains: c.gains.map((g, j) => (i === j ? value : g)),
-                }));
+                edit((c) =>
+                  saveCustom(
+                    c,
+                    c.gains.map((g, j) => (i === j ? value : g)),
+                  ),
+                );
               }}
               onPointerUp={flush}
               onKeyUp={flush}
@@ -53,14 +52,6 @@ export default function EqualizerBands({
             {inactive.includes(i) && <small>{t.inactive}</small>}
           </label>
         ))}
-        {showPreamp && (
-          <SoundPreamp
-            config={config}
-            edit={edit}
-            flush={flush}
-            language={language}
-          />
-        )}
       </div>
     </>
   );

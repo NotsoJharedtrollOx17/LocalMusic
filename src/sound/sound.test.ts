@@ -4,19 +4,37 @@ import { coefficients, response, bank, headroom, SoundProcessor } from "./dsp";
 import { defaultSound, validateSound, effectiveCurves } from "./model";
 import { PersonalProtocol, tone, deriveCurve } from "./personal";
 import { renderComparison } from "./comparison";
+import normalization from "../../tests/fixtures/sound-normalization.json";
+import type { SoundConfig } from "./types";
+import { saveCustom, selectSoundPreset } from "./model";
 import { formatGain } from "./formatGain";
 afterEach(() => vi.restoreAllMocks());
 describe("shared sound processing", () => {
+  it("matches shared legacy normalization fixtures", () => {
+    for (const sample of normalization) {
+      expect(validateSound(sample.input as SoundConfig), sample.name).toEqual(
+        sample.expected,
+      );
+    }
+  });
+  it("keeps Custom edits when switching to Normal or another preset", () => {
+    const edited = saveCustom(defaultSound(), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const normal = selectSoundPreset(edited, "flat");
+    expect(normal.gains).toEqual(Array(10).fill(0));
+    const rock = selectSoundPreset(normal, "rock");
+    expect(selectSoundPreset(rock, "custom").gains).toEqual(edited.gains);
+    expect(validateSound(normal).presets).toEqual(edited.presets);
+  });
   it("formats zero without a sign, including rounded attenuation and negative zero", () => {
     for (const value of [0, -0, -0.01, 0.01])
       expect(formatGain(value)).toBe("0.0 dB");
     expect(formatGain(1)).toBe("+1.0 dB");
     expect(formatGain(-1)).toBe("-1.0 dB");
   });
-  it("upgrades legacy profile strength without changing manual preamp", () => {
+  it("upgrades legacy profile strength and removes hidden manual preamp", () => {
     const saved = validateSound({ ...defaultSound(), strength: 50, preamp: 3 });
     expect(saved.strength).toBe(100);
-    expect(saved.preamp).toBe(3);
+    expect(saved.preamp).toBe(0);
   });
   it("matches independent RBJ fixtures, including Nyquist", () => {
     const rows = readFileSync(
@@ -38,8 +56,8 @@ describe("shared sound processing", () => {
     );
   });
   it("validates persistence and rejects nonfinite, excessive and duplicate controls", () => {
-    expect(validateSound(defaultSound()).enabled).toBe(false);
-    expect(validateSound({ ...defaultSound(), preamp: 12 }).preamp).toBe(12);
+    expect(validateSound(defaultSound()).enabled).toBe(true);
+    expect(validateSound({ ...defaultSound(), preamp: 12 }).preamp).toBe(0);
     expect(() => validateSound({ ...defaultSound(), preamp: 12.5 })).toThrow();
     expect(() =>
       validateSound({ ...defaultSound(), gains: Array(10).fill(NaN) }),

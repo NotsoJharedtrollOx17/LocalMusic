@@ -85,7 +85,7 @@ const en = {
   gain: "gain",
   inactive: "Inactive at this sample rate",
   presetNames: {
-    flat: "Flat",
+    flat: "Normal",
     pop: "Pop",
     rock: "Rock",
     jazz: "Jazz",
@@ -181,7 +181,7 @@ const es: typeof en = {
   gain: "ganancia",
   inactive: "Inactivo con esta frecuencia de muestreo",
   presetNames: {
-    flat: "Plano",
+    flat: "Normal",
     pop: "Pop",
     rock: "Rock",
     jazz: "Jazz",

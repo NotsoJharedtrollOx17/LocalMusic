@@ -25,18 +25,26 @@ pub struct Engine {
 mod tests {
     use super::*;
     #[test]
-    fn positive_preamp_is_independent_and_bounded() {
+    fn legacy_off_preamp_and_bounds_are_upgraded_before_processing() {
         let engine = Engine::new(Config::default());
         let mut c = Config::default();
-        c.enabled = true;
+        c.enabled = false;
         c.preamp = 12.;
+        c.gains = [12.; 10];
         engine.configure(c.clone()).unwrap();
-        assert!((engine.prepared.lock().unwrap().gain - 10f64.powf(12. / 20.)).abs() < 1e-9);
+        let saved = engine.config.lock().unwrap();
+        assert!(saved.enabled);
+        assert_eq!(saved.preamp, 0.);
+        assert_eq!(saved.gains[0], 0.);
+        assert_eq!(saved.gains[5], 10.);
+        assert_eq!(saved.preset_id, "custom");
+        assert_eq!(engine.prepared.lock().unwrap().gain, 1.);
+        drop(saved);
         c.preamp = 12.5;
         assert!(engine.configure(c).is_err());
     }
     #[test]
-    fn personal_curve_overrides_presets_and_keeps_global_preamp() {
+    fn personal_curve_overrides_presets_with_neutral_global_gain() {
         let engine = Engine::new(Config::default());
         let mut c = Config::default();
         c.enabled = true;
@@ -51,13 +59,15 @@ mod tests {
         });
         c.profile_id = Some("test".into());
         c.personal_enabled = true;
-        assert_eq!(c.curves(false, 2)[0], [6.; 10]);
+        let mut expected = [6.; 10];
+        expected[0] = 0.;
+        assert_eq!(c.curves(false, 2)[0], expected);
         assert_eq!(c.curves(false, 2)[1], [0.; 10]);
         c.enabled = false;
         engine.configure(c.clone()).unwrap();
         let p = engine.prepared.lock().unwrap();
         assert!(!p.bypass);
-        assert!((p.gain - 10f64.powf((6. - p.attenuation) / 20.)).abs() < 1e-9);
+        assert_eq!(p.gain, 1.);
         let restored = Engine::new(c);
         assert!(restored.config.lock().unwrap().personal_enabled);
         let saved = restored.prepared.lock().unwrap();
@@ -84,7 +94,7 @@ mod tests {
 }
 impl Engine {
     pub fn new(mut config: Config) -> Self {
-        config.strength = 100.;
+        config = config.normalized();
         let b = dsp::bank(config.curves(false, 2), 48000.);
         let attenuation = 0.;
         let p = Prepared {
@@ -117,7 +127,7 @@ impl Engine {
     }
     pub fn configure(&self, mut c: Config) -> Result<(), String> {
         c.validate()?;
-        c.strength = 100.;
+        c = c.normalized();
         *self.config.lock().unwrap() = c;
         self.prepare();
         Ok(())

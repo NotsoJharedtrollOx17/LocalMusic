@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../api";
 import type { SoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
-import EqualizerSwitch from "./EqualizerSwitch";
 import EqualizerBands from "./EqualizerBands";
 import SoundPresetSection from "./SoundPresetSection";
 import PersonalCurveBands from "./PersonalCurveBands";
@@ -89,17 +88,6 @@ export default function SoundControls({
           <section aria-label={t.equalizer}>
             <div className="sound-heading">
               <h3>{t.equalizer}</h3>
-              {!activeProfile && (
-                <EqualizerSwitch
-                  label={t.on}
-                  enabled={draft.enabled}
-                  disabled={controller.acting}
-                  onChange={(enabled) => {
-                    edit((c) => ({ ...c, enabled }));
-                    flush();
-                  }}
-                />
-              )}
             </div>
             <SoundPresetSection
               config={draft}
@@ -114,9 +102,6 @@ export default function SoundControls({
                   left={activeProfile.left}
                   right={activeProfile.right}
                   strength={draft.strength}
-                  config={draft}
-                  edit={edit}
-                  flush={flush}
                   inactive={state.inactiveBands}
                   language={language}
                 />
@@ -130,23 +115,6 @@ export default function SoundControls({
                 />
               )}
             </fieldset>
-            {!activeProfile && (
-              <div className="sound-actions">
-                <button
-                  className="text-button"
-                  disabled={controller.acting}
-                  onClick={() =>
-                    edit((c) => ({
-                      ...c,
-                      gains: Array(10).fill(0),
-                      presetId: "flat",
-                    }))
-                  }
-                >
-                  {t.flat}
-                </button>
-              </div>
-            )}
             <p className="sound-save-state" role="status">
               {pending ? t.saving : error ? "" : t.saved}
             </p>

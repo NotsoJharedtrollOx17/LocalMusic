@@ -136,14 +136,11 @@
 }
 .equalizer-bands {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 8px;
   margin: 24px 0;
   padding: 18px 0;
   border-top: 1px solid var(--rule);
-}
-.equalizer-bands.has-preamp {
-  grid-template-columns: repeat(10, minmax(0, 1fr)) 112px;
 }
 .sound-controls .equalizer-band {
   display: grid;
@@ -179,13 +176,6 @@
   text-align: center;
   font-size: 10px;
 }
-.sound-preamp-control {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-  justify-items: center;
-  min-width: 0;
-}
 .personal-stereo-bands {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -193,10 +183,6 @@
   margin: 24px 0;
   padding: 18px 0;
   border-top: 1px solid var(--rule);
-}
-.personal-stereo-bands.has-preamp {
-  grid-template-columns: minmax(0, 1fr) 112px;
-  column-gap: 12px;
 }
 .personal-curve-bank {
   grid-column: 1;
@@ -209,13 +195,8 @@
 }
 .personal-bank-faders {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 8px;
-}
-.personal-stereo-bands > .sound-preamp-control {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  margin-top: 42px;
 }
 .personal-curve-band input:disabled {
   opacity: 1;
@@ -267,8 +248,6 @@
 }
 @media (max-width: 799px) {
   .equalizer-bands,
-  .equalizer-bands.has-preamp,
-  .personal-stereo-bands.has-preamp,
   .personal-bank-faders {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -293,23 +272,6 @@
   }
   .equalizer-band small {
     grid-column: 2;
-  }
-  .personal-stereo-bands > .sound-preamp-control {
-    grid-column: 1;
-    grid-row: auto;
-    margin-top: 0;
-  }
-  .sound-preamp-control {
-    justify-items: stretch;
-  }
-  .sound-controls .sound-preamp {
-    grid-template-columns: minmax(0, 1fr) 64px;
-  }
-  .sound-preamp > span {
-    grid-column: 1 / -1;
-  }
-  .sound-controls .sound-preamp-control > button {
-    justify-self: end;
   }
 }
 /* Derived profiles use explicit visuals: disabled native sliders otherwise
@@ -353,72 +315,5 @@
       var(--ink) var(--gain-position)
     );
     background-size: 100% 6px;
-  }
-}
-
-.sound-controls .sound-eq-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  color: var(--ink);
-  font-weight: 600;
-  cursor: pointer;
-}
-.sound-eq-switch input[type="checkbox"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.sound-switch-track {
-  display: inline-flex;
-  align-items: center;
-  width: 52px;
-  height: 30px;
-  padding: 3px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  border: 1px solid var(--muted);
-  background: var(--surface);
-  transition:
-    background 150ms,
-    border-color 150ms;
-}
-.sound-switch-track > span {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--ink);
-  transition: transform 150ms;
-}
-.sound-eq-switch input:checked + .sound-switch-track {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.sound-eq-switch input:checked + .sound-switch-track > span {
-  transform: translateX(22px);
-  background: #1b1b1a;
-}
-.sound-eq-switch:has(input:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: var(--sound-control-radius);
-}
-.sound-eq-switch:has(input:disabled) {
-  opacity: 0.55;
-  cursor: default;
-}
-.sound-eq-switch input:disabled {
-  cursor: default;
-}
-@media (prefers-reduced-motion: reduce) {
-  .sound-switch-track,
-  .sound-switch-track > span {
-    transition: none;
   }
 }

@@ -1,0 +1,7 @@
+# EQ simplification - 12 October 2026
+
+Use the user's confirmed nine frequencies: 63, 125, 250, 500 Hz; 1, 2, 4, 8, 16 kHz. Keep -10 to +10 dB, centered zero, and an always-enabled EQ. Normal replaces Flat; Pop/Rock/Jazz/Classical remain. Remove boost/Voice presets, enable switch, preamp, manual preset naming and redundant Reset (Normal supplies reset). One Custom slot automatically stores manual edits and survives switching presets/restarting. Personal sound keeps its separate per-channel priority and management.
+
+Retain the version-one ten-slot storage/DSP structure for compatibility: slot zero (old 31 Hz) is permanently neutral and not displayed; slot one uses 63 Hz instead of 62 Hz. Native/browser/Android normalization enables ordinary EQ, zeros manual preamp, clamps active gains and Custom to +/-10 dB, and maps retired or named active presets into Custom. Archived named presets remain in storage, but are not presented in this simpler interface. Persist normalized configuration on startup. Shared fixtures verify normalization across all three backends. Limiters, tone scheduling, separate ear curves, history accounting and route reconfirmation remain intact.
+
+Verify Normal/Custom persistence, legacy settings, live audio spectral changes, profile priority, all nine bounds, keyboard controls, English/Spanish and responsive layout. Run frontend/browser, native Rust and Kotlin checks/builds; document actual Windows observations and separate Android runtime gates.

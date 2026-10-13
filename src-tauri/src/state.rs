@@ -36,6 +36,10 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
             .unwrap_or_default(),
     ));
     #[cfg(not(target_os = "android"))]
+    core.lock()
+        .unwrap()
+        .set_setting("sound-v1", &*sound.config.lock().unwrap())?;
+    #[cfg(not(target_os = "android"))]
     let player = desktop::launch(
         app.handle().clone(),
         core.clone(),

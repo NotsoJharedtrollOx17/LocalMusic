@@ -1,5 +1,5 @@
 ﻿import PersonalCurveBand from "./PersonalCurveBand";
-import { FREQUENCIES } from "./types";
+import { EQ_BANDS } from "./types";
 export default function PersonalCurveBank({
   curve,
   channel,
@@ -15,7 +15,7 @@ export default function PersonalCurveBank({
     <div className="personal-curve-bank" role="group" aria-label={channel}>
       <h4>{channel}</h4>
       <div className="personal-bank-faders">
-        {FREQUENCIES.map((frequency, i) => (
+        {EQ_BANDS.map(({ frequency, index: i }) => (
           <PersonalCurveBand
             key={frequency}
             frequency={frequency}

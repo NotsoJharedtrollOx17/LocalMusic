@@ -7,6 +7,46 @@ import org.junit.Test
 
 class SoundDspTest {
     @Test
+    fun sharedConfigurationNormalization() {
+        val cases =
+            org.json.JSONArray(
+                File("../../../../tests/fixtures/sound-normalization.json").readText()
+            )
+        for (i in 0 until cases.length()) {
+            val case = cases.getJSONObject(i)
+            val actual = SoundConfiguration(case.getJSONObject("input")).json
+            val expected = case.getJSONObject("expected")
+            assertTrue(actual.getBoolean("enabled"))
+            assertEquals(0.0, actual.getDouble("preamp"), 0.0)
+            assertEquals(expected.getString("presetId"), actual.getString("presetId"))
+            for (j in 0..9) assertEquals(
+                expected.getJSONArray("gains").getDouble(j),
+                actual.getJSONArray("gains").getDouble(j),
+                0.0,
+            )
+            assertEquals(
+                expected.getJSONArray("presets").length(),
+                actual.getJSONArray("presets").length(),
+            )
+            assertEquals(
+                expected.getJSONArray("profiles").toString(),
+                actual.getJSONArray("profiles").toString(),
+            )
+            for (j in 0 until expected.getJSONArray("presets").length()) {
+                val a = actual.getJSONArray("presets").getJSONObject(j)
+                val e = expected.getJSONArray("presets").getJSONObject(j)
+                assertEquals(e.getString("id"), a.getString("id"))
+                assertEquals(e.getDouble("preamp"), a.getDouble("preamp"), 0.0)
+                for (k in 0..9) assertEquals(
+                    e.getJSONArray("gains").getDouble(k),
+                    a.getJSONArray("gains").getDouble(k),
+                    0.0,
+                )
+            }
+        }
+    }
+
+    @Test
     fun sharedCoefficientFixtures() {
         val file = File("../../../../tests/fixtures/sound-dsp.csv")
         assertTrue("Shared fixture missing: ${file.absolutePath}", file.exists())

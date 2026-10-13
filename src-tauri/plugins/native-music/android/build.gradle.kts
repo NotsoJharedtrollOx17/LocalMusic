@@ -15,4 +15,6 @@ dependencies {
  implementation("androidx.documentfile:documentfile:1.1.0")
  implementation(project(":tauri-android"))
  testImplementation("junit:junit:4.13.2")
+ // Use real JSON parsing for JVM settings-migration tests; Android supplies org.json at runtime.
+ testImplementation("org.json:json:20240303")
 }
