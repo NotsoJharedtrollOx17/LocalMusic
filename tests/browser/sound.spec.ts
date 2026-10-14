@@ -388,14 +388,15 @@ test("personal setup saves an active default, persists on restart, cancels on bl
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
   for (let i = 0; i < 14; i++) {
-    const play = sound.getByRole("button", { name: "Play tone", exact: true });
-    await expect(play).toBeEnabled();
-    await play.click();
     const heard = sound.getByRole("button", { name: "Heard it", exact: true });
     await expect(heard).toBeEnabled();
     await heard.click();
   }
   await expect(sound).toContainText("Compare your sound");
+  await page.setViewportSize({ width: 390, height: 700 });
+  await page.screenshot({
+    path: "artifacts/adapt-review/comparison-mobile.png",
+  });
   await expect(
     sound.getByRole("slider", { name: "Strength", exact: true }),
   ).toHaveCount(0);
@@ -407,6 +408,7 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     .getByRole("button", { name: "Save profile", exact: true })
     .click();
   await expect(sound).toContainText("Profile saved as your default sound");
+  await page.screenshot({ path: "artifacts/adapt-review/saved-mobile.png" });
   await sound.getByRole("button", { name: "Done", exact: true }).click();
   await expect(
     sound.getByRole("button", { name: "Disable profile", exact: true }),
@@ -433,7 +435,6 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     .click();
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
-  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(
     sound.getByRole("button", { name: "Done", exact: true }),
@@ -667,18 +668,14 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
     .click();
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
-  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
   const missed = sound.getByRole("button", { name: "Not heard", exact: true });
   await expect(missed).toBeEnabled();
   await missed.click();
+  await sound.getByText("Tone details", { exact: true }).click();
   await expect(sound).toContainText("-48 dBFS");
   await expect(missed).toBeEnabled();
   await sound.getByRole("button", { name: "Heard it", exact: true }).click();
   await expect(sound).toContainText("250 Hz");
-  await expect(
-    sound.getByRole("button", { name: "Play tone", exact: true }),
-  ).toBeEnabled();
-  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
   for (let i = 0; i < 2; i++) {
     await expect(missed).toBeEnabled();
     await missed.click();
@@ -688,21 +685,17 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   ).toBeEnabled();
   await sound.getByRole("button", { name: "Heard it", exact: true }).click();
   await expect(
-    sound.getByRole("slider", { name: "250 Hz gain Left", exact: true }),
-  ).toHaveValue("6");
-  await expect(sound).toContainText("Provisional curve");
-  await expect(
-    sound.getByRole("button", { name: "Play tone", exact: true }),
-  ).toBeEnabled();
-  await sound.getByRole("button", { name: "Play tone", exact: true }).click();
+    sound.locator(".setup-channel").first().locator('[data-frequency="250"]'),
+  ).toHaveAttribute("data-gain", "6");
+  await expect(sound).toContainText("Your music balance takes shape");
   for (let i = 0; i < 4; i++) {
     await expect(missed).toBeEnabled();
     await missed.click();
   }
   await expect(sound).toContainText("2 kHz");
   await expect(
-    sound.getByRole("slider", { name: "1000 Hz gain Left", exact: true }),
-  ).toHaveValue("0");
+    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-gain", "0");
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(sound).toContainText("No partial profile was saved");
   await sound

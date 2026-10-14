@@ -1,4 +1,31 @@
 const en = {
+  answerRecorded: "Answer recorded. Moving on…",
+  setupLead: "A sound balance made for your headphones",
+  setupSummary:
+    "Listen to a few short beeps and answer Yes or No. We will shape the music balance for each channel.",
+  prepareHeadphones: "Put on your headphones",
+  prepareQuiet: "Find a quiet place",
+  prepareVolume: "Keep a comfortable, steady volume",
+  setupPause:
+    "Music pauses during setup. Keep other sound effects off and leave the volume unchanged.",
+  listening: "Listen carefully…",
+  hearQuestion: "Can you hear the beeps?",
+  preparingTone: "Preparing the next beeps…",
+  yes: "Yes",
+  no: "No",
+  setupCurve:
+    "Your music balance takes shape as you answer. It does not change the setup beeps.",
+  resultCurve: "Personal boost above the original balance · 0–6 dB",
+  setupDetails: "Tone details",
+  setupProgress: "Setup progress",
+  defaultProfileName: "My sound",
+  comparisonHint:
+    "Play the same short music sample with either balance, then save yours.",
+  adaptOverview: "Tune music to the way you listen",
+  adaptOverviewHint:
+    "Create a personal headphone balance, compare it with the original, and use it for your music.",
+  quietResult:
+    "Your answers suggest a flat balance. This profile will sound like the original.",
   ordinaryPresets: "Standard presets · inactive",
   manageProfile: "Manage profile",
   readOnlyCurve: "Profile gains · read only",
@@ -95,6 +122,33 @@ const en = {
   },
 };
 const es: typeof en = {
+  answerRecorded: "Respuesta registrada. Continuando…",
+  setupLead: "Un equilibrio para tus auriculares",
+  setupSummary:
+    "Escucha unos pitidos cortos y responde Sí o No. Ajustaremos el equilibrio musical de cada canal.",
+  prepareHeadphones: "Ponte los auriculares",
+  prepareQuiet: "Busca un lugar tranquilo",
+  prepareVolume: "Mantén un volumen cómodo y constante",
+  setupPause:
+    "La música se pausa durante la configuración. Desactiva otros efectos y no cambies el volumen.",
+  listening: "Escucha con atención…",
+  hearQuestion: "¿Escuchas los pitidos?",
+  preparingTone: "Preparando los siguientes pitidos…",
+  yes: "Sí",
+  no: "No",
+  setupCurve:
+    "Tu equilibrio musical cambia con tus respuestas. No modifica los pitidos de configuración.",
+  resultCurve: "Refuerzo personal sobre el original · 0–6 dB",
+  setupDetails: "Detalles del tono",
+  setupProgress: "Progreso de configuración",
+  defaultProfileName: "Mi sonido",
+  comparisonHint:
+    "Escucha la misma muestra musical con cada equilibrio y guarda el tuyo.",
+  adaptOverview: "Adapta la música a tu forma de escuchar",
+  adaptOverviewHint:
+    "Crea un equilibrio para tus auriculares, compáralo con el original y úsalo con tu música.",
+  quietResult:
+    "Tus respuestas sugieren un equilibrio plano. Este perfil sonará como el original.",
   ordinaryPresets: "Preajustes estándar · inactivos",
   manageProfile: "Gestionar perfil",
   readOnlyCurve: "Ganancias del perfil · solo lectura",

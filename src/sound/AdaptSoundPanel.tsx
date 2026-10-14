@@ -4,6 +4,7 @@ import type { SoundState, PersonalProfile } from "./types";
 import PersonalProfiles from "./PersonalProfiles";
 import PersonalWizard from "./PersonalWizard";
 import PersonalCurveBands from "./PersonalCurveBands";
+import { soundCopy } from "./copy";
 
 export default function AdaptSoundPanel({
   controller,
@@ -41,6 +42,10 @@ export default function AdaptSoundPanel({
     );
   return (
     <>
+      <div className="adapt-overview">
+        <h3>{soundCopy(language).adaptOverview}</h3>
+        <p>{soundCopy(language).adaptOverviewHint}</p>
+      </div>
       <PersonalProfiles
         config={draft}
         edit={edit}
