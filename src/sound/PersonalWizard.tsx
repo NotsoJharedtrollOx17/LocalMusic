@@ -22,6 +22,7 @@ export default function PersonalWizard({
   const t = soundCopy(language);
   const {
     session,
+    chart,
     pending,
     queued,
     answerQueued,
@@ -65,6 +66,7 @@ export default function PersonalWizard({
         <PersonalSetupTest
           language={language}
           session={session}
+          chart={chart}
           pending={pending}
           queued={queued}
           answerQueued={answerQueued}

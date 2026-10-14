@@ -4,6 +4,7 @@ import PersonalSetupChart from "./PersonalSetupChart";
 export default function PersonalSetupTest({
   language,
   session,
+  chart,
   pending,
   queued,
   answerQueued,
@@ -14,6 +15,7 @@ export default function PersonalSetupTest({
 }: {
   language: string;
   session: PersonalSession;
+  chart?: { left: number[]; right: number[] };
   pending: boolean;
   queued: boolean;
   answerQueued: boolean;
@@ -46,8 +48,8 @@ export default function PersonalSetupTest({
       </div>
       <PersonalSetupChart
         language={language}
-        left={session.left}
-        right={session.right}
+        left={chart?.left ?? session.left}
+        right={chart?.right ?? session.right}
         ear={session.ear}
         provisional
       />

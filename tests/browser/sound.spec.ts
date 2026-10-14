@@ -671,11 +671,20 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   const missed = sound.getByRole("button", { name: "Not heard", exact: true });
   await expect(missed).toBeEnabled();
   await missed.click();
+  await expect(
+    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-gain", "6");
+  await expect(
+    sound.locator(".setup-channel").last().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-gain", "0");
   await sound.getByText("Tone details", { exact: true }).click();
   await expect(sound).toContainText("-48 dBFS");
   await expect(missed).toBeEnabled();
   await sound.getByRole("button", { name: "Heard it", exact: true }).click();
   await expect(sound).toContainText("250 Hz");
+  await expect(
+    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-gain", "0");
   for (let i = 0; i < 2; i++) {
     await expect(missed).toBeEnabled();
     await missed.click();
@@ -693,6 +702,9 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
     await missed.click();
   }
   await expect(sound).toContainText("2 kHz");
+  await expect(
+    sound.locator(".setup-channel").first().locator('[data-frequency="500"]'),
+  ).toHaveAttribute("data-gain", "0");
   await expect(
     sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
   ).toHaveAttribute("data-gain", "0");

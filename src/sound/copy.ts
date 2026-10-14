@@ -14,7 +14,7 @@ const en = {
   yes: "Yes",
   no: "No",
   setupCurve:
-    "Your music balance takes shape as you answer. It does not change the setup beeps.",
+    "Your music balance takes shape as you answer. Tone adjustments are provisional until confirmed.",
   resultCurve: "Personal boost above the original balance · 0–6 dB",
   setupDetails: "Tone details",
   setupProgress: "Setup progress",
@@ -137,7 +137,7 @@ const es: typeof en = {
   yes: "Sí",
   no: "No",
   setupCurve:
-    "Tu equilibrio musical cambia con tus respuestas. No modifica los pitidos de configuración.",
+    "Tu equilibrio musical cambia con tus respuestas. Los ajustes del tono son provisionales hasta confirmarlos.",
   resultCurve: "Refuerzo personal sobre el original · 0–6 dB",
   setupDetails: "Detalles del tono",
   setupProgress: "Progreso de configuración",

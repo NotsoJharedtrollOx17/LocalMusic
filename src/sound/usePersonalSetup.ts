@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import type { PersonalAction, PersonalSession } from "./types";
+import { setupPreview } from "./setupPreview";
 
 /** Presentation scheduling only; tone limits, responses and leases stay in the backend. */
 export function usePersonalSetup() {
@@ -16,11 +17,14 @@ export function usePersonalSetup() {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [answerQueued, setAnswerQueued] = useState(false);
   const [stopped, setStopped] = useState(false);
+  const [pendingNo, setPendingNo] = useState(false);
+  const references = useRef<(number | undefined)[]>([undefined, undefined]);
 
   function clearQueue() {
     clearTimeout(timer.current);
     if (alive.current) setQueued(false);
     if (alive.current) setAnswerQueued(false);
+    if (alive.current) setPendingNo(false);
   }
   function publish(next: PersonalSession) {
     current.current = next;
@@ -33,7 +37,16 @@ export function usePersonalSetup() {
       revision.current++;
     }
     if (action.op === "start") setStopped(false);
+    if (action.op === "start") references.current = [undefined, undefined];
+    if (action.op === "retry" && current.current)
+      references.current[current.current.ear] = undefined;
     clearQueue();
+    if (
+      action.op === "respond" &&
+      !action.heard &&
+      current.current?.level !== -36
+    )
+      setPendingNo(true);
     const requested = revision.current;
     if (
       action.op === "respond" &&
@@ -57,6 +70,7 @@ export function usePersonalSetup() {
     locked.current = true;
     setPending(true);
     setError("");
+    const before = current.current;
     try {
       const next = await api.personalAction(action);
       if (!alive.current || requested !== revision.current) {
@@ -66,6 +80,8 @@ export function usePersonalSetup() {
             .catch(() => {});
         return;
       }
+      if (action.op === "respond" && action.heard && before?.step === 0)
+        references.current[before.ear] = before.level;
       publish(next);
       // Every accepted answer advances automatically; unanswered tones never advance.
       if (
@@ -97,6 +113,7 @@ export function usePersonalSetup() {
       if (alive.current && requested === revision.current) {
         locked.current = false;
         setPending(false);
+        setPendingNo(false);
       }
     }
   }
@@ -104,6 +121,7 @@ export function usePersonalSetup() {
     const wasStarting = locked.current && !current.current;
     revision.current++;
     clearQueue();
+    references.current = [undefined, undefined];
     locked.current = false;
     if (alive.current) setPending(false);
     const s = current.current;
@@ -171,6 +189,9 @@ export function usePersonalSetup() {
   }
   return {
     session,
+    chart: session
+      ? setupPreview(session, references.current[session.ear], pendingNo)
+      : undefined,
     pending,
     queued,
     answerQueued,
