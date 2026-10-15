@@ -8,7 +8,6 @@ const en = {
   prepareVolume: "Keep a comfortable, steady volume",
   setupPause:
     "Music pauses during setup. Keep other sound effects off and leave the volume unchanged.",
-  listening: "Listen carefully…",
   hearQuestion: "Can you hear the beeps?",
   preparingTone: "Preparing the next beeps…",
   yes: "Yes",
@@ -80,7 +79,6 @@ const en = {
   toneLevel: "Test level",
   nextTone:
     "Not heard: trying the next bounded test level, or moving to the next frequency.",
-  playTone: "Play tone",
   heard: "Heard it",
   notHeard: "Not heard",
   leftChannel: "Left",
@@ -131,7 +129,6 @@ const es: typeof en = {
   prepareVolume: "Mantén un volumen cómodo y constante",
   setupPause:
     "La música se pausa durante la configuración. Desactiva otros efectos y no cambies el volumen.",
-  listening: "Escucha con atención…",
   hearQuestion: "¿Escuchas los pitidos?",
   preparingTone: "Preparando los siguientes pitidos…",
   yes: "Sí",
@@ -202,7 +199,6 @@ const es: typeof en = {
     "El navegador puede no detectar cambios de salida. Detén la prueba si el sonido cambia de dispositivo.",
   begin: "Comenzar",
   stop: "Detener configuración",
-  playTone: "Reproducir tono",
   heard: "Lo escuché",
   notHeard: "No lo escuché",
   leftChannel: "Izquierdo",

@@ -8,9 +8,7 @@ export default function PersonalSetupTest({
   pending,
   queued,
   answerQueued,
-  now,
   onAnswer,
-  onReplay,
   onStop,
 }: {
   language: string;
@@ -19,25 +17,18 @@ export default function PersonalSetupTest({
   pending: boolean;
   queued: boolean;
   answerQueued: boolean;
-  now: number;
   onAnswer: (heard: boolean) => void;
-  onReplay: () => void;
   onStop: () => void;
 }) {
   const t = soundCopy(language);
-  const busy = now < session.busyUntil;
   const answerable = session.awaiting && !pending && !queued;
   const completed = session.ear * 7 + session.step;
   const percent = Math.round((completed / 14) * 100);
   const prompt = answerQueued
     ? t.answerRecorded
-    : busy
-      ? t.listening
-      : queued || pending
-        ? t.preparingTone
-        : session.awaiting
-          ? t.hearQuestion
-          : t.playTone;
+    : queued || pending
+      ? t.preparingTone
+      : t.hearQuestion;
   return (
     <>
       <div className="setup-stage-label">
@@ -89,13 +80,6 @@ export default function PersonalSetupTest({
           </button>
         </div>
         <div className="setup-secondary-actions">
-          <button
-            className="text-button"
-            disabled={pending || queued || now < session.busyUntil + 500}
-            onClick={onReplay}
-          >
-            {t.playTone}
-          </button>
           <button className="text-button" onClick={onStop}>
             {t.stop}
           </button>

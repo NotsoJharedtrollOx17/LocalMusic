@@ -11,7 +11,7 @@ Local voiceover was transcribed with a local speech model. The Windows narration
 ## Implementation
 
 - Present preparation as three short steps: headphones, quiet surroundings, comfortable steady volume. Explain that music pauses during setup and the result is a personal music balance.
-- Start the first tone after Begin. Advance automatically after both answers and retry, respecting the backend's tone timing and silence interval. Replay remains available; never treat lack of an answer as Not heard.
+- Start the first tone after Begin. Advance automatically after both answers and retry, respecting the backend's tone timing and silence interval. There is no manual replay button; never treat lack of an answer as Not heard.
 - Repeat the same bounded tone burst while awaiting a response, with 1.5 seconds silence between bursts. A response during playback is acknowledged immediately and sent when that burst ends; cancellation clears both scheduled answers and repeats. The user's clarification confirms the desired sequence: No -> diagram adjusts -> next adjusted tone automatically. Retain bounded level checks and show the current candidate provisionally, including reference-tone adjustment. Confirmed responses still determine the saved curve; unheard frequencies are not permanently boosted.
 - Keep one compact two-channel gain graphic above the question, real completed-step progress and fixed No/Yes actions. Display actual derived gains with zero baseline, never hearing-quality scores or invented sensitivity values. Keep detailed gain/frequency/level information accessible without dominating the task.
 - Replace provisional setup sliders with this compact read-only graphic. Retain the saved-profile EQ sliders and independent channel processing. Make listening, awaiting answer, preparing next tone, retry, interrupted, compare and saved states explicit.
@@ -24,4 +24,8 @@ Samsung's age presets, hearing-test claims, calls settings, proprietary curves a
 
 ## Verification
 
-Check automatic progression for both answers, replay, bounded retries, both ears, save/activation/persistence, interruption and no listening-history entries. Check narrow/short screens, EN/ES, dark/light, keyboard/focus, Back and Reduce Motion. Run frontend/browser checks, rebuild and inspect Windows, and record evidence in `docs/verification.md`. Android runtime and physical-headphone acceptance require separate evidence.
+Check automatic progression for both answers, continuous repetition, bounded retries, both ears, save/activation/persistence, interruption and no listening-history entries. Check narrow/short screens, EN/ES, dark/light, keyboard/focus, Back and Reduce Motion. Run frontend/browser checks, rebuild and inspect Windows, and record evidence in `docs/verification.md`. Android runtime and physical-headphone acceptance require separate evidence.
+
+## Stable continuous listening - 14 October 2026
+
+Remove Listen again/Play tone completely. Automatic repetitions call the audio protocol directly, without setting a foreground loading state or changing the listening question/answer availability. Remove the 100 ms presentation clock; timing still uses backend `busyUntil` for deferred responses and scheduled repeats. Keep the question stable through the burst and silence. Answers during a delayed repeat command are retained and submitted once after acknowledgement; Stop invalidates them. Audio failures show explicit restart recovery instead of reintroducing a replay control.

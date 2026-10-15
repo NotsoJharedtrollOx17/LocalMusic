@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { openSound, openSettings } from "./navigationHelpers";
+import { holdRepeatingTone } from "./personalSessionFixture";
 
 test("setup keeps two channel charts and answer actions reachable while tones repeat", async ({
   page,
@@ -40,11 +41,44 @@ test("setup keeps two channel charts and answer actions reachable while tones re
   expect(chartTops[0]).toBe(chartTops[1]);
   await expect(sound.getByRole("slider")).toHaveCount(0);
   await expect(sound.getByRole("progressbar")).toHaveAttribute("value", "0");
+  await expect(
+    sound.getByRole("button", { name: /Play tone|Listen again/ }),
+  ).toHaveCount(0);
+  await expect(sound.locator(".setup-question h3")).toHaveText(
+    "Can you hear the beeps?",
+  );
+  await expect(
+    sound.getByRole("button", { name: "Heard it", exact: true }),
+  ).toBeEnabled();
+  await page.evaluate(() => {
+    const root = document.querySelector(".personal-wizard")!;
+    (window as any).repeatUiChanges = [];
+    const observer = new MutationObserver(() => {
+      const heading = root.querySelector(".setup-question h3")?.textContent;
+      const disabled = [...root.querySelectorAll(".setup-answers button")].some(
+        (button) => (button as HTMLButtonElement).disabled,
+      );
+      if (heading !== "Can you hear the beeps?" || disabled)
+        (window as any).repeatUiChanges.push({ heading, disabled });
+    });
+    observer.observe(root, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["disabled"],
+    });
+    (window as any).stopRepeatObserver = () => observer.disconnect();
+  });
   await expect
     .poll(() => page.evaluate(() => (window as any).setupPulseCount), {
-      timeout: 10000,
+      timeout: 15000,
     })
-    .toBeGreaterThanOrEqual(2);
+    .toBeGreaterThanOrEqual(3);
+  await page.evaluate(() => (window as any).stopRepeatObserver());
+  expect(await page.evaluate(() => (window as any).repeatUiChanges)).toEqual(
+    [],
+  );
   await expect(sound).toContainText("Step 1/14"); // silence does not invent an answer
   for (const viewport of [
     { width: 1280, height: 720 },
@@ -97,4 +131,37 @@ test("setup keeps two channel charts and answer actions reachable while tones re
   await page.screenshot({
     path: "artifacts/adapt-review/preparation-spanish-dark.png",
   });
+});
+
+test("an answer during delayed automatic repeat IPC is retained and sent once", async ({
+  page,
+}) => {
+  await holdRepeatingTone(page);
+  await page.goto("/");
+  const sound = await openSound(page, "adapt");
+  await sound
+    .getByRole("button", { name: "Create personal profile", exact: true })
+    .click();
+  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
+  await sound.getByRole("button", { name: "Begin", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).repeatHeld))
+    .toBe(true);
+  await expect(sound.locator(".setup-question h3")).toHaveText(
+    "Can you hear the beeps?",
+  );
+  await sound.getByRole("button", { name: "Not heard", exact: true }).click();
+  await expect(sound).toContainText("Answer recorded");
+  await expect(
+    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-gain", "6");
+  await page.evaluate(() => (window as any).releaseTone());
+  await expect
+    .poll(() => page.evaluate(() => (window as any).responses))
+    .toEqual([false]);
+  await expect(
+    sound.getByRole("button", { name: "Heard it", exact: true }),
+  ).toBeEnabled();
+  await sound.getByRole("button", { name: "Stop setup", exact: true }).click();
+  await expect(sound).toContainText("No partial profile was saved");
 });

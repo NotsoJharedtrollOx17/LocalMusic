@@ -28,7 +28,6 @@ export default function PersonalWizard({
     answerQueued,
     stopped,
     error,
-    now,
     act,
     interrupt,
     restart,
@@ -52,6 +51,18 @@ export default function PersonalWizard({
           {error}
         </p>
       )}
+      {error && session?.phase === "test" && (
+        <button
+          className="button secondary"
+          onClick={() => {
+            restart();
+            setConfirmed(false);
+            setMode(undefined);
+          }}
+        >
+          {t.restart}
+        </button>
+      )}
       {!session && !stopped ? (
         <PersonalSetupIntro
           language={language}
@@ -67,14 +78,12 @@ export default function PersonalWizard({
           language={language}
           session={session}
           chart={chart}
-          pending={pending}
+          pending={pending || !!error}
           queued={queued}
           answerQueued={answerQueued}
-          now={now}
           onAnswer={(heard) =>
             void act({ op: "respond", id: session.id, heard })
           }
-          onReplay={() => void act({ op: "pulse", id: session.id })}
           onStop={interrupt}
         />
       ) : session?.phase === "compare" ? (

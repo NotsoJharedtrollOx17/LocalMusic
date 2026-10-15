@@ -9,11 +9,14 @@ export function usePersonalSetup() {
   const [pending, setPending] = useState(false);
   const [queued, setQueued] = useState(false);
   const [error, setError] = useState("");
-  const [now, setNow] = useState(Date.now());
   const current = useRef<PersonalSession | undefined>(undefined);
   const alive = useRef(true);
   const revision = useRef(0);
   const locked = useRef(false);
+  const inFlightAction = useRef<PersonalAction["op"] | undefined>(undefined);
+  const waitingAnswer = useRef<
+    Extract<PersonalAction, { op: "respond" }> | undefined
+  >(undefined);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [answerQueued, setAnswerQueued] = useState(false);
   const [stopped, setStopped] = useState(false);
@@ -32,7 +35,21 @@ export function usePersonalSetup() {
   }
   async function act(action: PersonalAction) {
     const interrupt = action.op === "cancel" || action.op === "start";
-    if (locked.current && !interrupt) return;
+    if (locked.current && !interrupt) {
+      // A background repeat must not swallow a click made while its IPC is pending.
+      if (
+        action.op === "respond" &&
+        inFlightAction.current === "pulse" &&
+        !waitingAnswer.current
+      ) {
+        waitingAnswer.current = action;
+        clearQueue();
+        setPending(true);
+        setAnswerQueued(true);
+        setPendingNo(!action.heard && current.current?.level !== -36);
+      }
+      return;
+    }
     if (interrupt) {
       revision.current++;
     }
@@ -68,9 +85,12 @@ export function usePersonalSetup() {
       return;
     }
     locked.current = true;
-    setPending(true);
+    inFlightAction.current = action.op;
+    // Repeating audio is background work, not a new screen/loading transition.
+    if (action.op !== "pulse") setPending(true);
     setError("");
     const before = current.current;
+    let succeeded = false;
     try {
       const next = await api.personalAction(action);
       if (!alive.current || requested !== revision.current) {
@@ -83,6 +103,7 @@ export function usePersonalSetup() {
       if (action.op === "respond" && action.heard && before?.step === 0)
         references.current[before.ear] = before.level;
       publish(next);
+      succeeded = true;
       // Every accepted answer advances automatically; unanswered tones never advance.
       if (
         next.phase === "test" &&
@@ -112,8 +133,15 @@ export function usePersonalSetup() {
     } finally {
       if (alive.current && requested === revision.current) {
         locked.current = false;
-        setPending(false);
-        setPendingNo(false);
+        inFlightAction.current = undefined;
+        const answer = waitingAnswer.current;
+        waitingAnswer.current = undefined;
+        if (answer && succeeded) void act(answer);
+        else if (action.op !== "pulse" || !succeeded) {
+          setPending(false);
+          setPendingNo(false);
+          if (!succeeded) clearQueue();
+        }
       }
     }
   }
@@ -123,6 +151,8 @@ export function usePersonalSetup() {
     clearQueue();
     references.current = [undefined, undefined];
     locked.current = false;
+    inFlightAction.current = undefined;
+    waitingAnswer.current = undefined;
     if (alive.current) setPending(false);
     const s = current.current;
     if (
@@ -138,7 +168,6 @@ export function usePersonalSetup() {
   }
   useEffect(() => {
     alive.current = true;
-    const clock = setInterval(() => setNow(Date.now()), 100);
     let inFlight = false;
     const heartbeat = setInterval(() => {
       const s = current.current;
@@ -173,7 +202,6 @@ export function usePersonalSetup() {
     document.addEventListener("visibilitychange", hidden);
     return () => {
       alive.current = false;
-      clearInterval(clock);
       clearInterval(heartbeat);
       window.removeEventListener("blur", interrupt);
       document.removeEventListener("visibilitychange", hidden);
@@ -197,7 +225,6 @@ export function usePersonalSetup() {
     answerQueued,
     stopped,
     error,
-    now,
     act,
     interrupt,
     restart,
