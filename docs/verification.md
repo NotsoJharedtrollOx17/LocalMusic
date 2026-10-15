@@ -394,9 +394,7 @@ The player previously constrained artwork height separately from width. `usePlay
 - Player resize checks at 1000, 750 and 600px height confirmed square artwork, progressively smaller size, no body overflow for the fixture and visible playback controls. After the short-height spacing refinement, that resize journey passed again. Browser screenshots were inspected.
 - Native Windows packaging/runtime results follow below. This UI follow-up changes no Rust/Kotlin processing or catalog rules. Android runtime and physical audio acceptance remain separate gates.
 
-
 The final portable Windows build succeeded. Actual OS window resizing through the owned test window confirmed square artwork at outer heights 1000/750/600px (renderer heights 875/647/509px), reducing artwork to approximately 320/230/93px. After allowing two pixels for display-scaling rounding, the final native checks confirmed zero player-body overflow at all three sizes; screenshots were inspected. Header logo/motto visibility and direct Settings access passed in the native renderer. Playback stayed paused, and only the agent-launched test instance was closed. The final affected browser resize rerun also passed. `git diff --check` passed. All diagnostics/screenshots remain ignored artifacts.
-
 
 ## EQ switch and Bypass removal ? 10 October 2026
 
@@ -408,7 +406,6 @@ Removed the Bypass all button from Sound controls. Regular EQ now has a labeled 
 - Backend processing contracts and internal bypass lifecycle handling are retained. Native results follow below; Android runtime remains a separate pending gate.
 
 The portable Windows build succeeded. In the actual WebView2/Rust app, Bypass was absent and keyboard Space changed the saved EQ enabled state while preserving gains, preamp and preset ID. The switch screenshot was inspected. The complete original native sound configuration was restored, playback remained paused, and only the agent-launched test instance was closed. No new physical audio or Android runtime claim is made.
-
 
 ## Recap label and toolbar spacing ? 10 October 2026
 
@@ -455,7 +452,6 @@ The final ARM64 native library and development APK rebuilt successfully using th
 
 Final `apksigner verify --verbose` passed: APK Signature Scheme v2 verified, one signer. This confirms packaging/signing only; Android runtime and physical-headphone acceptance remain pending.
 
-
 ## Compact EQ grid - 12 October 2026
 
 Presentation-only revision on `dev.ui-ux-polish`: compact vertical nine-band chart on desktop/mobile, eleven shared lines at 2 dB intervals, shared +10/0/-10 dB markers, frequencies below, and matching personal Left/Right banks. Idle Ready/Active, Presets and Saved labels and repeated visible gain outputs are removed; accessible gain values, errors, Retry and in-progress saving remain. DSP/storage unchanged.
@@ -466,7 +462,6 @@ Presentation-only revision on `dev.ui-ux-polish`: compact vertical nine-band cha
 - Inspected actual screenshots: `artifacts/eq-grid-1280.png`, `artifacts/eq-grid-320.png`, and Spanish dark mobile `artifacts/eq-simplified-mobile-dark-es.png`. Test screenshots and helper tools remain ignored.
 - Windows portable debug executable rebuilt successfully after the user closed the app. The sandbox initially denied LLVM execution; the authorized build outside the sandbox passed. Actual WebView2/Rust inspection passed: nine aligned sliders, eleven guide lines, three scale labels, no visible Presets/Saved remnants, and keyboard Custom -> Normal -> Custom persistence. Screenshot inspected: `artifacts/eq-grid-windows.png`; native evidence: `artifacts/eq-grid-windows-evidence.json`. Original sound configuration restored and playback remained paused. The agent-owned test app was closed.
 - No new Android package/runtime claims. This shared frontend layout was browser-tested; connected Android/physical headphone gates remain pending. Rust and Kotlin code are unchanged, so their preceding DSP checks were not rerun for this presentation edit.
-
 
 ## Compact Library / separate sound navigation - 12 October 2026
 
@@ -530,3 +525,17 @@ Removed the manual Play tone/Listen again control, callback and translations. Th
 - Inspected `artifacts/adapt-review/listening-320.png`: aligned charts, one stable question, No/Yes and Stop only. Windows portable debug executable rebuilt successfully; final native inspection results follow below. No Rust/Kotlin protocol or DSP changes, and no new Android runtime/physical-headphone claims. Diagnostic artifacts remain ignored.
 
 Final WebView2 inspection confirmed the embedded module matches the final production asset, preparation and Back work, and playback stays paused. Native tones were not started without physical headphone confirmation; repetition evidence above is browser-based. Closed only the owned Windows test instance and preview. `git diff --check` passed.
+
+## v0.3.0 local baseline - 14 October 2026
+
+Release preparation fast-forwarded `dev` to stable `dev.ui-ux-polish` (`71edbbe`). Application metadata is 0.3.0 in npm, Tauri and the native application crate/lock entry; independently versioned libraries remain unchanged. README links now follow the user's preserved `agents/` rename. Release notes explicitly retain the first-heard calibration limitation; the adaptive rewrite is a separate documentation-only follow-up.
+
+- `npm.cmd run check`: production build and all 35 frontend tests passed.
+- Complete browser suite: all 41 distinct journeys passed across the initial run (38 passed) and corrective run (3 passed). The initial run found one obsolete `.group-loading` assertion and a startup gate that held only one of two Library reads. Updated the tests to verify retained cards during a confirmed pending read and hold both startup reads until release. A third search startup timed out while the Android build refreshed `dist`; it passed unchanged on rerun. No remaining failed journeys. Evidence is under ignored `artifacts/browser-v030` and `artifacts/browser-v030-corrected`.
+- Browser coverage includes real AudioWorklet spectral response, full setup/save/default activation/persistence/cancellation with zero setup history, stable repeat controls, delayed native IPC response handling, limited/unknown responses, profile language parity, output failure/Retry, migration, dark startup, import updates, queue/modal focus, search, automatic playlists, recap exports and responsive geometry. Simulated native IPC establishes UI behavior only.
+- Rust core: 15 tests passed (2 automatic-playlist and 13 domain/evidence tests). Native Rust: all 15 tests passed, including DSP fixtures, limiter, profile priority, normalization, tone limits and source seeking.
+- Kotlin/JVM: `:tauri-plugin-native-music:testDebugUnitTest` completed successfully with incremental compilation disabled and one worker. Gradle considered its 27 tasks up-to-date; the unchanged sound-test report contains 4 tests, zero failures/errors. This validates the current task inputs against cached results, not a fresh execution or Android runtime.
+- Windows portable debug executable rebuilt successfully. Both PE FileVersion/ProductVersion and the running Tauri app API reported **0.3.0**. Actual WebView2 checks confirmed the final embedded frontend asset, three preparation rows, Begin disabled until confirmation, Escape/Back returning to management and paused playback. Inspected `artifacts/adapt-review/preparation-windows.png`; this run reported output unavailable, so no native audibility/completion claim is made. No native tones were started. The owned test instance was closed.
+- Android ARM64 debug APK rebuilt successfully using `scripts/build-android.ps1 -Debug -Target aarch64`; native compilation succeeded, followed by the established file-copy packaging fallback after Windows denied symbolic-link creation. `aapt2 dump badging` verified `app.localmusic.year`, version **0.3.0**, code **3000**, ABI **arm64-v8a**. `apksigner verify --verbose --print-certs` passed using APK Signature Scheme v2 with the Android Debug development certificate. Existing platform deprecation/dead-code warnings remain; no production-signing claim is made.
+- Ignored local packages are in `artifacts/releases/v0.3.0/`: Windows x64 development ZIP, Android ARM64 development APK and `SHA256SUMS.txt`. Verified the ZIP's five expected files, archive CRCs and packaged executable hash against the rebuilt binary. Native package outputs and tools are excluded from the release commit.
+- Android runtime remains pending: `adb devices -l` returned no connected devices. Physical stereo-headphone behavior, output/interruption acceptance, device screen readers and measured performance remain separate gates. Browser, Kotlin/JVM and build/signature results do not establish those gates.

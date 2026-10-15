@@ -89,13 +89,14 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 - [Verification evidence](docs/verification.md): what has actually been built and tested.
 - [Third-party notices](docs/third-party-notices.md) and [MIT license](LICENSE).
 
-Read [AGENTS.md](AGENTS.md) and the original `.AGENTS` development guide before substantial changes. Preserve the four reference images there as design source material. Keep build outputs, development tools and test artifacts out of Git.
+Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.2.0` include Phase 2 music flow/modularization and Step 3 sound processing. The immutable `v0.1.0` tag retains the preliminary baseline. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.2.0 release notes](docs/releases/v0.2.0.md) for scope and validation boundaries.
-
+`dev` is the integration branch. `main` and `v0.3.0` record the third local development baseline, including compact navigation, automatic playlists, simplified EQ and stabilized Adapt Sound onboarding. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.3.0 release notes](docs/releases/v0.3.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 
 Library tabs share the top row with Search and the menu. Its Edit action selects songs; Sound options opens separate Equalizer and Adapt Sound views. The Songs toolbar restores Favorites filtering and title/artist/album sorting without another selection action. Playlists uses the same orange creation toolbar without a repeated overview title. Settings explains that Listening history powers Your Year, Recently played and Most played. EQ edits apply live; sound views have no Resume button. Desktop transport and progress are centered, with action icons on the same row. The device calendar still updates recap boundaries automatically without a timezone setting. See [navigation revision](docs/library-sound-navigation.md).
 
 Adapt Sound setup uses short preparation steps, compact Left/Right diagrams, automatic repeating tones, progress and fixed No/Yes actions. Compare the original music sample with the personal balance before saving. The existing bounded level checks and profile rules remain; see [the onboarding revision](docs/adapt-sound-onboarding.md).
+
+Calibration currently records the first heard level relative to each ear's 1 kHz reference. Hearing every initial tone can produce a flat profile because quieter responses are not resolved. The adaptive calibration rewrite is planned separately; it is not part of v0.3.0.

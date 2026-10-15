@@ -425,6 +425,8 @@ test("artist and album details stay populated as import batches arrive", async (
           "success",
           (event) => {
             event.stopImmediatePropagation();
+            (window as unknown as { albumReadHeld: boolean }).albumReadHeld =
+              true;
             void gate.then(() => request.onsuccess?.call(request, event));
           },
           { once: true },
@@ -437,7 +439,14 @@ test("artist and album details stay populated as import batches arrive", async (
     .locator(".album-card")
     .filter({ hasText: "Fixture Album" })
     .click();
-  await expect(page.locator(".group-loading")).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { albumReadHeld: boolean }).albumReadHeld,
+      ),
+    )
+    .toBe(true);
+  await expect(page.locator(".toolbar-actions")).not.toContainText("Loading");
   await expect(
     page.locator(".album-card").filter({ hasText: "Fixture Album" }),
   ).toBeVisible();

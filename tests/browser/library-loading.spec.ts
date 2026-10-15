@@ -48,11 +48,14 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
       release = resolve;
     });
     (window as unknown as { releaseCatalog: () => void }).releaseCatalog =
-      release;
+      () => {
+        IDBObjectStore.prototype.getAll = original;
+        release();
+      };
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
       if (this.name === "tracks") {
-        IDBObjectStore.prototype.getAll = original;
+        // Hold both startup reads, including the debounced Library refresh.
         request.addEventListener(
           "success",
           (event) => {
