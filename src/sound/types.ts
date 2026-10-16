@@ -18,6 +18,18 @@ export interface PersonalProfile {
   left: number[];
   right: number[];
   complete: boolean[];
+  calibration?: { method: "bounded-3-v1"; coverage: CalibrationStatus[] };
+}
+export type CalibrationStatus =
+  "untested" | "estimating" | "bracketed" | "below-floor" | "above-ceiling";
+export interface ResponseEstimate {
+  ear: number;
+  frequency: number;
+  status: CalibrationStatus;
+  estimateDbfs: number | null;
+  lowerDbfs: number | null;
+  upperDbfs: number | null;
+  answered: number;
 }
 export interface SoundConfig {
   version: 1;
@@ -50,6 +62,10 @@ export interface SoundState {
   migrationNotice?: string;
 }
 export interface PersonalSession {
+  trialId: string;
+  answeredTrials: number;
+  totalTrials: number;
+  estimates: ResponseEstimate[];
   left?: number[];
   right?: number[];
   id: string;
@@ -65,8 +81,9 @@ export interface PersonalSession {
 }
 export type PersonalAction =
   | { op: "start"; replaceId?: string }
-  | { op: "pulse" | "heartbeat" | "retry" | "cancel"; id: string }
-  | { op: "respond"; id: string; heard: boolean }
+  | { op: "heartbeat" | "retry" | "cancel"; id: string }
+  | { op: "pulse"; id: string; trialId: string }
+  | { op: "respond"; id: string; trialId: string; heard: boolean }
   | {
       op: "preview";
       id: string;

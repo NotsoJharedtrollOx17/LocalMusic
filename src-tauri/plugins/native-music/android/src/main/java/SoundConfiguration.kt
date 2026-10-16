@@ -43,6 +43,13 @@ class SoundConfiguration(input: JSONObject) {
             val complete = p.getJSONArray("complete")
             require(complete.length() == 12)
             for (j in 0..11) complete.getBoolean(j)
+            if (p.has("calibration") && !p.isNull("calibration")) {
+                val metadata = p.getJSONObject("calibration")
+                require(metadata.getString("method") == "bounded-3-v1")
+                val coverage = metadata.getJSONArray("coverage")
+                require(coverage.length() == 12)
+                for (j in 0..11) require(coverage.getString(j) in listOf("bracketed", "below-floor", "above-ceiling"))
+            }
         }
         if (!json.isNull("profileId")) require(ids.contains(json.getString("profileId")))
         require(!personalEnabled || !json.isNull("profileId"))

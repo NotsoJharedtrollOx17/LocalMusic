@@ -9,6 +9,8 @@
 
 This document specifies the subsequent rewrite. The v0.3.0 baseline retains the existing calibration implementation.
 
+**Implementation authorized 15 October 2026:** the user requested the adaptive protocol and live band animation directly on `dev.adapt-sound-calibration`. The documentation-only boundary above records the completed release task; it is superseded for this feature branch. `dev`, `main` and the v0.3.0 tag retain the released baseline until a later integration.
+
 ## 2. Release the stable application
 
 Planning snapshot: clean working tree; `dev.ui-ux-polish` at `71edbbe`, sixteen commits ahead of both `dev` and `main`, with no divergence. No Git remote configured.
@@ -68,3 +70,12 @@ Samsung's [public documentation](https://www.samsung.com/ca/support/mobile-devic
 - Check actual processed response, matched comparison, persistence and zero setup-induced listening history.
 - Inspect EN/ES, mobile/desktop, short windows, keyboard/focus, Back, screen-reader labels and Reduce Motion.
 - Require Windows and Android builds. Record actual device/headphone observations separately; browser results establish browser behavior only.
+
+## 6. Implementation map
+
+- `src/sound/calibration.ts`, `src-tauri/src/sound/calibration.rs` and Android `SoundCalibration.kt`: the same bounded estimator, bounds, range status and 36-trial schedule, verified against `tests/fixtures/sound-calibration.json`.
+- Browser `PersonalProtocol.ts`, Rust `personal_protocol.rs` and Android `PersonalSoundSession.kt`: trial identity, lease, repeat spacing, derived curves and optional `bounded-3-v1` coverage metadata. Existing profiles without metadata stay readable.
+- `usePersonalSetup.ts`: foreground scheduling and immediate answer acknowledgement, with no speculative gain overlay. It sends the trial identifier on every pulse and response.
+- `PersonalResponseChart.tsx` / `PersonalResponseChannel.tsx`: six response bars per ear, ordered by frequency; 240 ms height transitions, active channel/frequency indication, gray unanswered bars and striped range limits. Reduce Motion makes updates immediate.
+- `PersonalSetupResult.tsx`: actual nine-band proposed EQ, matched comparison, separate flat/limited coverage copy and restart before explicit saving. Existing personal priority, zero manual preamp, limiter and history exclusions remain.
+- `comparison.worker.ts`: browser comparison rendering runs away from the UI thread so foreground heartbeats and motion remain responsive. Pending rendering is terminated on Stop, blur, output change or cancellation; a stale result cannot start audio.

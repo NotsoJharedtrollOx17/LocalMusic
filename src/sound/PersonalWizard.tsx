@@ -22,7 +22,6 @@ export default function PersonalWizard({
   const t = soundCopy(language);
   const {
     session,
-    chart,
     pending,
     queued,
     answerQueued,
@@ -77,12 +76,16 @@ export default function PersonalWizard({
         <PersonalSetupTest
           language={language}
           session={session}
-          chart={chart}
           pending={pending || !!error}
           queued={queued}
           answerQueued={answerQueued}
           onAnswer={(heard) =>
-            void act({ op: "respond", id: session.id, heard })
+            void act({
+              op: "respond",
+              id: session.id,
+              trialId: session.trialId,
+              heard,
+            })
           }
           onStop={interrupt}
         />
@@ -102,6 +105,11 @@ export default function PersonalWizard({
             void act({ op: "save", id: session.id, name, strength: 100 })
           }
           onStop={interrupt}
+          onRestart={() => {
+            restart();
+            setConfirmed(false);
+            setMode(undefined);
+          }}
         />
       ) : session?.phase === "retry" ? (
         <div className="setup-recovery">

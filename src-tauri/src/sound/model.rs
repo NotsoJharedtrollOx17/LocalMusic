@@ -18,6 +18,8 @@ pub struct Profile {
     pub left: [f64; 10],
     pub right: [f64; 10],
     pub complete: [bool; 12],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub calibration: Option<super::calibration::Metadata>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -87,6 +89,18 @@ impl Config {
         }
         ids.clear();
         for p in &self.profiles {
+            if p.calibration.as_ref().is_some_and(|m| {
+                m.method != "bounded-3-v1"
+                    || m.coverage.iter().any(|s| {
+                        matches!(
+                            s,
+                            super::calibration::Coverage::Untested
+                                | super::calibration::Coverage::Estimating
+                        )
+                    })
+            }) {
+                return Err("Invalid profile calibration coverage".into());
+            }
             if !name(&p.id)
                 || !name(&p.name)
                 || !ids.insert(p.id.clone())

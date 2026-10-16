@@ -80,6 +80,15 @@ export function validateSound(c: SoundConfig) {
     )
       throw new Error("Invalid personal profile");
     profiles.add(p.id);
+    if (
+      p.calibration &&
+      (p.calibration.method !== "bounded-3-v1" ||
+        p.calibration.coverage.length !== 12 ||
+        p.calibration.coverage.some(
+          (s) => !["bracketed", "below-floor", "above-ceiling"].includes(s),
+        ))
+    )
+      throw new Error("Invalid profile calibration coverage");
   }
   if (c.profileId !== null && !profiles.has(c.profileId))
     throw new Error("Unknown personal profile");

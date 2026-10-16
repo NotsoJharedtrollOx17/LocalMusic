@@ -1,10 +1,9 @@
 import { soundCopy } from "./copy";
 import type { PersonalSession } from "./types";
-import PersonalSetupChart from "./PersonalSetupChart";
+import PersonalResponseChart from "./PersonalResponseChart";
 export default function PersonalSetupTest({
   language,
   session,
-  chart,
   pending,
   queued,
   answerQueued,
@@ -13,7 +12,6 @@ export default function PersonalSetupTest({
 }: {
   language: string;
   session: PersonalSession;
-  chart?: { left: number[]; right: number[] };
   pending: boolean;
   queued: boolean;
   answerQueued: boolean;
@@ -22,8 +20,8 @@ export default function PersonalSetupTest({
 }) {
   const t = soundCopy(language);
   const answerable = session.awaiting && !pending && !queued;
-  const completed = session.ear * 7 + session.step;
-  const percent = Math.round((completed / 14) * 100);
+  const completed = session.answeredTrials;
+  const percent = Math.round((completed / session.totalTrials) * 100);
   const prompt = answerQueued
     ? t.answerRecorded
     : queued || pending
@@ -34,21 +32,20 @@ export default function PersonalSetupTest({
       <div className="setup-stage-label">
         <span>{session.ear === 0 ? t.left : t.right}</span>
         <span>
-          {t.progress} {completed + 1}/14
+          {t.progress} {Math.min(completed + 1, session.totalTrials)}/
+          {session.totalTrials}
         </span>
       </div>
-      <PersonalSetupChart
-        language={language}
-        left={chart?.left ?? session.left}
-        right={chart?.right ?? session.right}
-        ear={session.ear}
-        provisional
-      />
+      <PersonalResponseChart language={language} session={session} />
       <div className="setup-question">
         <h3 tabIndex={-1} aria-live="polite">
           {prompt}
         </h3>
-        <progress aria-label={t.setupProgress} max={14} value={completed} />
+        <progress
+          aria-label={t.setupProgress}
+          max={session.totalTrials}
+          value={completed}
+        />
         <strong aria-hidden="true">{percent}%</strong>
       </div>
       <details className="setup-tone-details">

@@ -8,6 +8,18 @@ export async function holdRepeatingTone(page: Page) {
     fixture.isTauri = true;
     const session = {
       id: "delayed-tone",
+      trialId: "trial-0",
+      answeredTrials: 0,
+      totalTrials: 36,
+      estimates: Array.from({ length: 12 }, (_, i) => ({
+        ear: Math.floor(i / 6),
+        frequency: [1000, 250, 500, 2000, 4000, 8000][i % 6],
+        status: "untested",
+        estimateDbfs: null,
+        lowerDbfs: null,
+        upperDbfs: null,
+        answered: 0,
+      })),
       phase: "test",
       ear: 0,
       step: 0,
@@ -78,7 +90,17 @@ export async function holdRepeatingTone(page: Page) {
             } else if (a.op === "respond") {
               fixture.responses.push(a.heard);
               session.awaiting = false;
-              if (!a.heard) session.level += 6;
+              session.answeredTrials++;
+              session.trialId = "trial-1";
+              session.ear = 1;
+              session.estimates[0] = {
+                ...session.estimates[0],
+                status: "estimating",
+                estimateDbfs: a.heard ? -66 : -42,
+                lowerDbfs: a.heard ? null : -54,
+                upperDbfs: a.heard ? -54 : null,
+                answered: 1,
+              };
             } else if (a.op === "cancel") session.phase = "cancelled";
             return structuredClone(session);
           }

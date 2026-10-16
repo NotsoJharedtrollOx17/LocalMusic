@@ -225,8 +225,8 @@ class SoundEngine(private val context: Context) {
         s.heartbeat()
         when (op) {
             "heartbeat" -> {}
-            "pulse" -> output.play(s.pulse())
-            "respond" -> s.respond(action.getBoolean("heard"))
+            "pulse" -> output.play(s.pulse(action.getString("trialId")))
+            "respond" -> s.respond(action.getBoolean("heard"), action.getString("trialId"))
             "retry" -> {
                 output.stop()
                 s.retry()

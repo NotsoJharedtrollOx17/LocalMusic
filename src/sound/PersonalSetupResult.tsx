@@ -11,6 +11,7 @@ export default function PersonalSetupResult({
   onPreview,
   onSave,
   onStop,
+  onRestart,
 }: {
   language: string;
   session: PersonalSession;
@@ -21,11 +22,13 @@ export default function PersonalSetupResult({
   onPreview: (mode: "original" | "personal") => void;
   onSave: () => void;
   onStop: () => void;
+  onRestart: () => void;
 }) {
   const t = soundCopy(language);
   const flat = [...(session.left ?? []), ...(session.right ?? [])].every(
     (v) => v === 0,
   );
+  const limited = session.estimates.some((e) => e.status !== "bracketed");
   return (
     <>
       <div className="setup-result-heading">
@@ -37,8 +40,8 @@ export default function PersonalSetupResult({
         left={session.left}
         right={session.right}
       />
-      {flat && <p className="operation-note">{t.quietResult}</p>}
-      <p className="operation-note">{t.unknown}</p>
+      {flat && !limited && <p className="operation-note">{t.quietResult}</p>}
+      {limited && <p className="operation-note">{t.limitedCoverage}</p>}
       <div className="setup-comparison">
         {(["original", "personal"] as const).map((m) => (
           <button
@@ -71,6 +74,14 @@ export default function PersonalSetupResult({
         <div className="setup-footer">
           <button className="button primary" disabled={pending || !name.trim()}>
             {t.saveProfile}
+          </button>
+          <button
+            type="button"
+            className="text-button"
+            disabled={pending}
+            onClick={onRestart}
+          >
+            {t.restart}
           </button>
           <button
             type="button"

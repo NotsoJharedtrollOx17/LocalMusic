@@ -1,8 +1,7 @@
 import processorUrl from "./processor.worklet.ts?worker&url";
 import { bank } from "./dsp";
 import { defaultSound, effectiveCurves, validateSound } from "./model";
-import { PersonalProtocol } from "./personal";
-import { renderComparison } from "./comparison";
+import { PersonalProtocol } from "./PersonalProtocol";
 import type {
   SoundConfig,
   SoundState,
@@ -26,6 +25,7 @@ export class BrowserSound {
   private channels = 2;
   private session?: PersonalProtocol;
   private sample?: AudioBufferSourceNode;
+  private comparisonJob?: { worker: Worker; reject: (error: Error) => void };
   constructor(
     private audio: HTMLAudioElement,
     read: () => Promise<SoundConfig | undefined>,
@@ -215,6 +215,11 @@ export class BrowserSound {
     this.worklet?.port.postMessage({ reset: true });
   }
   private stop() {
+    if (this.comparisonJob) {
+      this.comparisonJob.worker.terminate();
+      this.comparisonJob.reject(new Error("Sound comparison stopped"));
+      this.comparisonJob = undefined;
+    }
     try {
       this.sample?.stop();
     } catch {}
@@ -234,6 +239,35 @@ export class BrowserSound {
     this.sample.buffer = buffer;
     this.sample.connect(this.context.destination);
     this.sample.start();
+  }
+  private renderComparison(
+    profile: import("./types").PersonalProfile,
+    strength: number,
+    mode: "original" | "personal",
+  ) {
+    this.stop();
+    return new Promise<Float32Array>((resolve, reject) => {
+      const worker = new Worker(
+        new URL("./comparison.worker.ts", import.meta.url),
+        { type: "module" },
+      );
+      this.comparisonJob = { worker, reject };
+      const finish = () => {
+        worker.terminate();
+        if (this.comparisonJob?.worker === worker)
+          this.comparisonJob = undefined;
+      };
+      worker.onmessage = (event) => {
+        finish();
+        if (event.data instanceof Float32Array) resolve(event.data);
+        else reject(new Error(event.data?.error ?? "Sound comparison failed"));
+      };
+      worker.onerror = (event) => {
+        finish();
+        reject(new Error(event.message || "Sound comparison failed"));
+      };
+      worker.postMessage({ profile, strength, mode });
+    });
   }
   async personal(action: PersonalAction): Promise<PersonalSession> {
     await this.ready;
@@ -265,10 +299,10 @@ export class BrowserSound {
     session.heartbeat();
     switch (action.op) {
       case "pulse":
-        this.play(session.pulse());
+        this.play(session.pulse(action.trialId));
         break;
       case "respond":
-        session.respond(action.heard);
+        session.respond(action.heard, action.trialId);
         break;
       case "retry":
         this.stop();
@@ -276,7 +310,15 @@ export class BrowserSound {
         break;
       case "preview": {
         const p = session.preview(action.mode, action.strength);
-        this.play(renderComparison(p.profile, p.strength, p.mode));
+        const samples = await this.renderComparison(
+          p.profile,
+          p.strength,
+          p.mode,
+        );
+        if (session !== this.session || session.state.phase !== "compare")
+          throw new Error("Sound setup is no longer active");
+        session.heartbeat();
+        this.play(samples);
         break;
       }
       case "save": {

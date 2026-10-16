@@ -32,7 +32,7 @@ test("setup keeps two channel charts and answer actions reachable while tones re
     .poll(() => page.evaluate(() => (window as any).setupPulseCount))
     .toBe(1);
   await expect(sound.locator(".setup-channel")).toHaveCount(2);
-  await expect(sound.locator(".setup-gain")).toHaveCount(18);
+  await expect(sound.locator(".setup-gain")).toHaveCount(12);
   const chartTops = await sound
     .locator(".setup-channel-bars")
     .evaluateAll((nodes) =>
@@ -79,7 +79,7 @@ test("setup keeps two channel charts and answer actions reachable while tones re
   expect(await page.evaluate(() => (window as any).repeatUiChanges)).toEqual(
     [],
   );
-  await expect(sound).toContainText("Step 1/14"); // silence does not invent an answer
+  await expect(sound).toContainText("Step 1/36"); // silence does not invent an answer
   for (const viewport of [
     { width: 1280, height: 720 },
     { width: 390, height: 700 },
@@ -108,7 +108,7 @@ test("setup keeps two channel charts and answer actions reachable while tones re
     (await new AxeBuilder({ page }).include(".modal").analyze()).violations,
   ).toEqual([]);
   await sound.getByRole("button", { name: "Heard it", exact: true }).click();
-  await expect(sound).toContainText("Step 2/14");
+  await expect(sound).toContainText("Step 2/36");
   await sound.getByRole("button", { name: "Stop setup", exact: true }).click();
   await expect(sound).toContainText("No partial profile was saved");
   const pulses = await page.evaluate(() => (window as any).setupPulseCount);
@@ -154,11 +154,14 @@ test("an answer during delayed automatic repeat IPC is retained and sent once", 
   await expect(sound).toContainText("Answer recorded");
   await expect(
     sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
-  ).toHaveAttribute("data-gain", "6");
+  ).toHaveAttribute("data-status", "untested");
   await page.evaluate(() => (window as any).releaseTone());
   await expect
     .poll(() => page.evaluate(() => (window as any).responses))
     .toEqual([false]);
+  await expect(
+    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
+  ).toHaveAttribute("data-estimate", "-42");
   await expect(
     sound.getByRole("button", { name: "Heard it", exact: true }),
   ).toBeEnabled();

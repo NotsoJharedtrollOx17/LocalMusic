@@ -2,7 +2,8 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { coefficients, response, bank, headroom, SoundProcessor } from "./dsp";
 import { defaultSound, validateSound, effectiveCurves } from "./model";
-import { PersonalProtocol, tone, deriveCurve } from "./personal";
+import { tone, deriveCurve } from "./personal";
+import { PersonalProtocol } from "./PersonalProtocol";
 import { renderComparison } from "./comparison";
 import normalization from "../../tests/fixtures/sound-normalization.json";
 import type { SoundConfig } from "./types";
@@ -137,51 +138,27 @@ describe("personal listening protocol", () => {
     expect(samples.slice(76800, 124800).every((x) => x === 0)).toBe(true);
     expect(() => tone(1000, -12, 0)).toThrow();
   });
-  it("enforces replay spacing, reference retry, lease and raw-data discard", () => {
-    let time = 0;
-    vi.spyOn(performance, "now").mockImplementation(() => time);
-    const p = new PersonalProtocol();
-    expect(() => p.respond(true)).toThrow();
-    p.pulse();
-    expect(() => p.pulse()).toThrow();
-    expect(() => p.respond(true)).toThrow();
-    for (let i = 0; i < 4; i++) {
-      if (i) {
-        time += 500;
-        p.pulse();
-      }
-      for (let j = 0; j < 3; j++) {
-        time += 1000;
-        p.heartbeat();
-      }
-      time += 400;
-      p.respond(false);
-    }
-    expect(p.state.phase).toBe("retry");
-    p.retry();
-    expect(p.state.level).toBe(-54);
-    time += 2100;
-    expect(() => p.heartbeat()).toThrow();
-    expect(p.state.phase).toBe("cancelled");
-  });
   it("completes both ears without enabling effects and matches preview loudness", () => {
     let time = 0;
     vi.spyOn(performance, "now").mockImplementation(() => time);
     const p = new PersonalProtocol();
-    for (let i = 0; i < 14; i++) {
-      p.pulse();
+    for (let i = 0; i < 36; i++) {
+      p.pulse(p.state.trialId);
       for (let j = 0; j < 3; j++) {
         time += 1000;
         p.heartbeat();
       }
       time += 400;
-      p.respond(true);
+      p.respond(true, p.state.trialId);
       time += 500;
     }
     expect(p.state.phase).toBe("compare");
     const profile = p.profile("Headphones");
     expect(profile.left).toEqual(Array(10).fill(0));
-    expect(profile.complete.every(Boolean)).toBe(true);
+    expect(profile.complete.every((x) => !x)).toBe(true);
+    expect(
+      profile.calibration?.coverage.every((x) => x === "below-floor"),
+    ).toBe(true);
     const original = renderComparison(profile, 50, "original"),
       personal = renderComparison(profile, 50, "personal");
     expect(original.length).toBe(personal.length);

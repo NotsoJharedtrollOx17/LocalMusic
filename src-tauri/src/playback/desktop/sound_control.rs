@@ -149,8 +149,15 @@ impl DesktopPlayer {
                 let mut samples = None;
                 match action {
                     "heartbeat" => {}
-                    "pulse" => samples = Some(p.pulse()?),
-                    "respond" => p.respond(v["heard"].as_bool().ok_or("Missing tone response")?)?,
+                    "pulse" => {
+                        samples = Some(
+                            p.pulse(v["trialId"].as_str().ok_or("Missing sound setup trial")?)?,
+                        )
+                    }
+                    "respond" => p.respond(
+                        v["heard"].as_bool().ok_or("Missing tone response")?,
+                        v["trialId"].as_str().ok_or("Missing sound setup trial")?,
+                    )?,
                     "retry" => {
                         p.retry()?;
                         if let Some(t) = self.tone.take() {

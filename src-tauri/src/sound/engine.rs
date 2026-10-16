@@ -56,6 +56,7 @@ mod tests {
             left: [6.; 10],
             right: [0.; 10],
             complete: [true; 12],
+            calibration: None,
         });
         c.profile_id = Some("test".into());
         c.personal_enabled = true;

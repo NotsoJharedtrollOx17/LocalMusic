@@ -1,3 +1,4 @@
+import calibrationFixtures from "../fixtures/sound-calibration.json" with { type: "json" };
 import { test, expect, type Page } from "@playwright/test";
 import { defaultSound } from "../../src/sound/model";
 import {
@@ -375,6 +376,17 @@ test("library playback runs through the real AudioWorklet and band edits change 
 test("personal setup saves an active default, persists on restart, cancels on blur and creates no listening history", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    const Original = Worker;
+    (window as any).comparisonWorkerCount = 0;
+    window.Worker = class extends Original {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        if (String(url).includes("comparison.worker"))
+          (window as any).comparisonWorkerCount++;
+      }
+    };
+  });
   await page.goto("/");
   const sound = await openSound(page, "adapt");
   await sound
@@ -387,10 +399,21 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     .click();
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
-  for (let i = 0; i < 14; i++) {
-    const heard = sound.getByRole("button", { name: "Heard it", exact: true });
-    await expect(heard).toBeEnabled();
-    await heard.click();
+  test.setTimeout(240000);
+  const calibration = calibrationFixtures.sessions[3];
+  for (let i = 0; i < 36; i++) {
+    const answer = sound.getByRole("button", {
+      name: calibration.answers[i] ? "Heard it" : "Not heard",
+      exact: true,
+    });
+    await expect(answer).toBeEnabled();
+    await answer.click();
+    if (i < 35)
+      await expect(sound.getByRole("progressbar")).toHaveAttribute(
+        "value",
+        String(i + 1),
+      );
+    else await expect(sound).toContainText("Compare your sound");
   }
   await expect(sound).toContainText("Compare your sound");
   await page.setViewportSize({ width: 390, height: 700 });
@@ -401,6 +424,13 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     sound.getByRole("slider", { name: "Strength", exact: true }),
   ).toHaveCount(0);
   await sound.getByRole("button", { name: "Personal", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).comparisonWorkerCount))
+    .toBe(1);
+  await expect(
+    sound.getByRole("button", { name: "Save profile", exact: true }),
+  ).toBeEnabled({ timeout: 15000 });
+  await expect(sound.getByRole("alert")).toHaveCount(0);
   await sound
     .getByRole("textbox", { name: "Name", exact: true })
     .fill("Personal headphones");
@@ -416,6 +446,16 @@ test("personal setup saves an active default, persists on restart, cancels on bl
   await expect
     .poll(async () => (await preferences(page))?.personalEnabled)
     .toBe(true);
+  const savedConfig = await preferences(page);
+  const saved = savedConfig.profiles.find(
+    (p: any) => p.id === savedConfig.profileId,
+  );
+  expect(saved.left).toEqual(calibration.left);
+  expect(saved.right).toEqual(calibration.right);
+  expect(saved.calibration).toEqual({
+    method: "bounded-3-v1",
+    coverage: calibration.coverage,
+  });
   await page.reload();
   const restored = await openSound(page, "adapt");
   await expect(
@@ -658,7 +698,7 @@ test("legacy disabled EQ and manual gain migrate without losing archived curves"
   ).toHaveCount(0);
 });
 
-test("Not heard replays a bounded higher tone and interrupted setup offers restart", async ({
+test("answers refine both diagrams and alternate ears before switching frequency", async ({
   page,
 }) => {
   await page.goto("/");
@@ -668,46 +708,58 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
     .click();
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
-  const missed = sound.getByRole("button", { name: "Not heard", exact: true });
-  await expect(missed).toBeEnabled();
-  await missed.click();
-  await expect(
-    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
-  ).toHaveAttribute("data-gain", "6");
-  await expect(
-    sound.locator(".setup-channel").last().locator('[data-frequency="1000"]'),
-  ).toHaveAttribute("data-gain", "0");
+  const left = sound
+    .locator(".setup-channel")
+    .first()
+    .locator('[data-frequency="1000"]');
+  const right = sound
+    .locator(".setup-channel")
+    .last()
+    .locator('[data-frequency="1000"]');
+  const initialHeight = await left
+    .locator("span")
+    .first()
+    .evaluate((node) => node.getBoundingClientRect().height);
+  const originalBand = await left.elementHandle();
+  const answer = async (heard: boolean) => {
+    const button = sound.getByRole("button", {
+      name: heard ? "Heard it" : "Not heard",
+      exact: true,
+    });
+    await expect(button).toBeEnabled();
+    await button.click();
+  };
+  await answer(true);
+  await expect(left).toHaveAttribute("data-estimate", "-66");
+  expect(await originalBand!.evaluate((node) => node.isConnected)).toBe(true);
+  await expect
+    .poll(() =>
+      left
+        .locator("span")
+        .first()
+        .evaluate((node) => node.getBoundingClientRect().height),
+    )
+    .toBeGreaterThan(initialHeight + 10);
+  await expect(right).toHaveAttribute("data-status", "untested");
+  await answer(false);
+  await expect(right).toHaveAttribute("data-estimate", "-42");
   await sound.getByText("Tone details", { exact: true }).click();
-  await expect(sound).toContainText("-48 dBFS");
-  await expect(missed).toBeEnabled();
-  await sound.getByRole("button", { name: "Heard it", exact: true }).click();
+  await expect(sound).toContainText("-66 dBFS");
+  await answer(false);
+  await expect(left).toHaveAttribute("data-estimate", "-60");
+  await answer(true);
+  await expect(right).toHaveAttribute("data-estimate", "-48");
+  await answer(true);
+  await expect(left).toHaveAttribute("data-status", "bracketed");
+  await expect(left).toHaveAttribute("data-estimate", "-63");
+  await answer(false);
+  await expect(right).toHaveAttribute("data-status", "bracketed");
+  await expect(right).toHaveAttribute("data-estimate", "-45");
   await expect(sound).toContainText("250 Hz");
-  await expect(
-    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
-  ).toHaveAttribute("data-gain", "0");
-  for (let i = 0; i < 2; i++) {
-    await expect(missed).toBeEnabled();
-    await missed.click();
-  }
-  await expect(
-    sound.getByRole("button", { name: "Heard it", exact: true }),
-  ).toBeEnabled();
-  await sound.getByRole("button", { name: "Heard it", exact: true }).click();
-  await expect(
-    sound.locator(".setup-channel").first().locator('[data-frequency="250"]'),
-  ).toHaveAttribute("data-gain", "6");
-  await expect(sound).toContainText("Your music balance takes shape");
-  for (let i = 0; i < 4; i++) {
-    await expect(missed).toBeEnabled();
-    await missed.click();
-  }
-  await expect(sound).toContainText("2 kHz");
-  await expect(
-    sound.locator(".setup-channel").first().locator('[data-frequency="500"]'),
-  ).toHaveAttribute("data-gain", "0");
-  await expect(
-    sound.locator(".setup-channel").first().locator('[data-frequency="1000"]'),
-  ).toHaveAttribute("data-gain", "0");
+  await expect(sound).toContainText("Step 7/36");
+  await page.screenshot({
+    path: "artifacts/adapt-review/adaptive-six-answers.png",
+  });
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect(sound).toContainText("No partial profile was saved");
   await sound
@@ -716,9 +768,6 @@ test("Not heard replays a bounded higher tone and interrupted setup offers resta
   await expect(
     sound.getByRole("button", { name: "Begin", exact: true }),
   ).toBeDisabled();
-  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
-  await sound.getByRole("button", { name: "Begin", exact: true }).click();
-  await expect(sound).toContainText("Step 1/14");
 });
 
 test("compact EQ scale aligns at desktop, mobile and zoom-sized widths", async ({

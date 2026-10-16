@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import type { PersonalAction, PersonalSession } from "./types";
-import { setupPreview } from "./setupPreview";
 
 /** Presentation scheduling only; tone limits, responses and leases stay in the backend. */
 export function usePersonalSetup() {
@@ -20,14 +19,11 @@ export function usePersonalSetup() {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [answerQueued, setAnswerQueued] = useState(false);
   const [stopped, setStopped] = useState(false);
-  const [pendingNo, setPendingNo] = useState(false);
-  const references = useRef<(number | undefined)[]>([undefined, undefined]);
 
   function clearQueue() {
     clearTimeout(timer.current);
     if (alive.current) setQueued(false);
     if (alive.current) setAnswerQueued(false);
-    if (alive.current) setPendingNo(false);
   }
   function publish(next: PersonalSession) {
     current.current = next;
@@ -46,7 +42,6 @@ export function usePersonalSetup() {
         clearQueue();
         setPending(true);
         setAnswerQueued(true);
-        setPendingNo(!action.heard && current.current?.level !== -36);
       }
       return;
     }
@@ -54,16 +49,7 @@ export function usePersonalSetup() {
       revision.current++;
     }
     if (action.op === "start") setStopped(false);
-    if (action.op === "start") references.current = [undefined, undefined];
-    if (action.op === "retry" && current.current)
-      references.current[current.current.ear] = undefined;
     clearQueue();
-    if (
-      action.op === "respond" &&
-      !action.heard &&
-      current.current?.level !== -36
-    )
-      setPendingNo(true);
     const requested = revision.current;
     if (
       action.op === "respond" &&
@@ -89,7 +75,6 @@ export function usePersonalSetup() {
     // Repeating audio is background work, not a new screen/loading transition.
     if (action.op !== "pulse") setPending(true);
     setError("");
-    const before = current.current;
     let succeeded = false;
     try {
       const next = await api.personalAction(action);
@@ -100,8 +85,6 @@ export function usePersonalSetup() {
             .catch(() => {});
         return;
       }
-      if (action.op === "respond" && action.heard && before?.step === 0)
-        references.current[before.ear] = before.level;
       publish(next);
       succeeded = true;
       // Every accepted answer advances automatically; unanswered tones never advance.
@@ -116,11 +99,12 @@ export function usePersonalSetup() {
               !alive.current ||
               revision.current !== requested ||
               current.current?.id !== next.id ||
-              current.current.phase !== "test"
+              current.current.phase !== "test" ||
+              current.current.trialId !== next.trialId
             )
               return;
             setQueued(false);
-            void act({ op: "pulse", id: next.id });
+            void act({ op: "pulse", id: next.id, trialId: next.trialId });
           },
           Math.max(
             0,
@@ -139,7 +123,6 @@ export function usePersonalSetup() {
         if (answer && succeeded) void act(answer);
         else if (action.op !== "pulse" || !succeeded) {
           setPending(false);
-          setPendingNo(false);
           if (!succeeded) clearQueue();
         }
       }
@@ -149,7 +132,6 @@ export function usePersonalSetup() {
     const wasStarting = locked.current && !current.current;
     revision.current++;
     clearQueue();
-    references.current = [undefined, undefined];
     locked.current = false;
     inFlightAction.current = undefined;
     waitingAnswer.current = undefined;
@@ -217,9 +199,6 @@ export function usePersonalSetup() {
   }
   return {
     session,
-    chart: session
-      ? setupPreview(session, references.current[session.ear], pendingNo)
-      : undefined,
     pending,
     queued,
     answerQueued,
