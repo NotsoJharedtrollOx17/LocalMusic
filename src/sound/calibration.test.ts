@@ -63,8 +63,26 @@ describe("bounded calibration shared fixtures", () => {
     expect(() => p.respond(true, trial)).toThrow();
     expect(() => p.pulse(trial)).toThrow();
     now += 2100;
-    expect(() => p.heartbeat()).toThrow();
-    expect(p.state.phase).toBe("cancelled");
+    p.heartbeat();
+    expect(p.state.phase).toBe("paused");
+    expect(p.state.answeredTrials).toBe(1);
+    const estimates = structuredClone(p.state.estimates);
+    const pausedTrial = p.state.trialId;
+    p.pause();
+    expect(p.state.trialId).toBe(pausedTrial);
+    now += 30000;
+    p.heartbeat();
+    expect(() => p.resume(trial)).toThrow();
+    expect(() => p.pulse(pausedTrial)).toThrow();
+    p.resume(pausedTrial);
+    expect(p.state.phase).toBe("test");
+    expect(p.state.estimates).toEqual(estimates);
+    expect(p.state.answeredTrials).toBe(1);
+    expect(() => p.resume(pausedTrial)).toThrow();
+    expect(() => p.pulse(p.state.trialId)).toThrow();
+    now += 500;
+    p.pulse(p.state.trialId);
+    p.cancel();
     expect(p.state.estimates).toEqual([]);
   });
   it("saves only derived curves and coverage; cancelled retests leave existing profiles untouched", () => {

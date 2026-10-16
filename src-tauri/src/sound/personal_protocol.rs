@@ -14,6 +14,7 @@ pub struct View {
     pub total_trials: usize,
     pub estimates: Vec<Estimate>,
     pub phase: String,
+    pub resume_phase: String,
     pub ear: usize,
     pub step: usize,
     pub frequency: u32,
@@ -45,6 +46,7 @@ impl Protocol {
                 total_trials: TOTAL,
                 estimates: calibration.estimates().to_vec(),
                 phase: "test".into(),
+                resume_phase: "test".into(),
                 ear: 0,
                 step: 0,
                 frequency: 1000,
@@ -65,14 +67,41 @@ impl Protocol {
     }
     pub fn alive(&self) -> bool {
         self.view.phase != "cancelled"
-            && (self.view.phase == "saved" || Instant::now() < self.lease)
+            && (matches!(self.view.phase.as_str(), "saved" | "paused")
+                || Instant::now() < self.lease)
     }
     pub fn heartbeat(&mut self) -> Result<(), String> {
         if !self.alive() {
-            self.cancel();
-            return Err("Sound setup expired. Start again.".into());
+            self.pause();
+            if self.view.phase == "cancelled" {
+                return Err("Sound setup is no longer active".into());
+            }
         }
         self.lease = Instant::now() + Duration::from_secs(2);
+        Ok(())
+    }
+    pub fn pause(&mut self) {
+        if !matches!(self.view.phase.as_str(), "test" | "compare" | "retry") {
+            return;
+        }
+        self.view.resume_phase = self.view.phase.clone();
+        self.view.phase = "paused".into();
+        self.view.awaiting = false;
+        self.view.busy_until = 0;
+        self.view.trial_id = uuid::Uuid::new_v4().to_string();
+    }
+    pub fn resume(&mut self, trial: &str) -> Result<(), String> {
+        if self.view.phase != "paused" || trial.is_empty() || trial != self.view.trial_id {
+            return Err("Stale sound setup pause".into());
+        }
+        self.view.phase = self.view.resume_phase.clone();
+        self.view.trial_id = uuid::Uuid::new_v4().to_string();
+        self.lease = Instant::now() + Duration::from_secs(2);
+        self.next = Instant::now() + Duration::from_millis(500);
+        self.view.busy_until = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
         Ok(())
     }
     fn check_trial(&self, trial: &str) -> Result<(), String> {
@@ -225,7 +254,20 @@ mod tests {
         assert!(p.respond(true, &trial).is_err());
         assert!(p.pulse(&trial).is_err());
         p.lease = Instant::now();
-        assert!(p.heartbeat().is_err());
+        p.heartbeat().unwrap();
+        assert_eq!(p.view.phase, "paused");
+        assert_eq!(p.view.answered_trials, 1);
+        assert!(!p.view.estimates.is_empty());
+        let paused_trial = p.view.trial_id.clone();
+        p.pause();
+        assert_eq!(p.view.trial_id, paused_trial);
+        assert!(p.resume(&trial).is_err());
+        assert!(p.pulse(&paused_trial).is_err());
+        p.resume(&paused_trial).unwrap();
+        assert_eq!(p.view.phase, "test");
+        assert_eq!(p.view.answered_trials, 1);
+        assert!(p.resume(&paused_trial).is_err());
+        p.cancel();
         assert!(p.view.estimates.is_empty());
     }
 }

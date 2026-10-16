@@ -21,8 +21,7 @@ export default function PersonalCurveBands({
   );
   return (
     <div className="personal-curve-bands">
-      <p>{provisional ? t.provisional : t.curveHint}</p>
-      <p>{t.readOnlyCurve}</p>
+      <p className="sound-sr-only">{t.readOnlyCurve}</p>
       <div className="personal-stereo-bands">
         <PersonalCurveBank
           curve={curves[0]}

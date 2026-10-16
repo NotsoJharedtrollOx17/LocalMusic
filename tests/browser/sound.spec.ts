@@ -373,7 +373,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
     .toBeLessThan(1);
   await expect.poll(async () => (await preferences(page))?.preamp).toBe(0);
 });
-test("personal setup saves an active default, persists on restart, cancels on blur and creates no listening history", async ({
+test("personal setup saves an active default, persists on restart, pauses on blur and creates no listening history", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -431,6 +431,22 @@ test("personal setup saves an active default, persists on restart, cancels on bl
     sound.getByRole("button", { name: "Save profile", exact: true }),
   ).toBeEnabled({ timeout: 15000 });
   await expect(sound.getByRole("alert")).toHaveCount(0);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeVisible();
+  await expect(
+    sound.getByRole("button", { name: "Personal", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    sound.getByRole("button", { name: "Save profile", exact: true }),
+  ).toHaveCount(0);
+  await sound
+    .getByRole("button", { name: "Continue setup", exact: true })
+    .click();
+  await expect(
+    sound.getByRole("button", { name: "Save profile", exact: true }),
+  ).toBeEnabled();
   await sound
     .getByRole("textbox", { name: "Name", exact: true })
     .fill("Personal headphones");
@@ -476,6 +492,10 @@ test("personal setup saves an active default, persists on restart, cancels on bl
   await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
   await sound.getByRole("button", { name: "Begin", exact: true }).click();
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeVisible();
+  await sound.getByRole("button", { name: "Stop setup", exact: true }).click();
   await expect(
     sound.getByRole("button", { name: "Done", exact: true }),
   ).toBeVisible();
@@ -743,8 +763,7 @@ test("answers refine both diagrams and alternate ears before switching frequency
   await expect(right).toHaveAttribute("data-status", "untested");
   await answer(false);
   await expect(right).toHaveAttribute("data-estimate", "-42");
-  await sound.getByText("Tone details", { exact: true }).click();
-  await expect(sound).toContainText("-66 dBFS");
+  await expect(sound.getByText("Tone details", { exact: true })).toHaveCount(0);
   await answer(false);
   await expect(left).toHaveAttribute("data-estimate", "-60");
   await answer(true);
@@ -761,6 +780,20 @@ test("answers refine both diagrams and alternate ears before switching frequency
     path: "artifacts/adapt-review/adaptive-six-answers.png",
   });
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeVisible();
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(sound).toContainText("Step 7/36");
+  await expect(left).toHaveAttribute("data-estimate", "-63");
+  await expect(right).toHaveAttribute("data-estimate", "-45");
+  await sound
+    .getByRole("button", { name: "Continue setup", exact: true })
+    .click();
+  await answer(true);
+  await expect(sound).toContainText("Step 8/36");
+  await sound.getByRole("button", { name: "Stop setup", exact: true }).click();
   await expect(sound).toContainText("No partial profile was saved");
   await sound
     .getByRole("button", { name: "Restart setup", exact: true })

@@ -48,17 +48,21 @@ export class BrowserSound {
     };
     window.addEventListener("blur", () => {
       this.stop();
-      this.session?.cancel();
+      this.session?.pause();
     });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         this.stop();
-        this.session?.cancel();
+        this.session?.pause();
       }
     });
     navigator.mediaDevices?.addEventListener("devicechange", interrupt);
     window.setInterval(() => {
-      if (this.session && !this.session.alive()) this.stop();
+      if (
+        this.session &&
+        (!this.session.alive() || this.session.state.phase === "paused")
+      )
+        this.stop();
     }, 100);
   }
   private supported() {
@@ -298,6 +302,14 @@ export class BrowserSound {
     }
     session.heartbeat();
     switch (action.op) {
+      case "pause":
+        this.stop();
+        session.pause();
+        break;
+      case "resume":
+        await this.activate();
+        session.resume(action.trialId);
+        break;
       case "pulse":
         this.play(session.pulse(action.trialId));
         break;

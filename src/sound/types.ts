@@ -69,7 +69,8 @@ export interface PersonalSession {
   left?: number[];
   right?: number[];
   id: string;
-  phase: "test" | "retry" | "compare" | "saved" | "cancelled";
+  phase: "test" | "retry" | "compare" | "paused" | "saved" | "cancelled";
+  resumePhase?: "test" | "retry" | "compare";
   ear: number;
   step: number;
   frequency: number;
@@ -81,7 +82,8 @@ export interface PersonalSession {
 }
 export type PersonalAction =
   | { op: "start"; replaceId?: string }
-  | { op: "heartbeat" | "retry" | "cancel"; id: string }
+  | { op: "heartbeat" | "retry" | "pause" | "cancel"; id: string }
+  | { op: "resume"; id: string; trialId: string }
   | { op: "pulse"; id: string; trialId: string }
   | { op: "respond"; id: string; trialId: string; heard: boolean }
   | {

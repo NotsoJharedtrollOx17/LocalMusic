@@ -79,3 +79,11 @@ Samsung's [public documentation](https://www.samsung.com/ca/support/mobile-devic
 - `PersonalResponseChart.tsx` / `PersonalResponseChannel.tsx`: six response bars per ear, ordered by frequency; 240 ms height transitions, active channel/frequency indication, gray unanswered bars and striped range limits. Reduce Motion makes updates immediate.
 - `PersonalSetupResult.tsx`: actual nine-band proposed EQ, matched comparison, separate flat/limited coverage copy and restart before explicit saving. Existing personal priority, zero manual preamp, limiter and history exclusions remain.
 - `comparison.worker.ts`: browser comparison rendering runs away from the UI thread so foreground heartbeats and motion remain responsive. Pending rendering is terminated on Stop, blur, output change or cancellation; a stale result cannot start audio.
+
+## 7. Focus and presentation refinement (15 October 2026)
+
+- Focus loss, hiding the app and expiration of the foreground lease stop setup audio and pause the session in memory. Retain accepted answers, estimates and proposed curves; invalidate the interrupted trial token. Returning does not play tones automatically. Continue setup explicitly resumes the same unanswered trial with a new token and at least 500 ms silence before another burst.
+- Closing the wizard, Back, manual Stop and output changes still cancel and discard unfinished calibration. Paused progress is temporary, not a saved profile or a cross-restart draft. Existing saved profiles remain untouched.
+- Delayed heartbeats and action acknowledgements cannot overwrite a newer pause/resume or replay an answer queued before focus loss. Pending comparison rendering is stopped on pause.
+- Remove the tone-details disclosure and duplicate ear label. Keep progress, the question and response diagrams visible. Move descriptive chart/read-only guidance to screen-reader text and shorten the inactive preset disclosure to Presets; profile priority remains unchanged.
+- Verify pause/resume with partial progress, delayed repeat IPC, lease expiry, comparison, explicit cancellation and stale trial rejection in all three protocols. Native builds and physical audio observations remain separate evidence.

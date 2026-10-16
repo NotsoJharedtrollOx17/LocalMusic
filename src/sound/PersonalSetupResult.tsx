@@ -12,6 +12,7 @@ export default function PersonalSetupResult({
   onSave,
   onStop,
   onRestart,
+  onContinue,
 }: {
   language: string;
   session: PersonalSession;
@@ -23,6 +24,7 @@ export default function PersonalSetupResult({
   onSave: () => void;
   onStop: () => void;
   onRestart: () => void;
+  onContinue: () => void;
 }) {
   const t = soundCopy(language);
   const flat = [...(session.left ?? []), ...(session.right ?? [])].every(
@@ -48,7 +50,7 @@ export default function PersonalSetupResult({
             key={m}
             className={`button ${mode === m ? "primary" : "secondary"}`}
             aria-pressed={mode === m}
-            disabled={pending}
+            disabled={pending || session.phase === "paused"}
             onClick={() => onPreview(m)}
           >
             {m === "original" ? t.original : t.personalPreview}
@@ -59,6 +61,10 @@ export default function PersonalSetupResult({
         className="setup-save-form"
         onSubmit={(e) => {
           e.preventDefault();
+          if (session.phase === "paused") {
+            onContinue();
+            return;
+          }
           onSave();
         }}
       >
@@ -72,9 +78,29 @@ export default function PersonalSetupResult({
           />
         </label>
         <div className="setup-footer">
-          <button className="button primary" disabled={pending || !name.trim()}>
-            {t.saveProfile}
-          </button>
+          {session.phase === "paused" ? (
+            <button
+              key="continue"
+              type="button"
+              className="button primary"
+              disabled={pending}
+              onClick={(event) => {
+                event.preventDefault();
+                onContinue();
+              }}
+            >
+              {t.continueSetup}
+            </button>
+          ) : (
+            <button
+              key="save"
+              type="submit"
+              className="button primary"
+              disabled={pending || !name.trim()}
+            >
+              {t.saveProfile}
+            </button>
+          )}
           <button
             type="button"
             className="text-button"
@@ -83,12 +109,7 @@ export default function PersonalSetupResult({
           >
             {t.restart}
           </button>
-          <button
-            type="button"
-            className="text-button"
-            disabled={pending}
-            onClick={onStop}
-          >
+          <button type="button" className="text-button" onClick={onStop}>
             {t.stop}
           </button>
         </div>

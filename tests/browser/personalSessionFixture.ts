@@ -21,6 +21,7 @@ export async function holdRepeatingTone(page: Page) {
         answered: 0,
       })),
       phase: "test",
+      resumePhase: "test",
       ear: 0,
       step: 0,
       frequency: 1000,
@@ -78,13 +79,31 @@ export async function holdRepeatingTone(page: Page) {
             };
           case "personal_action": {
             const a = args.action;
+            if (a.op === "pause") {
+              session.resumePhase =
+                session.phase === "paused"
+                  ? session.resumePhase
+                  : session.phase;
+              session.phase = "paused";
+              session.awaiting = false;
+              session.busyUntil = 0;
+              session.trialId = "paused-trial";
+            } else if (a.op === "resume") {
+              if (session.phase !== "paused" || a.trialId !== session.trialId)
+                throw new Error("Stale pause");
+              session.phase = session.resumePhase;
+              session.trialId = "resumed-trial";
+            }
             if (a.op === "pulse") {
+              const trial = session.trialId;
               if (++pulses === 2) {
                 fixture.repeatHeld = true;
                 await new Promise<void>((resolve) => {
                   fixture.releaseTone = resolve;
                 });
               }
+              if (session.phase !== "test" || session.trialId !== trial)
+                return structuredClone(session);
               session.awaiting = true;
               session.busyUntil = Date.now() + 50;
             } else if (a.op === "respond") {

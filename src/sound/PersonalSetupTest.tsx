@@ -9,6 +9,7 @@ export default function PersonalSetupTest({
   answerQueued,
   onAnswer,
   onStop,
+  onContinue,
 }: {
   language: string;
   session: PersonalSession;
@@ -17,20 +18,23 @@ export default function PersonalSetupTest({
   answerQueued: boolean;
   onAnswer: (heard: boolean) => void;
   onStop: () => void;
+  onContinue: () => void;
 }) {
   const t = soundCopy(language);
   const answerable = session.awaiting && !pending && !queued;
   const completed = session.answeredTrials;
   const percent = Math.round((completed / session.totalTrials) * 100);
-  const prompt = answerQueued
-    ? t.answerRecorded
-    : queued || pending
-      ? t.preparingTone
-      : t.hearQuestion;
+  const paused = session.phase === "paused";
+  const prompt = paused
+    ? t.setupPaused
+    : answerQueued
+      ? t.answerRecorded
+      : queued || pending
+        ? t.preparingTone
+        : t.hearQuestion;
   return (
     <>
       <div className="setup-stage-label">
-        <span>{session.ear === 0 ? t.left : t.right}</span>
         <span>
           {t.progress} {Math.min(completed + 1, session.totalTrials)}/
           {session.totalTrials}
@@ -48,33 +52,36 @@ export default function PersonalSetupTest({
         />
         <strong aria-hidden="true">{percent}%</strong>
       </div>
-      <details className="setup-tone-details">
-        <summary>{t.setupDetails}</summary>
-        <p>
-          {session.frequency < 1000
-            ? `${session.frequency} Hz`
-            : `${session.frequency / 1000} kHz`}{" "}
-          · {session.level} dBFS · {t.burst}
-        </p>
-      </details>
       <div className="setup-footer">
         <div className="setup-answers">
-          <button
-            className="button secondary"
-            aria-label={t.notHeard}
-            disabled={!answerable}
-            onClick={() => onAnswer(false)}
-          >
-            {t.no}
-          </button>
-          <button
-            className="button primary"
-            aria-label={t.heard}
-            disabled={!answerable}
-            onClick={() => onAnswer(true)}
-          >
-            {t.yes}
-          </button>
+          {paused ? (
+            <button
+              className="button primary setup-continue"
+              disabled={pending}
+              onClick={onContinue}
+            >
+              {t.continueSetup}
+            </button>
+          ) : (
+            <>
+              <button
+                className="button secondary"
+                aria-label={t.notHeard}
+                disabled={!answerable}
+                onClick={() => onAnswer(false)}
+              >
+                {t.no}
+              </button>
+              <button
+                className="button primary"
+                aria-label={t.heard}
+                disabled={!answerable}
+                onClick={() => onAnswer(true)}
+              >
+                {t.yes}
+              </button>
+            </>
+          )}
         </div>
         <div className="setup-secondary-actions">
           <button className="text-button" onClick={onStop}>

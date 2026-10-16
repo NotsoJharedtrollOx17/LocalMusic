@@ -24,7 +24,7 @@ export default function PersonalResponseChart({
           />
         ))}
       </div>
-      <p className="setup-chart-caption">{t.responseCurve}</p>
+      <p className="sound-sr-only">{t.responseCurve}</p>
     </div>
   );
 }

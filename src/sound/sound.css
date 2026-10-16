@@ -272,6 +272,7 @@
 
 /* Focused music setup: one compact graphic, one question, stable actions. */
 .personal-wizard {
+  width: 100%;
   max-width: 640px;
   margin: 0 auto;
   gap: 20px;
@@ -323,6 +324,12 @@
   background: var(--hover);
   border: 1px solid var(--rule);
   border-radius: 12px;
+}
+.setup-continue {
+  grid-column: 1 / -1;
+}
+.personal-wizard .setup-stage-label {
+  justify-content: flex-end;
 }
 .setup-stereo-chart {
   display: grid;

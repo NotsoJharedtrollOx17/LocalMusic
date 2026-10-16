@@ -1,4 +1,6 @@
 const en = {
+  setupPaused: "Paused",
+  continueSetup: "Continue setup",
   responseCurve:
     "Responses so far · taller bars mean quieter beeps noticed, not the final EQ. Stripes mark the test limits.",
   limitedCoverage:
@@ -131,6 +133,8 @@ const en = {
   },
 };
 const es: typeof en = {
+  setupPaused: "En pausa",
+  continueSetup: "Continuar configuración",
   responseCurve:
     "Respuestas hasta ahora · las barras más altas indican pitidos más suaves percibidos, no el EQ final. Las rayas marcan los límites.",
   limitedCoverage:

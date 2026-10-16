@@ -3,6 +3,42 @@ import AxeBuilder from "@axe-core/playwright";
 import { openSound, openSettings } from "./navigationHelpers";
 import { holdRepeatingTone } from "./personalSessionFixture";
 
+test("focus loss during delayed repeat pauses without replaying queued answers", async ({
+  page,
+}) => {
+  await holdRepeatingTone(page);
+  await page.goto("/");
+  const sound = await openSound(page, "adapt");
+  await sound
+    .getByRole("button", { name: "Create personal profile", exact: true })
+    .click();
+  await sound.getByRole("checkbox", { name: /I am using headphones/ }).check();
+  await sound.getByRole("button", { name: "Begin", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).repeatHeld))
+    .toBe(true);
+  await sound.getByRole("button", { name: "Not heard", exact: true }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeEnabled();
+  await page.evaluate(() => (window as any).releaseTone());
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => (window as any).responses)).toEqual([]);
+  await expect(sound).toContainText("Step 1/36");
+  await sound
+    .getByRole("button", { name: "Continue setup", exact: true })
+    .click();
+  await expect(
+    sound.getByRole("button", { name: "Heard it", exact: true }),
+  ).toBeEnabled();
+  await sound.getByRole("button", { name: "Heard it", exact: true }).click();
+  await expect(sound).toContainText("Step 2/36");
+  expect(await page.evaluate(() => (window as any).responses)).toEqual([true]);
+  await sound.getByRole("button", { name: "Stop setup", exact: true }).click();
+  await expect(sound).toContainText("No partial profile was saved");
+});
+
 test("setup keeps two channel charts and answer actions reachable while tones repeat", async ({
   page,
 }) => {
@@ -80,6 +116,37 @@ test("setup keeps two channel charts and answer actions reachable while tones re
     [],
   );
   await expect(sound).toContainText("Step 1/36"); // silence does not invent an answer
+  const chartWidth = await sound
+    .locator(".setup-chart")
+    .evaluate((node) => node.getBoundingClientRect().width);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeVisible();
+  expect(
+    await sound
+      .locator(".setup-chart")
+      .evaluate((node) => node.getBoundingClientRect().width),
+  ).toBe(chartWidth);
+  const pausedPulses = await page.evaluate(
+    () => (window as any).setupPulseCount,
+  );
+  await page.waitForTimeout(5500);
+  expect(await page.evaluate(() => (window as any).setupPulseCount)).toBe(
+    pausedPulses,
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(
+    sound.getByRole("button", { name: "Continue setup", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({ path: "artifacts/adapt-review/paused-desktop.png" });
+  await sound
+    .getByRole("button", { name: "Continue setup", exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).setupPulseCount))
+    .toBeGreaterThan(pausedPulses);
+  await expect(sound.getByRole("progressbar")).toHaveAttribute("value", "0");
   for (const viewport of [
     { width: 1280, height: 720 },
     { width: 390, height: 700 },

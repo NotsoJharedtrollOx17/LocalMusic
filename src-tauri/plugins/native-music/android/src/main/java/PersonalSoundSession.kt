@@ -11,17 +11,29 @@ class PersonalSoundSession(private val replaceId: String? = null,
     private val wallClock: () -> Long = System::currentTimeMillis) {
     private var calibration = SoundCalibration()
     val view = JSONObject().put("id", UUID.randomUUID().toString()).put("trialId", UUID.randomUUID().toString())
-        .put("phase", "test").put("ear", 0).put("step", 0).put("frequency", 1000).put("level", -54)
+        .put("phase", "test").put("resumePhase", "test").put("ear", 0).put("step", 0).put("frequency", 1000).put("level", -54)
         .put("awaiting", false).put("busyUntil", 0).put("message", "").put("strength", 100)
         .put("answeredTrials", 0).put("totalTrials", 36).put("estimates", calibration.estimates())
         .put("left", JSONArray(List(10) { 0.0 })).put("right", JSONArray(List(10) { 0.0 }))
     private var lease = clock() + 2000
     private var end = 0L
     private var next = 0L
-    fun alive() = view.getString("phase") != "cancelled" && (view.getString("phase") == "saved" || clock() < lease)
+    fun alive() = view.getString("phase") != "cancelled" && (view.getString("phase") in listOf("saved", "paused") || clock() < lease)
     fun heartbeat() {
-        if (!alive()) { cancel(); error("Sound setup expired. Start again.") }
+        if (!alive()) { pause(); check(view.getString("phase") != "cancelled") { "Sound setup is no longer active" } }
         lease = clock() + 2000
+    }
+    fun pause() {
+        if (view.getString("phase") !in listOf("test", "compare", "retry")) return
+        view.put("resumePhase", view.getString("phase")).put("phase", "paused")
+            .put("awaiting", false).put("busyUntil", 0).put("trialId", UUID.randomUUID().toString())
+    }
+    fun resume(trial: String) {
+        check(view.getString("phase") == "paused" && trial.isNotEmpty() && trial == view.getString("trialId")) { "Stale sound setup pause" }
+        view.put("phase", view.getString("resumePhase")).put("trialId", UUID.randomUUID().toString())
+            .put("busyUntil", wallClock())
+        lease = clock() + 2000
+        next = clock() + 500
     }
     private fun checkTrial(trial: String) {
         check(trial.isNotEmpty() && trial == view.getString("trialId") && view.getString("phase") == "test") { "Stale sound setup trial" }

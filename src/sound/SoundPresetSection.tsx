@@ -33,9 +33,9 @@ export default function SoundPresetSection({
           {t.disableProfile}
         </button>
       </div>
-      <p>{t.priority}</p>
+      <p className="sound-sr-only">{t.priority}</p>
       <details className="inactive-presets">
-        <summary>{t.ordinaryPresets}</summary>
+        <summary>{t.presets}</summary>
         <fieldset disabled className="sound-fieldset">
           <SoundPresetList config={config} edit={edit} language={language} />
         </fieldset>

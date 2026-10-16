@@ -32,13 +32,37 @@ export class PersonalProtocol {
   };
   constructor(private readonly replaceId?: string) {}
   alive() {
-    if (performance.now() > this.lease && this.state.phase !== "saved")
-      this.cancel();
+    if (
+      performance.now() > this.lease &&
+      !["saved", "paused"].includes(this.state.phase)
+    )
+      this.pause();
     return this.state.phase !== "cancelled";
   }
   heartbeat() {
     if (!this.alive()) throw new Error("Sound setup expired. Start again.");
     this.lease = performance.now() + 2000;
+  }
+  pause() {
+    if (!["test", "compare", "retry"].includes(this.state.phase)) return;
+    this.state.resumePhase = this.state.phase as "test" | "compare" | "retry";
+    this.state.phase = "paused";
+    this.state.awaiting = false;
+    this.state.busyUntil = 0;
+    this.state.trialId = crypto.randomUUID();
+  }
+  resume(trialId: string) {
+    if (
+      this.state.phase !== "paused" ||
+      !trialId ||
+      trialId !== this.state.trialId
+    )
+      throw new Error("Stale sound setup pause");
+    this.state.phase = this.state.resumePhase ?? "test";
+    this.state.trialId = crypto.randomUUID();
+    this.lease = performance.now() + 2000;
+    this.nextPulse = performance.now() + 500;
+    this.state.busyUntil = Date.now();
   }
   private checkTrial(trialId: string) {
     if (

@@ -44,7 +44,13 @@ class SoundCalibrationTest {
         s.pulse(trial); assertEquals(trial, s.view.getString("trialId")); assertEquals(0, s.view.getInt("answeredTrials"))
         repeat(4) { now += 1000; s.heartbeat() }; s.respond(true, trial)
         assertEquals(1, s.view.getInt("ear")); rejected { s.respond(true, trial) }; rejected { s.pulse(trial) }
-        now += 2100; rejected { s.heartbeat() }; assertEquals("cancelled", s.view.getString("phase")); assertEquals(0, s.view.getJSONArray("estimates").length())
+        now += 2100; s.heartbeat(); assertEquals("paused", s.view.getString("phase"))
+        assertEquals(1, s.view.getInt("answeredTrials"))
+        val pausedTrial = s.view.getString("trialId")
+        s.pause(); assertEquals(pausedTrial, s.view.getString("trialId"))
+        now += 30000; s.heartbeat(); rejected { s.resume(trial) }; rejected { s.pulse(pausedTrial) }
+        s.resume(pausedTrial); assertEquals("test", s.view.getString("phase")); assertEquals(1, s.view.getInt("answeredTrials"))
+        rejected { s.resume(pausedTrial) }; s.cancel(); assertEquals(0, s.view.getJSONArray("estimates").length())
     }
     @Test fun savesDerivedProfileWithoutRawBounds() {
         var now=0L

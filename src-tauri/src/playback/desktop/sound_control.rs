@@ -36,7 +36,12 @@ impl DesktopPlayer {
             .as_ref()
             .is_some_and(|p| !p.alive());
         if expired {
-            self.cancel_personal();
+            if let Some(t) = self.tone.take() {
+                t.stop();
+            }
+            if let Some(p) = self.sound.session.lock().unwrap().as_mut() {
+                p.pause();
+            }
         }
     }
     pub(super) fn sound_command(
@@ -146,8 +151,22 @@ impl DesktopPlayer {
                     return Ok(true);
                 }
                 p.heartbeat()?;
+                if p.view.phase == "paused" {
+                    if let Some(t) = self.tone.take() {
+                        t.stop();
+                    }
+                }
                 let mut samples = None;
                 match action {
+                    "pause" => {
+                        p.pause();
+                        if let Some(t) = self.tone.take() {
+                            t.stop();
+                        }
+                    }
+                    "resume" => {
+                        p.resume(v["trialId"].as_str().ok_or("Missing sound setup pause")?)?;
+                    }
                     "heartbeat" => {}
                     "pulse" => {
                         samples = Some(

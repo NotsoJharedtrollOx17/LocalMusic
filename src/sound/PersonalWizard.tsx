@@ -36,13 +36,15 @@ export default function PersonalWizard({
   const [mode, setMode] = useState<string>();
   const root = useRef<HTMLElement>(null);
   useBackLayer(true, onDone);
+  const visiblePhase =
+    session?.phase === "paused" ? session.resumePhase : session?.phase;
   // Change focus for a new screen, never for every answer or frequency update.
   useEffect(() => {
     root.current
       ?.querySelector<HTMLElement>("h3")
       ?.focus({ preventScroll: true });
     root.current?.closest(".modal-body")?.scrollTo({ top: 0 });
-  }, [session?.phase]);
+  }, [visiblePhase]);
   return (
     <section ref={root} className="personal-wizard" aria-label={t.setup}>
       {error && (
@@ -72,7 +74,8 @@ export default function PersonalWizard({
           onBegin={() => void act({ op: "start", replaceId: replacement?.id })}
           onCancel={onDone}
         />
-      ) : session?.phase === "test" ? (
+      ) : session?.phase === "test" ||
+        (session?.phase === "paused" && session.resumePhase !== "compare") ? (
         <PersonalSetupTest
           language={language}
           session={session}
@@ -88,8 +91,12 @@ export default function PersonalWizard({
             })
           }
           onStop={interrupt}
+          onContinue={() =>
+            void act({ op: "resume", id: session.id, trialId: session.trialId })
+          }
         />
-      ) : session?.phase === "compare" ? (
+      ) : session?.phase === "compare" ||
+        (session?.phase === "paused" && session.resumePhase === "compare") ? (
         <PersonalSetupResult
           language={language}
           session={session}
@@ -105,6 +112,9 @@ export default function PersonalWizard({
             void act({ op: "save", id: session.id, name, strength: 100 })
           }
           onStop={interrupt}
+          onContinue={() =>
+            void act({ op: "resume", id: session.id, trialId: session.trialId })
+          }
           onRestart={() => {
             restart();
             setConfirmed(false);

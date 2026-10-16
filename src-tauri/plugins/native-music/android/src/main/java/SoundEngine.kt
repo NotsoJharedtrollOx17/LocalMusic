@@ -56,7 +56,7 @@ class SoundEngine(private val context: Context) {
             override fun run() {
                 synchronized(this@SoundEngine) {
                     if (session?.alive() == false) {
-                        session?.cancel()
+                        session?.pause()
                         output.stop()
                     }
                 }
@@ -223,7 +223,10 @@ class SoundEngine(private val context: Context) {
             return SoundConfiguration.copy(s.view)
         }
         s.heartbeat()
+        if (s.view.getString("phase") == "paused") output.stop()
         when (op) {
+            "pause" -> { s.pause(); output.stop() }
+            "resume" -> s.resume(action.getString("trialId"))
             "heartbeat" -> {}
             "pulse" -> output.play(s.pulse(action.getString("trialId")))
             "respond" -> s.respond(action.getBoolean("heard"), action.getString("trialId"))
