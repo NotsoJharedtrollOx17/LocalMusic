@@ -61,6 +61,19 @@ test("automatic playlists stay live, preserve import order and play their derive
     .getByRole("button", { name: "Play this mix", exact: true })
     .click();
   await expect(page.locator(".mini-player")).toContainText("Alpha");
+  // Allow decoding/output activation to finish before measuring real listening.
+  await expect(
+    page
+      .locator(".mini-player")
+      .getByRole("button", { name: "Pause", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(async () =>
+      Number(
+        await page.locator(".mini-player").getByRole("slider").inputValue(),
+      ),
+    )
+    .toBeGreaterThan(100);
   // Cross the automatic refresh interval while real fixture audio is playing.
   await page.waitForTimeout(6500);
   await page

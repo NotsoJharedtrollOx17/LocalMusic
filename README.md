@@ -91,7 +91,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.3.0` record the third local development baseline, including compact navigation, automatic playlists, simplified EQ and stabilized Adapt Sound onboarding. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.3.0 release notes](docs/releases/v0.3.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.4.0` record the adaptive Adapt Sound development baseline. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.4.0 release notes](docs/releases/v0.4.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 
@@ -99,4 +99,4 @@ Library tabs share the top row with Search and the menu. Its Edit action selects
 
 Adapt Sound setup uses short preparation steps, compact Left/Right diagrams, automatic repeating tones, progress and fixed No/Yes actions. Compare the original music sample with the personal balance before saving. The existing bounded level checks and profile rules remain; see [the onboarding revision](docs/adapt-sound-onboarding.md).
 
-The v0.3.0 release retains the earlier first-heard calibration limitation. On `dev.adapt-sound-calibration`, the [adaptive revision](docs/adapt-sound-calibration-plan.md) uses 36 answered trials, alternates ears and probes quieter after Yes or louder after No. Animated response estimates are separate from the final proposed EQ. Unresolved regions receive no boost; a resolved flat result is distinguished from limited coverage. Existing profiles stay readable. See [verification](docs/verification.md) for platform acceptance boundaries.
+The [adaptive revision](docs/adapt-sound-calibration-plan.md), included in v0.4.0, uses 36 answered trials, alternates ears and probes quieter after Yes or louder after No. Animated response estimates are separate from the final proposed EQ. Unresolved regions receive no boost; a resolved flat result is distinguished from limited coverage. Focus loss pauses setup and retains progress until explicitly continued or cancelled. Existing profiles stay readable. See [verification](docs/verification.md) for platform acceptance boundaries.
