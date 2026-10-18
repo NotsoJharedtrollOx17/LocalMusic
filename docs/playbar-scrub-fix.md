@@ -13,3 +13,5 @@ Verify actual seek calls during drag, one final seek on release, release outside
 Native seek completion previously cleared the optimistic preview before its position snapshot arrived. A poll started before seeking could also overwrite newer push state. `PlaybackUpdates` now rejects superseded polls, suspends intermediate pushes during a seek and publishes a fresh position before resolving it. Older seek acknowledgements cannot overwrite a later seek. Small adjustments need no arbitrary distance tolerance or fixed waiting timer.
 
 Compact and expanded players share the same 3 px track, circular thumb and 16 px input area. Removed expanded/legacy slider overrides, disabled background tiling and centered compact timestamps against the shared input area.
+
+The user approved both revisions on 17 October 2026. They are integrated into `dev` and included in the local v0.4.1 patch release; see `docs/releases/v0.4.1.md` and `docs/verification.md` for release evidence.
