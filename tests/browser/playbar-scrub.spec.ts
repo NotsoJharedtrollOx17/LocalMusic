@@ -1,5 +1,76 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import { taggedWav } from "./fixtures";
+import { delayedPlayback } from "./playbar-native-fixture";
+
+test("small native seeks retain their target until fresh state replaces old polls", async ({
+  page,
+}) => {
+  await delayedPlayback(page);
+  await page.goto("/");
+  const slider = page.locator(".mini-player").getByRole("slider");
+  await expect(slider).toHaveValue("10000");
+  for (const target of [10100, 9900]) {
+    await page.evaluate(() => {
+      const f = window as any;
+      f.holdPoll = true;
+      f.pollHeld = false;
+      f.freshHeld = false;
+      f.seekHeld = false;
+    });
+    await expect
+      .poll(() => page.evaluate(() => (window as any).pollHeld))
+      .toBe(true);
+    await page.evaluate(() => {
+      (window as any).holdFresh = true;
+    });
+    await slider.fill(String(target));
+    await expect
+      .poll(() => page.evaluate(() => (window as any).seekHeld))
+      .toBe(true);
+    await page.evaluate(() => (window as any).releaseSeek());
+    await expect
+      .poll(() => page.evaluate(() => (window as any).freshHeld))
+      .toBe(true);
+    await page.evaluate(() => (window as any).releasePoll());
+    await expect(slider).toHaveValue(String(target));
+    await page.waitForTimeout(150);
+    await expect(slider).toHaveValue(String(target));
+    await page.evaluate(() => (window as any).releaseFresh());
+    await page.waitForTimeout(150);
+    await expect(slider).toHaveValue(String(target));
+  }
+});
+
+test("compact and expanded players share the same thin track and circular thumb", async ({
+  page,
+}) => {
+  await start(page);
+  const mini = page.locator(".mini-player").getByRole("slider");
+  const appearance = (slider: Locator) =>
+    slider.evaluate((node) => {
+      const css = getComputedStyle(node);
+      return {
+        height: css.height,
+        backgroundSize: css.backgroundSize,
+        backgroundRepeat: css.backgroundRepeat,
+      };
+    });
+  const compact = await appearance(mini);
+  expect(compact.height).toBe("16px");
+  expect(compact.backgroundSize).toBe("100% 3px");
+  expect(compact.backgroundRepeat).toBe("no-repeat");
+  await page
+    .locator(".mini-player")
+    .getByRole("button", { name: "Now playing", exact: true })
+    .click();
+  const expanded = page
+    .getByRole("dialog", { name: "Now playing", exact: true })
+    .getByRole("slider");
+  await expect(expanded).toBeVisible();
+  expect(await appearance(expanded)).toEqual(compact);
+  await expect(page.locator(".toast")).toHaveCount(0);
+  await page.screenshot({ path: "artifacts/playbar-consistent-expanded.png" });
+});
 
 async function start(page: Page) {
   await page.addInitScript(() => {

@@ -376,15 +376,6 @@
   width: 62px;
   height: 62px;
 }
-.player-surface-footer .progress input {
-  height: 5px;
-  min-height: 16px;
-  background-size: 100% 5px;
-}
-.player-surface-footer .progress input::-webkit-slider-thumb {
-  width: 16px;
-  height: 16px;
-}
 .player-surface-footer .player-options {
   display: flex;
   flex-wrap: wrap;

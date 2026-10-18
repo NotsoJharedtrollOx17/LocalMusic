@@ -10,10 +10,12 @@ import type {
   PlaylistRequest,
 } from "../types";
 import { BrowserMusic } from "./browser";
+import { PlaybackUpdates } from "./PlaybackUpdates";
 export const native = isTauri();
 const cmd = <T>(name: string, args?: Record<string, unknown>) =>
   invoke<T>(name, args);
 class NativeMusic implements MusicApi {
+  private playbackUpdates = new PlaybackUpdates();
   searchCatalog(query: string, limit = 30) {
     return cmd<import("../types").SearchResults>("search_catalog", {
       query,
@@ -141,15 +143,25 @@ class NativeMusic implements MusicApi {
   async subscribe(cb: (s: PlaybackSnapshot) => void) {
     const unlisten = await listen<PlaybackSnapshot>(
       "playback://snapshot",
-      (e) => cb(e.payload),
+      (e) => this.playbackUpdates.push(e.payload),
     );
-    cb(await this.playback());
+    const remove = this.playbackUpdates.add(cb);
+    try {
+      await this.playbackUpdates.poll(() => this.playback());
+    } catch (error) {
+      remove();
+      unlisten();
+      throw error;
+    }
     let inFlight = false;
     const tick = () => {
       if (document.hidden || inFlight) return;
       inFlight = true;
-      void this.playback()
-        .then(cb)
+      void this.playbackUpdates
+        .poll(() => this.playback())
+        .catch(() => {
+          /* Keep the latest known snapshot on transient polling failures. */
+        })
         .finally(() => {
           inFlight = false;
         });
@@ -158,6 +170,7 @@ class NativeMusic implements MusicApi {
     document.addEventListener("visibilitychange", tick);
     return () => {
       unlisten();
+      remove();
       clearInterval(interval);
       document.removeEventListener("visibilitychange", tick);
     };
@@ -169,7 +182,10 @@ class NativeMusic implements MusicApi {
     return cmd<void>("toggle_playback");
   }
   seek(ms: number) {
-    return cmd<void>("seek", { ms });
+    return this.playbackUpdates.seek(
+      () => cmd<void>("seek", { ms }),
+      () => this.playback(),
+    );
   }
   next() {
     return cmd<void>("next_track");
