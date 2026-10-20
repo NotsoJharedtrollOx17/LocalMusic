@@ -1,75 +1,157 @@
 import { test, expect } from "@playwright/test";
 
-test("styled context menus retain track actions, keyboard focus and edge placement", async ({
+test("song menus are compact, scoped and equivalent across pointer and keyboard", async ({
   page,
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   const row = page.locator(".track-row").first();
+  const opener = row.getByRole("button", { name: /^Track actions:/ });
+  const menu = page.getByRole("menu");
+  const expected = [
+    "Add to playlist",
+    "Save audio copy",
+    "Track details",
+    "Go to album",
+    "Go to artist",
+    "Remove from Library",
+  ];
+  await opener.click();
+  await expect(opener).toHaveAttribute("aria-expanded", "true");
+  await expect(menu.getByRole("menuitem")).toHaveText(expected);
+  await page.keyboard.press("Escape");
+  await expect(opener).toBeFocused();
+  await expect(opener).toHaveAttribute("aria-expanded", "false");
   await row.click({ button: "right" });
-  const trackMenu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveText(expected);
+  await page.keyboard.press("Escape");
+  await row.locator(".track-hit").focus();
+  await page.keyboard.press("Shift+F10");
+  await expect(menu.getByRole("menuitem")).toHaveText(expected);
+  await page.keyboard.press("End");
   await expect(
-    trackMenu.getByRole("menuitem", { name: "Play", exact: true }),
-  ).toBeVisible();
-  await expect(
-    trackMenu.getByRole("menuitem", {
-      name: "Remove from Library",
-      exact: true,
-    }),
-  ).toBeVisible();
-  await trackMenu
-    .getByRole("menuitem", { name: "Favorite", exact: true })
-    .click();
+    menu.getByRole("menuitem", { name: "Remove from Library", exact: true }),
+  ).toBeFocused();
+  await page.evaluate(() => window.__musicBack?.());
+  await expect(row.locator(".track-hit")).toBeFocused();
+  await row.getByRole("button", { name: "Favorite", exact: true }).click();
   await expect(
     row.getByRole("button", { name: "Favorite", exact: true }),
   ).toHaveClass(/active/);
-  await expect(trackMenu).toHaveCount(0);
-  await row.locator(".track-hit").focus();
-  await page.keyboard.press("Shift+F10");
-  await expect(trackMenu).toBeVisible();
-  await page.keyboard.press("End");
-  await expect(
-    trackMenu.getByRole("menuitem", {
-      name: "Remove from Library",
-      exact: true,
-    }),
-  ).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(row.locator(".track-hit")).toBeFocused();
-  await page.locator(".heading-actions svg").first().click({ button: "right" });
-  await expect(page.getByRole("menu", { name: "App actions" })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.evaluate(() =>
-    document.querySelector(".app-shell")!.dispatchEvent(
+  await row.locator(".track-hit").click();
+  await expect(page.locator(".mini-player")).toBeVisible();
+  await page
+    .locator(".mini-center")
+    .getByRole("button", { name: "Pause", exact: true })
+    .click();
+  await page.setViewportSize({ width: 390, height: 700 });
+  await row.evaluate((el) =>
+    el.dispatchEvent(
       new MouseEvent("contextmenu", {
         bubbles: true,
         cancelable: true,
         clientX: 387,
-        clientY: 840,
+        clientY: 695,
       }),
     ),
   );
-  const menu = page.getByRole("menu", { name: "App actions" });
   await expect(menu).toBeVisible();
-  const box = await menu.boundingBox();
-  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+  const box = (await menu.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(box.y + box.height).toBeLessThanOrEqual(700);
   await page.screenshot({ path: "artifacts/context-menu-mobile.png" });
-  await menu.getByRole("menuitem", { name: "Search your library" }).click();
-  await expect(page.getByRole("searchbox")).toBeFocused();
-  await page.keyboard.press("Escape");
+});
+
+test("backgrounds and cards no longer expose redundant navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  for (const tab of ["Songs", "Albums", "Artists", "Playlists", "Your Year"]) {
+    await page.getByRole("tab", { name: tab, exact: true }).click();
+    const canceled = await page
+      .locator(".library-page")
+      .evaluate(
+        (el) =>
+          !el.dispatchEvent(
+            new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+          ),
+      );
+    expect(canceled).toBe(true);
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    if (tab === "Albums" || tab === "Artists") {
+      const card = page.locator(".album-card").first();
+      await expect(card).toBeVisible();
+      await card.click({ button: "right" });
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await expect(page.locator(".collection-hero")).toHaveCount(0);
+    }
+    if (tab !== "Songs") {
+      await page
+        .getByRole("button", { name: "Library actions", exact: true })
+        .click();
+      await expect(page.getByRole("menuitem")).toHaveText([
+        "Sound options",
+        "Settings",
+      ]);
+      await page.keyboard.press("Escape");
+    }
+  }
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
   const card = page.locator(".album-card").first();
   const title = await card.locator("strong").textContent();
-  await card.click({ button: "right" });
+  await card.focus();
+  await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("menuitem", { name: "Open", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("menuitem", { name: "Open", exact: true }).click();
+    page.getByRole("heading", { name: title!, exact: true }),
+  ).toHaveCount(1);
+});
+
+test("menus switch owners, dismiss without playback and hand focus to their destination", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  const row = page.locator(".track-row").first();
+  const opener = row.getByRole("button", { name: /^Track actions:/ });
+  const header = page.getByRole("button", {
+    name: "Library actions",
+    exact: true,
+  });
+  await header.click();
+  await opener.click();
+  await expect(page.getByRole("menu")).toHaveCount(1);
   await expect(
-    page.getByRole("heading", { name: title!, exact: true }).first(),
+    page.getByRole("menuitem", { name: "Track details", exact: true }),
   ).toBeVisible();
+  await row.locator(".track-hit").click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(page.locator(".mini-player")).toHaveCount(0);
+  await opener.click();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(opener).not.toBeFocused();
+  await opener.click();
+  await page
+    .getByRole("menuitem", { name: "Track details", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Track details",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  expect(
+    await dialog.evaluate((el) => el.contains(document.activeElement)),
+  ).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(opener).toBeFocused();
+  await opener.click();
+  await page
+    .getByRole("menuitem", { name: "Add to playlist", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(opener).toBeFocused();
 });
 
 test("custom editor menus preserve React values and clipboard failures", async ({

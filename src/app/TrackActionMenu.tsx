@@ -1,114 +1,99 @@
 import { ActionMenu } from "../ux";
-import { api } from "../api";
+import type { MenuAction } from "../ux/ActionMenu";
+import { audioShareLabel } from "../ux/sharing";
 import { useMusicAppContext } from "./MusicAppContext";
+import { trackMenuActions } from "./trackMenuActions";
 
 export default function TrackActionMenu() {
   const {
     setSearchOpen,
     setModal,
     dismissModals,
-    setSection,
     setDetail,
-    setSelectedIds,
-    setSelectionMode,
     setActionIds,
     menu,
     setMenu,
+    cache,
+    group,
+    searchOpen,
+    modal,
     t,
-    act,
     share,
-    shareLabel,
     sharing,
     openGroup,
-    closeGroup,
-    favorite,
   } = useMusicAppContext();
-
+  if (!menu) return null;
+  const track = cache[menu.track.id] ?? menu.track;
+  // Search/player objects are independent of the Library collection underneath.
+  const context = searchOpen || modal ? null : group;
+  const navigate = (kind: "albums" | "artists") => {
+    dismissModals();
+    setSearchOpen(false);
+    openGroup(
+      kind,
+      {
+        title: kind === "albums" ? track.album : track.artist,
+        subtitle: kind === "albums" ? track.artist : "",
+        ids: [track.id],
+        track,
+      },
+      menu.anchor,
+    );
+  };
+  const actions: Record<
+    ReturnType<typeof trackMenuActions>[number],
+    MenuAction
+  > = {
+    add: {
+      id: "add",
+      label: t.addToPlaylist,
+      action: () => {
+        setActionIds([track.id]);
+        setModal("add");
+      },
+    },
+    share: {
+      id: "share",
+      label: audioShareLabel(t, 1),
+      disabled: !track.available || sharing,
+      disabledReason: !track.available ? t.unavailable : t.sharingAudio,
+      action: () => void share([track.id]),
+    },
+    details: {
+      id: "details",
+      label: t.details,
+      action: () => {
+        setDetail(track);
+        setModal("track");
+      },
+    },
+    album: {
+      id: "album",
+      label: t.goToAlbum,
+      action: () => navigate("albums"),
+    },
+    artist: {
+      id: "artist",
+      label: t.goToArtist,
+      action: () => navigate("artists"),
+    },
+    remove: {
+      id: "remove",
+      label: t.removeLibrary,
+      danger: true,
+      action: () => {
+        setActionIds([track.id]);
+        setModal("remove");
+      },
+    },
+  };
   return (
-    <>
-      {menu && (
-        <ActionMenu
-          anchor={menu.anchor}
-          point={menu.point}
-          label={menu.track.title}
-          onClose={() => setMenu(null)}
-          items={[
-            {
-              label: t.play,
-              disabled: !menu.track.available || menu.track.hidden,
-              action: () => void act(() => api.play([menu.track.id])),
-            },
-            { label: t.favorite, action: () => void favorite(menu.track) },
-            {
-              label: t.details,
-              action: () => {
-                setDetail(menu.track);
-                setModal("track");
-              },
-            },
-            {
-              label: t.albums,
-              disabled: !menu.track.album,
-              action: () => {
-                dismissModals();
-                setSearchOpen(false);
-                openGroup("albums", {
-                  title: menu.track.album,
-                  subtitle: menu.track.artist,
-                  ids: [menu.track.id],
-                  track: menu.track,
-                });
-              },
-            },
-            {
-              label: t.artists,
-              disabled: !menu.track.artist,
-              action: () => {
-                dismissModals();
-                setSearchOpen(false);
-                openGroup("artists", {
-                  title: menu.track.artist,
-                  subtitle: "",
-                  ids: [menu.track.id],
-                  track: menu.track,
-                });
-              },
-            },
-            {
-              label: t.addToPlaylist,
-              action: () => {
-                setActionIds([menu.track.id]);
-                setModal("add");
-              },
-            },
-            {
-              label: shareLabel,
-              disabled: !menu.track.available || sharing,
-              action: () => void share([menu.track.id]),
-            },
-            {
-              label: t.selectSongs,
-              disabled: menu.track.hidden,
-              action: () => {
-                dismissModals();
-                setSearchOpen(false);
-                setSection("songs");
-                closeGroup();
-                setSelectionMode(true);
-                setSelectedIds([menu.track.id]);
-              },
-            },
-            {
-              label: t.removeLibrary,
-              disabled: menu.track.hidden,
-              action: () => {
-                setActionIds([menu.track.id]);
-                setModal("remove");
-              },
-            },
-          ]}
-        />
-      )}
-    </>
+    <ActionMenu
+      anchor={menu.anchor}
+      point={menu.point}
+      label={track.title}
+      onClose={() => setMenu(null)}
+      items={trackMenuActions(track, context).map((id) => actions[id])}
+    />
   );
 }

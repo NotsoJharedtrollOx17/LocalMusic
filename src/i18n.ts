@@ -1,4 +1,11 @@
 export const en = {
+  goToAlbum: "Go to album",
+  goToArtist: "Go to artist",
+  saveAudioCopy: "Save audio copy",
+  sharingAudio: "Sharing audio…",
+  doneSelecting: "Done selecting",
+  editPlaylist: "Edit playlist",
+  savePlaylist: "Save playlist",
   automaticPlaylists: "Made for your library",
   recentlyAdded: "Recently added",
   recentlyPlayed: "Recently played",
@@ -223,6 +230,13 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  goToAlbum: "Ir al álbum",
+  goToArtist: "Ir al artista",
+  saveAudioCopy: "Guardar copia de audio",
+  sharingAudio: "Compartiendo audio…",
+  doneSelecting: "Terminar selección",
+  editPlaylist: "Editar lista",
+  savePlaylist: "Guardar lista",
   automaticPlaylists: "Hechas para tu biblioteca",
   recentlyAdded: "Agregadas recientemente",
   recentlyPlayed: "Reproducidas recientemente",

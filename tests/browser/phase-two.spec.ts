@@ -243,12 +243,12 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await page
     .locator(".track-row")
-    .getByRole("button", { name: "Track details", exact: true })
+    .getByRole("button", { name: /^Track actions:/ })
     .click();
   const menu = page.getByRole("menu");
   const downloading = page.waitForEvent("download");
   await menu
-    .getByRole("menuitem", { name: /Share audio|Save audio copies/ })
+    .getByRole("menuitem", { name: /Share audio|Save audio cop(?:y|ies)/ })
     .click();
   await expect(page.locator(".toast")).toHaveText("Audio download started");
   expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
@@ -280,7 +280,7 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await expect(page.locator(".track-row")).toHaveCount(1);
   await page
     .locator(".track-row")
-    .getByRole("button", { name: "Track details", exact: true })
+    .getByRole("button", { name: /^Track actions:/ })
     .click();
   await menu
     .getByRole("menuitem", { name: "Remove from Library", exact: true })
@@ -326,7 +326,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   });
   await page
     .locator(".selection-toolbar")
-    .getByRole("button", { name: /Share audio|Save audio copies/ })
+    .getByRole("button", { name: /Share audio|Save audio cop(?:y|ies)/ })
     .click();
   await expect(page.locator(".toast")).not.toContainText(
     "Sharing chooser opened",
@@ -399,7 +399,7 @@ test("hidden playlist entries keep their membership and visible editing order", 
   await page
     .locator(".track-row")
     .first()
-    .getByRole("button", { name: "Track details", exact: true })
+    .getByRole("button", { name: /^Track actions:/ })
     .click();
   await page
     .getByRole("menuitem", { name: "Remove from Library", exact: true })
@@ -416,7 +416,9 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .getByRole("button", { name: "Play this mix", exact: true })
     .click();
   await expect(page.locator(".mini-track strong")).toHaveText("Fixture 1");
-  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Edit playlist", exact: true })
+    .click();
   await page
     .locator(".track-row")
     .first()
@@ -426,7 +428,9 @@ test("hidden playlist entries keep their membership and visible editing order", 
     "Fixture 2",
     "Fixture 1",
   ]);
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save playlist", exact: true })
+    .click();
   await page
     .locator(".undo-banner")
     .getByRole("button", { name: "Undo", exact: true })

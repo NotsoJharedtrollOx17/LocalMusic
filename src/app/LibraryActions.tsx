@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Settings2 } from "lucide-react";
 import { ActionMenu } from "../ux";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function LibraryActions() {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const includedEdit = useRef(false);
   const {
     section,
     group,
     artistView,
     selectedList,
+    editingList,
+    visible,
+    playlistTracks,
+    libraryLoading,
+    groupLoading,
     setModal,
     openSound,
     selectionMode,
@@ -17,10 +23,15 @@ export default function LibraryActions() {
     setSelectedIds,
     t,
   } = useMusicAppContext();
+  const trackView = group
+    ? group.kind === "albums" || artistView === "tracks"
+    : section === "songs" || (section === "playlists" && !!selectedList);
+  const count =
+    section === "playlists" ? playlistTracks.length : visible.length;
   const canSelect =
-    section === "songs" ||
-    (group && (group.kind === "albums" || artistView === "tracks")) ||
-    (section === "playlists" && !!selectedList);
+    !!trackView && !(section === "playlists" && editingList) && count > 0;
+  const loading =
+    section === "songs" ? libraryLoading : !!group && groupLoading;
   return (
     <>
       <button
@@ -30,7 +41,10 @@ export default function LibraryActions() {
         aria-label={t.libraryActions}
         aria-haspopup="menu"
         aria-expanded={!!anchor}
-        onClick={(e) => setAnchor(e.currentTarget)}
+        onClick={(event) => {
+          includedEdit.current = canSelect || selectionMode;
+          setAnchor(event.currentTarget);
+        }}
       >
         <Settings2 size={25} />
       </button>
@@ -40,16 +54,30 @@ export default function LibraryActions() {
           label={t.libraryActions}
           onClose={() => setAnchor(null)}
           items={[
+            ...(includedEdit.current
+              ? [
+                  {
+                    id: "edit",
+                    label: selectionMode ? t.doneSelecting : t.edit,
+                    disabled: !selectionMode && (!canSelect || loading),
+                    action: () => {
+                      if (!selectionMode && (!canSelect || loading)) return;
+                      setSelectionMode(!selectionMode);
+                      setSelectedIds([]);
+                    },
+                  },
+                ]
+              : []),
             {
-              label: t.edit,
-              disabled: !canSelect,
-              action: () => {
-                setSelectionMode(!selectionMode);
-                setSelectedIds([]);
-              },
+              id: "sound",
+              label: t.soundControls,
+              action: () => void openSound(),
             },
-            { label: t.soundControls, action: () => void openSound() },
-            { label: t.settings, action: () => setModal("settings") },
+            {
+              id: "settings",
+              label: t.settings,
+              action: () => setModal("settings"),
+            },
           ]}
         />
       )}

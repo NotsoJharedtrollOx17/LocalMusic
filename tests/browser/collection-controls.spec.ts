@@ -8,6 +8,15 @@ test("Lists uses the shared creation toolbar without a repeated title", async ({
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   const imported = await page.locator(".library-import").boundingBox();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page
+    .locator("#library-content")
+    .evaluate((el) =>
+      Promise.all(
+        el
+          .getAnimations()
+          .map((animation) => animation.finished.catch(() => {})),
+      ),
+    );
   await expect(
     page.getByRole("heading", { name: "Playlists", exact: true }),
   ).toHaveCount(0);

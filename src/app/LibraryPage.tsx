@@ -59,7 +59,14 @@ export default function LibraryPage() {
       className={"library-page" + (motion.compact ? " is-compact" : "")}
     >
       <div className="page-heading library-navigation">
-        {group ? <h1 tabIndex={-1}>{group.title}</h1> : <LibraryTabs />}
+        {group ? (
+          <button className="text-button group-back" onClick={backGroup}>
+            <ArrowLeft size={17} />
+            {t.library}
+          </button>
+        ) : (
+          <LibraryTabs />
+        )}
         <div className="heading-actions">
           <IconButton
             label={t.search}
@@ -70,12 +77,6 @@ export default function LibraryPage() {
           <LibraryActions />
         </div>
       </div>
-      {group ? (
-        <button className="text-button group-back" onClick={backGroup}>
-          <ArrowLeft size={17} />
-          {t.library}
-        </button>
-      ) : null}
       <div
         id="library-content"
         role={!group ? "tabpanel" : undefined}
@@ -85,9 +86,15 @@ export default function LibraryPage() {
           <div className="collection-hero">
             <Cover imageRef={detailHero} track={group.coverTrack} large />
             <div>
-              <strong>{group.title}</strong>
+              <h1 tabIndex={-1}>{group.title}</h1>
+              {group.subtitle && <span>{group.subtitle}</span>}
               <span>
-                {group.subtitle || formatMusicCount(group.ids.length)}
+                {[
+                  group.kind === "albums" ? group.coverTrack.releaseYear : null,
+                  formatMusicCount(group.ids.length),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </div>
           </div>
@@ -131,6 +138,11 @@ export default function LibraryPage() {
                       {artistAlbums.map((album) => (
                         <button
                           className="album-card"
+                          data-group-key={JSON.stringify([
+                            "albums",
+                            album.title,
+                            album.subtitle,
+                          ])}
                           key={JSON.stringify([album.title, album.subtitle])}
                           onClick={(e) =>
                             openGroup("albums", album, e.currentTarget)
@@ -168,6 +180,11 @@ export default function LibraryPage() {
                     <button
                       key={JSON.stringify([g.title, g.subtitle])}
                       className="album-card"
+                      data-group-key={JSON.stringify([
+                        section,
+                        g.title,
+                        g.subtitle,
+                      ])}
                       onClick={(e) =>
                         openGroup(
                           section as "albums" | "artists",

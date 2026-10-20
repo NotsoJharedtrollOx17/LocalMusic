@@ -28,10 +28,12 @@ export default function LibraryFilters() {
           onClose={() => setAnchor(null)}
           items={[
             {
+              id: "favorites",
               label: onlyFavorites ? t.allMusic : t.favorites,
               action: () => setOnlyFavorites(!onlyFavorites),
             },
             ...(["title", "artist", "album"] as const).map((value) => ({
+              id: value,
               label:
                 value === "title"
                   ? t.sort

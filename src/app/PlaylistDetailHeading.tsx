@@ -11,6 +11,8 @@ export default function PlaylistDetailHeading() {
     formatMusicCount,
     saveList,
     playlistTracks,
+    setSelectionMode,
+    setSelectedIds,
   } = useMusicAppContext();
 
   if (!selectedList) return null;
@@ -37,11 +39,13 @@ export default function PlaylistDetailHeading() {
         <button
           className="text-button"
           onClick={() => {
+            setSelectionMode(false);
+            setSelectedIds([]);
             if (editingList) void saveList(selectedList);
             setEditingList(!editingList);
           }}
         >
-          {editingList ? t.save : t.edit}
+          {editingList ? t.savePlaylist : t.editPlaylist}
         </button>
       )}
     </div>

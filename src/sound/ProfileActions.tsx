@@ -36,9 +36,9 @@ export default function ProfileActions({
           label={t.manageProfile}
           onClose={() => setOpen(false)}
           items={[
-            { label: t.rename, action: onRename },
-            { label: t.retestProfile, action: onRetest },
-            { label: t.remove, action: onDelete },
+            { id: "rename", label: t.rename, action: onRename },
+            { id: "retest", label: t.retestProfile, action: onRetest },
+            { id: "delete", label: t.remove, action: onDelete },
           ]}
         />
       )}

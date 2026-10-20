@@ -1,6 +1,6 @@
 # Contextual menu UX revision
 
-19 October 2026. **Status: planning only; implementation pending.**
+19 October 2026. **Status: implemented on `dev.context-menu-ux`; review pending.** Platform verification and remaining gates are recorded in [verification](verification.md).
 
 ## 1. Goal and branch
 
@@ -8,8 +8,8 @@ Reduce repeated actions and make menus describe the object or page they belong t
 
 - Baseline: `dev` at `c3c8265` (`v0.4.1`). The working tree was clean before this review.
 - Planning branch: **`dev.context-menu-ux`**, created from `dev`.
-- This deliverable changes documentation only. No application behavior, application version, release tag, native contract or persisted schema changes in this step.
-- Implement the revision later on this branch, verify it, and leave it for review before integration into `dev`. Preserve `main`, existing tags, recordings and the four source reference images.
+- The original planning commit `af3a3d9` changed documentation only. The user subsequently authorized the implementation below. Application versions, native contracts and persisted schemas remain unchanged.
+- Leave the implementation on this branch for review before integration into `dev`. Preserve `main`, existing tags, recordings and the four source reference images.
 
 The menu decisions here supersede earlier menu inventories in [phase two](phase-two-ux-flow.md) and [Library navigation](library-sound-navigation.md) only where stated. Other product requirements remain applicable.
 
@@ -192,7 +192,7 @@ Inspect EN/ES, light/dark, long/missing metadata, desktop/maximized/short Window
 
 Run `npm.cmd run check` and `npm.cmd run test:browser` after implementation; run Rust core tests using `npm.cmd run test:core` for the unchanged domain regressions. If native code must change, add the affected native tests. Build and inspect the actual Windows app for the recorded menu flows, save-copy dialog and native context-menu suppression. Build Android for the shared UI change; exercise touch/Back/share on an available emulator/device and state any unavailable runtime gate explicitly. Browser evidence establishes browser behavior only. Releasing, version changes and tags require a separate release task.
 
-## 8. Planning verification and remaining work
+## 8. Original planning verification
 
 Completed for this planning deliverable:
 
@@ -200,4 +200,13 @@ Completed for this planning deliverable:
 - Created the focused branch from the released `dev` baseline.
 - Saved this specification; checked Markdown formatting, relative local links and the documentation-only diff.
 
-Pending: every application change and every implementation acceptance check above. No new application build, browser journey, native/runtime or assistive-technology result is claimed by this document.
+At the planning commit, application changes and implementation acceptance checks were pending. The follow-up implementation and actual verification are recorded below and in [verification](verification.md).
+
+## 9. Implementation record
+
+- Reduced song actions to Add to playlist, platform-appropriate Share/Save audio copy, Track details, Go to album, Go to artist and Remove from Library. Unavailable/hidden tracks and the current collection determine which actions can run or are omitted. Play, Favorite and selection retain their primary controls.
+- Removed the generic background/card navigation menu while preserving text editing and native browser-menu suppression. Shared menu ownership coordinates header, track, filter, text and profile menus; stable action IDs, explicit disabled states, focus handoff, outside-click consumption and scope-change dismissal prevent competing interactions.
+- Header Edit selects within the current loaded track collection; Done selecting exits it. Unsupported/empty contexts omit Edit. Saved-playlist membership/order editing uses Edit playlist and Save playlist, separately from track selection.
+- Consolidated each album/artist detail title into a centered, responsive hero. Collection navigation retains its originating tab, scroll position and recreated opener focus target; delayed reads cannot replace a newer navigation choice.
+- Added English/Spanish labels and targeted unit/browser regressions. Retained file/history preservation, Undo, queue semantics, filters, playback, EQ processing and personal-profile priority. No new capability or dependency was added.
+- Windows and ARM64 development builds retain version 0.4.1; they are unreleased feature-branch builds. Browser, native Windows and package evidence have separate scopes. Android device/emulator runtime and physical-device accessibility/performance acceptance remain pending; see the dated verification entry for exact results and limitations.

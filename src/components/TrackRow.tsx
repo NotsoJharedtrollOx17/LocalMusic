@@ -41,6 +41,7 @@ export function TrackRow({
     play: string;
     favorite: string;
     details: string;
+    actions: string;
     remove: string;
     moveUp: string;
     moveDown: string;
@@ -60,6 +61,7 @@ export function TrackRow({
   useEffect(() => cancel, []);
   return (
     <div
+      data-track-id={track.id}
       onContextMenu={(event) => {
         if (!onMore) return;
         event.preventDefault();
@@ -211,7 +213,11 @@ export function TrackRow({
             </IconButton>
           )}
           {onMore && (
-            <IconButton label={labels.details} onClick={onMore}>
+            <IconButton
+              label={labels.actions + ": " + track.title}
+              onClick={onMore}
+              hasMenu
+            >
               <MoreHorizontal size={22} />
             </IconButton>
           )}

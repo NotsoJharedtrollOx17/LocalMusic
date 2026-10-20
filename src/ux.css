@@ -16,7 +16,7 @@
 .text-button:active:not(:disabled) {
   transform: scale(0.97);
 }
-.collection-hero strong {
+.collection-hero h1 {
   overflow-wrap: anywhere;
 }
 .library-page h1:focus {
@@ -66,6 +66,7 @@
 .collection-hero {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 24px;
   padding: 24px 0;
   animation: music-enter var(--motion-surface) var(--ease-music);
@@ -82,9 +83,11 @@
   flex-direction: column;
   gap: 8px;
 }
-.collection-hero strong {
+.collection-hero h1 {
   font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
+  margin: 0;
+  line-height: 1.2;
 }
 .collection-hero span {
   color: var(--muted);
@@ -195,6 +198,24 @@
 .action-menu button:hover,
 .action-menu button:focus-visible {
   background: var(--hover);
+}
+.action-menu button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+.action-menu .menu-danger {
+  color: #a33123;
+  border-top: 1px solid var(--rule);
+  margin-top: 5px;
+  border-radius: 0 0 5px 5px;
+}
+:root[data-theme="dark"] .action-menu .menu-danger {
+  color: #ff9980;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .action-menu .menu-danger {
+    color: #ff9980;
+  }
 }
 .operation-note {
   margin: 18px 0 24px;
@@ -493,12 +514,14 @@
   .collection-hero {
     gap: 16px;
     padding: 18px 0;
+    flex-direction: column;
+    text-align: center;
   }
   .collection-hero .cover {
     width: 88px;
     height: 88px;
   }
-  .collection-hero strong {
+  .collection-hero h1 {
     font-size: 20px;
   }
   .selection-toolbar {

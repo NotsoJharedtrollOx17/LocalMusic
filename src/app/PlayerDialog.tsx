@@ -52,6 +52,8 @@ export default function PlayerDialog() {
                 </button>
                 <button
                   className="text-button"
+                  aria-haspopup="menu"
+                  aria-expanded={false}
                   onClick={(e) =>
                     setMenu({ track: current, anchor: e.currentTarget })
                   }

@@ -1,4 +1,5 @@
 import { useAutomaticPlaylists } from "./useAutomaticPlaylists";
+import { dismissMenu, hasOpenMenu } from "../ux/menuLayer";
 import { audioShareLabel } from "../ux/sharing";
 import { useSoundController } from "../sound/useSoundController";
 import { useMusicActions } from "./useMusicActions";
@@ -265,11 +266,46 @@ export function useMusicApp(initialSettings?: Settings) {
   const groupIdentity = group
     ? JSON.stringify([group.kind, group.title, group.subtitle])
     : "";
+  useLayoutEffect(() => {
+    dismissMenu();
+    state.setMenu(null);
+  }, [
+    section,
+    groupIdentity,
+    artistView,
+    selectedList?.id,
+    modal,
+    searchOpen,
+    shareRecap,
+  ]);
+  useEffect(() => {
+    setSelectionMode(false);
+    setSelectedIds([]);
+  }, [section, groupIdentity, artistView, selectedList?.id]);
   const restoreGroupScroll = useRef<number | null>(null);
+  const groupOrigin = useRef<{ section: LibrarySection; selector?: string }>({
+    section,
+  });
+  const restoreGroupFocus = useRef(false);
   useLayoutEffect(() => {
     if (restoreGroupScroll.current !== null) {
       window.scrollTo({ top: restoreGroupScroll.current, behavior: "instant" });
       restoreGroupScroll.current = null;
+    }
+    if (!group && restoreGroupFocus.current) {
+      restoreGroupFocus.current = false;
+      const selector = groupOrigin.current.selector;
+      const frame = requestAnimationFrame(() => {
+        (
+          document.querySelector<HTMLElement>(
+            selector ?? '.section-tabs [aria-selected="true"]',
+          ) ??
+          document.querySelector<HTMLElement>(
+            '.section-tabs [aria-selected="true"]',
+          )
+        )?.focus({ preventScroll: true });
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [groupIdentity]);
   useEffect(() => {
@@ -367,6 +403,7 @@ export function useMusicApp(initialSettings?: Settings) {
         ) ||
         modal ||
         menu ||
+        hasOpenMenu() ||
         searchOpen ||
         selectionMode ||
         shareRecap
@@ -400,6 +437,8 @@ export function useMusicApp(initialSettings?: Settings) {
         await refreshGroup(previous.group);
       });
     } else {
+      setSection(groupOrigin.current.section);
+      restoreGroupFocus.current = true;
       closeGroup(groupScroll.current);
     }
   }
@@ -467,7 +506,7 @@ export function useMusicApp(initialSettings?: Settings) {
     });
   }
   const sharingActive = useRef(false);
-  const shareLabel = audioShareLabel(t);
+  const shareLabel = audioShareLabel(t, state.selectedIds.length);
   async function share(ids: string[]) {
     if (sharingActive.current) return;
     sharingActive.current = true;
@@ -502,8 +541,20 @@ export function useMusicApp(initialSettings?: Settings) {
       window.scrollTo({ top: 0, behavior: "instant" });
       return;
     }
-    if (!group) groupScroll.current = window.scrollY;
-    else groupStack.current.push({ group, scroll: window.scrollY, artistView });
+    if (!group) {
+      groupScroll.current = window.scrollY;
+      const row = source?.closest<HTMLElement>("[data-track-id]");
+      const key = source?.dataset.groupKey;
+      groupOrigin.current = {
+        section,
+        selector: row?.dataset.trackId
+          ? `[data-track-id="${CSS.escape(row.dataset.trackId)}"] [aria-haspopup="menu"]`
+          : key
+            ? `[data-group-key="${CSS.escape(key)}"]`
+            : undefined,
+      };
+    } else
+      groupStack.current.push({ group, scroll: window.scrollY, artistView });
     const image = source?.querySelector<HTMLImageElement>("img");
     coverOrigin.current = image
       ? { rect: image.getBoundingClientRect(), src: image.src }

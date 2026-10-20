@@ -28,6 +28,7 @@ export function SearchSurface({
     play: string;
     favorite: string;
     details: string;
+    actions: string;
     remove: string;
     moveUp: string;
     moveDown: string;

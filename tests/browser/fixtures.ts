@@ -19,11 +19,16 @@ export function wav(seconds = 40) {
   return b;
 }
 
-export function taggedWav(title: string, marker: number, seconds = 1) {
+export function taggedWav(
+  title: string,
+  marker: number,
+  seconds = 1,
+  metadata?: { artist?: string; album?: string },
+) {
   const base = wav(seconds);
   base.writeInt16LE(marker, 44);
   const chunk = (kind: string, value: string) => {
-    const bytes = Buffer.from(value + "\0");
+    const bytes = Buffer.from(value + "\0", "latin1");
     const part = Buffer.alloc(8 + bytes.length + (bytes.length % 2));
     part.write(kind, 0);
     part.writeUInt32LE(bytes.length, 4);
@@ -32,8 +37,8 @@ export function taggedWav(title: string, marker: number, seconds = 1) {
   };
   const info = Buffer.concat([
     Buffer.from("INFO"),
-    chunk("IART", "Fixture Artist"),
-    chunk("IPRD", "Fixture Album"),
+    chunk("IART", metadata?.artist ?? "Fixture Artist"),
+    chunk("IPRD", metadata?.album ?? "Fixture Album"),
     chunk("INAM", title),
   ]);
   const header = Buffer.alloc(8);

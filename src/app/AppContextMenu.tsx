@@ -8,26 +8,11 @@ import {
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function AppContextMenu() {
-  const {
-    t,
-    act,
-    setSection,
-    closeGroup,
-    setSearchOpen,
-    setModal,
-    dismissModals,
-    setMenu,
-    setSelectionMode,
-    setSelectedIds,
-    menu,
-    modal,
-    searchOpen,
-  } = useMusicAppContext();
+  const { t, act, setMenu, menu, modal, searchOpen } = useMusicAppContext();
   const [context, setContext] = useState<{
     anchor: HTMLElement;
     point?: { x: number; y: number };
     text: TextContext;
-    card: HTMLButtonElement | null;
   } | null>(null);
   useEffect(() => {
     const open = (event: MouseEvent) => {
@@ -45,17 +30,19 @@ export default function AppContextMenu() {
           ? document.activeElement
           : target);
       setMenu(null);
-      setContext({
-        anchor,
-        point:
-          event.clientX || event.clientY
-            ? { x: event.clientX, y: event.clientY }
-            : undefined,
-        text: captureTextContext(target),
-        card: target.closest<HTMLButtonElement>(
-          "button.album-card,button.playlist-tile",
-        ),
-      });
+      const text = captureTextContext(target);
+      setContext(
+        text.editor || text.text
+          ? {
+              anchor,
+              point:
+                event.clientX || event.clientY
+                  ? { x: event.clientX, y: event.clientY }
+                  : undefined,
+              text,
+            }
+          : null,
+      );
     };
     document.addEventListener("contextmenu", open);
     return () => document.removeEventListener("contextmenu", open);
@@ -63,15 +50,8 @@ export default function AppContextMenu() {
   useEffect(() => {
     if (menu) setContext(null);
   }, [menu]);
+  useEffect(() => setContext(null), [modal, searchOpen]);
   if (!context) return null;
-  const navigate = (tab: "library" | "year") => {
-    dismissModals();
-    setSearchOpen(false);
-    setSelectionMode(false);
-    setSelectedIds([]);
-    closeGroup();
-    setSection(tab === "year" ? "year" : "songs");
-  };
   const clipboard = async (operation: () => Promise<void>) => {
     try {
       await operation();
@@ -82,6 +62,7 @@ export default function AppContextMenu() {
   const editor = context.text.editor;
   const textItems = [
     {
+      id: "copy",
       label: t.copyText,
       disabled: !context.text.text || !navigator.clipboard?.writeText,
       action: () =>
@@ -92,6 +73,7 @@ export default function AppContextMenu() {
     ...(editor
       ? [
           {
+            id: "cut",
             label: t.cutText,
             disabled:
               !context.text.text ||
@@ -107,6 +89,7 @@ export default function AppContextMenu() {
               ),
           },
           {
+            id: "paste",
             label: t.pasteText,
             disabled:
               editor.readOnly ||
@@ -123,6 +106,7 @@ export default function AppContextMenu() {
               ),
           },
           {
+            id: "select-all",
             label: t.selectAllText,
             action: () => {
               editor.focus({ preventScroll: true });
@@ -136,23 +120,9 @@ export default function AppContextMenu() {
     <ActionMenu
       anchor={context.anchor}
       point={context.point}
-      label={editor ? t.textActions : t.appActions}
+      label={t.textActions}
       onClose={() => setContext(null)}
-      items={[
-        ...(editor || context.text.text ? textItems : []),
-        ...(context.card
-          ? [{ label: t.openItem, action: () => context.card?.click() }]
-          : []),
-        ...(!modal && !searchOpen
-          ? [
-              { label: t.library, action: () => navigate("library") },
-              { label: t.year, action: () => navigate("year") },
-              { label: t.search, action: () => setSearchOpen(true) },
-              { label: t.settings, action: () => setModal("settings") },
-            ]
-          : []),
-        { label: t.close, action: () => {} },
-      ]}
+      items={textItems}
     />
   );
 }

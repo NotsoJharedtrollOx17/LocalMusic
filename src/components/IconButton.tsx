@@ -6,12 +6,14 @@ export function IconButton({
   children,
   active = false,
   disabled = false,
+  hasMenu = false,
 }: {
   label: string;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   children: ReactNode;
   active?: boolean;
   disabled?: boolean;
+  hasMenu?: boolean;
 }) {
   return (
     <button
@@ -22,6 +24,8 @@ export function IconButton({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active || undefined}
+      aria-haspopup={hasMenu ? "menu" : undefined}
+      aria-expanded={hasMenu ? false : undefined}
     >
       {children}
     </button>
