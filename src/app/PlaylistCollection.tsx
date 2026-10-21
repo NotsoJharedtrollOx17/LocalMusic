@@ -3,6 +3,7 @@ import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistCollection() {
   const { lists, t, openPlaylist, formatMusicCount } = useMusicAppContext();
+  if (!lists.length) return null;
 
   return (
     <div className="playlist-collection">

@@ -31,8 +31,10 @@ export default function AutomaticPlaylistCollection() {
     },
   ];
   return (
-    <section className="automatic-playlists" aria-label={t.automaticPlaylists}>
-      <h3>{t.automaticPlaylists}</h3>
+    <section
+      className="automatic-playlists"
+      aria-labelledby="automatic-playlists-heading"
+    >
       <div className="playlist-collection" aria-busy={automatic.loading}>
         {definitions.map(({ key, title, description, Icon }) => {
           const p = automatic.playlists.find(
@@ -52,7 +54,7 @@ export default function AutomaticPlaylistCollection() {
                 </span>
               </div>
               <div>
-                <h4>{p ? automaticPlaylistLabel(p, t) : title}</h4>
+                <h3>{p ? automaticPlaylistLabel(p, t) : title}</h3>
                 {p ? (
                   <span>{formatMusicCount(p.trackIds.length)}</span>
                 ) : automatic.error ? (

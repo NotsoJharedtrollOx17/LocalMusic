@@ -10,7 +10,7 @@ export default function PlaylistToolbar() {
       {selectedList ? (
         <h2>{automaticPlaylistLabel(selectedList, t)}</h2>
       ) : (
-        <div aria-hidden="true" />
+        <h2 id="automatic-playlists-heading">{t.automaticPlaylists}</h2>
       )}
       <div className="toolbar-actions">
         <button

@@ -39,4 +39,12 @@ This revision changes presentation and accessibility only. No public `MusicApi`,
 
 ## Execution record
 
+- Created `dev.menus-ui-updates` from `59e1840` and committed this plan before implementation.
+- Implemented the balanced popup footer, symmetric header/transport, consolidated scrolling styles, playlist toolbar and responsive detail layout.
+- Regression checks also identified and corrected checkbox focus restoration after pending updates, long saved-playlist grid overflow, and automatic-card heading hierarchy.
+- Native zoom hotkeys are enabled for Windows accessibility and actual 200% zoom verification. No audio, persistence, public API or contextual-menu changes were required.
+- Actual test/build results and remaining platform gates are recorded in [verification.md](verification.md#21-october-2026--player-and-playlist-layout-stabilization). Integration and release remain separate requests.
+
+## Execution record
+
 21 October 2026: created the branch from `59e1840` and saved this specification before implementation. Implementation and acceptance results follow in `verification.md`.

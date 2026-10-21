@@ -844,7 +844,7 @@ input[type="range"] {
 }
 .playlist-collection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 15px 0 34px;
 }
@@ -988,18 +988,6 @@ input[type="range"] {
 }
 .generated-result > .button {
   margin-top: 24px;
-}
-.playlist-detail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 16px;
-  gap: 10px;
-}
-.playlist-detail-head > span {
-  font-size: 12px;
-  color: var(--muted);
 }
 .playlist-footer {
   display: flex;
@@ -1268,57 +1256,6 @@ input[type="range"] {
   color: var(--muted);
   margin-bottom: 12px;
 }
-.full-player > .eyebrow {
-  text-align: center;
-  margin-bottom: 24px;
-}
-.full-player .player-cover {
-  width: 100%;
-  height: auto;
-  border-radius: 7px;
-}
-.player-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 25px 0 30px;
-  gap: 15px;
-}
-.player-title > div {
-  min-width: 0;
-}
-.player-title h2 {
-  font-size: 34px;
-  overflow-wrap: anywhere;
-}
-.player-title p {
-  font-size: 18px;
-  color: var(--muted);
-  margin-top: 8px;
-}
-.full-player .progress > div {
-  font-size: 12px;
-  margin-top: 14px;
-}
-.full-player .transport {
-  gap: 17px;
-  margin: 30px 0;
-}
-.full-player .play-circle {
-  width: 68px;
-  height: 68px;
-}
-.player-options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  border-top: 1px solid var(--rule);
-  padding-top: 15px;
-}
-.player-options .check-label {
-  font-size: 11px;
-}
 .track-picker {
   max-height: 42vh;
   overflow: auto;
@@ -1577,7 +1514,7 @@ input[type="range"] {
     grid-column: span 1;
   }
   .playlist-collection {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .recap-highlights {
     gap: 16px;
@@ -1877,13 +1814,6 @@ input[type="range"] {
   .playlist-tile h3 {
     font-size: 19px;
   }
-  .playlist-detail-head {
-    flex-wrap: wrap;
-    font-size: 11px;
-  }
-  .playlist-detail-head > span {
-    font-size: 10px;
-  }
   .result-heading h2 {
     font-size: 25px;
   }
@@ -2035,35 +1965,6 @@ input[type="range"] {
   .modal .track-number {
     width: 15px;
     font-size: 9px;
-  }
-  .full-player .player-cover {
-    max-width: 330px;
-    margin: auto;
-  }
-  .player-title {
-    margin: 22px 0 28px;
-  }
-  .player-title h2 {
-    font-size: 30px;
-  }
-  .player-title p {
-    font-size: 16px;
-  }
-  .full-player .transport {
-    gap: 16px;
-    margin: 27px 0;
-  }
-  .full-player .play-circle {
-    width: 62px;
-    height: 62px;
-  }
-  .full-player .transport > .icon-button {
-    width: 40px;
-    min-width: 40px;
-  }
-  .player-options .check-label {
-    font-size: 10px;
-    gap: 6px;
   }
   .story-scene {
     min-height: 340px;

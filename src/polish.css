@@ -1,7 +1,3 @@
-﻿/* Shared overlay geometry: headers stay reachable and only bodies scroll. */
-.player-scrim[hidden] {
-  display: none;
-}
 .modal {
   display: flex;
   flex-direction: column;
@@ -70,33 +66,6 @@
   line-height: 1.6;
   max-width: 36em;
 }
-.player-surface-head {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) 110px;
-}
-.player-surface-head > .icon-button {
-  justify-self: start;
-}
-.player-surface-head > .text-button {
-  justify-self: end;
-}
-.player-surface .queue-content .row-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 44px);
-}
-.player-surface .queue-content .icon-button {
-  width: 44px;
-  min-width: 44px;
-}
-.player-surface .queue-content .row-actions > :nth-child(1) {
-  grid-column: 1;
-}
-.player-surface .queue-content .row-actions > :nth-child(2) {
-  grid-column: 2;
-}
-.player-surface .queue-content .row-actions > :nth-child(3) {
-  grid-column: 3;
-}
 .modal:has(.manual-playlist-form) .modal-body {
   display: flex;
   overflow: hidden;
@@ -152,24 +121,6 @@
   }
   .search-close-icon {
     display: none;
-  }
-  .player-surface-head {
-    grid-template-columns: 64px minmax(0, 1fr) 100px;
-  }
-}
-@media (max-width: 480px) {
-  .player-surface .queue-content .track-row {
-    flex-wrap: wrap;
-    padding-block: 12px;
-  }
-  .player-surface .queue-content .track-hit {
-    flex-basis: calc(100% - 28px);
-  }
-  .player-surface .queue-content .row-actions {
-    margin-left: auto;
-  }
-  .player-surface .queue-content .track-duration {
-    margin-left: 58px;
   }
 }
 @media (max-height: 520px) {
@@ -244,19 +195,6 @@
 .library-brand-note .preview-note {
   margin: 0;
 }
-.player-surface-body .full-player {
-  display: flow-root;
-}
-.player-surface .player-cover {
-  width: min(100%, var(--player-art-size, 320px));
-  height: auto;
-  max-height: none;
-  aspect-ratio: 1;
-}
-.player-surface-head,
-.player-surface-footer {
-  flex-shrink: 0;
-}
 @media (max-width: 1100px) {
   :root {
     --sidebar: 0px;
@@ -276,42 +214,6 @@
   }
 }
 
-@media (max-height: 700px) {
-  .player-surface-head {
-    padding-block: 8px;
-  }
-  .player-surface-body {
-    padding-top: 12px;
-  }
-  .player-surface .full-player > .eyebrow {
-    margin-bottom: 10px;
-  }
-  .player-surface .player-title {
-    margin: 12px 0;
-  }
-  .player-surface .player-title h2 {
-    font-size: 22px;
-  }
-  .player-surface .player-title p {
-    margin-top: 4px;
-    font-size: 12px;
-  }
-  .player-surface-footer {
-    padding-top: 12px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
-  .player-surface-footer .transport {
-    margin: 10px 0 4px;
-  }
-  .player-surface-footer .play-circle {
-    width: 52px;
-    height: 52px;
-  }
-  .player-surface-footer .player-options {
-    margin-top: 8px;
-  }
-}
-
 /* Recap now sits inside Library, without the old destination eyebrow. */
 .year-page > .page-heading {
   margin: 20px 0 24px;
@@ -323,18 +225,12 @@
   background: var(--accent);
   color: #1b1b1a;
 }
-
-.automatic-playlists {
-  margin-bottom: 28px;
-}
-.automatic-playlists > h3 {
-  font-size: 18px;
-  margin: 0 0 16px;
-}
-.automatic-playlist-tile h4 {
+.automatic-playlist-tile h3 {
   font-size: 18px;
   margin: 0 0 6px;
   overflow-wrap: anywhere;
+  white-space: normal;
+  overflow: visible;
 }
 .automatic-playlist-tile p {
   font-size: 12px;
@@ -458,14 +354,6 @@
   .library-navigation .section-tabs button {
     font-size: 16px;
   }
-}
-
-/* Matching collection actions and symmetric desktop playback geometry. */
-.playlist-toolbar h2 {
-  margin: 0;
-  font-size: 28px;
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 @media (min-width: 761px) {
   .mini-player {

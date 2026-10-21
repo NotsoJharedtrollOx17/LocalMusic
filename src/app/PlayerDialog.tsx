@@ -1,11 +1,9 @@
-import PrivatePlaybackToggle from "./PrivatePlaybackToggle";
 import { Heart } from "lucide-react";
 import { PlayerSurface } from "../ux";
 import { api } from "../api";
 import { Cover, TrackRow, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
-import PlaybackProgress from "./PlaybackProgress";
-import TransportControls from "./TransportControls";
+import PlayerFooter from "./PlayerFooter";
 
 export default function PlayerDialog() {
   const {
@@ -16,11 +14,9 @@ export default function PlayerDialog() {
     modal,
     playerParent,
     setModal,
-    setMenu,
     t,
     act,
     current,
-    openSound,
     favorite,
   } = useMusicAppContext();
   const view = modal === "player" || modal === "queue" ? modal : playerParent;
@@ -38,32 +34,7 @@ export default function PlayerDialog() {
           trackId={current.id}
           onView={setModal}
           onClose={() => setModal(null)}
-          footer={
-            <>
-              <PlaybackProgress />
-              <TransportControls />
-              <div className="player-options">
-                <button
-                  className="text-button"
-                  data-sound-trigger
-                  onClick={() => void openSound()}
-                >
-                  {t.soundControls}
-                </button>
-                <button
-                  className="text-button"
-                  aria-haspopup="menu"
-                  aria-expanded={false}
-                  onClick={(e) =>
-                    setMenu({ track: current, anchor: e.currentTarget })
-                  }
-                >
-                  {t.actions}
-                </button>
-                <PrivatePlaybackToggle />
-              </div>
-            </>
-          }
+          footer={<PlayerFooter />}
         >
           {view === "player" ? (
             <div className="full-player">

@@ -28,7 +28,7 @@ export default function PlaylistDetailHeading() {
         <ArrowLeft size={18} />
         {t.playlists}
       </button>
-      <span>
+      <span className="playlist-detail-meta">
         {formatMusicCount(playlistTracks.length)} ·{" "}
         {Math.round(
           playlistTracks.reduce((s, x) => s + x.durationMs, 0) / 60000,
