@@ -76,6 +76,8 @@ export const en = {
   emptyHint: "MP3, FLAC, WAV, M4A, OGG and Opus. Nothing leaves your device.",
   allMusic: "All music",
   favorites: "Favorites",
+  emptyFavorites: "No favorite songs yet",
+  emptyFavoritesHint: "Tap the heart beside a song to find it here.",
   songCount: "songs",
   sort: "Sort by title",
   recent: "Recently added",
@@ -307,6 +309,9 @@ export const es: typeof en = {
   emptyHint: "MP3, FLAC, WAV, M4A, OGG y Opus. Nada sale de tu dispositivo.",
   allMusic: "Toda la música",
   favorites: "Favoritas",
+  emptyFavorites: "Aún no tienes canciones favoritas",
+  emptyFavoritesHint:
+    "Pulsa el corazón junto a una canción para encontrarla aquí.",
   songCount: "canciones",
   sort: "Ordenar por título",
   recent: "Añadidas recientemente",

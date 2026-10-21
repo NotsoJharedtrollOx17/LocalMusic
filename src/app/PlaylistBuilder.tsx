@@ -4,7 +4,7 @@ import PlaylistFilters from "./PlaylistFilters";
 import PlaylistOptions from "./PlaylistOptions";
 
 export default function PlaylistBuilder() {
-  const { total, busy, t, buildMix } = useMusicAppContext();
+  const { catalogTotal, busy, t, buildMix } = useMusicAppContext();
 
   return (
     <div className="generator">
@@ -33,7 +33,7 @@ export default function PlaylistBuilder() {
           </span>
           <button
             className="button primary"
-            disabled={busy || !total}
+            disabled={busy || !catalogTotal}
             type="submit"
           >
             {t.generate}

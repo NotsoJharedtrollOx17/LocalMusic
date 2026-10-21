@@ -204,6 +204,8 @@ At the planning commit, application changes and implementation acceptance checks
 
 ## 9. Implementation record
 
+20 October follow-up: isolate the Songs Favorites result count from the unfiltered catalog count. Empty Favorites now has a localized, recoverable empty state; pending or stale filter/sort reads cannot expose the empty-library import splash or hide Albums/Artists. Playlist generation uses the catalog count, while Songs pagination continues to use its filtered count.
+
 20 October follow-up: remove Save audio copy from song menus. Share audio remains only on platforms with a sharing chooser; desktop song menus now contain at most five actions. Existing bulk-selection copy operations are outside this menu revision.
 
 - Reduced song actions to Add to playlist, chooser-based Share audio, Track details, Go to album, Go to artist and Remove from Library. Unavailable/hidden tracks and the current collection determine which actions can run or are omitted. Play, Favorite and selection retain their primary controls.

@@ -6,6 +6,10 @@ import LibraryFilters from "./LibraryFilters";
 export default function LibraryToolbar() {
   const {
     total,
+    catalogTotal,
+    libraryViewPending,
+    libraryError,
+    section,
     onlyFavorites,
     setOnlyFavorites,
     group,
@@ -15,18 +19,26 @@ export default function LibraryToolbar() {
     formatMusicCount,
     doImport,
   } = useMusicAppContext();
+  const songFilters = section === "songs" && !group;
+  const favorites = songFilters && onlyFavorites;
+  const count = group ? group.ids.length : songFilters ? total : catalogTotal;
 
   return (
     <div className="library-toolbar">
       <div>
         <button
-          className={"filter-button" + (!onlyFavorites ? " chosen" : "")}
+          className={"filter-button" + (!favorites ? " chosen" : "")}
           onClick={() => setOnlyFavorites(false)}
         >
-          {onlyFavorites ? t.favorites : t.allMusic}
+          {favorites ? t.favorites : t.allMusic}
         </button>
-        <span className="count-dot">·</span>
-        <span>{formatMusicCount(group ? group.ids.length : total, true)}</span>
+        {count !== null &&
+          !(songFilters && (libraryViewPending || libraryError)) && (
+            <>
+              <span className="count-dot">·</span>
+              <span>{formatMusicCount(count, true)}</span>
+            </>
+          )}
       </div>
       <div className="toolbar-actions">
         <LibraryFilters />

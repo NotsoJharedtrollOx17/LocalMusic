@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 import { api } from "../api";
 
@@ -33,21 +33,54 @@ export function useCatalogReads(
   } = state;
   const libraryOptions = useRef({ favoriteOnly: onlyFavorites, sort });
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
+  const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
+  const [libraryRead, setLibraryRead] = useState<{
+    key: string;
+    failed: boolean;
+  } | null>(null);
+  const key = JSON.stringify([state.query, onlyFavorites, sort]);
+  const desiredKey = useRef(key);
+  desiredKey.current = key;
   const libraryRequest = useRef(0);
   const groupRequest = useRef(0);
   const groupsRequest = useRef({ albums: 0, artists: 0 });
   const refresh = useCallback(
     async (q = "", offset = 0) => {
+      const options = { ...libraryOptions.current };
+      const requestKey = JSON.stringify([
+        q,
+        options.favoriteOnly,
+        options.sort,
+      ]);
+      if (requestKey !== desiredKey.current) return;
       const version = offset
         ? libraryRequest.current
         : ++libraryRequest.current;
       if (!offset) setLibraryLoading(true);
       try {
-        const p = await api.listTracks(q, offset, 60, libraryOptions.current);
-        if (version !== libraryRequest.current) return;
+        // A filtered page total is never the size of the user's library.
+        const [p, catalog] = await Promise.all([
+          api.listTracks(q, offset, 60, options),
+          q || options.favoriteOnly ? api.listTracks("", 0, 1) : null,
+        ]);
+        if (
+          version !== libraryRequest.current ||
+          requestKey !== desiredKey.current
+        )
+          return;
         setTracks((old) => (offset ? [...old, ...p.tracks] : p.tracks));
         setTotal(p.total);
+        setCatalogTotal(catalog?.total ?? p.total);
+        setLibraryRead({ key: requestKey, failed: false });
         remember(p.tracks);
+      } catch (error) {
+        if (
+          version !== libraryRequest.current ||
+          requestKey !== desiredKey.current
+        )
+          return;
+        setLibraryRead({ key: requestKey, failed: true });
+        throw error;
       } finally {
         if (version === libraryRequest.current) setLibraryLoading(false);
       }
@@ -187,6 +220,10 @@ export function useCatalogReads(
     [],
   );
   return {
+    catalogTotal,
+    libraryViewPending: libraryRead?.key !== key,
+    libraryLoading: state.libraryLoading || libraryRead?.key !== key,
+    libraryError: libraryRead?.key === key && libraryRead.failed,
     libraryOptions,
     libraryRequest,
     groupRequest,

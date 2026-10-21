@@ -8,6 +8,7 @@ import TrackRows from "./TrackRows";
 import PlaylistsPage from "./PlaylistsPage";
 import LibraryToolbar from "./LibraryToolbar";
 import EmptyLibrary from "./EmptyLibrary";
+import EmptyFavorites from "./EmptyFavorites";
 import SelectionToolbar from "./SelectionToolbar";
 import LibraryTabs from "./LibraryTabs";
 import YourYearPage from "./YourYearPage";
@@ -17,6 +18,10 @@ export default function LibraryPage() {
     section,
     tracks,
     total,
+    catalogTotal,
+    onlyFavorites,
+    libraryViewPending,
+    libraryError,
     query,
     searchOpen,
     setSearchOpen,
@@ -122,11 +127,22 @@ export default function LibraryPage() {
           <>
             <LibraryToolbar />
 
-            {libraryLoading && total === 0 ? (
+            {!group && section === "songs" && libraryError ? (
+              <div className="empty-small">
+                <button
+                  className="button secondary"
+                  onClick={() => void act(() => refresh(query))}
+                >
+                  {t.retry}
+                </button>
+              </div>
+            ) : !group &&
+              section === "songs" &&
+              (libraryViewPending || (libraryLoading && !tracks.length)) ? (
               <div className="catalog-loading">
                 <LoadingIndicator label={t.loadingLibrary} />
               </div>
-            ) : total === 0 && !query ? (
+            ) : catalogTotal === 0 && !group ? (
               <EmptyLibrary />
             ) : section === "songs" || group ? (
               <>
@@ -162,6 +178,8 @@ export default function LibraryPage() {
                   />
                 ) : group && groupLoading ? (
                   <LoadingIndicator label={t.loading} />
+                ) : !group && onlyFavorites && !query ? (
+                  <EmptyFavorites />
                 ) : (
                   <div className="empty-small">
                     <Search />
@@ -248,7 +266,7 @@ export default function LibraryPage() {
             {(group
               ? groupLoading && visible.length > 0
               : section === "songs"
-                ? libraryLoading && total > 0
+                ? libraryLoading && !libraryViewPending && tracks.length > 0
                 : selectedGroupPage.status === "loading" &&
                   catalogGroups.length > 0) && (
               <LoadingIndicator label={t.loading} />
@@ -256,7 +274,7 @@ export default function LibraryPage() {
             {(group
               ? groupTracks.length < group.ids.length
               : section === "songs"
-                ? tracks.length < total
+                ? !libraryLoading && !libraryError && tracks.length < total
                 : catalogGroups.length < groupsTotal) && (
               <button
                 className="button secondary load-more"

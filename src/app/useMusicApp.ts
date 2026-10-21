@@ -26,7 +26,6 @@ export function useMusicApp(initialSettings?: Settings) {
     section,
     setSection,
     tracks,
-    total,
     cache,
     setCache,
     query,
@@ -262,7 +261,7 @@ export function useMusicApp(initialSettings?: Settings) {
   useEffect(() => {
     if (section === "albums" || section === "artists")
       void act(() => refreshGroups(section));
-  }, [section, total, catalogRevision, act, refreshGroups]);
+  }, [section, catalog.catalogTotal, catalogRevision, act, refreshGroups]);
   const groupIdentity = group
     ? JSON.stringify([group.kind, group.title, group.subtitle])
     : "";

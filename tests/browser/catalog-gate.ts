@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 export async function holdNextTrackRead(page: Page) {
   await page.evaluate(() => {
+    const state = window as unknown as { catalogReadHeld: boolean };
+    state.catalogReadHeld = false;
     const original = IDBObjectStore.prototype.getAll;
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
@@ -11,6 +13,7 @@ export async function holdNextTrackRead(page: Page) {
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
       if (this.name === "tracks") {
+        state.catalogReadHeld = true;
         IDBObjectStore.prototype.getAll = original;
         request.addEventListener(
           "success",
