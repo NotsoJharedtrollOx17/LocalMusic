@@ -1,5 +1,12 @@
 import { native } from "../api";
 
+export function hasAudioShareChooser() {
+  return native
+    ? /Android/i.test(navigator.userAgent)
+    : typeof navigator.canShare === "function" &&
+        typeof navigator.share === "function";
+}
+
 export function audioShareLabel(
   labels: {
     shareAudio: string;
@@ -8,11 +15,7 @@ export function audioShareLabel(
   },
   count?: number,
 ) {
-  const chooser = native
-    ? /Android/i.test(navigator.userAgent)
-    : typeof navigator.canShare === "function" &&
-      typeof navigator.share === "function";
-  return chooser
+  return hasAudioShareChooser()
     ? labels.shareAudio
     : count === 1
       ? labels.saveAudioCopy

@@ -67,14 +67,14 @@ No additional submenu, icon column, section heading or card overflow button is n
 
 Use the same ordered actions for overflow click, right-click and keyboard context invocation on the same track:
 
-| Order | English                       | Spanish                                  | Meaning                                                                                                             |
-| ----- | ----------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| 1     | Add to playlist               | Añadir a una lista                       | Open the existing playlist picker for this track. Keep this destination explicit rather than ambiguous “Add.”       |
-| 2     | Share audio / Save audio copy | Compartir audio / Guardar copia de audio | Use the existing platform capability and outcome rules; singular wording for one track, plural for bulk operations. |
-| 3     | Track details                 | Detalles de la canción                   | Open the existing metadata display.                                                                                 |
-| 4     | Go to album                   | Ir al álbum                              | Open this track's resolved album, preserving its identity and native ordering.                                      |
-| 5     | Go to artist                  | Ir al artista                            | Open this track's resolved artist.                                                                                  |
-| 6     | Remove from Library           | Quitar de la biblioteca                  | Open the existing confirmation; preserve original files/history and Undo/reimport behavior.                         |
+| Order | English                    | Spanish                 | Meaning                                                                                                       |
+| ----- | -------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1     | Add to playlist            | Añadir a una lista      | Open the existing playlist picker for this track. Keep this destination explicit rather than ambiguous “Add.” |
+| 2     | Share audio (chooser only) | Compartir audio         | Show only when a sharing chooser is supported. Do not show Save audio copy in the song menu.                  |
+| 3     | Track details              | Detalles de la canción  | Open the existing metadata display.                                                                           |
+| 4     | Go to album                | Ir al álbum             | Open this track's resolved album, preserving its identity and native ordering.                                |
+| 5     | Go to artist               | Ir al artista           | Open this track's resolved artist.                                                                            |
+| 6     | Remove from Library        | Quitar de la biblioteca | Open the existing confirmation; preserve original files/history and Undo/reimport behavior.                   |
 
 Keep removal last, separated by a small gap or one subtle rule, with the existing danger treatment. Do not add descriptive paragraphs inside the menu. Use stable internal action IDs rather than translated strings as identity.
 
@@ -204,7 +204,9 @@ At the planning commit, application changes and implementation acceptance checks
 
 ## 9. Implementation record
 
-- Reduced song actions to Add to playlist, platform-appropriate Share/Save audio copy, Track details, Go to album, Go to artist and Remove from Library. Unavailable/hidden tracks and the current collection determine which actions can run or are omitted. Play, Favorite and selection retain their primary controls.
+20 October follow-up: remove Save audio copy from song menus. Share audio remains only on platforms with a sharing chooser; desktop song menus now contain at most five actions. Existing bulk-selection copy operations are outside this menu revision.
+
+- Reduced song actions to Add to playlist, chooser-based Share audio, Track details, Go to album, Go to artist and Remove from Library. Unavailable/hidden tracks and the current collection determine which actions can run or are omitted. Play, Favorite and selection retain their primary controls.
 - Removed the generic background/card navigation menu while preserving text editing and native browser-menu suppression. Shared menu ownership coordinates header, track, filter, text and profile menus; stable action IDs, explicit disabled states, focus handoff, outside-click consumption and scope-change dismissal prevent competing interactions.
 - Header Edit selects within the current loaded track collection; Done selecting exits it. Unsupported/empty contexts omit Edit. Saved-playlist membership/order editing uses Edit playlist and Save playlist, separately from track selection.
 - Consolidated each album/artist detail title into a centered, responsive hero. Collection navigation retains its originating tab, scroll position and recreated opener focus target; delayed reads cannot replace a newer navigation choice.

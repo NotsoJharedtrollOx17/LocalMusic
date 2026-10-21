@@ -1,6 +1,6 @@
 import { ActionMenu } from "../ux";
 import type { MenuAction } from "../ux/ActionMenu";
-import { audioShareLabel } from "../ux/sharing";
+import { audioShareLabel, hasAudioShareChooser } from "../ux/sharing";
 import { useMusicAppContext } from "./MusicAppContext";
 import { trackMenuActions } from "./trackMenuActions";
 
@@ -93,7 +93,9 @@ export default function TrackActionMenu() {
       point={menu.point}
       label={track.title}
       onClose={() => setMenu(null)}
-      items={trackMenuActions(track, context).map((id) => actions[id])}
+      items={trackMenuActions(track, context)
+        .filter((id) => id !== "share" || hasAudioShareChooser())
+        .map((id) => actions[id])}
     />
   );
 }

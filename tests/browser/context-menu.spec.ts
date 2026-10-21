@@ -10,7 +10,6 @@ test("song menus are compact, scoped and equivalent across pointer and keyboard"
   const menu = page.getByRole("menu");
   const expected = [
     "Add to playlist",
-    "Save audio copy",
     "Track details",
     "Go to album",
     "Go to artist",
@@ -60,6 +59,27 @@ test("song menus are compact, scoped and equivalent across pointer and keyboard"
   expect(box.x + box.width).toBeLessThanOrEqual(390);
   expect(box.y + box.height).toBeLessThanOrEqual(700);
   await page.screenshot({ path: "artifacts/context-menu-mobile.png" });
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async () => {
+        document.body.dataset.shareChooser = "opened";
+      },
+    });
+  });
+  await opener.click();
+  await menu
+    .getByRole("menuitem", { name: "Share audio", exact: true })
+    .click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-share-chooser",
+    "opened",
+  );
 });
 
 test("backgrounds and cards no longer expose redundant navigation", async ({

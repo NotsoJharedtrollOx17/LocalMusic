@@ -242,21 +242,18 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await page.locator("input[type=file]").first().setInputFiles(file);
   await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await page
-    .locator(".track-row")
-    .getByRole("button", { name: /^Track actions:/ })
-    .click();
-  const menu = page.getByRole("menu");
-  const downloading = page.waitForEvent("download");
-  await menu
-    .getByRole("menuitem", { name: /Share audio|Save audio cop(?:y|ies)/ })
-    .click();
-  await expect(page.locator(".toast")).toHaveText("Audio download started");
-  expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
-  await page
     .getByRole("button", { name: "Library actions", exact: true })
     .click();
   await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await page.locator(".selection-check").click();
+  const menu = page.getByRole("menu");
+  const downloading = page.waitForEvent("download");
+  await page
+    .locator(".selection-toolbar")
+    .getByRole("button", { name: /Share audio|Save audio cop(?:y|ies)/ })
+    .click();
+  await expect(page.locator(".toast")).toHaveText("Audio download started");
+  expect(await readFile((await (await downloading).path())!)).toEqual(buffer);
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
   await page
     .locator(".selection-toolbar")

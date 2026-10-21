@@ -182,7 +182,6 @@ test("localized long collection names and menus remain usable in desktop and nar
     const menu = page.getByRole("menu");
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Añadir a una lista",
-      "Guardar copia de audio",
       "Detalles de la canción",
       "Ir al álbum",
       "Ir al artista",
@@ -257,7 +256,7 @@ test("album navigation distinguishes artists with the same album title", async (
   ).toBeFocused();
 });
 
-test("unavailable audio keeps details and a disabled sharing action without invented destinations", async ({
+test("unavailable audio keeps details without copy actions or invented destinations", async ({
   page,
 }) => {
   await importTracks(page);
@@ -294,16 +293,12 @@ test("unavailable audio keeps details and a disabled sharing action without inve
   await row.getByRole("button", { name: /^Track actions:/ }).click();
   await expect(page.getByRole("menuitem")).toHaveText([
     "Add to playlist",
-    "Save audio copy",
     "Track details",
     "Remove from Library",
   ]);
-  const share = page.getByRole("menuitem", {
-    name: "Save audio copy",
-    exact: true,
-  });
-  await expect(share).toBeDisabled();
-  await expect(share).toHaveAttribute("aria-description", "Unavailable");
+  await expect(
+    page.getByRole("menuitem", { name: /Save audio cop/ }),
+  ).toHaveCount(0);
   await page
     .getByRole("menuitem", { name: "Track details", exact: true })
     .click();
