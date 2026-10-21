@@ -222,14 +222,8 @@ export function useMusicApp(initialSettings?: Settings) {
   }, [section, selectedList, setSelectedIds]);
   const catalog = useCatalogReads(state, act, remember);
   const lastPlaybackError = useRef<string | null>(null);
-  const {
-    libraryRequest,
-    groupRequest,
-    refresh,
-    refreshGroup,
-    refreshGroups,
-    refreshLists,
-  } = catalog;
+  const { groupRequest, refresh, refreshGroup, refreshGroups, refreshLists } =
+    catalog;
   useEffect(() => {
     void act(async () => {
       setSettings(initialSettings ?? (await api.settings()));
@@ -559,7 +553,6 @@ export function useMusicApp(initialSettings?: Settings) {
       ? { rect: image.getBoundingClientRect(), src: image.src }
       : null;
     setSection(kind);
-    ++libraryRequest.current;
     const opening = refreshGroup({
       kind,
       title: g.title,

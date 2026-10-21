@@ -76,8 +76,12 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
       () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
     );
     await release(page);
+    await expect(page.locator(".track-row")).toHaveCount(3);
+    await expect(page.locator(".empty-favorites")).toHaveCount(0);
+    await expect(page.locator(".library-toolbar")).toContainText("All music");
+    await expect(page.locator(".library-toolbar")).toContainText("3 songs");
+    await choose(page, "Favorites");
     await expect(page.locator(".empty-favorites")).toBeVisible();
-    await expect(page.locator(".library-toolbar")).toContainText("0 songs");
   }
   await page.screenshot({
     path: "artifacts/favorites-filter-review/empty-favorites-en.png",
@@ -111,6 +115,22 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
         (window as unknown as { wrongEmptyStates: string[] }).wrongEmptyStates,
     ),
   ).toEqual([]);
+});
+
+test("Favorites has its own empty state even before the first import", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator(".empty-library")).toBeVisible();
+  await choose(page, "Favorites");
+  await expect(page.locator(".empty-favorites")).toContainText(
+    "No favorite songs yet",
+  );
+  await expect(page.locator(".library-toolbar")).toContainText("0 songs");
+  await expect(page.locator(".empty-library")).toHaveCount(0);
+  await choose(page, "Sort by title", true);
+  await expect(page.locator(".empty-library")).toBeVisible();
+  await expect(page.locator(".empty-favorites")).toHaveCount(0);
 });
 
 test("Favorites recovers after a failed read and after removing its last song", async ({

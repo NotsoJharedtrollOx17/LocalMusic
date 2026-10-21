@@ -41,7 +41,10 @@ export default function LibraryFilters() {
                     ? t.sortArtist
                     : t.sortAlbum,
               checked: sort === value,
-              action: () => setSort(value),
+              action: () => {
+                setOnlyFavorites(false);
+                setSort(value);
+              },
             })),
           ]}
         />

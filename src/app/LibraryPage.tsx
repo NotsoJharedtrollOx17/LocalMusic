@@ -142,7 +142,9 @@ export default function LibraryPage() {
               <div className="catalog-loading">
                 <LoadingIndicator label={t.loadingLibrary} />
               </div>
-            ) : catalogTotal === 0 && !group ? (
+            ) : catalogTotal === 0 &&
+              !group &&
+              !(section === "songs" && onlyFavorites) ? (
               <EmptyLibrary />
             ) : section === "songs" || group ? (
               <>
