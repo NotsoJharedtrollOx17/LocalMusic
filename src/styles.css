@@ -623,6 +623,9 @@ input[type="range"] {
   color: var(--ink);
   margin-bottom: 10px;
 }
+.empty-favorites > .button {
+  margin-top: 24px;
+}
 .load-more {
   display: flex;
   margin: 25px auto;
