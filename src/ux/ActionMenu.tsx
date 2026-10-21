@@ -52,9 +52,12 @@ export function ActionMenu({
     const release = claimMenu({ close: () => latestClose.current() });
     const opener = anchor.matches('[aria-haspopup="menu"]');
     if (opener) anchor.setAttribute("aria-expanded", "true");
-    node
-      .querySelector<HTMLButtonElement>("button")
-      ?.focus({ preventScroll: true });
+    const selected = node.querySelector<HTMLButtonElement>(
+      'button[aria-checked="true"]:not([aria-disabled="true"])',
+    );
+    (selected ?? node.querySelector<HTMLButtonElement>("button"))?.focus({
+      preventScroll: true,
+    });
     return () => {
       release();
       if (opener) anchor.setAttribute("aria-expanded", "false");

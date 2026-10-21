@@ -29,8 +29,9 @@ export default function LibraryFilters() {
           items={[
             {
               id: "favorites",
-              label: onlyFavorites ? t.allMusic : t.favorites,
-              action: () => setOnlyFavorites(!onlyFavorites),
+              label: t.favorites,
+              checked: onlyFavorites,
+              action: () => setOnlyFavorites(true),
             },
             ...(["title", "artist", "album"] as const).map((value) => ({
               id: value,
@@ -40,7 +41,7 @@ export default function LibraryFilters() {
                   : value === "artist"
                     ? t.sortArtist
                     : t.sortAlbum,
-              checked: sort === value,
+              checked: !onlyFavorites && sort === value,
               action: () => {
                 setOnlyFavorites(false);
                 setSort(value);

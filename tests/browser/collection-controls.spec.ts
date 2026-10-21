@@ -68,8 +68,9 @@ test("song filtering and sorting return without duplicating Edit", async ({
   });
   await filter.click();
   const menu = page.getByRole("menu", { name: "Filter and sort", exact: true });
-  await expect(menu.getByRole("menuitem")).toHaveText(["Favorites"]);
+  await expect(menu.getByRole("menuitem")).toHaveCount(0);
   await expect(menu.getByRole("menuitemradio")).toHaveText([
+    "Favorites",
     "Sort by title",
     "Sort by artist",
     "Sort by album",
@@ -77,13 +78,17 @@ test("song filtering and sorting return without duplicating Edit", async ({
   await expect(menu.getByRole("menuitem", { name: /Edit|Select/ })).toHaveCount(
     0,
   );
-  await menu.getByRole("menuitem", { name: "Favorites", exact: true }).click();
+  await menu
+    .getByRole("menuitemradio", { name: "Favorites", exact: true })
+    .click();
   await expect(page.locator(".track-row")).toHaveCount(favoriteCount);
   await expect(
     page.getByText(`${favoriteCount} songs`, { exact: true }),
   ).toBeVisible();
   await filter.click();
-  await menu.getByRole("menuitem", { name: "All music", exact: true }).click();
+  await menu
+    .getByRole("menuitemradio", { name: "Sort by title", exact: true })
+    .click();
   await expect(page.locator(".track-row")).toHaveCount(8);
   for (const name of ["Sort by artist", "Sort by album", "Sort by title"]) {
     await filter.click();

@@ -20,13 +20,13 @@ async function importLibrary(page: Page) {
   await expect(page.locator(".library-toolbar")).toContainText("3 songs");
 }
 
-async function choose(page: Page, name: string, radio = false) {
+async function choose(page: Page, name: string) {
   await page
     .getByRole("button", { name: "Filter and sort", exact: true })
     .click();
   await page
     .getByRole("menu", { name: "Filter and sort" })
-    .getByRole(radio ? "menuitemradio" : "menuitem", { name, exact: true })
+    .getByRole("menuitemradio", { name, exact: true })
     .click();
 }
 
@@ -70,7 +70,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
   await expect(page.locator(".library-toolbar")).toContainText("0 songs");
   for (const name of ["Sort by artist", "Sort by album", "Sort by title"]) {
     await holdNextTrackRead(page);
-    await choose(page, name, true);
+    await choose(page, name);
     await expect(page.locator(".catalog-loading")).toBeVisible();
     await page.waitForFunction(
       () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
@@ -89,7 +89,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
 
   // A stale Favorites request must not hide collections or replace All music.
   await holdNextTrackRead(page);
-  await choose(page, "Sort by artist", true);
+  await choose(page, "Sort by artist");
   await expect(page.locator(".catalog-loading")).toBeVisible();
   await page.waitForFunction(
     () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
@@ -128,9 +128,84 @@ test("Favorites has its own empty state even before the first import", async ({
   );
   await expect(page.locator(".library-toolbar")).toContainText("0 songs");
   await expect(page.locator(".empty-library")).toHaveCount(0);
-  await choose(page, "Sort by title", true);
+  await choose(page, "Sort by title");
   await expect(page.locator(".empty-library")).toBeVisible();
   await expect(page.locator(".empty-favorites")).toHaveCount(0);
+});
+
+test("Favorites keeps its label, exclusive selection and opening focus after sorting", async ({
+  page,
+}) => {
+  await importLibrary(page);
+  for (const language of ["en", "es"]) {
+    if (language === "es") {
+      const settings = await openSettings(page);
+      await settings
+        .getByRole("button", { name: "Español", exact: true })
+        .click();
+      await page.keyboard.press("Escape");
+      await page.setViewportSize({ width: 390, height: 844 });
+    }
+    const filter = page.getByRole("button", {
+      name: language === "en" ? "Filter and sort" : "Filtrar y ordenar",
+      exact: true,
+    });
+    const favorites = language === "en" ? "Favorites" : "Favoritas";
+    const artist = language === "en" ? "Sort by artist" : "Ordenar por artista";
+    const title = language === "en" ? "Sort by title" : "Ordenar por título";
+    const menu = page.getByRole("menu");
+    const favoriteOption = menu.getByRole("menuitemradio", {
+      name: favorites,
+      exact: true,
+    });
+    await filter.click();
+    await menu
+      .getByRole("menuitemradio", { name: artist, exact: true })
+      .click();
+    await expect(page.locator(".track-row")).toHaveCount(3);
+    await filter.click();
+    await expect(
+      menu.getByRole("menuitemradio", { name: artist, exact: true }),
+    ).toBeFocused();
+    await favoriteOption.click();
+    await expect(page.locator(".empty-favorites")).toBeVisible();
+    for (let reopen = 0; reopen < 2; reopen++) {
+      await filter.click();
+      await expect(favoriteOption).toHaveAttribute("aria-checked", "true");
+      await expect(favoriteOption).toBeFocused();
+      await expect(menu.locator('[aria-checked="true"]')).toHaveCount(1);
+      await expect(
+        menu.getByText(language === "en" ? "All music" : "Toda la música", {
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await page.keyboard.press("Enter");
+      await expect(page.locator(".empty-favorites")).toBeVisible();
+      await expect(filter).toBeFocused();
+    }
+    await filter.click();
+    await page.keyboard.press("ArrowDown");
+    await expect(
+      menu.getByRole("menuitemradio", { name: title, exact: true }),
+    ).toBeFocused();
+    await expect(favoriteOption).toHaveAttribute("aria-checked", "true");
+    await page.keyboard.press("Escape");
+    await expect(filter).toBeFocused();
+    await filter.click();
+    await expect(favoriteOption).toBeFocused();
+    await menu.getByRole("menuitemradio", { name: title, exact: true }).click();
+    await expect(page.locator(".track-row")).toHaveCount(3);
+    await filter.click();
+    await expect(favoriteOption).toHaveAttribute("aria-checked", "false");
+    await expect(
+      menu.getByRole("menuitemradio", { name: title, exact: true }),
+    ).toBeFocused();
+    await expect(menu.locator('[aria-checked="true"]')).toHaveCount(1);
+    await page.screenshot({
+      path: `artifacts/favorites-scope-review/menu-selection-${language}.png`,
+    });
+    await page.keyboard.press("Escape");
+  }
 });
 
 test("Favorites recovers after a failed read and after removing its last song", async ({
