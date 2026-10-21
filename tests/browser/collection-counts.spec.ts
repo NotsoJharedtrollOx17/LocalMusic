@@ -1,6 +1,63 @@
 import { test, expect } from "@playwright/test";
 import { taggedWav } from "./fixtures";
 import { openSettings } from "./navigationHelpers";
+import { holdNextTrackRead, release } from "./catalog-gate";
+
+test("tab changes never flash a bare title and retain known totals during refresh", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const count = page.locator(".collection-count");
+  await expect(count).toHaveText("0 songs");
+  await page.evaluate(() => {
+    const state = window as unknown as { bareCountTitles: string[] };
+    state.bareCountTitles = [];
+    new MutationObserver(() => {
+      const text = document
+        .querySelector(".collection-count")
+        ?.textContent?.trim();
+      if (text && ["Songs", "Albums", "Artists", "Playlists"].includes(text))
+        state.bareCountTitles.push(text);
+    }).observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+    });
+  });
+  await holdNextTrackRead(page);
+  await page.getByRole("tab", { name: "Albums", exact: true }).click();
+  await page.waitForFunction(
+    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
+  );
+  await expect(count).toHaveAttribute("aria-busy", "true");
+  expect((await count.textContent())?.trim()).toBe("");
+  await release(page);
+  await expect(count).toHaveText("0 albums");
+  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  await expect(count).toHaveText("0 songs");
+  await holdNextTrackRead(page);
+  await page.getByRole("tab", { name: "Albums", exact: true }).click();
+  await page.waitForFunction(
+    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
+  );
+  await expect(count).toHaveText("0 albums");
+  await release(page);
+  for (const [tab, text] of [
+    ["Artists", "0 artists"],
+    ["Playlists", "4 playlists"],
+    ["Albums", "0 albums"],
+    ["Songs", "0 songs"],
+  ]) {
+    await page.getByRole("tab", { name: tab, exact: true }).click();
+    await expect(count).toHaveText(text);
+  }
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { bareCountTitles: string[] }).bareCountTitles,
+    ),
+  ).toEqual([]);
+});
 
 test("collection headings show their own totals without inactive buttons", async ({
   page,

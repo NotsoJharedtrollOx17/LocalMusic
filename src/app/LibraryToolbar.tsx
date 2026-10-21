@@ -31,7 +31,7 @@ export default function LibraryToolbar() {
       ? libraryViewPending || libraryError
         ? null
         : total
-      : selectedGroupPage.status === "ready"
+      : selectedGroupPage.loaded && selectedGroupPage.status !== "error"
         ? groupsTotal
         : null;
 

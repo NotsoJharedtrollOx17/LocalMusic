@@ -23,6 +23,7 @@ const blank: PlaybackSnapshot = {
   excluded: false,
 };
 type GroupPage = {
+  loaded?: boolean;
   groups: CatalogGroup[];
   total: number;
   status: "idle" | "loading" | "ready" | "error";

@@ -19,13 +19,18 @@ export default function CollectionCountHeading({
   };
   const text =
     count === null
-      ? t[kind]
+      ? "\u00a0"
       : kind === "songs"
         ? formatMusicCount(count, true)
         : `${count.toLocaleString(settings?.language)} ${count === 1 ? singular[kind] : t[kind].toLocaleLowerCase(settings?.language)}`;
   return (
-    <h2 className="collection-count" id={id}>
-      {prefix ? `${prefix} · ${text}` : text}
+    <h2
+      className="collection-count"
+      id={id}
+      aria-busy={count === null}
+      aria-label={count === null ? t[kind] : undefined}
+    >
+      {count !== null && prefix ? `${prefix} · ${text}` : text}
     </h2>
   );
 }

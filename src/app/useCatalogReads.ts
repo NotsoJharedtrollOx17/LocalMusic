@@ -183,6 +183,7 @@ export function useCatalogReads(
               : p.groups,
             total: p.total,
             status: "ready",
+            loaded: true,
           },
         }));
         remember(p.groups.map((g) => g.track));
