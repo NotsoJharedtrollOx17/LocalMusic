@@ -82,9 +82,9 @@ test("song filtering and sorting return without duplicating Edit", async ({
     .getByRole("menuitemradio", { name: "Favorites", exact: true })
     .click();
   await expect(page.locator(".track-row")).toHaveCount(favoriteCount);
-  await expect(
-    page.getByText(`${favoriteCount} songs`, { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".collection-count")).toHaveText(
+    `Favorites · ${favoriteCount} songs`,
+  );
   await filter.click();
   await menu
     .getByRole("menuitemradio", { name: "Sort by title", exact: true })

@@ -34,6 +34,7 @@ export function useCatalogReads(
   const libraryOptions = useRef({ favoriteOnly: onlyFavorites, sort });
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
   const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
+  const [playlistsReady, setPlaylistsReady] = useState(false);
   const [libraryRead, setLibraryRead] = useState<{
     key: string;
     failed: boolean;
@@ -215,12 +216,13 @@ export function useCatalogReads(
     );
     return () => clearTimeout(timer);
   }, [modal, pickerQuery, catalogRevision, act, refreshPicker]);
-  const refreshLists = useCallback(
-    async () => setLists(await api.playlists()),
-    [],
-  );
+  const refreshLists = useCallback(async () => {
+    setLists(await api.playlists());
+    setPlaylistsReady(true);
+  }, []);
   return {
     catalogTotal,
+    playlistsReady,
     libraryViewPending: libraryRead?.key !== key,
     libraryLoading: state.libraryLoading || libraryRead?.key !== key,
     libraryError: libraryRead?.key === key && libraryRead.failed,

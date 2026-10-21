@@ -391,17 +391,14 @@ input[type="range"] {
   align-items: center;
   gap: 10px;
 }
-.filter-button {
-  padding: 8px 0;
-  min-height: 44px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.filter-button.chosen {
+.library-toolbar .collection-count {
+  margin: 0;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--ink);
-}
-.count-dot {
-  padding: 0 2px;
+  overflow-wrap: anywhere;
+  cursor: default;
 }
 .toolbar-actions {
   gap: 2px !important;
@@ -1584,9 +1581,6 @@ input[type="range"] {
   .library-toolbar {
     font-size: 11px;
     padding: 10px 0;
-  }
-  .filter-button {
-    font-size: 11px;
   }
   .library-toolbar > div {
     gap: 7px;

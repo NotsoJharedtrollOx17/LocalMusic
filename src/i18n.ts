@@ -1,4 +1,7 @@
 export const en = {
+  albumSingular: "album",
+  artistSingular: "artist",
+  playlistSingular: "playlist",
   goToAlbum: "Go to album",
   goToArtist: "Go to artist",
   saveAudioCopy: "Save audio copy",
@@ -232,6 +235,9 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  albumSingular: "álbum",
+  artistSingular: "artista",
+  playlistSingular: "lista",
   goToAlbum: "Ir al álbum",
   goToArtist: "Ir al artista",
   saveAudioCopy: "Guardar copia de audio",

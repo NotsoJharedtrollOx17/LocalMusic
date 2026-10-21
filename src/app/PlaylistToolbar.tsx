@@ -1,16 +1,34 @@
 import { Plus } from "lucide-react";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import { useMusicAppContext } from "./MusicAppContext";
+import CollectionCountHeading from "./CollectionCountHeading";
 
 export default function PlaylistToolbar() {
-  const { selectedList, setManualTitle, setManualIds, setModal, t } =
-    useMusicAppContext();
+  const {
+    selectedList,
+    lists,
+    automatic,
+    playlistsReady,
+    setManualTitle,
+    setManualIds,
+    setModal,
+    t,
+  } = useMusicAppContext();
   return (
     <div className="library-toolbar playlist-toolbar">
       {selectedList ? (
         <h2>{automaticPlaylistLabel(selectedList, t)}</h2>
       ) : (
-        <h2 id="automatic-playlists-heading">{t.automaticPlaylists}</h2>
+        <CollectionCountHeading
+          id="automatic-playlists-heading"
+          kind="playlists"
+          count={
+            playlistsReady && !automatic.loading && !automatic.error
+              ? new Set([...lists, ...automatic.playlists].map((p) => p.id))
+                  .size
+              : null
+          }
+        />
       )}
       <div className="toolbar-actions">
         <button

@@ -78,7 +78,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
     await release(page);
     await expect(page.locator(".track-row")).toHaveCount(3);
     await expect(page.locator(".empty-favorites")).toHaveCount(0);
-    await expect(page.locator(".library-toolbar")).toContainText("All music");
+    await expect(page.locator(".collection-count")).toHaveText("3 songs");
     await expect(page.locator(".library-toolbar")).toContainText("3 songs");
     await choose(page, "Favorites");
     await expect(page.locator(".empty-favorites")).toBeVisible();
@@ -96,8 +96,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
   );
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
   await expect(page.locator(".album-card")).toHaveCount(1);
-  await expect(page.locator(".library-toolbar")).toContainText("All music");
-  await expect(page.locator(".library-toolbar")).toContainText("3 songs");
+  await expect(page.locator(".collection-count")).toHaveText("1 album");
   await page.locator(".album-card").click();
   await expect(page.locator(".track-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Library", exact: true }).click();

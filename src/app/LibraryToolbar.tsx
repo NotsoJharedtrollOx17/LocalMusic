@@ -2,44 +2,46 @@ import { Plus } from "lucide-react";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
 import LibraryFilters from "./LibraryFilters";
+import CollectionCountHeading from "./CollectionCountHeading";
 
 export default function LibraryToolbar() {
   const {
     total,
-    catalogTotal,
     libraryViewPending,
     libraryError,
     section,
     onlyFavorites,
-    setOnlyFavorites,
+    groupsTotal,
+    selectedGroupPage,
     group,
     busy,
     fileInput,
     t,
-    formatMusicCount,
     doImport,
   } = useMusicAppContext();
   const songFilters = section === "songs" && !group;
   const favorites = songFilters && onlyFavorites;
-  const count = group ? group.ids.length : songFilters ? total : catalogTotal;
+  const kind =
+    !group && (section === "albums" || section === "artists")
+      ? section
+      : "songs";
+  const count = group
+    ? group.ids.length
+    : songFilters
+      ? libraryViewPending || libraryError
+        ? null
+        : total
+      : selectedGroupPage.status === "ready"
+        ? groupsTotal
+        : null;
 
   return (
     <div className="library-toolbar">
-      <div>
-        <button
-          className={"filter-button" + (!favorites ? " chosen" : "")}
-          onClick={() => setOnlyFavorites(false)}
-        >
-          {favorites ? t.favorites : t.allMusic}
-        </button>
-        {count !== null &&
-          !(songFilters && (libraryViewPending || libraryError)) && (
-            <>
-              <span className="count-dot">·</span>
-              <span>{formatMusicCount(count, true)}</span>
-            </>
-          )}
-      </div>
+      <CollectionCountHeading
+        kind={kind}
+        count={count}
+        prefix={favorites ? t.favorites : undefined}
+      />
       <div className="toolbar-actions">
         <LibraryFilters />
         <button

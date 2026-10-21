@@ -333,7 +333,7 @@ test("playlist headings share the creation toolbar and detail metadata wraps wit
       .click();
     const heading = page.locator("#automatic-playlists-heading");
     await expect(heading).toHaveText(
-      language === "en" ? "Made for your library" : "Hechas para tu biblioteca",
+      language === "en" ? "4 playlists" : "5 listas",
     );
     await expect(page.locator(".automatic-playlists > h3")).toHaveCount(0);
     const create = page.locator(".playlist-toolbar button");
