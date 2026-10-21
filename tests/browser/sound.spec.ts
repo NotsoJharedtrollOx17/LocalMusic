@@ -123,6 +123,14 @@ test("library playback runs through the real AudioWorklet and band edits change 
   page,
 }) => {
   await page.addInitScript(() => {
+    // Match the 48 kHz fixture: at 44.1 kHz, nearest FFT bins introduce
+    // unequal window loss for these tones even with completely flat processing.
+    const Context = window.AudioContext;
+    window.AudioContext = class extends Context {
+      constructor(options?: AudioContextOptions) {
+        super({ ...options, sampleRate: 48000 });
+      }
+    };
     const Original = AudioWorkletNode;
     class Captured extends Original {
       constructor(
@@ -198,6 +206,7 @@ test("library playback runs through the real AudioWorklet and band edits change 
       return data[bin(1000)] - data[bin(250)];
     });
   await expect.poll(measure).not.toBeNull();
+  expect(await page.evaluate(() => (window as any).__soundRate)).toBe(48000);
   await expect
     .poll(async () => Math.abs((await measure()) ?? 100))
     .toBeLessThan(0.5);

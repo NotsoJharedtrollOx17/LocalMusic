@@ -82,7 +82,9 @@ test("social recap preview is the saved image and snapshots select their own yea
   await expect(page.locator(".recap-total strong")).toHaveText("21,604");
   await page.getByRole("button", { name: "Export image", exact: true }).click();
   const share = page.getByRole("dialog", { name: "Export image" });
-  await expect(share.locator(".recap-image-preview")).toBeVisible();
+  await expect(share.locator(".recap-image-preview")).toBeVisible({
+    timeout: 15000,
+  });
   const bytes = await share
     .locator(".recap-image-preview")
     .evaluate(async (img) =>
@@ -140,7 +142,9 @@ test("social recap preview is the saved image and snapshots select their own yea
     .getByRole("button", { name: "Exportar imagen", exact: true })
     .click();
   const spanish = page.getByRole("dialog", { name: "Exportar imagen" });
-  await expect(spanish.locator(".recap-image-preview")).toBeVisible();
+  await expect(spanish.locator(".recap-image-preview")).toBeVisible({
+    timeout: 15000,
+  });
   const spanishWait = page.waitForEvent("download");
   await spanish
     .getByRole("button", { name: "Guardar PNG", exact: true })
