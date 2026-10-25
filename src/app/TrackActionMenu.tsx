@@ -3,6 +3,7 @@ import type { MenuAction } from "../ux/ActionMenu";
 import { audioShareLabel, hasAudioShareChooser } from "../ux/sharing";
 import { useMusicAppContext } from "./MusicAppContext";
 import { trackMenuActions } from "./trackMenuActions";
+import { usePlaybackPrivacy } from "./usePlaybackPrivacy";
 
 export default function TrackActionMenu() {
   const {
@@ -21,7 +22,10 @@ export default function TrackActionMenu() {
     share,
     sharing,
     openGroup,
+    openSound,
+    player,
   } = useMusicAppContext();
+  const privacy = usePlaybackPrivacy();
   if (!menu) return null;
   const track = cache[menu.track.id] ?? menu.track;
   // Search/player objects are independent of the Library collection underneath.
@@ -93,9 +97,33 @@ export default function TrackActionMenu() {
       point={menu.point}
       label={track.title}
       onClose={() => setMenu(null)}
-      items={trackMenuActions(track, context)
-        .filter((id) => id !== "share" || hasAudioShareChooser())
-        .map((id) => actions[id])}
+      items={[
+        ...trackMenuActions(track, context)
+          .filter((id) => id !== "share" || hasAudioShareChooser())
+          .map((id) => actions[id]),
+        ...(menu.anchor.hasAttribute("data-player-menu") &&
+        track.id === player.trackId &&
+        (modal === "player" || modal === "queue")
+          ? [
+              {
+                id: "sound",
+                label: t.soundControls,
+                action: () => void openSound(),
+              },
+              {
+                id: "privacy",
+                label: t.private,
+                checked: privacy.checked,
+                checkType: "checkbox" as const,
+                keepOpen: true,
+                busy: privacy.pending,
+                disabled: privacy.disabled,
+                disabledReason: track.demo ? t.sampleNote : undefined,
+                action: privacy.toggle,
+              },
+            ]
+          : []),
+      ]}
     />
   );
 }

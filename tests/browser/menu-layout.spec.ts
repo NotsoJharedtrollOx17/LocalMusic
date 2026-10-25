@@ -56,30 +56,24 @@ async function aligned(surface: Locator) {
       node.querySelector<HTMLElement>(selector)!.getBoundingClientRect();
     const center = (rect: DOMRect) => rect.x + rect.width / 2;
     const root = node.getBoundingClientRect();
-    const options = [
-      ...node.querySelectorAll<HTMLElement>(".player-option"),
-    ].map((option) => {
-      const rect = option.getBoundingClientRect();
-      return {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-        bottom: rect.bottom,
-        iconY: option.querySelector("svg")!.getBoundingClientRect().y,
-        clipped: option.scrollWidth > option.clientWidth + 1,
-      };
-    });
+    const menu = box("[data-player-menu]");
     return {
       centers: [
         center(box(".player-surface-head h2")),
         center(box(".play-circle")),
         center(box(".progress input")),
-        center(box(".player-options")),
         center(box(".player-track-actions")),
       ],
       center: center(root),
-      options,
+      menu: {
+        width: menu.width,
+        height: menu.height,
+        centerY: menu.y + menu.height / 2,
+      },
+      headerY:
+        box(".player-surface-head h2").y +
+        box(".player-surface-head h2").height / 2,
+      transportBottom: box(".transport").bottom,
       overflow: node.scrollWidth - node.clientWidth,
       viewportHeight: innerHeight,
       transport: [...node.querySelectorAll(".transport > button")].map(
@@ -105,25 +99,15 @@ async function aligned(surface: Locator) {
   });
   for (const center of metrics.centers)
     expect(Math.abs(center - metrics.center)).toBeLessThanOrEqual(1);
-  expect(metrics.options).toHaveLength(2);
-  for (const option of metrics.options) {
-    expect(
-      Math.abs(option.width - metrics.options[0].width),
-    ).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(option.height - metrics.options[0].height),
-    ).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(option.iconY - metrics.options[0].iconY),
-    ).toBeLessThanOrEqual(1);
-    expect(option.width).toBeGreaterThanOrEqual(44);
-    expect(option.height).toBeGreaterThanOrEqual(44);
-    expect(option.bottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
-    expect(option.clipped).toBe(false);
-  }
+  expect(metrics.menu.width).toBeGreaterThanOrEqual(44);
+  expect(metrics.menu.height).toBeGreaterThanOrEqual(44);
+  expect(Math.abs(metrics.menu.centerY - metrics.headerY)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(metrics.transportBottom).toBeLessThanOrEqual(metrics.viewportHeight);
   expect(metrics.overflow).toBeLessThanOrEqual(1);
   expect(metrics.transport).toHaveLength(5);
-  expect(metrics.actionButtons).toHaveLength(3);
+  expect(metrics.actionButtons).toHaveLength(2);
   for (const button of metrics.actionButtons) {
     expect(button.width).toBeGreaterThanOrEqual(44);
     expect(button.height).toBeGreaterThanOrEqual(44);
@@ -166,14 +150,27 @@ test("player and Queue keep a common centerline and balanced actions across lang
         exact: true,
       });
       await aligned(surface);
-      const labels = await surface
-        .locator(".player-option > span")
-        .allTextContents();
-      expect(labels).toEqual(
-        language === "en"
-          ? ["Sound options", "Exclude from recap"]
-          : ["Opciones de sonido", "Excluir del resumen"],
-      );
+      await expect(surface.locator(".player-options")).toHaveCount(0);
+      const options = surface.getByRole("button", {
+        name: language === "en" ? "Player options" : "Opciones del reproductor",
+        exact: true,
+      });
+      await options.click();
+      await expect(
+        page.getByRole("menuitemcheckbox", {
+          name:
+            language === "en" ? "Exclude from recap" : "Excluir del resumen",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("menuitem", {
+          name: language === "en" ? "Sound options" : "Opciones de sonido",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(options).toBeFocused();
       expect(
         await surface
           .locator(".player-track-actions > button")
@@ -181,13 +178,11 @@ test("player and Queue keep a common centerline and balanced actions across lang
             nodes.map((node) => node.getAttribute("aria-label")),
           ),
       ).toEqual(
-        language === "en"
-          ? ["Queue", "Favorite", "Track actions"]
-          : ["Cola", "Favorita", "Acciones de la canción"],
+        language === "en" ? ["Queue", "Favorite"] : ["Cola", "Favorita"],
       );
       await expect(surface.locator(".player-title button")).toHaveCount(0);
       await expect(surface.locator(".player-surface-head button")).toHaveCount(
-        1,
+        2,
       );
       await surface
         .locator(".player-track-actions")
@@ -246,7 +241,12 @@ test("privacy pending and failure states recover while menus and queue actions r
   await expect(favorite).toHaveAttribute("aria-pressed", "false");
   await favorite.click();
   await expect(favorite).toHaveAttribute("aria-pressed", "true");
-  const privacy = surface.getByRole("checkbox", {
+  const actions = surface.getByRole("button", {
+    name: "Player options",
+    exact: true,
+  });
+  await actions.click();
+  const privacy = page.getByRole("menuitemcheckbox", {
     name: "Exclude from recap",
     exact: true,
   });
@@ -273,19 +273,18 @@ test("privacy pending and failure states recover while menus and queue actions r
       return request;
     };
   });
-  await privacy.check();
-  await expect(privacy).toBeChecked();
+  await privacy.click();
+  await expect(privacy).toHaveAttribute("aria-checked", "true");
   await expect(privacy).toBeDisabled();
-  await expect(surface.locator(".player-privacy")).toHaveAttribute(
-    "aria-busy",
-    "true",
-  );
+  await expect(privacy).toHaveAttribute("aria-busy", "true");
+  await page.keyboard.press("Escape");
+  await expect(actions).toBeFocused();
+  await actions.click();
+  await expect(privacy).toHaveAttribute("aria-checked", "true");
+  await expect(privacy).toBeDisabled();
   await page.evaluate(() => (window as any).releasePrivacy());
   await expect(privacy).toBeEnabled();
-  await expect(surface.locator(".player-privacy")).toHaveAttribute(
-    "data-checked",
-    "true",
-  );
+  await expect(privacy).not.toHaveAttribute("aria-busy", "true");
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.get;
     IDBObjectStore.prototype.get = function (...args) {
@@ -300,38 +299,34 @@ test("privacy pending and failure states recover while menus and queue actions r
   await expect(page.getByRole("alert")).toContainText(
     "Privacy fixture read failed",
   );
-  await expect(privacy).toBeChecked();
+  await expect(privacy).toHaveAttribute("aria-checked", "true");
   await expect(privacy).toBeEnabled();
-  await privacy.uncheck();
-  await expect(privacy).not.toBeChecked();
+  await privacy.click();
+  await expect(privacy).toHaveAttribute("aria-checked", "false");
   await privacy.focus();
   await page.keyboard.press("Space");
-  await expect(privacy).toBeChecked();
+  await expect(privacy).toHaveAttribute("aria-checked", "true");
   await expect(privacy).toBeEnabled();
   await page.keyboard.press("Space");
-  await expect(privacy).not.toBeChecked();
+  await expect(privacy).toHaveAttribute("aria-checked", "false");
   await expect(privacy).toBeEnabled();
-  const actions = surface.getByRole("button", {
-    name: "Track actions",
-    exact: true,
-  });
+  await page.keyboard.press("Escape");
   await actions.click();
   await expect(actions).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("menu")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(actions).toBeFocused();
   await expect(actions).toHaveAttribute("aria-expanded", "false");
-  await surface
-    .getByRole("button", { name: "Sound options", exact: true })
+  await actions.click();
+  await page
+    .getByRole("menuitem", { name: "Sound options", exact: true })
     .click();
   await chooseSound(page, "equalizer");
   await expect(page.locator(".player-scrim")).toBeHidden();
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
-  await expect(
-    surface.getByRole("button", { name: "Sound options", exact: true }),
-  ).toBeFocused();
+  await expect(actions).toBeFocused();
   await surface.getByRole("button", { name: "Queue", exact: true }).click();
   const queue = page.getByRole("dialog", { name: "Queue", exact: true });
   const rows = queue.locator(".track-row");

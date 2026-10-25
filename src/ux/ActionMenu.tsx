@@ -9,6 +9,9 @@ export interface MenuAction {
   disabled?: boolean;
   disabledReason?: string;
   checked?: boolean;
+  checkType?: "radio" | "checkbox";
+  keepOpen?: boolean;
+  busy?: boolean;
   danger?: boolean;
 }
 
@@ -53,7 +56,7 @@ export function ActionMenu({
     const opener = anchor.matches('[aria-haspopup="menu"]');
     if (opener) anchor.setAttribute("aria-expanded", "true");
     const selected = node.querySelector<HTMLButtonElement>(
-      'button[aria-checked="true"]:not([aria-disabled="true"])',
+      'button[role="menuitemradio"][aria-checked="true"]:not([aria-disabled="true"])',
     );
     (selected ?? node.querySelector<HTMLButtonElement>("button"))?.focus({
       preventScroll: true,
@@ -192,21 +195,33 @@ export function ActionMenu({
           key={item.id}
           type="button"
           tabIndex={-1}
-          role={item.checked === undefined ? "menuitem" : "menuitemradio"}
+          role={
+            item.checked === undefined
+              ? "menuitem"
+              : item.checkType === "checkbox"
+                ? "menuitemcheckbox"
+                : "menuitemradio"
+          }
           aria-checked={item.checked}
           aria-disabled={item.disabled || undefined}
+          aria-busy={item.busy || undefined}
           aria-description={item.disabled ? item.disabledReason : undefined}
           title={item.disabled ? item.disabledReason : undefined}
           className={item.danger ? "menu-danger" : undefined}
           onClick={() => {
             if (item.disabled) return;
             // Capture the opener as the child's return target before it mounts.
-            restore();
-            latestClose.current();
+            if (!item.keepOpen) {
+              restore();
+              latestClose.current();
+            }
             item.action();
           }}
         >
           {item.label}
+          {item.checkType === "checkbox" && (
+            <span aria-hidden="true">{item.checked ? "✓" : ""}</span>
+          )}
         </button>
       ))}
     </div>

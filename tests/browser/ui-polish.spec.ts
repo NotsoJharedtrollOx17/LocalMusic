@@ -48,7 +48,10 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     .locator(".player-surface-body")
     .evaluate((node) => node.scrollTop);
   await queue
-    .getByRole("button", { name: "Sound options", exact: true })
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Sound options", exact: true })
     .click();
   const sound = await chooseSound(page, "equalizer");
   await expect(
@@ -76,7 +79,7 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
   await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
   await expect(
-    queue.getByRole("button", { name: "Sound options", exact: true }),
+    queue.getByRole("button", { name: "Player options", exact: true }),
   ).toBeFocused();
   expect(
     await queue
@@ -84,7 +87,10 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
       .evaluate((node) => node.scrollTop),
   ).toBe(position);
   await queue
-    .getByRole("button", { name: "Sound options", exact: true })
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Sound options", exact: true })
     .click();
   await chooseSound(page, "equalizer");
   await expect(

@@ -199,6 +199,15 @@
 .action-menu button:focus-visible {
   background: var(--hover);
 }
+.action-menu button[role="menuitemcheckbox"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.action-menu button[role="menuitemcheckbox"] > span {
+  min-width: 1em;
+}
 .action-menu button[aria-disabled="true"] {
   opacity: 0.5;
   cursor: default;

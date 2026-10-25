@@ -1,4 +1,5 @@
 export const en = {
+  playerOptions: "Player options",
   albumSingular: "album",
   artistSingular: "artist",
   playlistSingular: "playlist",
@@ -235,6 +236,7 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  playerOptions: "Opciones del reproductor",
   albumSingular: "álbum",
   artistSingular: "artista",
   playlistSingular: "lista",

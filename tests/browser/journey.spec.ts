@@ -222,7 +222,17 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     .locator(".mini-actions")
     .getByRole("button", { name: "Now playing" })
     .click();
-  await page.getByLabel("Exclude from recap", { exact: true }).check();
+  await page
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  const privacy = page.getByRole("menuitemcheckbox", {
+    name: "Exclude from recap",
+    exact: true,
+  });
+  await privacy.click();
+  await expect(privacy).toHaveAttribute("aria-checked", "true");
+  await expect(privacy).toBeEnabled();
+  await page.keyboard.press("Escape");
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
   await page
     .locator(".library-brand-header")

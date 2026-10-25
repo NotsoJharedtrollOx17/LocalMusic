@@ -21,6 +21,7 @@ export function PlayerSurface({
   onClose,
   children,
   footer,
+  headerAction,
   trackId,
   active = true,
 }: {
@@ -31,6 +32,7 @@ export function PlayerSurface({
   onClose: () => void;
   children: ReactNode;
   footer: ReactNode;
+  headerAction?: ReactNode;
   trackId: string;
   active?: boolean;
 }) {
@@ -147,6 +149,7 @@ export function PlayerSurface({
             <ChevronDown />
           </IconButton>
           <h2>{title}</h2>
+          {headerAction}
         </header>
         <div
           className={"player-surface-body " + view}

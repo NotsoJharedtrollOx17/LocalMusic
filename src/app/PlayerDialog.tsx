@@ -3,6 +3,7 @@ import { api } from "../api";
 import { Cover, TrackRow } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlayerFooter from "./PlayerFooter";
+import PlayerMenuButton from "./PlayerMenuButton";
 
 export default function PlayerDialog() {
   const {
@@ -31,6 +32,7 @@ export default function PlayerDialog() {
           onView={setModal}
           onClose={() => setModal(null)}
           footer={<PlayerFooter view={view} />}
+          headerAction={<PlayerMenuButton />}
         >
           {view === "player" ? (
             <div className="full-player">

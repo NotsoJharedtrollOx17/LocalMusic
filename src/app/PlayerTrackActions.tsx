@@ -1,4 +1,4 @@
-import { Heart, ListMusic, MoreHorizontal } from "lucide-react";
+import { Heart, ListMusic } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlayerTrackActions({
@@ -6,8 +6,7 @@ export default function PlayerTrackActions({
 }: {
   view: "player" | "queue";
 }) {
-  const { current, favorite, menu, setMenu, setModal, t } =
-    useMusicAppContext();
+  const { current, favorite, setModal, t } = useMusicAppContext();
   if (!current) return null;
   const queueLabel = view === "queue" ? t.nowPlaying : t.queue;
   return (
@@ -35,22 +34,6 @@ export default function PlayerTrackActions({
           fill={current.favorite ? "currentColor" : "none"}
           aria-hidden="true"
         />
-      </button>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label={t.actions}
-        title={t.actions}
-        aria-haspopup="menu"
-        aria-expanded={
-          menu?.track.id === current.id &&
-          menu.anchor.closest(".player-track-actions") !== null
-        }
-        onClick={(event) =>
-          setMenu({ track: current, anchor: event.currentTarget })
-        }
-      >
-        <MoreHorizontal size={24} aria-hidden="true" />
       </button>
     </div>
   );

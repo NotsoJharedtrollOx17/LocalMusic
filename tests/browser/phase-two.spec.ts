@@ -172,8 +172,14 @@ test("mobile swipe tabs and player keep transport anchored, Back and reduced mot
   await expect(player).toBeVisible();
   await player.evaluate((el) => el.setAttribute("data-kept", "yes"));
   await player
-    .getByRole("button", { name: "Track actions", exact: true })
+    .getByRole("button", { name: "Player options", exact: true })
     .click();
+  await expect(
+    page.getByRole("menuitemcheckbox", {
+      name: "Exclude from recap",
+      exact: true,
+    }),
+  ).toBeDisabled();
   await page
     .getByRole("menuitem", { name: "Track details", exact: true })
     .click();
