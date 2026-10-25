@@ -1,7 +1,6 @@
-import { Heart } from "lucide-react";
 import { PlayerSurface } from "../ux";
 import { api } from "../api";
-import { Cover, TrackRow, IconButton } from "../components";
+import { Cover, TrackRow } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlayerFooter from "./PlayerFooter";
 
@@ -17,7 +16,6 @@ export default function PlayerDialog() {
     t,
     act,
     current,
-    favorite,
   } = useMusicAppContext();
   const view = modal === "player" || modal === "queue" ? modal : playerParent;
 
@@ -27,14 +25,12 @@ export default function PlayerDialog() {
         <PlayerSurface
           title={view === "queue" ? t.queue : t.nowPlaying}
           closeLabel={t.close}
-          queueLabel={t.queue}
-          playerLabel={t.nowPlaying}
           view={view}
           active={modal === "player" || modal === "queue"}
           trackId={current.id}
           onView={setModal}
           onClose={() => setModal(null)}
-          footer={<PlayerFooter />}
+          footer={<PlayerFooter view={view} />}
         >
           {view === "player" ? (
             <div className="full-player">
@@ -45,16 +41,6 @@ export default function PlayerDialog() {
                   <h2>{current.title}</h2>
                   <p>{current.artist || t.unknownArtist}</p>
                 </div>
-                <IconButton
-                  label={t.favorite}
-                  active={current.favorite}
-                  onClick={() => void favorite(current)}
-                >
-                  <Heart
-                    size={26}
-                    fill={current.favorite ? "currentColor" : "none"}
-                  />
-                </IconButton>
               </div>
               {current.demo && <p className="small-muted">{t.sampleNote}</p>}
             </div>

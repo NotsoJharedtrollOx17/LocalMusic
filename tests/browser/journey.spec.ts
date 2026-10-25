@@ -531,7 +531,7 @@ test("album disc order is preserved in views, queue and legacy library migration
   await page.getByRole("button", { name: "Pause", exact: true }).click();
   await page.locator(".mini-track").click();
   await page
-    .locator(".player-surface-head")
+    .locator(".player-track-actions")
     .getByRole("button", { name: "Queue", exact: true })
     .click();
   await expect(

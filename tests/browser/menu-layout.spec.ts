@@ -76,6 +76,7 @@ async function aligned(surface: Locator) {
         center(box(".play-circle")),
         center(box(".progress input")),
         center(box(".player-options")),
+        center(box(".player-track-actions")),
       ],
       center: center(root),
       options,
@@ -84,11 +85,27 @@ async function aligned(surface: Locator) {
       transport: [...node.querySelectorAll(".transport > button")].map(
         (button) => button.getAttribute("aria-label"),
       ),
+      actionButtons: [
+        ...node.querySelectorAll(".player-track-actions > button"),
+      ].map((button) => {
+        const r = button.getBoundingClientRect();
+        return {
+          width: r.width,
+          height: r.height,
+          centerY: r.y + r.height / 2,
+        };
+      }),
+      rowOrder: [
+        box(".player-track-actions").bottom,
+        box(".progress").top,
+        box(".progress").bottom,
+        box(".transport").top,
+      ],
     };
   });
   for (const center of metrics.centers)
     expect(Math.abs(center - metrics.center)).toBeLessThanOrEqual(1);
-  expect(metrics.options).toHaveLength(3);
+  expect(metrics.options).toHaveLength(2);
   for (const option of metrics.options) {
     expect(
       Math.abs(option.width - metrics.options[0].width),
@@ -106,6 +123,16 @@ async function aligned(surface: Locator) {
   }
   expect(metrics.overflow).toBeLessThanOrEqual(1);
   expect(metrics.transport).toHaveLength(5);
+  expect(metrics.actionButtons).toHaveLength(3);
+  for (const button of metrics.actionButtons) {
+    expect(button.width).toBeGreaterThanOrEqual(44);
+    expect(button.height).toBeGreaterThanOrEqual(44);
+    expect(
+      Math.abs(button.centerY - metrics.actionButtons[0].centerY),
+    ).toBeLessThanOrEqual(1);
+  }
+  expect(metrics.rowOrder[0]).toBeLessThanOrEqual(metrics.rowOrder[1] + 1);
+  expect(metrics.rowOrder[2]).toBeLessThanOrEqual(metrics.rowOrder[3] + 1);
 }
 
 test("player and Queue keep a common centerline and balanced actions across languages and window sizes", async ({
@@ -144,15 +171,26 @@ test("player and Queue keep a common centerline and balanced actions across lang
         .allTextContents();
       expect(labels).toEqual(
         language === "en"
-          ? ["Sound options", "Track actions", "Exclude from recap"]
-          : [
-              "Opciones de sonido",
-              "Acciones de la canción",
-              "Excluir del resumen",
-            ],
+          ? ["Sound options", "Exclude from recap"]
+          : ["Opciones de sonido", "Excluir del resumen"],
+      );
+      expect(
+        await surface
+          .locator(".player-track-actions > button")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => node.getAttribute("aria-label")),
+          ),
+      ).toEqual(
+        language === "en"
+          ? ["Queue", "Favorite", "Track actions"]
+          : ["Cola", "Favorita", "Acciones de la canción"],
+      );
+      await expect(surface.locator(".player-title button")).toHaveCount(0);
+      await expect(surface.locator(".player-surface-head button")).toHaveCount(
+        1,
       );
       await surface
-        .locator(".player-surface-head")
+        .locator(".player-track-actions")
         .getByRole("button", {
           name: language === "en" ? "Queue" : "Cola",
           exact: true,
@@ -202,6 +240,12 @@ test("privacy pending and failure states recover while menus and queue actions r
   page,
 }) => {
   const surface = await player(page);
+  const favorite = surface
+    .locator(".player-track-actions")
+    .getByRole("button", { name: "Favorite", exact: true });
+  await expect(favorite).toHaveAttribute("aria-pressed", "false");
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "true");
   const privacy = surface.getByRole("checkbox", {
     name: "Exclude from recap",
     exact: true,
@@ -311,6 +355,15 @@ test("privacy pending and failure states recover while menus and queue actions r
     .getByRole("button", { name: "Remove", exact: true })
     .click();
   await expect(rows).toHaveCount(7);
+  await expect(
+    queue
+      .locator(".player-track-actions")
+      .getByRole("button", { name: "Favorite", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await queue.getByRole("button", { name: "Now playing", exact: true }).click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "true");
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "false");
 });
 
 test("playlist headings share the creation toolbar and detail metadata wraps without competing actions", async ({

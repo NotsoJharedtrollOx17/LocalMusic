@@ -16,8 +16,6 @@ import { animateCover } from "./motion";
 export function PlayerSurface({
   title,
   closeLabel,
-  queueLabel,
-  playerLabel,
   view,
   onView,
   onClose,
@@ -28,8 +26,6 @@ export function PlayerSurface({
 }: {
   title: string;
   closeLabel: string;
-  queueLabel: string;
-  playerLabel: string;
   view: "player" | "queue";
   onView: (view: "player" | "queue") => void;
   onClose: () => void;
@@ -151,12 +147,6 @@ export function PlayerSurface({
             <ChevronDown />
           </IconButton>
           <h2>{title}</h2>
-          <button
-            className="text-button"
-            onClick={() => onView(view === "queue" ? "player" : "queue")}
-          >
-            {view === "queue" ? playerLabel : queueLabel}
-          </button>
         </header>
         <div
           className={"player-surface-body " + view}

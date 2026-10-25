@@ -47,14 +47,6 @@
 .player-surface-head > .icon-button {
   justify-self: start;
 }
-.player-surface-head > .text-button {
-  justify-self: end;
-  max-width: 100%;
-  font-size: 12px;
-  min-height: 44px;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
 .player-surface-body {
   flex: 1;
   min-height: 0;
@@ -124,9 +116,6 @@
   color: var(--muted);
   margin-top: 8px;
 }
-.player-title > .icon-button {
-  flex-shrink: 0;
-}
 .player-surface-footer {
   flex-shrink: 0;
   padding: 20px 30px 24px;
@@ -151,9 +140,22 @@
   width: var(--player-play-size);
   height: var(--player-play-size);
 }
-.player-options {
+.player-track-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.player-track-actions > .icon-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+.player-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   border-top: 1px solid var(--rule);
   padding-top: 16px;
