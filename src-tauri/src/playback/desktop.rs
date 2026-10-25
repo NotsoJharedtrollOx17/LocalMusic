@@ -31,7 +31,6 @@ pub fn launch(
         sound.available.store(device.is_ok(), Ordering::Relaxed);
         let mut p = DesktopPlayer {
             sound,
-            tone: None,
             device: device.ok(),
             sink: None,
             core,
@@ -105,7 +104,6 @@ pub fn launch(
 }
 struct DesktopPlayer {
     sound: Arc<Engine>,
-    tone: Option<rodio::Player>,
     device: Option<rodio::MixerDeviceSink>,
     sink: Option<rodio::Player>,
     core: Arc<Mutex<Store>>,
@@ -257,9 +255,6 @@ impl DesktopPlayer {
         if self.sound_command(op, &v)? {
             return Ok(());
         }
-        if ["play", "toggle", "next", "previous"].contains(&op) {
-            self.cancel_personal();
-        }
         match op {
             "play" => {
                 let ids: Vec<String> =
@@ -394,7 +389,6 @@ fn open_audio_device(sound: Arc<Engine>) -> Result<rodio::MixerDeviceSink, Strin
     rodio::DeviceSinkBuilder::from_default_device()
         .map_err(|e| e.to_string())?
         .with_error_callback(move |_| {
-            sound.route_generation.fetch_add(1, Ordering::AcqRel);
             sound.route_changed.store(true, Ordering::Release);
         })
         .open_sink_or_fallback()

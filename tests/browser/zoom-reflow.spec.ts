@@ -1,6 +1,6 @@
 ﻿import { test, expect } from "@playwright/test";
 import { taggedWav } from "./fixtures";
-import { openSettings, chooseSound } from "./navigationHelpers";
+import { openSettings, equalizerDialog } from "./navigationHelpers";
 
 test("zoom-sized viewports retain readable player content, reachable controls and collection reflow", async ({
   page,
@@ -134,11 +134,11 @@ test("zoom-sized viewports retain readable player content, reachable controls an
     await page.locator("[data-player-menu]").click();
     await page
       .getByRole("menuitem", {
-        name: language === "en" ? "Sound options" : "Opciones de sonido",
+        name: language === "en" ? "Equalizer" : "Ecualizador",
         exact: true,
       })
       .click();
-    await chooseSound(page, "equalizer");
+    await equalizerDialog(page);
     await page.setViewportSize({ width: 256, height: 200 });
     const dialog = page.getByRole("dialog");
     await expect

@@ -25,7 +25,7 @@
       "strength": 100
     },
     "expected": {
-      "version": 1,
+      "version": 2,
       "enabled": true,
       "gains": [
         0,
@@ -41,11 +41,7 @@
       ],
       "preamp": 0,
       "presetId": "flat",
-      "presets": [],
-      "profiles": [],
-      "profileId": null,
-      "personalEnabled": false,
-      "strength": 100
+      "presets": []
     }
   },
   {
@@ -92,7 +88,7 @@
       "strength": 100
     },
     "expected": {
-      "version": 1,
+      "version": 2,
       "enabled": true,
       "gains": [
         0,
@@ -143,11 +139,7 @@
           ],
           "preamp": 0
         }
-      ],
-      "profiles": [],
-      "profileId": null,
-      "personalEnabled": false,
-      "strength": 100
+      ]
     }
   },
   {
@@ -176,7 +168,7 @@
       "strength": 100
     },
     "expected": {
-      "version": 1,
+      "version": 2,
       "enabled": true,
       "gains": [
         0,
@@ -210,11 +202,7 @@
           ],
           "preamp": 0
         }
-      ],
-      "profiles": [],
-      "profileId": null,
-      "personalEnabled": false,
-      "strength": 100
+      ]
     }
   },
   {
@@ -261,7 +249,7 @@
       "strength": 100
     },
     "expected": {
-      "version": 1,
+      "version": 2,
       "enabled": true,
       "gains": [
         0,
@@ -295,11 +283,7 @@
           ],
           "preamp": 0
         }
-      ],
-      "profiles": [],
-      "profileId": null,
-      "personalEnabled": false,
-      "strength": 100
+      ]
     }
   },
   {
@@ -371,6 +355,169 @@
       "strength": 50
     },
     "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
+    }
+  },
+  {
+    "name": "active profile restores the last ordinary Rock preset",
+    "input": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        2,
+        1,
+        -1,
+        -2,
+        -1,
+        1,
+        2,
+        3,
+        2
+      ],
+      "preamp": 0,
+      "presetId": "rock",
+      "presets": [
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "preamp": 0
+        }
+      ],
+      "profiles": [
+        {
+          "id": "old",
+          "name": "Old",
+          "left": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "right": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "complete": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "calibration": {
+            "method": "bounded-3-v1",
+            "coverage": [
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed"
+            ]
+          }
+        }
+      ],
+      "personalEnabled": true,
+      "profileId": "old",
+      "strength": 100
+    },
+    "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        2,
+        1,
+        -1,
+        -2,
+        -1,
+        1,
+        2,
+        3,
+        2
+      ],
+      "preamp": 0,
+      "presetId": "rock",
+      "presets": [
+        {
+          "id": "custom",
+          "name": "Custom",
+          "gains": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "preamp": 0
+        }
+      ]
+    }
+  },
+  {
+    "name": "inactive profile is deleted with legacy coverage",
+    "input": {
       "version": 1,
       "enabled": true,
       "gains": [
@@ -390,31 +537,31 @@
       "presets": [],
       "profiles": [
         {
-          "id": "ears",
-          "name": "My profile",
+          "id": "old",
+          "name": "Old",
           "left": [
-            0,
-            0,
-            0,
-            3,
-            2,
-            0,
-            0,
-            0,
-            0,
-            0
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
           ],
           "right": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
           ],
           "complete": [
             true,
@@ -429,12 +576,239 @@
             true,
             true,
             true
-          ]
+          ],
+          "calibration": {
+            "method": "bounded-3-v1",
+            "coverage": [
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed"
+            ]
+          }
         }
       ],
-      "profileId": "ears",
+      "personalEnabled": false,
+      "profileId": "old"
+    },
+    "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
+    }
+  },
+  {
+    "name": "malformed retired fields cannot block ordinary EQ",
+    "input": {
+      "version": 1,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": "invalid",
+      "personalEnabled": {
+        "bad": true
+      },
+      "profileId": 42,
+      "strength": "invalid"
+    },
+    "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
+    }
+  },
+  {
+    "name": "version two strips stale personalization fields",
+    "input": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": [],
+      "profiles": [
+        {
+          "id": "old",
+          "name": "Old",
+          "left": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "right": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "complete": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "calibration": {
+            "method": "bounded-3-v1",
+            "coverage": [
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed",
+              "bracketed"
+            ]
+          }
+        }
+      ],
       "personalEnabled": true,
-      "strength": 100
+      "profileId": "old"
+    },
+    "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
+    }
+  },
+  {
+    "name": "fresh version two remains Normal",
+    "input": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
+    },
+    "expected": {
+      "version": 2,
+      "enabled": true,
+      "gains": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "preamp": 0,
+      "presetId": "flat",
+      "presets": []
     }
   }
 ]

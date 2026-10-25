@@ -22,7 +22,7 @@ export default function TrackActionMenu() {
     share,
     sharing,
     openGroup,
-    openSound,
+    openEqualizer,
     player,
   } = useMusicAppContext();
   const privacy = usePlaybackPrivacy();
@@ -111,9 +111,9 @@ export default function TrackActionMenu() {
         ...(playerMenu
           ? [
               {
-                id: "sound",
-                label: t.soundControls,
-                action: () => void openSound(),
+                id: "equalizer",
+                label: t.equalizer,
+                action: () => void openEqualizer(),
               },
               {
                 id: "privacy",

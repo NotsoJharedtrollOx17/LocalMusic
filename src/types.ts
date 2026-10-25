@@ -122,10 +122,6 @@ export interface MusicApi {
   soundAction(
     action: import("./sound/types").SoundAction,
   ): Promise<SoundCapabilities>;
-  personalAction(
-    action: import("./sound/types").PersonalAction,
-  ): Promise<import("./sound/types").PersonalSession>;
-  openSoundPanel(): Promise<void>;
   groupIds(
     kind: "albums" | "artists",
     title: string,

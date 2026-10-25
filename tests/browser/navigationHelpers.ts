@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 export async function openSettings(page: Page) {
   await page
     .getByRole("button", {
@@ -8,37 +8,24 @@ export async function openSettings(page: Page) {
   await page.getByRole("menuitem", { name: /^(Settings|Ajustes)$/ }).click();
   return page.getByRole("dialog", { name: /^(Settings|Ajustes)$/ });
 }
-export async function openSound(
-  page: Page,
-  view: "equalizer" | "adapt" = "equalizer",
-) {
+export async function equalizerDialog(page: Page) {
+  const dialog = page.getByRole("dialog", {
+    name: /^(Equalizer|Ecualizador)$/,
+  });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+export async function openEqualizer(page: Page) {
   await page
     .getByRole("button", {
       name: /^(Library actions|Acciones de la biblioteca)$/,
     })
     .click();
   await page
-    .getByRole("menuitem", { name: /^(Sound options|Opciones de sonido)$/ })
+    .getByRole("menuitem", { name: /^(Equalizer|Ecualizador)$/ })
     .click();
-  return chooseSound(page, view);
+  return equalizerDialog(page);
 }
-export async function chooseSound(page: Page, view: "equalizer" | "adapt") {
-  const name =
-    view === "equalizer" ? /^(Equalizer|Ecualizador)$/ : /^Adapt Sound$/;
-  await page
-    .getByRole("dialog", { name: /^(Sound options|Opciones de sonido)$/ })
-    .getByRole("button", {
-      name:
-        view === "equalizer" ? /^(Equalizer|Ecualizador)\b/ : /^Adapt Sound\b/,
-    })
-    .click();
-  return page.getByRole("dialog", { name });
-}
-export async function switchSound(page: Page, view: "equalizer" | "adapt") {
-  await page.keyboard.press("Escape");
-  return chooseSound(page, view);
-}
-export async function closeSound(page: Page) {
-  await page.keyboard.press("Escape");
+export async function closeEqualizer(page: Page) {
   await page.keyboard.press("Escape");
 }

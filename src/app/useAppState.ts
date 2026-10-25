@@ -84,9 +84,7 @@ export function useAppState(initialSettings?: Settings) {
       | "story"
       | "remove"
       | "add"
-      | "sound"
       | "equalizer"
-      | "adapt"
       | null
     >(null),
     [detail, setDetail] = useState<Track | null>(null),

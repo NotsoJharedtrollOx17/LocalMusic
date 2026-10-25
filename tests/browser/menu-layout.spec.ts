@@ -1,7 +1,7 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { taggedWav } from "./fixtures";
-import { openSettings, chooseSound } from "./navigationHelpers";
+import { openSettings, equalizerDialog } from "./navigationHelpers";
 
 async function library(page: Page) {
   await page.goto("/");
@@ -165,7 +165,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
       ).toBeVisible();
       await expect(
         page.getByRole("menuitem", {
-          name: language === "en" ? "Sound options" : "Opciones de sonido",
+          name: language === "en" ? "Equalizer" : "Ecualizador",
           exact: true,
         }),
       ).toBeVisible();
@@ -177,7 +177,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Track details",
               "Go to album",
               "Go to artist",
-              "Sound options",
+              "Equalizer",
               "Exclude from recap",
               "Remove from Library",
             ]
@@ -185,7 +185,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Detalles de la canción",
               "Ir al álbum",
               "Ir al artista",
-              "Opciones de sonido",
+              "Ecualizador",
               "Excluir del resumen",
               "Quitar de la biblioteca",
             ],
@@ -380,13 +380,10 @@ test("privacy pending and failure states recover while menus and queue actions r
   await expect(actions).toBeFocused();
   await expect(actions).toHaveAttribute("aria-expanded", "false");
   await actions.click();
-  await page
-    .getByRole("menuitem", { name: "Sound options", exact: true })
-    .click();
-  await chooseSound(page, "equalizer");
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  await equalizerDialog(page);
   await expect(page.locator(".player-scrim")).toBeHidden();
   await expect(page.getByRole("dialog")).toHaveCount(1);
-  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await expect(actions).toBeFocused();
   await surface.getByRole("button", { name: "Queue", exact: true }).click();

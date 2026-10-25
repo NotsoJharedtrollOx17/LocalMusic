@@ -34,8 +34,6 @@ pub fn run() {
             commands::sound::sound_capabilities,
             commands::sound::set_sound,
             commands::sound::sound_action,
-            commands::sound::personal_action,
-            commands::sound::open_sound_panel,
             commands::window::show_main_window,
             commands::catalog::list_tracks,
             commands::catalog::list_groups,

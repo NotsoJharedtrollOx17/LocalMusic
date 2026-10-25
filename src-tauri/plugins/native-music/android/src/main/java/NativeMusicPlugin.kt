@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ClipData
-import android.media.audiofx.AudioEffect
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -60,17 +59,12 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  @Command fun snapshot(invoke:Invoke){withService(invoke){resolveSnapshot(invoke,it)}}
  @Command fun ack(invoke:Invoke){val args=invoke.parseArgs(AckArgs::class.java);withService(invoke){it.journal.ack(args.through?:0){invoke.resolve(JSObject())}}}
  @Command fun timeZone(invoke:Invoke){invoke.resolve(JSObject().put("value",java.util.TimeZone.getDefault().id))}
- private fun soundIntent(service:PlaybackService)=Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).putExtra(AudioEffect.EXTRA_AUDIO_SESSION,service.player.audioSessionId).putExtra(AudioEffect.EXTRA_PACKAGE_NAME,activity.packageName).putExtra(AudioEffect.EXTRA_CONTENT_TYPE,AudioEffect.CONTENT_TYPE_MUSIC)
  @Command fun soundCapabilities(invoke:Invoke){withService(invoke){service->
-  val result=service.sound.state(service.player.isPlaying);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null)
+  val result=service.sound.state(service.player.isPlaying)
   invoke.resolve(JSObject(result.toString()))
  }}
- @Command fun setSound(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val playing=service.player.isPlaying;worker.execute{try{service.sound.configure(JSONObject(args.payload?:"{}"));val result=service.sound.state(playing);result.put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null);invoke.resolve(JSObject(result.toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound configuration failed")}}}}
- @Command fun soundAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="retry"){service.player.pause();if(service.player.playerError!=null&&service.player.currentMediaItem!=null)service.player.prepare()};val playing=service.player.isPlaying;worker.execute{try{service.sound.action(action);invoke.resolve(JSObject(service.sound.state(playing).put("systemPanel",soundIntent(service).resolveActivity(activity.packageManager)!=null).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound action failed")}}}}
- @Command fun personalAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="start")service.player.pause();worker.execute{try{invoke.resolve(JSObject(service.sound.personal(action).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound setup failed")}}}}
- @Command fun openSoundPanel(invoke:Invoke){withService(invoke){service->
-  val intent=soundIntent(service);if(intent.resolveActivity(activity.packageManager)==null)invoke.reject("Device sound panel unavailable")else{activity.startActivity(intent);invoke.resolve(JSObject())}
- }}
+ @Command fun setSound(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val playing=service.player.isPlaying;worker.execute{try{service.sound.configure(JSONObject(args.payload?:"{}"));val result=service.sound.state(playing);invoke.resolve(JSObject(result.toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound configuration failed")}}}}
+ @Command fun soundAction(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);withService(invoke){service->val action=JSONObject(args.payload?:"{}");if(action.optString("op")=="retry"){service.player.pause();if(service.player.playerError!=null&&service.player.currentMediaItem!=null)service.player.prepare()};val playing=service.player.isPlaying;worker.execute{try{service.sound.action(action);invoke.resolve(JSObject(service.sound.state(playing).toString()))}catch(e:Exception){invoke.reject(e.message?:"Sound action failed")}}}}
  @Command fun shareAudio(invoke:Invoke){
   val args=invoke.parseArgs(ShareArgs::class.java)
   activity.runOnUiThread{try{

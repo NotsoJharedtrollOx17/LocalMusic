@@ -11,7 +11,6 @@ struct Watcher {
 }
 impl IMMNotificationClient_Impl for Watcher_Impl {
     fn OnDeviceStateChanged(&self, _: &PCWSTR, _: DEVICE_STATE) -> windows::core::Result<()> {
-        self.engine.route_generation.fetch_add(1, Ordering::AcqRel);
         self.engine.route_changed.store(true, Ordering::Release);
         Ok(())
     }
@@ -19,7 +18,6 @@ impl IMMNotificationClient_Impl for Watcher_Impl {
         Ok(())
     }
     fn OnDeviceRemoved(&self, _: &PCWSTR) -> windows::core::Result<()> {
-        self.engine.route_generation.fetch_add(1, Ordering::AcqRel);
         self.engine.route_changed.store(true, Ordering::Release);
         Ok(())
     }
@@ -30,7 +28,6 @@ impl IMMNotificationClient_Impl for Watcher_Impl {
         _: &PCWSTR,
     ) -> windows::core::Result<()> {
         if flow == eRender && (role == eMultimedia || role == eConsole) {
-            self.engine.route_generation.fetch_add(1, Ordering::AcqRel);
             self.engine.route_changed.store(true, Ordering::Release);
         }
         Ok(())

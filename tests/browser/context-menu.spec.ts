@@ -111,7 +111,7 @@ test("backgrounds and cards no longer expose redundant navigation", async ({
         .getByRole("button", { name: "Library actions", exact: true })
         .click();
       await expect(page.getByRole("menuitem")).toHaveText([
-        "Sound options",
+        "Equalizer",
         "Settings",
       ]);
       await page.keyboard.press("Escape");

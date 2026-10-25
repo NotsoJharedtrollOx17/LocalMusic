@@ -9,14 +9,12 @@ export default function EqualizerBands({
   flush,
   inactive,
   language,
-  readOnly = false,
 }: {
   config: SoundConfig;
   edit: (update: (c: SoundConfig) => SoundConfig) => void;
   flush: () => void;
   inactive: number[];
   language: string;
-  readOnly?: boolean;
 }) {
   const t = soundCopy(language);
   return (
@@ -33,10 +31,10 @@ export default function EqualizerBands({
                 type="range"
                 aria-label={`${f} Hz ${t.gain}`}
                 aria-valuetext={formatGain(config.gains[i])}
-                disabled={inactive.includes(i) || readOnly}
+                disabled={inactive.includes(i)}
                 min={-10}
                 max={10}
-                step={readOnly ? "any" : 0.5}
+                step={0.5}
                 value={config.gains[i]}
                 onChange={(e) => {
                   const value = Number(e.target.value);

@@ -12,17 +12,6 @@ pub struct Preset {
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Profile {
-    pub id: String,
-    pub name: String,
-    pub left: [f64; 10],
-    pub right: [f64; 10],
-    pub complete: [bool; 12],
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub calibration: Option<super::calibration::Metadata>,
-}
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Config {
     pub version: u8,
     pub enabled: bool,
@@ -30,24 +19,16 @@ pub struct Config {
     pub preamp: f64,
     pub preset_id: String,
     pub presets: Vec<Preset>,
-    pub profiles: Vec<Profile>,
-    pub profile_id: Option<String>,
-    pub personal_enabled: bool,
-    pub strength: f64,
 }
 impl Default for Config {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: 2,
             enabled: true,
             gains: [0.; 10],
             preamp: 0.,
             preset_id: "flat".into(),
             presets: vec![],
-            profiles: vec![],
-            profile_id: None,
-            personal_enabled: false,
-            strength: 100.,
         }
     }
 }
@@ -55,12 +36,10 @@ impl Config {
     pub fn validate(&self) -> Result<(), String> {
         let range = |v: f64, a: f64, b: f64| v.is_finite() && v >= a && v <= b;
         let name = |s: &String| !s.trim().is_empty() && s.chars().count() <= 60;
-        if self.version != 1
+        if ![1, 2].contains(&self.version)
             || !self.gains.iter().all(|v| range(*v, -12., 12.))
             || !range(self.preamp, -12., 12.)
-            || !range(self.strength, 0., 100.)
             || self.presets.len() > 101
-            || self.profiles.len() > 100
         {
             return Err("Invalid sound configuration".into());
         }
@@ -87,44 +66,13 @@ impl Config {
                 return Err("Invalid sound preset".into());
             }
         }
-        ids.clear();
-        for p in &self.profiles {
-            if p.calibration.as_ref().is_some_and(|m| {
-                m.method != "bounded-3-v1"
-                    || m.coverage.iter().any(|s| {
-                        matches!(
-                            s,
-                            super::calibration::Coverage::Untested
-                                | super::calibration::Coverage::Estimating
-                        )
-                    })
-            }) {
-                return Err("Invalid profile calibration coverage".into());
-            }
-            if !name(&p.id)
-                || !name(&p.name)
-                || !ids.insert(p.id.clone())
-                || !p
-                    .left
-                    .iter()
-                    .chain(p.right.iter())
-                    .all(|v| range(*v, 0., 6.))
-            {
-                return Err("Invalid personal profile".into());
-            }
-        }
-        if self.profile_id.as_ref().is_some_and(|id| !ids.contains(id))
-            || (self.personal_enabled && self.profile_id.is_none())
-        {
-            return Err("Choose a valid personal profile".into());
-        }
         Ok(())
     }
-    /// Upgrade the ordinary EQ flow without discarding archived preset/profile data.
+    /// Upgrade stored EQ and discard retired fields through EQ-only serialization.
     pub fn normalized(mut self) -> Self {
         self.enabled = true;
         self.preamp = 0.;
-        self.strength = 100.;
+        self.version = 2;
         let editable = |gains: &mut [f64; 10]| {
             for (i, g) in gains.iter_mut().enumerate() {
                 *g = if i == 0 { 0. } else { g.clamp(-10., 10.) };
@@ -155,40 +103,22 @@ impl Config {
         }
         self
     }
-    pub fn curves(&self, bypass: bool, channels: usize) -> [[f64; 10]; 2] {
-        let mut out = [[0.; 10]; 2];
-        let p = if self.personal_enabled && !bypass && channels <= 2 {
-            self.profiles
-                .iter()
-                .find(|p| Some(&p.id) == self.profile_id.as_ref())
-        } else {
-            None
-        };
-        for ch in 0..2 {
-            for i in 0..10 {
-                out[ch][i] = if i == 0 {
-                    0.
-                } else {
-                    (if self.enabled && !bypass && p.is_none() {
-                        self.gains[i]
-                    } else {
-                        0.
-                    }) + p
-                        .map(|p| if ch == 0 { p.left[i] } else { p.right[i] })
-                        .unwrap_or(0.)
-                        * self.strength
-                        / 100.
-                };
+    pub fn curves(&self, bypass: bool, _channels: usize) -> [[f64; 10]; 2] {
+        let gains = std::array::from_fn(|i| {
+            if i > 0 && self.enabled && !bypass {
+                self.gains[i]
+            } else {
+                0.
             }
-        }
-        out
+        });
+        [gains, gains]
     }
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct State {
     pub supported: bool,
-    pub system_panel: bool,
+
     pub config: Config,
     pub status: String,
     pub reason: Option<String>,
@@ -197,9 +127,7 @@ pub struct State {
     pub attenuation: f64,
     pub bypass: bool,
     pub inactive_bands: Vec<usize>,
-    pub personal_available: bool,
     pub route_monitoring: bool,
-    pub route_generation: usize,
 }
 
 #[cfg(test)]
@@ -214,7 +142,17 @@ mod normalization_tests {
         for case in cases.as_array().unwrap() {
             let config: Config = serde_json::from_value(case["input"].clone()).unwrap();
             config.validate().unwrap();
-            let actual = serde_json::to_value(config.normalized()).unwrap();
+            let normalized = config.normalized();
+            assert_eq!(
+                normalized.curves(false, 6),
+                [normalized.gains, normalized.gains]
+            );
+            let actual = serde_json::to_value(normalized.clone()).unwrap();
+            assert_eq!(
+                actual,
+                serde_json::to_value(normalized.normalized()).unwrap()
+            );
+            assert_eq!(actual.as_object().unwrap().len(), 6);
             let expected: Config = serde_json::from_value(case["expected"].clone()).unwrap();
             assert_eq!(
                 actual,

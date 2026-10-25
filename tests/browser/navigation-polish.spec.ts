@@ -1,8 +1,12 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { openSettings, openSound, closeSound } from "./navigationHelpers";
+import {
+  openSettings,
+  openEqualizer,
+  closeEqualizer,
+} from "./navigationHelpers";
 
-test("compact Library menu separates EQ, Adapt Sound and ordinary settings", async ({
+test("compact Library menu opens EQ directly and keeps ordinary settings separate", async ({
   page,
 }) => {
   await page.goto("/");
@@ -22,7 +26,7 @@ test("compact Library menu separates EQ, Adapt Sound and ordinary settings", asy
   await expect(menu).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("menuitem")).toHaveText([
     "Edit",
-    "Sound options",
+    "Equalizer",
     "Settings",
   ]);
   await page.keyboard.press("Escape");
@@ -31,34 +35,20 @@ test("compact Library menu separates EQ, Adapt Sound and ordinary settings", asy
   await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await expect(page.locator(".selection-toolbar")).toBeVisible();
   await page.keyboard.press("Escape");
-  const eq = await openSound(page);
+  const eq = await openEqualizer(page);
   await expect(eq.getByRole("slider")).toHaveCount(9);
   await expect(
     eq.getByRole("button", { name: "Create personal profile", exact: true }),
   ).toHaveCount(0);
   await page.keyboard.press("Escape");
-  const hub = page.getByRole("dialog", { name: "Sound options", exact: true });
-  await expect(hub.locator('[data-sound-view="equalizer"]')).toBeFocused();
-  await expect(page.getByRole("dialog")).toHaveCount(1);
-  await hub.getByRole("button", { name: /^Adapt Sound/ }).click();
-  const adapt = page.getByRole("dialog", { name: "Adapt Sound", exact: true });
-  await expect(
-    adapt.getByRole("button", { name: "Create personal profile", exact: true }),
-  ).toBeVisible();
-  await expect(
-    adapt.getByRole("button", { name: "Normal", exact: true }),
-  ).toHaveCount(0);
-  // Android Back uses the same visible-layer handler as Escape.
-  await page.evaluate(() => window.__musicBack?.());
-  await expect(hub).toBeVisible();
-  await page.keyboard.press("Escape");
   await expect(menu).toBeFocused();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   const settings = await openSettings(page);
   await expect(settings.getByRole("group")).toHaveCount(2);
   await expect(settings).toContainText("Listening history");
   await expect(settings).not.toContainText("time zone");
   await expect(
-    settings.getByRole("button", { name: "Sound options", exact: true }),
+    settings.getByRole("button", { name: "Equalizer", exact: true }),
   ).toHaveCount(0);
   await settings.getByRole("button", { name: "Dark", exact: true }).click();
   await settings
@@ -88,6 +78,6 @@ test("compact Library menu separates EQ, Adapt Sound and ordinary settings", asy
   await expect(spanish).toContainText("Tema");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.keyboard.press("Escape");
-  await openSound(page, "adapt");
-  await closeSound(page);
+  await openEqualizer(page);
+  await closeEqualizer(page);
 });

@@ -71,7 +71,7 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
     .click();
   menu = await headerMenu(page);
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Sound options",
+    "Equalizer",
     "Settings",
   ]);
   await page.keyboard.press("Escape");
@@ -119,7 +119,7 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
     .click();
   menu = await headerMenu(page);
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Sound options",
+    "Equalizer",
     "Settings",
   ]);
   await page.keyboard.press("Escape");

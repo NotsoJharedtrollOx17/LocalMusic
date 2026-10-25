@@ -1,14 +1,7 @@
 import processorUrl from "./processor.worklet.ts?worker&url";
 import { bank } from "./dsp";
 import { defaultSound, effectiveCurves, validateSound } from "./model";
-import { PersonalProtocol } from "./PersonalProtocol";
-import type {
-  SoundConfig,
-  SoundState,
-  SoundAction,
-  PersonalAction,
-  PersonalSession,
-} from "./types";
+import type { SoundConfig, SoundState, SoundAction } from "./types";
 
 /** Separate preview engine; library audio remains the browser journal authority. */
 export class BrowserSound {
@@ -21,49 +14,24 @@ export class BrowserSound {
   private failure = "";
   private bypass = false;
   private attenuation = 0;
-  private routeGeneration = 0;
   private channels = 2;
-  private session?: PersonalProtocol;
-  private sample?: AudioBufferSourceNode;
-  private comparisonJob?: { worker: Worker; reject: (error: Error) => void };
+  private configurationReady = false;
   constructor(
     private audio: HTMLAudioElement,
-    read: () => Promise<SoundConfig | undefined>,
+    private read: () => Promise<unknown>,
     private write: (config: SoundConfig) => Promise<void>,
-    private pause: () => Promise<void>,
   ) {
-    this.ready = read().then((c) => {
-      if (c) this.config = validateSound(c);
-      return this.write(this.config);
+    this.ready = this.restore().catch((error) => {
+      this.failure = String(error);
     });
-    const interrupt = () => {
-      this.routeGeneration++;
-      this.stop();
-      this.session?.cancel();
-      if (this.config.personalEnabled) {
-        this.config = { ...this.config, personalEnabled: false };
-        this.apply();
-        void this.write(this.config);
-      }
-    };
-    window.addEventListener("blur", () => {
-      this.stop();
-      this.session?.pause();
-    });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        this.stop();
-        this.session?.pause();
-      }
-    });
-    navigator.mediaDevices?.addEventListener("devicechange", interrupt);
-    window.setInterval(() => {
-      if (
-        this.session &&
-        (!this.session.alive() || this.session.state.phase === "paused")
-      )
-        this.stop();
-    }, 100);
+  }
+  private async restore() {
+    const stored = await this.read();
+    const next = stored ? validateSound(stored) : defaultSound();
+    this.config = next;
+    await this.write(next);
+    this.configurationReady = true;
+    this.failure = "";
   }
   private supported() {
     return (
@@ -84,7 +52,7 @@ export class BrowserSound {
           : "ready";
     return {
       supported: this.supported(),
-      systemPanel: false,
+
       config: structuredClone(this.config),
       status,
       reason: this.failure || undefined,
@@ -95,14 +63,12 @@ export class BrowserSound {
       inactiveBands: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]
         .map((f, i) => (f >= rate / 2 ? i : -1))
         .filter((i) => i >= 0),
-      personalAvailable: this.channels <= 2,
       routeMonitoring: false,
-      routeGeneration: this.routeGeneration,
     };
   }
   async activate() {
     await this.ready;
-    if (!this.supported()) return;
+    if (!this.configurationReady || !this.supported()) return;
     if (!this.initializing) this.initializing = this.initialize();
     await this.initializing;
     if (this.context?.state === "suspended") {
@@ -135,8 +101,6 @@ export class BrowserSound {
         if (this.worklet !== processor) return;
         this.failure =
           "Audio processor stopped. Ordinary playback remains available.";
-        this.stop();
-        this.session?.cancel();
         processor.disconnect();
         this.source?.disconnect();
         if (this.context && this.source)
@@ -158,209 +122,51 @@ export class BrowserSound {
   private apply() {
     if (!this.worklet || !this.context) return;
     const cs = bank(
-      effectiveCurves(this.config, this.bypass, this.channels),
+      effectiveCurves(this.config, this.bypass),
       this.context.sampleRate,
     );
     this.attenuation = 0;
     this.worklet.port.postMessage({
       bank: cs,
-      gain:
-        10 **
-        (((!this.bypass &&
-        (this.config.enabled ||
-          (this.config.personalEnabled && this.channels <= 2))
-          ? this.config.preamp
-          : 0) -
-          this.attenuation) /
-          20),
-      bypass:
-        this.bypass ||
-        (!this.config.enabled &&
-          (!this.config.personalEnabled || this.channels > 2)),
+      gain: 1,
+      bypass: this.bypass || !this.config.enabled,
     });
   }
-  async configure(config: SoundConfig, authorizePersonal = false) {
+  async configure(config: SoundConfig) {
     await this.ready;
     const next = validateSound(config);
-    if (
-      next.personalEnabled &&
-      !this.config.personalEnabled &&
-      !authorizePersonal
-    )
-      throw new Error("Confirm headphones with Use profile first");
     await this.write(next);
+    const wasReady = this.configurationReady;
+    this.configurationReady = true;
+    if (!wasReady) this.failure = "";
     this.config = next;
+    if (!wasReady && !this.audio.paused) await this.activate();
     this.apply();
     return this.state();
   }
   async action(action: SoundAction) {
-    if (action.op === "profile-use") {
-      if (this.channels > 2)
-        throw new Error("Personal sound requires mono or stereo audio");
-      if (action.routeGeneration !== this.routeGeneration)
-        throw new Error("Output changed. Confirm headphones again.");
-      return this.configure(
-        { ...this.config, profileId: action.id, personalEnabled: true },
-        true,
-      );
-    }
     if (action.op === "retry") {
+      if (!this.configurationReady) {
+        try {
+          await this.restore();
+        } catch (error) {
+          this.failure = String(error);
+          throw error;
+        }
+      }
       this.initializing = undefined;
       this.worklet?.disconnect();
       this.worklet = undefined;
       await this.activate();
-    } else {
+    } else if (action.op === "bypass") {
       this.bypass = action.value;
       this.apply();
+    } else {
+      throw new Error("Unknown sound action");
     }
     return this.state();
   }
   reset() {
     this.worklet?.port.postMessage({ reset: true });
-  }
-  private stop() {
-    if (this.comparisonJob) {
-      this.comparisonJob.worker.terminate();
-      this.comparisonJob.reject(new Error("Sound comparison stopped"));
-      this.comparisonJob = undefined;
-    }
-    try {
-      this.sample?.stop();
-    } catch {}
-    this.sample?.disconnect();
-    this.sample = undefined;
-  }
-  private play(samples: Float32Array) {
-    if (!this.context || this.context.state !== "running")
-      throw new Error("Activate audio before starting sound setup");
-    this.stop();
-    const buffer = this.context.createBuffer(2, samples.length / 2, 48000);
-    for (let ch = 0; ch < 2; ch++) {
-      const channel = buffer.getChannelData(ch);
-      for (let i = 0; i < channel.length; i++) channel[i] = samples[i * 2 + ch];
-    }
-    this.sample = this.context.createBufferSource();
-    this.sample.buffer = buffer;
-    this.sample.connect(this.context.destination);
-    this.sample.start();
-  }
-  private renderComparison(
-    profile: import("./types").PersonalProfile,
-    strength: number,
-    mode: "original" | "personal",
-  ) {
-    this.stop();
-    return new Promise<Float32Array>((resolve, reject) => {
-      const worker = new Worker(
-        new URL("./comparison.worker.ts", import.meta.url),
-        { type: "module" },
-      );
-      this.comparisonJob = { worker, reject };
-      const finish = () => {
-        worker.terminate();
-        if (this.comparisonJob?.worker === worker)
-          this.comparisonJob = undefined;
-      };
-      worker.onmessage = (event) => {
-        finish();
-        if (event.data instanceof Float32Array) resolve(event.data);
-        else reject(new Error(event.data?.error ?? "Sound comparison failed"));
-      };
-      worker.onerror = (event) => {
-        finish();
-        reject(new Error(event.message || "Sound comparison failed"));
-      };
-      worker.postMessage({ profile, strength, mode });
-    });
-  }
-  async personal(action: PersonalAction): Promise<PersonalSession> {
-    await this.ready;
-    if (action.op === "start") {
-      if (this.channels > 2)
-        throw new Error("Personal sound requires mono or stereo audio");
-      await this.pause();
-      this.stop();
-      this.session?.cancel();
-      await this.activate();
-      if (!this.worklet || this.failure)
-        throw new Error(this.failure || "Audio processing is unavailable");
-      if (
-        action.replaceId &&
-        !this.config.profiles.some((p) => p.id === action.replaceId)
-      )
-        throw new Error("Unknown profile to retest");
-      this.session = new PersonalProtocol(action.replaceId);
-      return { ...this.session.state };
-    }
-    const session = this.session;
-    if (!session || session.state.id !== action.id)
-      throw new Error("Sound setup is no longer active");
-    if (action.op === "cancel") {
-      this.stop();
-      session.cancel();
-      return { ...session.state };
-    }
-    session.heartbeat();
-    switch (action.op) {
-      case "pause":
-        this.stop();
-        session.pause();
-        break;
-      case "resume":
-        await this.activate();
-        session.resume(action.trialId);
-        break;
-      case "pulse":
-        this.play(session.pulse(action.trialId));
-        break;
-      case "respond":
-        session.respond(action.heard, action.trialId);
-        break;
-      case "retry":
-        this.stop();
-        session.retry();
-        break;
-      case "preview": {
-        const p = session.preview(action.mode, action.strength);
-        const samples = await this.renderComparison(
-          p.profile,
-          p.strength,
-          p.mode,
-        );
-        if (session !== this.session || session.state.phase !== "compare")
-          throw new Error("Sound setup is no longer active");
-        session.heartbeat();
-        this.play(samples);
-        break;
-      }
-      case "save": {
-        if (
-          !Number.isFinite(action.strength) ||
-          action.strength < 0 ||
-          action.strength > 100
-        )
-          throw new Error("Invalid profile strength");
-        session.state.strength = action.strength;
-        const profile = session.profile(action.name);
-        await this.configure(
-          {
-            ...this.config,
-            profiles: [
-              ...this.config.profiles.filter((p) => p.id !== profile.id),
-              profile,
-            ],
-            profileId: profile.id,
-            personalEnabled: true,
-            strength: session.state.strength,
-          },
-          true,
-        );
-        this.stop();
-        session.state.phase = "saved";
-        session.discard();
-        break;
-      }
-    }
-    return { ...session.state };
   }
 }

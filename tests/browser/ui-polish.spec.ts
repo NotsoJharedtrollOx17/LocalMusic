@@ -1,31 +1,11 @@
-﻿import { test, expect, type Page } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { defaultSound } from "../../src/sound/model";
 import {
   openSettings,
-  openSound,
-  chooseSound,
-  closeSound,
+  openEqualizer,
+  equalizerDialog,
+  closeEqualizer,
 } from "./navigationHelpers";
-async function storedSound(page: Page) {
-  return page.evaluate(
-    () =>
-      new Promise<any>((resolve) => {
-        const request = indexedDB.open("local-music-v1", 1);
-        request.onsuccess = () => {
-          const db = request.result,
-            read = db
-              .transaction("settings")
-              .objectStore("settings")
-              .get("sound-v1");
-          read.onsuccess = () => {
-            resolve(read.result);
-            db.close();
-          };
-        };
-      }),
-  );
-}
 test("queue yields the entire modal surface to sound and restores scroll and focus", async ({
   page,
 }) => {
@@ -50,10 +30,8 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
   await queue
     .getByRole("button", { name: "Player options", exact: true })
     .click();
-  await page
-    .getByRole("menuitem", { name: "Sound options", exact: true })
-    .click();
-  const sound = await chooseSound(page, "equalizer");
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  const sound = await equalizerDialog(page);
   await expect(
     sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toBeVisible();
@@ -76,7 +54,6 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
     .locator(".modal-head")
     .getByRole("button", { name: "Close", exact: true })
     .click();
-  await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
   await expect(
     queue.getByRole("button", { name: "Player options", exact: true }),
@@ -89,132 +66,17 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
   await queue
     .getByRole("button", { name: "Player options", exact: true })
     .click();
-  await page
-    .getByRole("menuitem", { name: "Sound options", exact: true })
-    .click();
-  await chooseSound(page, "equalizer");
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  await equalizerDialog(page);
   await expect(
     sound.getByRole("slider", { name: "1000 Hz gain", exact: true }),
   ).toHaveValue(gain);
-  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await expect(queue).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("dialog", { name: "Now playing", exact: true }),
   ).toBeVisible();
-});
-test("personal banks stay grouped and EN/ES preserve the exact same sound configuration", async ({
-  page,
-}) => {
-  await page.goto("/");
-  const config = {
-    ...defaultSound(),
-    enabled: true,
-    preamp: 3.5,
-    gains: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    presetId: "custom",
-    personalEnabled: true,
-    profileId: "stable-profile",
-    profiles: [
-      {
-        id: "stable-profile",
-        name: "Headphones with a long personal music balance name",
-        left: [0, 0, 0, 6, 2, 1, 3, 4, 0, 0],
-        right: [0, 0, 0, 1, 3, 4, 2, 5, 0, 0],
-        complete: Array(12).fill(true),
-      },
-    ],
-  };
-  await page.evaluate(
-    (config) =>
-      new Promise<void>((resolve) => {
-        const request = indexedDB.open("local-music-v1", 1);
-        request.onsuccess = () => {
-          const db = request.result,
-            tx = db.transaction("settings", "readwrite");
-          tx.objectStore("settings").put(config, "sound-v1");
-          tx.oncomplete = () => {
-            db.close();
-            resolve();
-          };
-        };
-      }),
-    config,
-  );
-  await page.reload();
-  let sound = await openSound(page, "adapt");
-  await expect(
-    sound.getByRole("button", { name: "Disable profile", exact: true }),
-  ).toBeVisible();
-  const left = sound.getByRole("group", { name: "Left", exact: true }),
-    right = sound.getByRole("group", { name: "Right", exact: true });
-  await expect(left.getByRole("slider")).toHaveCount(9);
-  await expect(right.getByRole("slider")).toHaveCount(9);
-  expect((await left.boundingBox())!.y).toBeLessThan(
-    (await right.boundingBox())!.y,
-  );
-  await expect(
-    sound.getByRole("slider", { name: "Preamp", exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    sound.getByRole("button", { name: "Normal", exact: true }),
-  ).toHaveCount(0);
-  await page.screenshot({ path: "artifacts/ui-polish-personal-desktop.png" });
-  const baseline = await storedSound(page);
-  await closeSound(page);
-  let settings = await openSettings(page);
-  await settings.getByRole("button", { name: "Dark", exact: true }).click();
-  await settings.getByRole("button", { name: "Español", exact: true }).click();
-  await page.keyboard.press("Escape");
-  sound = await openSound(page, "adapt");
-  await expect(
-    sound.getByRole("slider", { name: "Preamplificador", exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    sound.getByRole("slider", {
-      name: "250 Hz ganancia Izquierdo",
-      exact: true,
-    }),
-  ).toHaveValue("6");
-  await expect(
-    sound.getByRole("slider", { name: "250 Hz ganancia Derecho", exact: true }),
-  ).toHaveValue("1");
-  expect(await storedSound(page)).toEqual(baseline);
-  await sound
-    .getByRole("button", { name: "Gestionar perfil", exact: true })
-    .click();
-  await expect(
-    sound.getByRole("menuitem", { name: "Renombrar", exact: true }),
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(
-    sound.getByRole("button", { name: "Gestionar perfil", exact: true }),
-  ).toBeFocused();
-  for (const width of [1280, 640, 390]) {
-    await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBeLessThanOrEqual(width);
-    await expect(
-      sound
-        .locator(".modal-head")
-        .getByRole("button", { name: "Cerrar", exact: true }),
-    ).toBeInViewport();
-  }
-  await page.screenshot({
-    path: "artifacts/ui-polish-personal-spanish-mobile.png",
-  });
-  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-  await closeSound(page);
-  settings = await openSettings(page);
-  await settings.getByRole("button", { name: "English", exact: true }).click();
-  await page.keyboard.press("Escape");
-  await openSound(page, "adapt");
-  await expect(
-    page.getByRole("slider", { name: "250 Hz gain Left", exact: true }),
-  ).toHaveValue("6");
-  expect(await storedSound(page)).toEqual(baseline);
 });
 test("search starts with guidance and playlist Save stays reachable while its list scrolls", async ({
   page,
@@ -312,12 +174,12 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
   ).toBeVisible();
   await expect(page.getByRole("menuitem")).toHaveText([
     "Edit",
-    "Sound options",
+    "Equalizer",
     "Settings",
   ]);
   await expect(page.getByRole("menuitemradio")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  const sound = await openSound(page);
+  const sound = await openEqualizer(page);
   await expect(sound.locator(".sound-preamp-control button")).toHaveCount(0);
   await expect(sound.locator(".equalizer-bands")).toHaveCSS(
     "border-bottom-width",

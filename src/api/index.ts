@@ -37,14 +37,6 @@ class NativeMusic implements MusicApi {
   soundAction(action: import("../sound/types").SoundAction) {
     return cmd<import("../sound/types").SoundState>("sound_action", { action });
   }
-  personalAction(action: import("../sound/types").PersonalAction) {
-    return cmd<import("../sound/types").PersonalSession>("personal_action", {
-      action,
-    });
-  }
-  openSoundPanel() {
-    return cmd<void>("open_sound_panel");
-  }
   groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
     return cmd<string[]>("group_ids", { kind, title, subtitle });
   }

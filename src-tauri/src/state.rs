@@ -29,16 +29,18 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
         ..Default::default()
     }));
     #[cfg(not(target_os = "android"))]
-    let sound = Arc::new(crate::sound::engine::Engine::new(
-        core.lock()
-            .unwrap()
-            .get_setting("sound-v1")?
-            .unwrap_or_default(),
-    ));
-    #[cfg(not(target_os = "android"))]
-    core.lock()
-        .unwrap()
-        .set_setting("sound-v1", &*sound.config.lock().unwrap())?;
+    let sound = {
+        let store = core.lock().unwrap();
+        let config: crate::sound::model::Config =
+            store.get_setting("sound-v1")?.unwrap_or_default();
+        config.validate().map_err(std::io::Error::other)?;
+        let config = config.normalized();
+        let engine = crate::sound::engine::Engine::new(config.clone());
+        if let Err(error) = store.set_setting("sound-v1", &config) {
+            engine.persistence_failed(error.to_string());
+        }
+        Arc::new(engine)
+    };
     #[cfg(not(target_os = "android"))]
     let player = desktop::launch(
         app.handle().clone(),

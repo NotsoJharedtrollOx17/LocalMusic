@@ -1,4 +1,4 @@
-import { openSound, closeSound } from "./navigationHelpers";
+import { openEqualizer, closeEqualizer } from "./navigationHelpers";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
@@ -336,13 +336,13 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   );
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-toolbar")).toHaveCount(0);
-  const sound = await openSound(page);
+  const sound = await openEqualizer(page);
   await expect(sound).not.toContainText("Audio effects are not available");
   await expect(
     sound.getByRole("button", { name: "Normal", exact: true }),
   ).toBeVisible();
   await expect(sound.getByRole("slider")).toHaveCount(9);
-  await closeSound(page);
+  await closeEqualizer(page);
   await page
     .getByRole("button", { name: "Library actions", exact: true })
     .click();

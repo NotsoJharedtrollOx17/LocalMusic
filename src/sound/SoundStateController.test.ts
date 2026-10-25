@@ -6,14 +6,13 @@ function state(config = defaultSound()): SoundState {
   return {
     config,
     supported: true,
-    systemPanel: false,
+
     status: "ready",
     sampleRate: 48000,
     channels: 2,
     attenuation: 0,
     bypass: false,
     inactiveBands: [],
-    personalAvailable: true,
     routeMonitoring: true,
   };
 }
@@ -83,7 +82,7 @@ describe("app-owned sound coordination", () => {
     expect(controller.snapshot().draft.preamp).toBe(7);
     expect(controller.snapshot().pending).toBe(false);
   });
-  test("activation follows a pending edit and stale reads cannot disable the profile", async () => {
+  test("retry follows pending edits and stale reads cannot replace the saved EQ", async () => {
     const api = backend(),
       controller = new SoundStateController(api);
     await controller.refresh();
@@ -91,26 +90,15 @@ describe("app-owned sound coordination", () => {
     api.soundCapabilities.mockReturnValueOnce(oldRead.promise);
     const polling = controller.refresh();
     await Promise.resolve();
-    controller.edit((c) => ({ ...c, preamp: 4 }));
+    controller.edit((c) => ({ ...c, gains: [0, 0, 0, 0, 0, 4, 0, 0, 0, 0] }));
     api.soundAction.mockImplementation(async () =>
-      state({
-        ...api.setSound.mock.calls.at(-1)![0],
-        personalEnabled: true,
-        profileId: "ears",
-      }),
+      state(api.setSound.mock.calls.at(-1)![0]),
     );
-    await controller.action({
-      op: "profile-use",
-      id: "ears",
-      routeGeneration: 0,
-    });
+    await controller.action({ op: "retry" });
     oldRead.resolve(state());
     await polling;
-    expect(controller.snapshot().draft).toMatchObject({
-      preamp: 4,
-      personalEnabled: true,
-      profileId: "ears",
-    });
+    expect(controller.snapshot().draft.gains[5]).toBe(4);
+    expect(api.setSound).toHaveBeenCalledTimes(1);
   });
   test("a failed final save rolls back to the last acknowledgement", async () => {
     const api = backend(),

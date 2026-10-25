@@ -82,9 +82,7 @@ export function useMusicApp(initialSettings?: Settings) {
     settingsWrite,
     searchInput,
   } = state;
-  const soundController = useSoundController(
-    ["sound", "equalizer", "adapt"].includes(modal ?? ""),
-  );
+  const soundController = useSoundController(modal === "equalizer");
   type Dialog = typeof modal;
   const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
   const dialogScroll = useRef(new Map<NonNullable<Dialog>, number>());
@@ -582,8 +580,8 @@ export function useMusicApp(initialSettings?: Settings) {
         .querySelector<HTMLElement>(".library-page h1")
         ?.focus({ preventScroll: true });
   }, [group?.title, group?.kind]);
-  async function openSound() {
-    setModal("sound");
+  async function openEqualizer() {
+    setModal("equalizer");
   }
   const formatMinutes = (ms: number) =>
     ms > 0 && ms < 60000
@@ -657,7 +655,7 @@ export function useMusicApp(initialSettings?: Settings) {
     changeVisibility,
     share,
     openGroup,
-    openSound,
+    openEqualizer,
     formatMinutes,
     formatMusicCount,
     formatDate,

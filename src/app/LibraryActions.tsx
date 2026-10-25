@@ -17,7 +17,7 @@ export default function LibraryActions() {
     libraryLoading,
     groupLoading,
     setModal,
-    openSound,
+    openEqualizer,
     selectionMode,
     setSelectionMode,
     setSelectedIds,
@@ -69,9 +69,9 @@ export default function LibraryActions() {
                 ]
               : []),
             {
-              id: "sound",
-              label: t.soundControls,
-              action: () => void openSound(),
+              id: "equalizer",
+              label: t.equalizer,
+              action: () => void openEqualizer(),
             },
             {
               id: "settings",

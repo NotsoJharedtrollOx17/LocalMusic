@@ -28,10 +28,14 @@ class SoundDspTest {
                 expected.getJSONArray("presets").length(),
                 actual.getJSONArray("presets").length(),
             )
-            assertEquals(
-                expected.getJSONArray("profiles").toString(),
-                actual.getJSONArray("profiles").toString(),
-            )
+            assertEquals(2, actual.getInt("version"))
+            assertFalse(actual.has("profiles"))
+            assertFalse(actual.has("profileId"))
+            assertFalse(actual.has("personalEnabled"))
+            assertFalse(actual.has("strength"))
+            assertEquals(actual.toString(), SoundConfiguration(actual).json.toString())
+            val curves = SoundConfiguration(actual).curves(false, 6)
+            for (channel in curves) for (j in 0..9) assertEquals(actual.getJSONArray("gains").getDouble(j), channel[j], 0.0)
             for (j in 0 until expected.getJSONArray("presets").length()) {
                 val a = actual.getJSONArray("presets").getJSONObject(j)
                 val e = expected.getJSONArray("presets").getJSONObject(j)
@@ -81,12 +85,8 @@ class SoundDspTest {
     }
 
     @Test
-    fun toneIsolationAndCap() {
-        val tone = PersonalSoundSession.tone(1000, -36, 1)
-        assertEquals(326400, tone.size)
-        for (i in tone.indices step 2) {
-            assertEquals(0f, tone[i], 0f)
-            assertTrue(abs(tone[i + 1]) <= 10.0.pow(-36.0 / 20) + 1e-6)
-        }
+    fun rejectsUnsupportedVersion() {
+        try { SoundConfiguration(SoundConfiguration.defaults().put("version", 3)); fail("Unsupported version accepted") }
+        catch (_: IllegalArgumentException) {}
     }
 }

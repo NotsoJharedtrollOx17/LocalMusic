@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { openSettings, openSound, closeSound } from "./navigationHelpers";
+import {
+  openSettings,
+  openEqualizer,
+  closeEqualizer,
+} from "./navigationHelpers";
 
 test("Lists uses the shared creation toolbar without a repeated title", async ({
   page,
@@ -114,7 +118,7 @@ test("song filtering and sorting return without duplicating Edit", async ({
     .click();
   await expect(page.getByRole("menuitem")).toHaveText([
     "Edit",
-    "Sound options",
+    "Equalizer",
     "Settings",
   ]);
   await page.keyboard.press("Escape");
@@ -162,17 +166,13 @@ test("compact transport and actions share an axis and sound has no Resume button
     );
     await page.screenshot({ path: `artifacts/player-centered-${width}.png` });
   }
-  const eq = await openSound(page);
+  const eq = await openEqualizer(page);
   await expect(
     eq.getByRole("button", { name: "Resume music", exact: true }),
   ).toHaveCount(0);
   await eq.getByRole("button", { name: "Rock", exact: true }).click();
-  await closeSound(page);
-  const adapt = await openSound(page, "adapt");
-  await expect(
-    adapt.getByRole("button", { name: "Resume music", exact: true }),
-  ).toHaveCount(0);
-  await closeSound(page);
+  await closeEqualizer(page);
+
   const settings = await openSettings(page);
   await expect(settings).toContainText(
     "Listening history powers Your Year, Recently played, and Most played.",

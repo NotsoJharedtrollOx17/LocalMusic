@@ -1,7 +1,6 @@
 use super::{
     dsp::{self, Prepared},
     model::*,
-    personal::Protocol,
 };
 use std::sync::{
     atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
@@ -16,9 +15,8 @@ pub struct Engine {
     pub playing: AtomicBool,
     pub route_changed: AtomicBool,
     pub route_monitoring: AtomicBool,
-    pub route_generation: AtomicUsize,
-    pub session: Mutex<Option<Protocol>>,
     pub bypass: AtomicBool,
+    persistence_error: Mutex<Option<String>>,
 }
 
 #[cfg(test)]
@@ -44,36 +42,15 @@ mod tests {
         assert!(engine.configure(c).is_err());
     }
     #[test]
-    fn personal_curve_overrides_presets_with_neutral_global_gain() {
+    fn persistence_failure_keeps_processing_bypassed_until_saved_configuration() {
         let engine = Engine::new(Config::default());
-        let mut c = Config::default();
-        c.enabled = true;
-        c.gains = [12.; 10];
-        c.preamp = 6.;
-        c.profiles.push(Profile {
-            id: "test".into(),
-            name: "Test".into(),
-            left: [6.; 10],
-            right: [0.; 10],
-            complete: [true; 12],
-            calibration: None,
-        });
-        c.profile_id = Some("test".into());
-        c.personal_enabled = true;
-        let mut expected = [6.; 10];
-        expected[0] = 0.;
-        assert_eq!(c.curves(false, 2)[0], expected);
-        assert_eq!(c.curves(false, 2)[1], [0.; 10]);
-        c.enabled = false;
-        engine.configure(c.clone()).unwrap();
-        let p = engine.prepared.lock().unwrap();
-        assert!(!p.bypass);
-        assert_eq!(p.gain, 1.);
-        let restored = Engine::new(c);
-        assert!(restored.config.lock().unwrap().personal_enabled);
-        let saved = restored.prepared.lock().unwrap();
-        assert!(!saved.bypass);
-        assert!((saved.gain - p.gain).abs() < 1e-9);
+        engine.persistence_failed("Disk full".into());
+        assert_eq!(engine.state().status, "failed");
+        assert_eq!(engine.state().reason.as_deref(), Some("Disk full"));
+        assert!(engine.prepared.lock().unwrap().bypass);
+        engine.configure(Config::default()).unwrap();
+        assert_ne!(engine.state().status, "failed");
+        assert!(!engine.prepared.lock().unwrap().bypass);
     }
     #[test]
     fn configuration_remains_editable_without_an_output() {
@@ -100,15 +77,8 @@ impl Engine {
         let attenuation = 0.;
         let p = Prepared {
             bank: b,
-            gain: 10f64.powf(
-                (if config.enabled || config.personal_enabled {
-                    config.preamp
-                } else {
-                    0.
-                } - attenuation)
-                    / 20.,
-            ),
-            bypass: !config.enabled && !config.personal_enabled,
+            gain: 10f64.powf((if config.enabled { config.preamp } else { 0. } - attenuation) / 20.),
+            bypass: !config.enabled,
             attenuation,
             generation: 1,
         };
@@ -121,38 +91,37 @@ impl Engine {
             playing: AtomicBool::new(false),
             route_changed: AtomicBool::new(false),
             route_monitoring: AtomicBool::new(false),
-            route_generation: AtomicUsize::new(0),
-            session: Mutex::new(None),
             bypass: AtomicBool::new(false),
+            persistence_error: Mutex::new(None),
         }
     }
     pub fn configure(&self, mut c: Config) -> Result<(), String> {
         c.validate()?;
         c = c.normalized();
         *self.config.lock().unwrap() = c;
+        *self.persistence_error.lock().unwrap() = None;
         self.prepare();
         Ok(())
+    }
+    pub fn persistence_failed(&self, error: String) {
+        *self.persistence_error.lock().unwrap() = Some(error);
+        self.prepare();
     }
     pub fn prepare(&self) {
         let rate = self.rate.load(Ordering::Relaxed);
         let channels = self.channels.load(Ordering::Relaxed);
         let c = self.config.lock().unwrap().clone();
-        let bypass = self.bypass.load(Ordering::Relaxed);
+        let bypass =
+            self.bypass.load(Ordering::Relaxed) || self.persistence_error.lock().unwrap().is_some();
         let b = dsp::bank(c.curves(bypass, channels), rate as f64);
         let attenuation = 0.;
         let mut p = self.prepared.lock().unwrap();
         let generation = p.generation + 1;
         *p = Prepared {
             bank: b,
-            gain: 10f64.powf(
-                (if !bypass && (c.enabled || (c.personal_enabled && channels <= 2)) {
-                    c.preamp
-                } else {
-                    0.
-                } - attenuation)
-                    / 20.,
-            ),
-            bypass: bypass || (!c.enabled && !c.personal_enabled) || (!c.enabled && channels > 2),
+            gain: 10f64
+                .powf((if !bypass && (c.enabled) { c.preamp } else { 0. } - attenuation) / 20.),
+            bypass: bypass || !c.enabled,
             attenuation,
             generation,
         };
@@ -160,11 +129,14 @@ impl Engine {
     pub fn state(&self) -> State {
         let rate = self.rate.load(Ordering::Relaxed);
         let channels = self.channels.load(Ordering::Relaxed);
+        let failure = self.persistence_error.lock().unwrap().clone();
         State {
             supported: true,
-            system_panel: false,
+
             config: self.config.lock().unwrap().clone(),
-            status: if !self.available.load(Ordering::Relaxed) {
+            status: if failure.is_some() {
+                "failed"
+            } else if !self.available.load(Ordering::Relaxed) {
                 "output-unavailable"
             } else if self.playing.load(Ordering::Relaxed) {
                 "active"
@@ -172,7 +144,7 @@ impl Engine {
                 "ready"
             }
             .into(),
-            reason: None,
+            reason: failure,
             sample_rate: rate,
             channels,
             attenuation: self.prepared.lock().unwrap().attenuation,
@@ -182,9 +154,7 @@ impl Engine {
                 .enumerate()
                 .filter_map(|(i, f)| (*f >= rate as f64 / 2.).then_some(i))
                 .collect(),
-            personal_available: channels <= 2,
             route_monitoring: self.route_monitoring.load(Ordering::Relaxed),
-            route_generation: self.route_generation.load(Ordering::Acquire),
         }
     }
 }

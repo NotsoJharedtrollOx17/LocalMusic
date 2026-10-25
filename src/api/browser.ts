@@ -82,9 +82,6 @@ export class BrowserMusic implements MusicApi {
       () =>
         this.get<import("../sound/types").SoundConfig>("settings", "sound-v1"),
       (config) => this.put("settings", "sound-v1", config),
-      async () => {
-        this.audio.pause();
-      },
     );
     this.ready = this.get<PlaybackSnapshot>("settings", "queue").then((v) => {
       if (v) {
@@ -478,12 +475,7 @@ export class BrowserMusic implements MusicApi {
   soundAction(action: import("../sound/types").SoundAction) {
     return this.sound.action(action);
   }
-  personalAction(action: import("../sound/types").PersonalAction) {
-    return this.sound.personal(action);
-  }
-  async openSoundPanel(): Promise<void> {
-    throw new Error("Device sound settings are unavailable in browser preview");
-  }
+
   async importMusic(
     files: File[] = [],
     _mode?: string,

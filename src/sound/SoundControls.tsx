@@ -1,23 +1,17 @@
 import "./sound.css";
-import { useState } from "react";
-import { api } from "../api";
 import type { SoundController } from "./useSoundController";
 import { soundCopy } from "./copy";
 import EqualizerPanel from "./EqualizerPanel";
-import AdaptSoundPanel from "./AdaptSoundPanel";
 import type { SoundState } from "./types";
 export default function SoundControls({
   controller,
   language,
-  view,
 }: {
   controller: SoundController & { state: SoundState };
   language: string;
-  view: "equalizer" | "adapt";
 }) {
-  const { state, refresh, action, error } = controller;
+  const { state, action, error } = controller;
   const t = soundCopy(language);
-  const [deviceError, setDeviceError] = useState("");
   const status =
     state.status === "ready"
       ? t.ready
@@ -36,9 +30,9 @@ export default function SoundControls({
       >
         {status}
       </p>
-      {(error || state.reason || deviceError) && (
+      {(error || state.reason) && (
         <p className="sound-error" role="alert">
-          {error || state.reason || deviceError}
+          {error || state.reason}
         </p>
       )}
       {state.migrationNotice && <p>{state.migrationNotice}</p>}
@@ -52,27 +46,7 @@ export default function SoundControls({
           {t.retry}
         </button>
       )}
-      {view === "equalizer" ? (
-        <EqualizerPanel controller={controller} language={language} />
-      ) : (
-        <AdaptSoundPanel controller={controller} language={language} />
-      )}
-      {state.systemPanel && (
-        <>
-          <button
-            className="button secondary"
-            onClick={() =>
-              void api
-                .openSoundPanel()
-                .then(() => refresh())
-                .catch((e) => setDeviceError(String(e)))
-            }
-          >
-            {t.device}
-          </button>
-          <p className="operation-note">{t.deviceHint}</p>
-        </>
-      )}
+      <EqualizerPanel controller={controller} language={language} />
     </div>
   );
 }
