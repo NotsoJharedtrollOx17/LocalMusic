@@ -1,3 +1,4 @@
+import { normalizeRecap } from "../recap/periods";
 import { automaticPlaylists } from "../automaticPlaylists";
 import { ensureImportOrder, putImportedTrack } from "./browserImportOrder";
 import { BrowserSound } from "../sound/BrowserSound";
@@ -11,6 +12,7 @@ import type {
   PlaylistRequest,
   PlaybackSnapshot,
   Recap,
+  RecapRequest,
 } from "../types";
 import {
   aggregate,
@@ -715,6 +717,7 @@ export class BrowserMusic implements MusicApi {
     let s = await this.get<Settings>("settings", "preferences");
     if (!s) {
       s = {
+        recapPeriod: "year",
         language: "en",
         theme: "system",
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -727,7 +730,7 @@ export class BrowserMusic implements MusicApi {
       s = { ...s, timeZone: deviceZone };
       await this.put("settings", "preferences", s);
     }
-    return s;
+    return { ...s, recapPeriod: s.recapPeriod ?? "year" };
   }
   private async updatePreferences(update: (current: Settings) => Settings) {
     await this.settings();
@@ -753,7 +756,7 @@ export class BrowserMusic implements MusicApi {
       historyEnabledSince: current.historyEnabledSince,
     }));
   }
-  async recap(year: number) {
+  async recap(request: RecapRequest) {
     this.checkpoint();
     if (!this.audio.paused && !this.audio.ended) {
       this.startedPosition = this.audio.currentTime;
@@ -762,7 +765,7 @@ export class BrowserMusic implements MusicApi {
     }
     await this.writes;
     return aggregate(
-      year,
+      request,
       await this.settings(),
       (await this.all<StoredTrack>("tracks")).map((t) => this.present(t)),
       await this.all<Session>("sessions"),
@@ -772,10 +775,10 @@ export class BrowserMusic implements MusicApi {
   async saveSnapshot(r: Recap) {
     const copy = structuredClone(r);
     for (const t of copy.topTracks) t.track.artworkUrl = undefined;
-    await this.put("snapshots", r.year + ":" + Date.now(), copy);
+    await this.put("snapshots", crypto.randomUUID(), copy);
   }
   async snapshots() {
-    return this.all<Recap>("snapshots");
+    return (await this.all<unknown>("snapshots")).map(normalizeRecap);
   }
   async deleteHistory() {
     this.finish("history-deleted");

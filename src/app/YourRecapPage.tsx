@@ -1,3 +1,5 @@
+import RecapPeriodControls from "./RecapPeriodControls";
+import { periodFor, periodLabel, periodRequest } from "../recap/periods";
 import {
   ArrowUpRight,
   Play,
@@ -10,53 +12,53 @@ import { coverageThrough } from "../domain";
 import { IconButton, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import TrackRows from "./TrackRows";
-import MonthlyListening from "./MonthlyListening";
+import RecapListening from "./RecapListening";
 
-export default function YourYearPage() {
+export default function YourRecapPage() {
   const {
     cache,
     recap,
     setShareRecap,
     recapLoading,
+    recapError,
     setRecapRevision,
     snapshotMode,
-    setSnapshotMode,
     setSnapshots,
-    year,
-    setYear,
+    recapSelection,
+    choosePeriod,
+    settings,
     setNotice,
     setModal,
     setStory,
     t,
-    yearOptions,
     act,
     formatMinutes,
     formatDate,
   } = useMusicAppContext();
 
+  const selected = periodFor(recapSelection);
+  const shown = Boolean(
+    recap &&
+    (snapshotMode ||
+      (recap.period.kind === selected.kind &&
+        recap.period.startDate === selected.startDate &&
+        recap.timeZone === settings?.timeZone)),
+  );
   return (
     <section className="year-page">
       <div className="page-heading">
         <div>
-          <h2>{t.year}</h2>
+          <h1 className="recap-heading">{t.year}</h1>
         </div>
         <div className="year-controls">
-          <select
-            aria-label={t.year}
-            value={year}
-            onChange={(e) => {
-              setSnapshotMode(false);
-              setYear(Number(e.target.value));
-            }}
-          >
-            {yearOptions.map((y) => (
-              <option key={y}>{y}</option>
-            ))}
-          </select>
           <IconButton
             label={snapshotMode ? t.liveRecap : t.refreshRecap}
             onClick={() => {
-              setSnapshotMode(false);
+              choosePeriod(
+                snapshotMode && recap
+                  ? periodRequest(recap.period)
+                  : recapSelection,
+              );
               setRecapRevision((v) => v + 1);
             }}
           >
@@ -70,25 +72,33 @@ export default function YourYearPage() {
           </IconButton>
         </div>
       </div>
+      <RecapPeriodControls />
       <OrbitPoster
-        year={recap?.year === year ? recap.year : year}
-        seed={recap?.visualSeed ?? "ff6600"}
+        title={periodLabel(
+          snapshotMode && recap ? recap.period : selected,
+          settings?.language,
+        )}
+        seed={shown ? recap!.visualSeed : "ff6600"}
         label={t.inSound}
       />
-      {recapLoading && (
+      {(recapLoading || (!shown && !recapError)) && (
         <p role="status" className="small-muted">
           {t.loading}
         </p>
       )}
-      {recap && recap.year === year && (
+      {recapError && <p role="alert">{recapError}</p>}
+      {recap && shown && (
         <>
           <div className="recap-coverage">
             <span>
               {snapshotMode
                 ? t.snapshot
-                : recap.completeYear
+                : recap.completePeriod
                   ? t.fullYear
-                  : t.partialYear}
+                  : Date.parse(recap.coveredThrough) >
+                      Date.parse(recap.coveredFrom)
+                    ? t.partialYear
+                    : t.noCoverage}
             </span>
             <span>
               {t.since} {formatDate(recap.coveredFrom, recap.timeZone)} ·{" "}
@@ -116,7 +126,7 @@ export default function YourYearPage() {
               <ArrowUpRight size={18} />
             </button>
           </div>
-          <MonthlyListening />
+          <RecapListening />
           <p className="month-caption">
             {recap.listenedMs ? t.monthStory : t.recapEmpty}
           </p>

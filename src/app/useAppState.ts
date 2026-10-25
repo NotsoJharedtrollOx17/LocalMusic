@@ -1,3 +1,4 @@
+import { periodFor, localDate } from "../recap/periods";
 import { useState, useRef } from "react";
 
 import {
@@ -7,6 +8,7 @@ import {
   type PlaybackSnapshot,
   type Settings,
   type Recap,
+  type RecapRequest,
   type CatalogGroup,
   type ImportProgress,
 } from "../types";
@@ -67,10 +69,21 @@ export function useAppState(initialSettings?: Settings) {
     [recap, setRecap] = useState<Recap>(),
     [shareRecap, setShareRecap] = useState<Recap | null>(null),
     [recapLoading, setRecapLoading] = useState(false),
+    [recapError, setRecapError] = useState(""),
     [recapRevision, setRecapRevision] = useState(0),
     [snapshotMode, setSnapshotMode] = useState(false),
     [snapshots, setSnapshots] = useState<Recap[]>([]),
-    [year, setYear] = useState(new Date().getFullYear()),
+    [recapSelection, setRecapSelection] = useState<RecapRequest>({
+      kind: initialSettings?.recapPeriod ?? "year",
+      anchorDate: periodFor({
+        kind: initialSettings?.recapPeriod ?? "year",
+        anchorDate: localDate(
+          new Date(),
+          initialSettings?.timeZone ??
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ),
+      }).startDate,
+    }),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
@@ -194,14 +207,16 @@ export function useAppState(initialSettings?: Settings) {
     setShareRecap,
     recapLoading,
     setRecapLoading,
+    recapError,
+    setRecapError,
     recapRevision,
     setRecapRevision,
     snapshotMode,
     setSnapshotMode,
     snapshots,
     setSnapshots,
-    year,
-    setYear,
+    recapSelection,
+    setRecapSelection,
     busy,
     setBusy,
     notice,

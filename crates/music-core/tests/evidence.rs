@@ -29,6 +29,7 @@ fn settings() -> Settings {
         time_zone: "UTC".into(),
         history_enabled_since: "2025-01-01T00:00:00Z".into(),
         privacy_revision: 0,
+        recap_period: RecapKind::Year,
     }
 }
 #[test]
@@ -64,7 +65,10 @@ fn library_removal_preserves_history_and_restores_search() {
     assert!(db.search_catalog("Artist").unwrap().tracks.is_empty());
     assert!(db.track(&t.id).unwrap().unwrap().hidden);
     let recap = recap::aggregate(
-        2025,
+        &RecapRequest {
+            kind: RecapKind::Year,
+            anchor_date: "2025-01-01".into(),
+        },
         &settings(),
         &db.all_tracks().unwrap(),
         &db.sessions().unwrap(),
@@ -139,13 +143,35 @@ fn recap_splits_year_and_excludes_private() {
         })
         .collect::<Vec<_>>();
     let now = Utc.with_ymd_and_hms(2026, 2, 1, 0, 0, 0).unwrap();
-    let a = recap::aggregate(2025, &settings(), &ts, &ss, &intervals, now).unwrap();
-    let b = recap::aggregate(2026, &settings(), &ts, &ss, &intervals, now).unwrap();
+    let a = recap::aggregate(
+        &RecapRequest {
+            kind: RecapKind::Year,
+            anchor_date: "2025-01-01".into(),
+        },
+        &settings(),
+        &ts,
+        &ss,
+        &intervals,
+        now,
+    )
+    .unwrap();
+    let b = recap::aggregate(
+        &RecapRequest {
+            kind: RecapKind::Year,
+            anchor_date: "2026-01-01".into(),
+        },
+        &settings(),
+        &ts,
+        &ss,
+        &intervals,
+        now,
+    )
+    .unwrap();
     assert_eq!(a.listened_ms, 20000);
     assert_eq!(b.listened_ms, 20000);
     assert_eq!(a.qualified_plays, 1);
     assert_eq!(b.qualified_plays, 0);
-    assert_eq!(a.months[11], 20000);
+    assert_eq!(a.buckets[11].listened_ms, 20000);
 }
 #[test]
 fn dst_day_has_23_hours() {

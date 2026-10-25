@@ -37,7 +37,7 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
   await page.waitForTimeout(1400);
   await dialog.getByRole("button", { name: "Pause", exact: true }).click();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("tab", { name: "Your Year" }).click();
+  await page.getByRole("tab", { name: "Your Recap" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await expect(page.getByRole("button", { name: /Export JSON/i })).toHaveCount(
     0,
@@ -134,7 +134,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     .getByRole("button", { name: "Pause", exact: true })
     .click();
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
-  await page.getByRole("tab", { name: "Your Year" }).click();
+  await page.getByRole("tab", { name: "Your Recap" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await openSettings(page);
   await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
@@ -143,7 +143,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     .getByRole("dialog")
     .getByRole("button", { name: "Cerrar" })
     .click();
-  await expect(page.getByRole("tab", { name: "Tu año" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Tu resumen" })).toBeVisible();
   await page.reload();
   await expect(
     page.getByRole("tablist", { name: "Biblioteca", exact: true }),
@@ -209,7 +209,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     .locator(".mini-center")
     .getByRole("button", { name: "Pause", exact: true })
     .click();
-  await page.getByRole("tab", { name: "Your Year" }).click();
+  await page.getByRole("tab", { name: "Your Recap" }).click();
   await expect(page.getByText("1 qualified plays")).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Qualified tone", exact: true }),
@@ -238,7 +238,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     .locator(".library-brand-header")
     .getByRole("link", { name: "Library" })
     .click();
-  await page.getByRole("tab", { name: "Your Year" }).click();
+  await page.getByRole("tab", { name: "Your Recap" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
@@ -250,7 +250,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
     "History privacy changed",
   );
   await page.reload();
-  await page.getByRole("tab", { name: "Your Year" }).click();
+  await page.getByRole("tab", { name: "Your Recap" }).click();
   await expect(page.getByText("0 qualified plays")).toBeVisible();
 });
 

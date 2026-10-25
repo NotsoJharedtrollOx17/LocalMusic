@@ -8,7 +8,7 @@ test("main journeys expose accessible controls at mobile width", async ({
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
-  for (const name of ["Songs", "Playlists", "Your Year"]) {
+  for (const name of ["Songs", "Playlists", "Your Recap"]) {
     await page.getByRole("tab", { name, exact: true }).click();
     await expect
       .poll(

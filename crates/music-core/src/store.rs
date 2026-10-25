@@ -285,7 +285,10 @@ impl Store {
         Ok(())
     }
     pub fn snapshots(&self) -> Result<Vec<Recap>> {
-        self.json_rows("SELECT data FROM snapshots ORDER BY id")
+        self.json_rows::<serde_json::Value>("SELECT data FROM snapshots ORDER BY id")?
+            .into_iter()
+            .map(crate::recap::decode_snapshot)
+            .collect()
     }
     pub fn delete_history(&mut self) -> Result<()> {
         let tx = self.connection.transaction().map_err(|e| e.to_string())?;

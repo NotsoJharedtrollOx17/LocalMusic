@@ -55,6 +55,8 @@ pub struct Interval {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
+    #[serde(default)]
+    pub recap_period: RecapKind,
     pub language: String,
     pub theme: String,
     pub time_zone: String,
@@ -65,6 +67,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            recap_period: RecapKind::Year,
             language: "en".into(),
             theme: "system".into(),
             time_zone: "UTC".into(),
@@ -131,15 +134,15 @@ pub struct Recap {
     pub schema_version: u32,
     #[serde(default)]
     pub privacy_revision: u64,
-    pub year: i32,
+    pub period: RecapPeriod,
     pub time_zone: String,
     pub covered_from: String,
     pub covered_through: String,
-    pub complete_year: bool,
+    pub complete_period: bool,
     pub listened_ms: u64,
     pub qualified_plays: u64,
     pub active_days: usize,
-    pub months: [u64; 12],
+    pub buckets: Vec<RecapBucket>,
     pub top_tracks: Vec<RankedTrack>,
     pub top_artist: Option<ArtistRank>,
     pub top_album: Option<AlbumRank>,
@@ -150,4 +153,43 @@ pub struct Recap {
 pub struct LibraryPage {
     pub tracks: Vec<Track>,
     pub total: usize,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecapKind {
+    Week,
+    Month,
+    #[default]
+    Year,
+}
+impl RecapKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Week => "week",
+            Self::Month => "month",
+            Self::Year => "year",
+        }
+    }
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecapRequest {
+    pub kind: RecapKind,
+    pub anchor_date: String,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecapPeriod {
+    pub kind: RecapKind,
+    pub start_date: String,
+    pub end_date: String,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecapBucket {
+    pub start_date: String,
+    pub end_date: String,
+    pub listened_ms: u64,
+    pub observed: bool,
 }

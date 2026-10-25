@@ -1,3 +1,4 @@
+import { periodLabel, periodRequest } from "../recap/periods";
 import { ArrowUpRight } from "lucide-react";
 import { coverageThrough } from "../domain";
 import { Modal } from "../components";
@@ -7,12 +8,14 @@ export default function SnapshotsDialog() {
   const {
     setRecap,
     setRecapLoading,
+    setRecapError,
     setSnapshotMode,
     snapshots,
-    setYear,
+    setRecapSelection,
     modal,
     setModal,
     t,
+    settings,
     remember,
     recapRequest,
     formatMinutes,
@@ -34,8 +37,9 @@ export default function SnapshotsDialog() {
                 key={i}
                 onClick={() => {
                   ++recapRequest.current;
-                  setYear(r.year);
+                  setRecapSelection(periodRequest(r.period));
                   setRecapLoading(false);
+                  setRecapError("");
                   setRecap(r);
                   setSnapshotMode(true);
                   remember(r.topTracks.map((x) => x.track));
@@ -43,7 +47,7 @@ export default function SnapshotsDialog() {
                 }}
               >
                 <span>
-                  {r.year} ·{" "}
+                  {periodLabel(r.period, settings?.language)} ·{" "}
                   {formatDate(coverageThrough(r).toISOString(), r.timeZone)}
                 </span>
                 <strong>

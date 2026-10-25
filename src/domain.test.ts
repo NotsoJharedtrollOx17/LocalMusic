@@ -41,7 +41,7 @@ describe("recap evidence", () => {
       playedMs: 40000,
     };
     const a = aggregate(
-      2025,
+      { kind: "year", anchorDate: "2025-01-01" },
       settings,
       [track("a")],
       [s],
@@ -49,7 +49,7 @@ describe("recap evidence", () => {
       new Date("2026-02-01"),
     );
     const b = aggregate(
-      2026,
+      { kind: "year", anchorDate: "2026-01-01" },
       settings,
       [track("a")],
       [s],
@@ -79,7 +79,7 @@ describe("recap evidence", () => {
       },
     ];
     const r = aggregate(
-      2025,
+      { kind: "year", anchorDate: "2025-01-01" },
       settings,
       [track("a"), track("b")],
       ss,
@@ -114,14 +114,14 @@ describe("recap evidence", () => {
   it("keeps completed-year display dates inside the selected year", () => {
     for (const timeZone of ["UTC", "America/Los_Angeles"]) {
       const recap = aggregate(
-        2025,
+        { kind: "year", anchorDate: "2025-01-01" },
         { ...settings, timeZone },
         [],
         [],
         [],
         new Date("2026-01-02T12:00:00Z"),
       );
-      expect(recap.completeYear).toBe(true);
+      expect(recap.completePeriod).toBe(true);
       expect(safeRecap(recap).coverage).toMatchObject({
         since: "2025-01-01",
         through: "2025-12-31",
@@ -130,7 +130,7 @@ describe("recap evidence", () => {
   });
   it("exports display data without paths, identifiers or exact times", () => {
     const r = aggregate(
-      2025,
+      { kind: "year", anchorDate: "2025-01-01" },
       settings,
       [track("a")],
       [],

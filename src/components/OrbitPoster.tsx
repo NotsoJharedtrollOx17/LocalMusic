@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import { drawOrbit } from "../export";
 
 export function OrbitPoster({
-  year,
+  title,
   seed,
   label,
 }: {
-  year: number;
+  title: string;
   seed: string;
   label: string;
 }) {
@@ -19,13 +19,13 @@ export function OrbitPoster({
     drawOrbit(ctx, 0, 0, 1000, 480, seed);
   }, [seed]);
   return (
-    <div className="orbit-poster">
+    <div className={"orbit-poster" + (title.length > 4 ? " period-range" : "")}>
       <canvas ref={ref} aria-hidden="true" />
       <div>
-        <strong>{year}</strong>
+        <strong>{title}</strong>
         <span>{label}</span>
       </div>
-      <small>LOCAL MUSIC / YOUR YEAR</small>
+      <small>LOCAL MUSIC</small>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { periodLabel } from "./recap/periods";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Download, LoaderCircle } from "lucide-react";
 import { Modal } from "./components";
@@ -68,7 +69,7 @@ export default function ShareRecap({
       await checkPrivacy(prepared.recap, language);
       const result = await saveBlob(
         prepared.blob,
-        "your-year-" + recap.year + "-" + format + ".png",
+        `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result !== false) setSaved(true);
     } catch (e) {
@@ -109,7 +110,7 @@ export default function ShareRecap({
             <img
               className="recap-image-preview"
               src={prepared.url}
-              alt={t.imagePreview + " " + recap.year}
+              alt={t.imagePreview + " " + periodLabel(recap.period, language)}
             />
           )
         )}

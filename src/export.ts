@@ -1,16 +1,17 @@
+import { periodRequest, periodLabel, bucketLabel } from "./recap/periods";
 import type { Recap } from "./types";
-import { safeRecap, localMidnight } from "./domain";
+import { safeRecap } from "./domain";
 import { native, api } from "./api";
 export async function checkPrivacy(recap: Recap, language: "en" | "es" = "en") {
-  const current = await api.recap(recap.year); // Flush native journal before checking privacy changes.
+  const current = await api.recap(periodRequest(recap.period)); // Flush native journal before checking privacy changes.
   if (
     (recap.privacyRevision ?? 0) !==
     ((await api.settings()).privacyRevision ?? 0)
   ) {
     throw new Error(
       language === "es"
-        ? "La privacidad del historial cambió. Abre Tu año y genera un resumen nuevo antes de compartir."
-        : "History privacy changed. Open Your Year again and generate a new recap before sharing.",
+        ? "La privacidad del historial cambió. Abre Tu resumen y genera un resumen nuevo antes de compartir."
+        : "History privacy changed. Open Your Recap again and generate a new recap before sharing.",
     );
   }
   return current;
@@ -149,13 +150,25 @@ export async function renderRecapCard(
   ctx.fillRect(0, 0, 1080, h);
   const heroHeight = story ? 560 : 300;
   drawOrbit(ctx, 32, 32, 1016, heroHeight, recap.visualSeed);
-  text(String(recap.year), pad, 198, 156, 600, paper, 700);
+  text(
+    periodLabel(recap.period, language),
+    pad,
+    198,
+    recap.period.kind === "year"
+      ? 156
+      : recap.period.kind === "month"
+        ? 88
+        : 48,
+    w,
+    paper,
+    700,
+  );
   text(es ? "EN SONIDO" : "IN SOUND", pad + 8, 251, 30, 600, paper);
   text(
-    recap.completeYear
+    recap.completePeriod
       ? es
         ? "AÑO COMPLETO"
-        : "COMPLETE YEAR"
+        : "COMPLETE PERIOD"
       : es
         ? "ESCUCHA REGISTRADA"
         : "RECORDED LISTENING",
@@ -187,32 +200,28 @@ export async function renderRecapCard(
     muted,
   );
   const chartBottom = totalY + (story ? 325 : 225);
-  const max = Math.max(...recap.months, 1),
+  const max = Math.max(...recap.buckets.map((b) => b.listenedMs), 1),
     chartHeight = story ? 135 : 95;
-  recap.months.forEach((ms, i) => {
-    const observed =
-      Date.parse(recap.coveredFrom) <
-        localMidnight(recap.year, i + 1, 1, recap.timeZone) &&
-      Date.parse(recap.coveredThrough) >=
-        localMidnight(recap.year, i, 1, recap.timeZone);
-    const x = pad + i * (w / 12);
-    ctx.fillStyle = observed ? accent : "#d5d6d0";
-    const height = observed && ms ? Math.max(3, (ms / max) * chartHeight) : 2;
-    ctx.fillRect(x + 13, chartBottom - height, 36, height);
+  recap.buckets.forEach((bucket, i) => {
+    const x = pad + i * (w / recap.buckets.length),
+      cell = w / recap.buckets.length;
+    ctx.fillStyle = bucket.observed ? accent : "#d5d6d0";
+    const height =
+      bucket.observed && bucket.listenedMs
+        ? Math.max(3, (bucket.listenedMs / max) * chartHeight)
+        : 2;
+    ctx.fillRect(x + cell * 0.2, chartBottom - height, cell * 0.6, height);
     text(
-      new Intl.DateTimeFormat(language, { month: "short", timeZone: "UTC" })
-        .format(new Date(Date.UTC(2000, i, 1)))
-        .replace(/\.$/, "")
-        .toUpperCase(),
-      x + 5,
+      bucketLabel(recap, i, language).replace(/\.$/, "").toUpperCase(),
+      x,
       chartBottom + 35,
-      21,
-      76,
+      recap.period.kind === "month" ? 18 : 21,
+      cell,
       muted,
     );
   });
   text(
-    es ? "Gris: meses sin cobertura" : "Gray: months outside recorded history",
+    es ? "Gris: fechas sin cobertura" : "Gray: dates outside recorded history",
     pad,
     chartBottom + 75,
     22,
@@ -287,7 +296,7 @@ export async function renderRecapCard(
     muted,
   );
   text(
-    es ? "local. / TU MÚSICA. TU AÑO." : "local. / YOUR MUSIC. YOUR YEAR.",
+    es ? "local. / TU MÚSICA. TU RESUMEN." : "local. / YOUR MUSIC. YOUR RECAP.",
     pad,
     h - 38,
     22,

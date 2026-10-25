@@ -1,3 +1,4 @@
+import { useRecapPeriods } from "./useRecapPeriods";
 import { useAutomaticPlaylists } from "./useAutomaticPlaylists";
 import { dismissMenu, hasOpenMenu } from "../ux/menuLayer";
 import { audioShareLabel } from "../ux/sharing";
@@ -16,7 +17,7 @@ import { useLibraryMotion, animateCover, type LibrarySection } from "../ux";
 import { useBackLayer } from "../navigation";
 import { api } from "../api";
 import { en, es } from "../i18n";
-import { compareCatalogTracks, recapYears } from "../domain";
+import { compareCatalogTracks } from "../domain";
 import { applyTheme } from "../theme";
 import { type Track, type Settings, type CatalogGroup } from "../types";
 
@@ -53,12 +54,13 @@ export function useMusicApp(initialSettings?: Settings) {
     setRecap,
     shareRecap,
     setRecapLoading,
+    setRecapError,
     recapRevision,
     setRecapRevision,
     snapshotMode,
     setSnapshots,
-    year,
-    setYear,
+    recapSelection,
+    setRecapSelection,
     notice,
     setNotice,
     setError,
@@ -165,27 +167,6 @@ export function useMusicApp(initialSettings?: Settings) {
       window.clearInterval(timer);
     };
   }, [setSettings, Boolean(settings)]);
-  const liveYears = settings
-    ? recapYears(settings)
-    : [new Date().getFullYear()];
-  const yearOptions =
-    snapshotMode && recap && !liveYears.includes(recap.year)
-      ? [...liveYears, recap.year].sort((a, b) => b - a)
-      : liveYears;
-  const calendarReady = useRef(false);
-  useEffect(() => {
-    if (!settings || snapshotMode) return;
-    if (!calendarReady.current) {
-      calendarReady.current = true;
-      setYear(liveYears[0]);
-    } else if (!liveYears.includes(year)) setYear(liveYears[0]);
-  }, [
-    settings?.timeZone,
-    liveYears[0],
-    liveYears[liveYears.length - 1],
-    year,
-    snapshotMode,
-  ]);
   const act = useCallback(async (fn: () => Promise<unknown>) => {
     setError("");
     try {
@@ -194,6 +175,14 @@ export function useMusicApp(initialSettings?: Settings) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }, []);
+  const recapPeriods = useRecapPeriods(
+    settings,
+    setSettings,
+    recapSelection,
+    setRecapSelection,
+    snapshotMode,
+    state.setSnapshotMode,
+  );
   const remember = useCallback(
     (ts: Track[]) =>
       setCache((c) => ({
@@ -318,7 +307,9 @@ export function useMusicApp(initialSettings?: Settings) {
     if (settings) {
       document.documentElement.lang = settings.language;
       applyTheme(settings.theme);
-      settingsWrite.current = api.saveSettings(settings);
+      settingsWrite.current = settingsWrite.current
+        .catch(() => {})
+        .then(() => api.saveSettings(settings));
       void act(() => settingsWrite.current);
     }
   }, [settings]);
@@ -350,14 +341,18 @@ export function useMusicApp(initialSettings?: Settings) {
     const version = ++recapRequest.current;
     let active = true;
     setRecapLoading(true);
+    setRecapError("");
     void act(async () => {
       try {
         await settingsWrite.current;
-        const result = await api.recap(year);
+        const result = await api.recap(recapSelection);
         const saved = await api.snapshots();
         if (!active || version !== recapRequest.current) return;
         setRecap(result);
         setSnapshots(saved);
+      } catch (error) {
+        if (active && version === recapRequest.current)
+          setRecapError(error instanceof Error ? error.message : String(error));
       } finally {
         if (active && version === recapRequest.current) setRecapLoading(false);
       }
@@ -367,7 +362,7 @@ export function useMusicApp(initialSettings?: Settings) {
     };
   }, [
     section,
-    year,
+    recapSelection,
     settings,
     snapshotMode,
     recapRevision,
@@ -641,9 +636,7 @@ export function useMusicApp(initialSettings?: Settings) {
     groupsTotal,
     motion,
     t,
-    liveYears,
-    yearOptions,
-    calendarReady,
+    ...recapPeriods,
     act,
     remember,
     groupIdentity,

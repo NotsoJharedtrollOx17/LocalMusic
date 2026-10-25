@@ -87,7 +87,7 @@ test("backgrounds and cards no longer expose redundant navigation", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  for (const tab of ["Songs", "Albums", "Artists", "Playlists", "Your Year"]) {
+  for (const tab of ["Songs", "Albums", "Artists", "Playlists", "Your Recap"]) {
     await page.getByRole("tab", { name: tab, exact: true }).click();
     const canceled = await page
       .locator(".library-page")

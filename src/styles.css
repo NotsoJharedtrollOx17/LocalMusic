@@ -1023,6 +1023,7 @@ input[type="range"] {
   position: absolute;
   top: 24px;
   left: 28px;
+  right: 28px;
   display: flex;
   flex-direction: column;
   color: #faf8f4;
@@ -1092,8 +1093,8 @@ input[type="range"] {
   font-size: 11px;
 }
 .month-chart {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  gap: 16px 4px;
   height: 125px;
   padding-top: 10px;
   align-items: stretch;
@@ -1123,7 +1124,7 @@ input[type="range"] {
 .month-chart small {
   font-size: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0;
   color: var(--ink);
 }
 .month-chart .unobserved small {
@@ -2195,4 +2196,58 @@ input[type="range"] {
 .playlists-page > .page-heading h2 {
   font-family: "Space Grotesk", Inter, sans-serif;
   font-size: 28px;
+}
+
+/* Calendar recap controls share the collection width and reflow without overlays. */
+.recap-period-controls {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 24px;
+}
+.recap-timeframes {
+  display: flex;
+  width: min(100%, 440px);
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  gap: 4px;
+}
+.recap-timeframes button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 7px;
+  padding: 8px;
+}
+.recap-timeframes button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #1b1b1a;
+}
+.recap-period-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.recap-period-navigation select {
+  min-width: 0;
+  max-width: min(420px, calc(100% - 104px));
+  flex: 1;
+  min-height: 44px;
+}
+.orbit-poster.period-range strong {
+  font-size: clamp(24px, 4.5vw, 58px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .recap-period-navigation .text-button {
+    flex-basis: 100%;
+    min-height: 44px;
+    text-align: center;
+  }
+}
+
+.year-page .recap-heading {
+  font-size: 32px;
+  line-height: 1.2;
 }

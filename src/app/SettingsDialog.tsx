@@ -1,6 +1,6 @@
 import { api, native } from "../api";
 
-import { recapYears } from "../domain";
+import { localDate } from "../recap/periods";
 import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
@@ -11,7 +11,7 @@ export default function SettingsDialog() {
     setRecap,
     setSnapshotMode,
     setSnapshots,
-    setYear,
+    setRecapSelection,
     setNotice,
     modal,
     setModal,
@@ -72,11 +72,17 @@ export default function SettingsDialog() {
                     if (confirm(t.deleteWarning)) {
                       await api.deleteHistory();
                       const nextSettings = await api.settings();
-                      const nextYear = recapYears(nextSettings)[0];
+                      const nextSelection = {
+                        kind: nextSettings.recapPeriod ?? ("year" as const),
+                        anchorDate: localDate(
+                          new Date(),
+                          nextSettings.timeZone,
+                        ),
+                      };
                       setSettings(nextSettings);
                       setSnapshotMode(false);
-                      setYear(nextYear);
-                      setRecap(await api.recap(nextYear));
+                      setRecapSelection(nextSelection);
+                      setRecap(await api.recap(nextSelection));
                       setSnapshots([]);
                       setNotice(t.done);
                     }

@@ -74,11 +74,13 @@ test("social recap preview is the saved image and snapshots select their own yea
     db.close();
   }, lastYear);
   await page.reload();
-  await page.getByRole("tab", { name: "Your Year", exact: true }).click();
+  await page.getByRole("tab", { name: "Your Recap", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Export image", exact: true }),
   ).toBeDisabled();
-  await page.locator(".year-controls select").selectOption(String(lastYear));
+  await page
+    .locator(".recap-period-navigation select")
+    .selectOption(`${lastYear}-01-01`);
   await expect(page.locator(".recap-total strong")).toHaveText("21,604");
   await page.getByRole("button", { name: "Export image", exact: true }).click();
   const share = page.getByRole("dialog", { name: "Export image" });
@@ -122,14 +124,14 @@ test("social recap preview is the saved image and snapshots select their own yea
     .click();
   await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
   await page
-    .locator(".year-controls select")
-    .selectOption(String(lastYear + 1));
+    .locator(".recap-period-navigation select")
+    .selectOption(`${lastYear + 1}-01-01`);
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
     .click();
   await page.getByRole("dialog").locator(".snapshot-row").first().click();
-  await expect(page.locator(".year-controls select")).toHaveValue(
-    String(lastYear),
+  await expect(page.locator(".recap-period-navigation select")).toHaveValue(
+    `${lastYear}-01-01`,
   );
   await expect(page.locator(".recap-total strong")).toHaveText("21,604");
   await expect(
@@ -186,8 +188,8 @@ test("social recap preview is the saved image and snapshots select their own yea
   await page
     .getByRole("button", { name: "Borrar historial", exact: true })
     .click();
-  await expect(page.locator(".year-controls select")).toHaveValue(
-    String(lastYear + 1),
+  await expect(page.locator(".recap-period-navigation select")).toHaveValue(
+    `${lastYear + 1}-01-01`,
   );
   await expect(page.locator(".recap-total strong")).toHaveText("0");
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();

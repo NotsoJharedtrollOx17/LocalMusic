@@ -1,3 +1,12 @@
+import {
+  localDate,
+  localMidnight,
+  dateBoundary,
+  addDays,
+} from "./recap/calendar";
+export { localDate, localMidnight } from "./recap/calendar";
+import { periodFor, bucketDates } from "./recap/periods";
+import type { RecapRequest } from "./types";
 import type {
   Track,
   Session,
@@ -92,51 +101,6 @@ export const coverUrl = (
     encodeURIComponent(
       coverSvg(track.album ? key(track.artist + "|" + track.album) : track.id),
     );
-export function localDate(date: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  return ["year", "month", "day"]
-    .map((k) => parts.find((p) => p.type === k)!.value)
-    .join("-");
-}
-export function localMidnight(
-  year: number,
-  month: number,
-  day: number,
-  timeZone: string,
-): number {
-  const target = Date.UTC(year, month, day);
-  let t = target;
-  for (let i = 0; i < 4; i++) {
-    const ps = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      hourCycle: "h23",
-    }).formatToParts(new Date(t));
-    const v = (k: string) => Number(ps.find((p) => p.type === k)!.value);
-    const asUtc = Date.UTC(
-      v("year"),
-      v("month") - 1,
-      v("day"),
-      v("hour"),
-      v("minute"),
-      v("second"),
-    );
-    const next = t + (target - asUtc);
-    if (next === t) break;
-    t = next;
-  }
-  return t;
-}
 export function generate(
   request: PlaylistRequest,
   tracks: Track[],
@@ -189,44 +153,60 @@ export function generate(
   return out;
 }
 export function aggregate(
-  year: number,
+  request: RecapRequest,
   settings: Settings,
   tracks: Track[],
   sessions: Session[],
   intervals: Interval[],
   now = new Date(),
 ): Recap {
-  const start = localMidnight(year, 0, 1, settings.timeZone),
-    end = localMidnight(year + 1, 0, 1, settings.timeZone);
-  const monthEdges = Array.from({ length: 13 }, (_, m) =>
-    localMidnight(year, m, 1, settings.timeZone),
-  );
-  const coveredFrom = new Date(
+  const period = periodFor(request),
+    edges = bucketDates(period);
+  const start = dateBoundary(period.startDate, settings.timeZone),
+    end = dateBoundary(period.endDate, settings.timeZone);
+  if (start > now.getTime()) throw new Error("Future recap period");
+  const through = Math.max(start, Math.min(end, now.getTime()));
+  const from = Math.min(
+    through,
     Math.max(start, Date.parse(settings.historyEnabledSince)),
-  ).toISOString();
-  const coveredThrough = new Date(
-    Math.max(start, Math.min(end, now.getTime())),
-  ).toISOString();
+  );
+  const coveredFrom = new Date(from).toISOString(),
+    coveredThrough = new Date(through).toISOString();
+  const boundaries = edges.map((d) => dateBoundary(d, settings.timeZone));
+  const buckets = edges.slice(0, -1).map((startDate, i) => ({
+    startDate,
+    endDate: edges[i + 1],
+    listenedMs: 0,
+    observed:
+      from < boundaries[i + 1] &&
+      through > boundaries[i] &&
+      through > from &&
+      boundaries[i + 1] > boundaries[i],
+  }));
   const allowed = new Set(sessions.filter((s) => !s.excluded).map((s) => s.id));
-  const months = Array(12).fill(0) as number[];
   const days = new Set<string>();
   let total = 0;
   for (const i of intervals) {
     if (!allowed.has(i.sessionId) || i.playedMs <= 0) continue;
     const a = Date.parse(i.startUtc),
       b = a + i.playedMs;
-    for (let m = 0; m < 12; m++) {
-      const l = Math.max(a, monthEdges[m]),
-        r = Math.min(b, monthEdges[m + 1], now.getTime());
+    for (let m = 0; m < buckets.length; m++) {
+      const l = Math.max(a, boundaries[m], from),
+        r = Math.min(b, boundaries[m + 1], through);
       if (r > l) {
-        months[m] += r - l;
+        buckets[m].listenedMs += r - l;
         total += r - l;
-        let d = l;
-        while (d < r) {
-          days.add(localDate(new Date(d), settings.timeZone));
-          d += 3600000;
+        let d = localDate(new Date(l), settings.timeZone);
+        const last = localDate(new Date(r - 1), settings.timeZone);
+        while (d <= last) {
+          const next = addDays(d, 1);
+          if (
+            dateBoundary(d, settings.timeZone) <
+            dateBoundary(next, settings.timeZone)
+          )
+            days.add(d);
+          d = next;
         }
-        days.add(localDate(new Date(r - 1), settings.timeZone));
       }
     }
   }
@@ -236,7 +216,7 @@ export function aggregate(
     if (
       !s.excluded &&
       s.playedMs >= 30000 &&
-      t >= start &&
+      t >= from &&
       t < end &&
       t <= now.getTime()
     ) {
@@ -296,23 +276,25 @@ export function aggregate(
     .slice(0, 25)
     .map((x) => x.track.id);
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     privacyRevision: settings.privacyRevision ?? 0,
-    year,
+    period,
     timeZone: settings.timeZone,
     coveredFrom,
     coveredThrough,
-    completeYear:
+    completePeriod:
       now.getTime() >= end && Date.parse(settings.historyEnabledSince) <= start,
     listenedMs: total,
     qualifiedPlays: topTracks.reduce((s, t) => s + t.plays, 0),
     activeDays: days.size,
-    months,
+    buckets,
     topTracks,
     topArtist: rank(artists),
     topAlbum: rank(albums),
     trackIds: ids,
-    visualSeed: hash(year + "|" + coveredFrom + "|" + total),
+    visualSeed: hash(
+      period.kind + "|" + period.startDate + "|" + coveredFrom + "|" + total,
+    ),
   };
 }
 export function recapYears(settings: Settings, now = new Date()): number[] {
@@ -327,24 +309,33 @@ export function recapYears(settings: Settings, now = new Date()): number[] {
   return Array.from({ length: current - first + 1 }, (_, i) => current - i);
 }
 export function coverageThrough(recap: Recap): Date {
-  const end = localMidnight(recap.year + 1, 0, 1, recap.timeZone);
+  const end = dateBoundary(recap.period.endDate, recap.timeZone);
   const through = Date.parse(recap.coveredThrough);
-  return new Date(through >= end ? end - 1 : through);
+  return new Date(
+    through >= end && through > Date.parse(recap.coveredFrom)
+      ? end - 1
+      : through,
+  );
 }
 export function safeRecap(recap: Recap) {
   return {
     schemaVersion: recap.schemaVersion,
-    year: recap.year,
+    period: recap.period,
     timeZone: recap.timeZone,
     coverage: {
       since: localDate(new Date(recap.coveredFrom), recap.timeZone),
       through: localDate(coverageThrough(recap), recap.timeZone),
-      completeYear: recap.completeYear,
+      completePeriod: recap.completePeriod,
     },
     minutesListened: Math.round(recap.listenedMs / 60000),
     qualifiedPlays: recap.qualifiedPlays,
     activeDays: recap.activeDays,
-    months: recap.months.map((ms) => Math.round(ms / 60000)),
+    buckets: recap.buckets.map((b) => ({
+      startDate: b.startDate,
+      endDate: b.endDate,
+      minutes: Math.round(b.listenedMs / 60000),
+      observed: b.observed,
+    })),
     topTracks: recap.topTracks.map(({ track, plays }) => ({
       title: track.title,
       artist: track.artist,

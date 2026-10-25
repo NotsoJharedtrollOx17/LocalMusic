@@ -49,7 +49,24 @@ export interface Session {
   excluded: boolean;
   endReason?: string;
 }
+export type RecapKind = "week" | "month" | "year";
+export interface RecapRequest {
+  kind: RecapKind;
+  anchorDate: string;
+}
+export interface RecapPeriod {
+  kind: RecapKind;
+  startDate: string;
+  endDate: string;
+}
+export interface RecapBucket {
+  startDate: string;
+  endDate: string;
+  listenedMs: number;
+  observed: boolean;
+}
 export interface Settings {
+  recapPeriod?: RecapKind;
   language: "en" | "es";
   theme: "system" | "light" | "dark";
   timeZone: string;
@@ -69,15 +86,15 @@ export interface PlaylistRequest {
 export interface Recap {
   schemaVersion: number;
   privacyRevision?: number;
-  year: number;
+  period: RecapPeriod;
   timeZone: string;
   coveredFrom: string;
   coveredThrough: string;
-  completeYear: boolean;
+  completePeriod: boolean;
   listenedMs: number;
   qualifiedPlays: number;
   activeDays: number;
-  months: number[];
+  buckets: RecapBucket[];
   topTracks: { track: Track; plays: number; playedMs: number }[];
   topArtist?: { name: string; plays: number };
   topAlbum?: { name: string; artist: string; plays: number };
@@ -154,7 +171,7 @@ export interface MusicApi {
   generatePlaylist(request: PlaylistRequest): Promise<Playlist>;
   settings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
-  recap(year: number): Promise<Recap>;
+  recap(request: RecapRequest): Promise<Recap>;
   saveSnapshot(recap: Recap): Promise<void>;
   snapshots(): Promise<Recap[]>;
   deleteHistory(): Promise<void>;

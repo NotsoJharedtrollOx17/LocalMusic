@@ -1,12 +1,14 @@
+import { periodLabel } from "../recap/periods";
 import { ArrowLeft, ArrowRight, Play, Share2 } from "lucide-react";
 import { api } from "../api";
 import { Cover, IconButton, Modal, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
-import MonthlyListening from "./MonthlyListening";
+import RecapListening from "./RecapListening";
 
 export default function RecapStoryDialog() {
   const {
     recap,
+    settings,
     setShareRecap,
     recapLoading,
     modal,
@@ -42,7 +44,7 @@ export default function RecapStoryDialog() {
             {story === 0 ? (
               <>
                 <OrbitPoster
-                  year={recap.year}
+                  title={periodLabel(recap.period, settings?.language)}
                   seed={recap.visualSeed}
                   label={t.inSound}
                 />
@@ -80,7 +82,7 @@ export default function RecapStoryDialog() {
             ) : story === 4 ? (
               <>
                 <p className="eyebrow">{t.monthTitle}</p>
-                <MonthlyListening />
+                <RecapListening />
                 <p>{t.monthStory}</p>
               </>
             ) : (

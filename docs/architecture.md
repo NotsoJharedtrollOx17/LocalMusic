@@ -2,7 +2,7 @@
 
 The application has a React/TypeScript frontend and two runtime adapters. In Tauri, commands call the shared Rust core and the platform player. In a browser, a separate preview adapter stores user-selected audio blobs and a playback journal in IndexedDB and plays through an HTML audio element. The browser preview has no Android background guarantees.
 
-The music-core crate owns SQLite catalog/search, playlists, settings, history import and recap aggregation. Playback snapshots are separate from catalog pages. Lists are fetched in pages of 60; queue and playlist items resolve by stable track ID. The React Library contains Songs, Albums, Artists and Playlists tabs; Your Year is the other primary navigation destination.
+The music-core crate owns SQLite catalog/search, playlists, settings, history import and recap aggregation. Playback snapshots are separate from catalog pages. Lists are fetched in pages of 60; queue and playlist items resolve by stable track ID. The React Library contains Songs, Albums, Artists and Playlists tabs; Your Recap is the other primary navigation destination.
 
 Windows playback runs on a dedicated Rust worker with Rodio. Android playback lives in a Media3 foreground service, controlled through the native-music Tauri plugin. The service persists its queue and writes checkpoints to its own SQLite outbox while the WebView is suspended. Rust imports absolute session totals and intervals idempotently, then acknowledges committed outbox IDs.
 
@@ -37,3 +37,10 @@ Android uses `SoundEngine`, `SoundAudioProcessor`, `SoundDsp` and Media3's rende
 All adapters apply the ordinary EQ to both channel banks, retaining existing mono/multichannel handling, RBJ peaking filters (Q=1.4), a 20 ms configuration crossfade and linked peak limiter. Music has no automatic global attenuation; manual preamp remains zero. The limiter controls digital peaks, not hearing safety.
 
 EQ-only configuration version 2 uses the existing `sound-v1` storage key in Windows SQLite, Android private preferences and browser IndexedDB. Ten compatibility slots remain: neutral hidden 31 Hz followed by nine editable bands. Version-one migration reads only ordinary settings and discards retired profile fields, even if malformed. Ordinary preset/Custom state is preserved; fresh installs use Normal. Atomic persistence precedes processing; write failures expose retryable errors and keep EQ processing inactive. Repeated migration is idempotent. There are no calibration commands, tone/sample players, profile workers or per-ear processing paths. Historical feature plans and release notes remain archival references.
+
+
+## Calendar recaps
+
+React owns timeframe/date navigation and presentation; Rust owns native calendar aggregation, with a matching browser adapter. MusicApi.recap accepts { kind, anchorDate }, where kind is week/month/year and anchorDate is a local ISO date. Boundaries follow the device IANA zone, use inclusive starts/exclusive ends, and resolve midnight gaps/overlaps consistently. Recap schema 2 returns a canonical period and daily buckets for weeks/months or monthly buckets for years. Listening minutes split at boundaries; qualified plays stay in the session's starting period. Monotonic playback accounting and the Android journal are unchanged.
+
+The optional recapPeriod preference defaults to year. Existing snapshot JSON stays unchanged; schema-one yearly values normalize in memory when read. New snapshots freeze period/buckets. Export refreshes the matching period and verifies privacy revision before preview and saving, without exporting exact timestamps or playback IDs.

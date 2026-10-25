@@ -44,3 +44,8 @@ Move Playlists into the Library tab row alongside Songs, Albums and Artists, as 
 ## Current state after integration — 9 October 2026
 
 The recap export, loading/startup and playlist navigation revisions above are integrated into `dev`. The original build sequence and acceptance list remain a record of the initial draft; the JSON and 1080 × 1920 export targets are superseded by the recap export revision. See [README](../README.md) for the current feature set, [developer guide](developer-guide.md) for code ownership, and [verification](verification.md) for actual checks and remaining Android acceptance gates.
+
+
+## Calendar recap revision - 25 October 2026
+
+The approved Your Recap revision adds calendar weeks/months/years, Monday week boundaries, remembered timeframe preference and period-aware snapshots/charts/PNG exports. It supersedes year-only presentation and aggregation inputs; historical plan entries above remain archival. See [approved specification](your-recap-periods-plan.md), [current methodology](recap-methodology.md) and [verification](verification.md). Playback accounting and Android journal ownership remain unchanged.

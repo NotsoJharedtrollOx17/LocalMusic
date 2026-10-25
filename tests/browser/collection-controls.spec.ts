@@ -175,6 +175,6 @@ test("compact transport and actions share an axis and sound has no Resume button
 
   const settings = await openSettings(page);
   await expect(settings).toContainText(
-    "Listening history powers Your Year, Recently played, and Most played.",
+    "Listening history powers Your Recap, Recently played, and Most played.",
   );
 });

@@ -3,7 +3,7 @@ use crate::{
     playback::dispatch,
     state::{MusicState, Result},
 };
-use music_core::{Recap, Settings};
+use music_core::{Recap, RecapRequest, Settings};
 use serde_json::json;
 use tauri::State;
 
@@ -11,15 +11,12 @@ use tauri::State;
 pub(crate) async fn get_recap(
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
-    year: i32,
+    request: RecapRequest,
 ) -> Result<Recap> {
-    if !(1970..=9998).contains(&year) {
-        return Err("Invalid recap year".into());
-    }
     dispatch(app.clone(), &state, "flush", json!({})).await?;
     let store = state.core.lock().map_err(|e| e.to_string())?;
     let mut recap = music_core::recap::aggregate(
-        year,
+        &request,
         &store
             .get_setting::<Settings>("preferences")?
             .unwrap_or_default(),

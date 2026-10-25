@@ -133,7 +133,7 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     "Albums",
     "Artists",
     "Playlists",
-    "Your Year",
+    "Your Recap",
   ]);
   const importButton = page
     .locator(".library-toolbar")
@@ -151,11 +151,11 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
   await page.getByRole("tab", { name: "Songs", exact: true }).focus();
   await page.keyboard.press("End");
   await expect(
-    page.getByRole("tab", { name: "Your Year", exact: true }),
+    page.getByRole("tab", { name: "Your Recap", exact: true }),
   ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
-    page.getByRole("tab", { name: "Your Year", exact: true }),
+    page.getByRole("tab", { name: "Your Recap", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("0 qualified plays")).toBeVisible();
   await expect(page.locator(".year-page > .page-heading .eyebrow")).toHaveCount(

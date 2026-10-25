@@ -7,6 +7,7 @@ import type {
   Playlist,
   Settings,
   Recap,
+  RecapRequest,
   PlaylistRequest,
 } from "../types";
 import { BrowserMusic } from "./browser";
@@ -117,8 +118,8 @@ class NativeMusic implements MusicApi {
   saveSettings(settings: Settings) {
     return cmd<void>("save_settings", { settings });
   }
-  recap(year: number) {
-    return cmd<Recap>("get_recap", { year });
+  recap(request: RecapRequest) {
+    return cmd<Recap>("get_recap", { request });
   }
   saveSnapshot(recap: Recap) {
     return cmd<void>("save_snapshot", { recap });

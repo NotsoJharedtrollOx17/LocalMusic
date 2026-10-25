@@ -11,7 +11,7 @@ import EmptyLibrary from "./EmptyLibrary";
 import EmptyFavorites from "./EmptyFavorites";
 import SelectionToolbar from "./SelectionToolbar";
 import LibraryTabs from "./LibraryTabs";
-import YourYearPage from "./YourYearPage";
+import YourRecapPage from "./YourRecapPage";
 
 export default function LibraryPage() {
   const {
@@ -120,7 +120,7 @@ export default function LibraryPage() {
         )}
         {selectionMode && <SelectionToolbar />}
         {section === "year" ? (
-          <YourYearPage />
+          <YourRecapPage />
         ) : section === "playlists" ? (
           <PlaylistsPage />
         ) : (

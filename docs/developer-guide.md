@@ -91,7 +91,7 @@ The visible overlay owns focus and Back. Suspend the retained player with hidden
 
 ### Library ordering (screenshot follow-up)
 
-Library is the main destination. `LibrarySection` contains Songs, Albums, Artists, Playlists and Your Year in that order. Recap reads, playback caches and Back handling follow the selected section; do not introduce a second independent recap destination state. All five tabs share keyboard navigation, swipe handling and remembered scroll positions. The shell has no sidebar or redundant mobile destination bar.
+Library is the main destination. `LibrarySection` contains Songs, Albums, Artists, Playlists and Your Recap in that order. Recap reads, playback caches and Back handling follow the selected section; do not introduce a second independent recap destination state. All five tabs share keyboard navigation, swipe handling and remembered scroll positions. The shell has no sidebar or redundant mobile destination bar.
 
 `LibraryToolbar` owns the orange Import music button below the tabs. `LibraryFilters` restores the Songs-only Favorites and title/artist/album menu without Select/Edit; collection details retain album ordering. `LibraryActions` provides Edit, Equalizer and Settings through the top-right menu. Favorites also remains an automatic playlist. `LibraryBrand` replaces sidebar/mobile branding with one logo and localized shield motto above Library. Keep track menus and long press as selection entry paths. EQ now uses its six preset choices and nine faders, with automatic Custom persistence and Normal as reset. Switch, Bypass, preamp and named-preset controls are absent.
 
@@ -114,3 +114,10 @@ Above 760px, the compact player uses symmetric side columns around its centered 
 ### Loading feedback
 
 `components/LoadingIndicator.tsx` renders a circular loader with a localized accessible status name and no visible label. Initial Album/Artist requests place these indicators inside the artwork placeholders; cached results stay visible during refresh, with a content-area indicator. Songs, artist album views, automatic playlist counts and search use the same component. Keep loading feedback out of the Import toolbar so it does not move its actions. Reduce Motion stops rotation while retaining the visible indicator. Ordinary EQ saving renders no transient status row; controller persistence, stale-write protection and inline errors remain unchanged.
+
+
+## Your Recap periods
+
+Use the shared recap period request/types; do not pass a bare year to MusicApi.recap. Calendar weeks start Monday; months/years use their calendar boundaries in the device zone. React remembers timeframe preference, follows rollover only for current-period views, and guards read acknowledgements against stale requests. Period changes hide unmatched totals; same-period refresh retains confirmed content and exposes retryable errors. Snapshots select their own period without replacing the live preference.
+
+Rust/browser share calendar fixtures under tests/fixtures/recap-periods.json. New schema-two results use period, completePeriod and buckets; compatibility readers project legacy yearly snapshots without rewriting records. Charts/posters/story and both PNG formats consume this same period metadata. Preserve playback/listening/seek/privacy invariants and keep actual device acceptance separate from test/build evidence.
