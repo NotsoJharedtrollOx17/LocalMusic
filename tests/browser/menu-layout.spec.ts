@@ -107,7 +107,7 @@ async function aligned(surface: Locator) {
   expect(metrics.transportBottom).toBeLessThanOrEqual(metrics.viewportHeight);
   expect(metrics.overflow).toBeLessThanOrEqual(1);
   expect(metrics.transport).toHaveLength(5);
-  expect(metrics.actionButtons).toHaveLength(2);
+  expect(metrics.actionButtons).toHaveLength(3);
   for (const button of metrics.actionButtons) {
     expect(button.width).toBeGreaterThanOrEqual(44);
     expect(button.height).toBeGreaterThanOrEqual(44);
@@ -169,6 +169,27 @@ test("player and Queue keep a common centerline and balanced actions across lang
           exact: true,
         }),
       ).toBeVisible();
+      await expect(
+        page.getByRole("menu").locator('[role^="menuitem"]'),
+      ).toHaveText(
+        language === "en"
+          ? [
+              "Track details",
+              "Go to album",
+              "Go to artist",
+              "Sound options",
+              "Exclude from recap",
+              "Remove from Library",
+            ]
+          : [
+              "Detalles de la canción",
+              "Ir al álbum",
+              "Ir al artista",
+              "Opciones de sonido",
+              "Excluir del resumen",
+              "Quitar de la biblioteca",
+            ],
+      );
       await page.keyboard.press("Escape");
       await expect(options).toBeFocused();
       expect(
@@ -178,7 +199,9 @@ test("player and Queue keep a common centerline and balanced actions across lang
             nodes.map((node) => node.getAttribute("aria-label")),
           ),
       ).toEqual(
-        language === "en" ? ["Queue", "Favorite"] : ["Cola", "Favorita"],
+        language === "en"
+          ? ["Queue", "Favorite", "Add to playlist"]
+          : ["Cola", "Favorita", "Añadir a una lista"],
       );
       await expect(surface.locator(".player-title button")).toHaveCount(0);
       await expect(surface.locator(".player-surface-head button")).toHaveCount(
@@ -229,6 +252,45 @@ test("player and Queue keep a common centerline and balanced actions across lang
         .analyze()
     ).violations,
   ).toEqual([]);
+});
+
+test("player plus targets the current song and returns focus after playlist cancellation and save", async ({
+  page,
+}) => {
+  const surface = await player(page);
+  const plus = surface.getByRole("button", {
+    name: "Add to playlist",
+    exact: true,
+  });
+  await plus.click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.locator(".player-scrim")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(plus).toBeFocused();
+  await plus.click();
+  await page.getByRole("button", { name: "New playlist", exact: true }).click();
+  await page
+    .getByLabel("Playlist name", { exact: true })
+    .fill("Current song collection");
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(1);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.locator(".playlist-destinations")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Current song collection", exact: true })
+    .click();
+  await expect(surface).toBeVisible();
+  await expect(plus).toBeFocused();
+  await page.keyboard.press("Escape");
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page
+    .locator(".playlist-tile")
+    .filter({ hasText: "Current song collection" })
+    .click();
+  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator(".track-row strong")).toHaveText(
+    "A long song title from the midnight orchestra and its expanded concert edition",
+  );
 });
 
 test("privacy pending and failure states recover while menus and queue actions retain their behavior", async ({

@@ -1,4 +1,4 @@
-import { Heart, ListMusic } from "lucide-react";
+import { Heart, ListMusic, Plus } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlayerTrackActions({
@@ -6,7 +6,7 @@ export default function PlayerTrackActions({
 }: {
   view: "player" | "queue";
 }) {
-  const { current, favorite, setModal, t } = useMusicAppContext();
+  const { current, favorite, setModal, setActionIds, t } = useMusicAppContext();
   if (!current) return null;
   const queueLabel = view === "queue" ? t.nowPlaying : t.queue;
   return (
@@ -34,6 +34,19 @@ export default function PlayerTrackActions({
           fill={current.favorite ? "currentColor" : "none"}
           aria-hidden="true"
         />
+      </button>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={t.addToPlaylist}
+        title={t.addToPlaylist}
+        disabled={current.hidden}
+        onClick={() => {
+          setActionIds([current.id]);
+          setModal("add");
+        }}
+      >
+        <Plus size={24} aria-hidden="true" />
       </button>
     </div>
   );

@@ -44,6 +44,13 @@ export default function TrackActionMenu() {
       menu.anchor,
     );
   };
+  const playerMenu =
+    menu.anchor.hasAttribute("data-player-menu") &&
+    track.id === player.trackId &&
+    (modal === "player" || modal === "queue");
+  const available = trackMenuActions(track, context).filter(
+    (id) => id !== "share" || hasAudioShareChooser(),
+  );
   const actions: Record<
     ReturnType<typeof trackMenuActions>[number],
     MenuAction
@@ -98,12 +105,10 @@ export default function TrackActionMenu() {
       label={track.title}
       onClose={() => setMenu(null)}
       items={[
-        ...trackMenuActions(track, context)
-          .filter((id) => id !== "share" || hasAudioShareChooser())
+        ...available
+          .filter((id) => !playerMenu || (id !== "add" && id !== "remove"))
           .map((id) => actions[id]),
-        ...(menu.anchor.hasAttribute("data-player-menu") &&
-        track.id === player.trackId &&
-        (modal === "player" || modal === "queue")
+        ...(playerMenu
           ? [
               {
                 id: "sound",
@@ -123,6 +128,7 @@ export default function TrackActionMenu() {
               },
             ]
           : []),
+        ...(playerMenu && available.includes("remove") ? [actions.remove] : []),
       ]}
     />
   );
