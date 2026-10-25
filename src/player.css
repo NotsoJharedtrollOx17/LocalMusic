@@ -93,16 +93,9 @@
   border-radius: 7px;
   margin: auto;
 }
-.full-player > .eyebrow {
-  text-align: center;
-  margin-bottom: 18px;
-}
 .player-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
   margin: 20px 0;
+  text-align: center;
 }
 .player-title > div {
   min-width: 0;
@@ -288,9 +281,6 @@
   }
   .player-surface-body {
     padding-top: 12px;
-  }
-  .full-player > .eyebrow {
-    margin-bottom: 10px;
   }
   .player-title {
     margin: 12px 0;

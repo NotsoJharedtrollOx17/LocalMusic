@@ -34,7 +34,6 @@ export default function PlayerDialog() {
         >
           {view === "player" ? (
             <div className="full-player">
-              <p className="eyebrow">{t.playingFrom}</p>
               <Cover track={current} className="player-cover" large />
               <div className="player-title">
                 <div>
