@@ -14,7 +14,7 @@
 }
 .player-surface {
   --player-play-size: 62px;
-  --player-head-side: clamp(84px, 20vw, 110px);
+  --player-head-side: 44px;
   width: 620px;
   max-width: 100%;
   height: min(900px, calc(100dvh - 48px));
@@ -82,7 +82,7 @@
   }
 }
 .player-surface-body.player {
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 .player-surface-body .full-player {
   display: flow-root;
@@ -126,7 +126,7 @@
   grid-template-columns: 44px 44px var(--player-play-size) 44px 44px;
   justify-content: center;
   align-items: center;
-  gap: clamp(8px, 2vw, 18px);
+  gap: clamp(0px, calc((100vw - 292px) / 4), 18px);
   margin: 18px 0;
 }
 .player-surface-footer .transport > .icon-button {
@@ -239,5 +239,46 @@
   }
   .player-surface-footer .transport {
     margin: 10px 0;
+  }
+}
+/* Zoom and landscape can leave too little height for an anchored footer.
+   Scroll one complete player instead of collapsing the song to a sliver. */
+@media (max-height: 400px) {
+  .player-scrim {
+    padding: 0;
+  }
+  .player-surface {
+    height: 100dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
+    border-radius: 0;
+  }
+  .player-surface-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--paper);
+  }
+  .player-surface-body {
+    flex: none;
+    overflow: visible;
+    scrollbar-gutter: auto;
+  }
+  .player-surface-footer {
+    border-radius: 0;
+  }
+}
+@media (max-width: 320px) {
+  .player-surface-head {
+    padding-inline: 12px;
+  }
+  .player-surface-body,
+  .player-surface-footer {
+    padding-inline: 12px;
+  }
+  .player-surface-footer .transport {
+    gap: 0;
   }
 }

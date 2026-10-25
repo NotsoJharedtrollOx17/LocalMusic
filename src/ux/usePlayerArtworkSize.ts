@@ -24,7 +24,16 @@ export function usePlayerArtworkSize(
         parseFloat(padding.paddingBottom) -
         otherContent;
       const size = Math.floor(
-        Math.max(32, Math.min(320, content.clientWidth, available - 2)),
+        Math.max(
+          32,
+          Math.min(
+            320,
+            content.clientWidth,
+            matchMedia("(max-height: 400px)").matches
+              ? Math.min(160, innerHeight * 0.4)
+              : available - 2,
+          ),
+        ),
       );
       const value = `${size}px`;
       if (body.style.getPropertyValue("--player-art-size") !== value)
@@ -33,7 +42,11 @@ export function usePlayerArtworkSize(
     const observer = new ResizeObserver(fit);
     observer.observe(body);
     observer.observe(content);
+    window.addEventListener("resize", fit);
     fit();
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
   }, [surface, active, view, trackId]);
 }

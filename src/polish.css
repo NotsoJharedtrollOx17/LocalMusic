@@ -12,8 +12,12 @@
   background: var(--paper);
 }
 .modal-head h2 {
+  min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
+}
+.modal-head > .icon-button {
+  flex-shrink: 0;
 }
 .modal-body {
   min-height: 0;
@@ -404,5 +408,47 @@
         0,
         1fr
       );
+  }
+}
+/* Preserve content growth at large zoom without forcing a wider document. */
+.year-page > .page-heading {
+  flex-wrap: wrap;
+}
+.modal-body > *,
+.sound-option {
+  min-width: 0;
+}
+@media (max-width: 320px) {
+  .content-shell {
+    padding-inline: 12px;
+  }
+  .library-brand-note .local-note {
+    overflow-wrap: anywhere;
+  }
+  .library-navigation .section-tabs {
+    gap: 20px;
+  }
+  .settings-choice > div {
+    flex-wrap: wrap;
+  }
+  .settings-choice button {
+    flex-basis: 80px;
+  }
+}
+@media (max-height: 400px) {
+  .modal-scrim {
+    padding: 8px;
+  }
+  .modal {
+    max-height: calc(100dvh - 16px);
+  }
+  .modal-head {
+    padding-block: 10px;
+  }
+  .modal-body {
+    padding-block: 12px;
+  }
+  .library-page > .library-navigation {
+    position: relative;
   }
 }

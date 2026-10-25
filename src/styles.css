@@ -629,7 +629,7 @@ input[type="range"] {
 }
 .album-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
   gap: 26px;
   padding: 26px 0;
 }
@@ -1005,6 +1005,7 @@ input[type="range"] {
 }
 .orbit-poster {
   position: relative;
+  width: 100%;
   overflow: hidden;
   border-radius: 3px;
   background: #151719;
@@ -1824,7 +1825,7 @@ input[type="range"] {
     padding: 8px 10px;
   }
   .orbit-poster {
-    min-height: 230px;
+    min-height: 0;
     aspect-ratio: 1.55;
   }
   .orbit-poster > div {
@@ -1832,7 +1833,7 @@ input[type="range"] {
     top: 23px;
   }
   .orbit-poster strong {
-    font-size: 87px;
+    font-size: clamp(48px, 20vw, 87px);
   }
   .orbit-poster span {
     font-size: 11px;

@@ -139,6 +139,7 @@
   margin: 28px 0 12px;
 }
 .equalizer-grid {
+  --equalizer-track-height: 180px;
   position: relative;
   max-width: 680px;
   margin-inline: auto;
@@ -149,7 +150,7 @@
   top: 0;
   left: 48px;
   right: 0;
-  height: 180px;
+  height: var(--equalizer-track-height);
   pointer-events: none;
 }
 .equalizer-level {
@@ -179,7 +180,7 @@
 .sound-controls .equalizer-band {
   position: relative;
   display: grid;
-  grid-template-rows: 180px 24px;
+  grid-template-rows: var(--equalizer-track-height) 24px;
   align-items: center;
   align-content: start;
   justify-items: center;
@@ -196,7 +197,7 @@
   grid-row: 1;
   writing-mode: vertical-lr;
   direction: rtl;
-  height: 180px;
+  height: var(--equalizer-track-height);
   width: 26px;
   min-height: 0;
   padding: 0;
@@ -566,6 +567,11 @@
   }
   .setup-footer {
     padding: 8px 0;
+  }
+}
+@media (max-height: 400px) {
+  .equalizer-grid {
+    --equalizer-track-height: clamp(80px, 40dvh, 120px);
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -45,6 +45,10 @@ This revision changes presentation and accessibility only. No public `MusicApi`,
 - Native zoom hotkeys are enabled for Windows accessibility and actual 200% zoom verification. No audio, persistence, public API or contextual-menu changes were required.
 - Actual test/build results and remaining platform gates are recorded in [verification.md](verification.md#21-october-2026--player-and-playlist-layout-stabilization). Integration and release remain separate requests.
 
-## Execution record
+## Accepted follow-ups and release
 
-21 October 2026: created the branch from `59e1840` and saved this specification before implementation. Implementation and acceptance results follow in `verification.md`.
+The subsequent review replaced the lower player cards with a Queue/Favorite/Add to playlist row and a header menu. Exclude from recap precedes Remove from Library at the end of that menu. Collection overviews use passive counts, retain confirmed totals during refresh and avoid title-to-count flashes. Favorites selection/focus remains stable after sorting.
+
+Final zoom work retains accessibility zoom and uses a scrolling player below 400 CSS px height; ordinary-height views keep anchored controls. Icon-sized header columns, proportional recap artwork, wrapping settings and shorter EQ tracks prevent clipped or artificially expanded content. See `verification.md` for actual evidence and platform limits.
+
+On 24 October the user approved the local v0.6.0 integration through `dev` into `main`, development packages and annotated tag after verification. Release execution completed on 25 October; earlier releases, source recordings and reference images remain preserved.
