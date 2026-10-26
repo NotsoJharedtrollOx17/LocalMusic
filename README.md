@@ -91,7 +91,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.7.0` include the reviewed EQ-only revision on the stable player/playlist and zoom-reflow baseline. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.7.0 release notes](docs/releases/v0.7.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.8.0` include the reviewed Your Recap revision on the EQ-only player/playlist and zoom-reflow baseline. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.8.0 release notes](docs/releases/v0.8.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 
@@ -100,6 +100,6 @@ Library tabs share the top row with Search and the menu. Its Edit action selects
 v0.7.0 removes Adapt Sound across all adapters and exposes Equalizer directly. Configuration upgrades overwrite the existing sound settings key with version 2, delete retired profiles and retain the last ordinary EQ; no personal curve is converted into Custom. Native processing, output recovery and live edits remain, with no calibration or profile actions. The local release includes Windows portable and signed ARM64 development packages. See [the removal plan](docs/remove-adapt-sound-plan.md) and [verification](docs/verification.md).
 
 
-The `dev.your-recap-periods` review branch adds calendar recaps; application versions remain 0.7.0 until a separate release request. See [the archived specification](docs/your-recap-periods-plan.md) and [verification](docs/verification.md).
+v0.8.0 integrates the reviewed `dev.your-recap-periods` work: live calendar periods, ISO week numbers, top-three artwork/story rankings and an explicitly saved top-ten playlist. See [the archived specification](docs/your-recap-periods-plan.md) and [verification](docs/verification.md).
 
 Your Recap shows the top three songs, artists and albums with descending rank emphasis. Its ranked top-ten song list can be played or explicitly saved as an editable playlist for that period; unavailable or removed tracks are not queued or saved.
