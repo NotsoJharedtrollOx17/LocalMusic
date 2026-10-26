@@ -835,3 +835,10 @@ Implemented on `dev.adapt-sound-calibration`, following the user's authorization
 
 - Enlarged Origin of Symmetry's displayed scale by 25%, retaining its audio response and rendering budget. Production frontend build passed; the affected real-audio visualizer browser journey passed (21.8 seconds). Inspected the enlarged Geometry screenshot (`artifacts/visualizer-geometry.png`).
 - Windows development build passed at unchanged version 0.8.0; verified embedded frontend index-CFaxc2ko.js, index-OmjNZwwZ.css. The Android APK was not rebuilt for this scale-only revision. No new performance or physical-device claims.
+
+
+### 26 October 2026 - clear Geometry when playback stops
+
+- Geometry previously drew its rectangle scene unconditionally, then stopped scheduling frames after audio settled, leaving a frozen final pose. Pass actual playback state to the renderer; paused/finished Geometry now clears to the current theme background and resets its visual envelopes so rendering can idle immediately. Resuming restores the animation. Active playback under Reduce Motion still supports a static scene, and other modes retain their existing behavior.
+- `npm.cmd run check` passed production compilation and **67 unit tests**. All **five visualizer browser journeys passed (1.1 minutes)**, including a new real-canvas regression for pause/clear, paused theme/mode changes, resume and the media element's actual natural completion after seeking to the end. Existing real-audio, lifecycle/error, theme/color, narrow-layout and Reduce Motion checks remain passing.
+- Windows development rebuild passed at 0.8.0, with embedded frontend index-BVhxGv6k.js, index-OmjNZwwZ.css verified. The Android APK was not rebuilt for this shared-renderer change. Physical-device and native audible-runtime acceptance remain separate; no new performance claims.

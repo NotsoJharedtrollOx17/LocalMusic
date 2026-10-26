@@ -71,6 +71,7 @@ export class VisualizerRenderer {
     dt: number,
     animate: boolean,
     now: number,
+    playing = true,
   ) {
     const start = performance.now();
     const c = this.context,
@@ -79,6 +80,13 @@ export class VisualizerRenderer {
       f = frame ?? empty;
     c.fillStyle = this.background;
     c.fillRect(0, 0, w, h);
+    if (mode === "geometry" && !playing) {
+      this.energy = 0;
+      this.values.fill(0);
+      this.peaks.fill(0);
+      this.waveform.fill(0);
+      return;
+    }
     const a = animate ? 1 - Math.exp(-dt * 14) : 1;
     this.energy += ((animate ? f.rms : 0) - this.energy) * a;
     if (animate && this.energy > 0.0001)
@@ -133,7 +141,8 @@ export class VisualizerRenderer {
       const cy = Math.cos(rotation * 0.7 + mid * this.energy * 0.15);
       const cz = Math.cos(rotation),
         sz = Math.sin(rotation);
-      const scale = Math.min(w, h) * 1.25 * (0.007 + bass * this.energy * 0.003);
+      const scale =
+        Math.min(w, h) * 1.25 * (0.007 + bass * this.energy * 0.003);
       for (let i = 0; i < 60; i++) {
         // Ping-pong a finite deterministic orbit, avoiding a discontinuous wrap.
         const travel = (head + i) % 15998;

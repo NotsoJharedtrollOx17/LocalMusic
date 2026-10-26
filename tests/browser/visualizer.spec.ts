@@ -119,6 +119,44 @@ test("real post-EQ analysis, modes, seek, pause, blur and focus return", async (
   expect(errors).toEqual([]);
 });
 
+test("Geometry clears on pause and natural completion, and resumes after pause", async ({
+  page,
+}) => {
+  const view = await open(page);
+  await view.getByRole("button", { name: "Geometry", exact: true }).click();
+  const pixels = () =>
+    view.locator("canvas").evaluate((node) => {
+      const canvas = node as HTMLCanvasElement;
+      const data = canvas
+        .getContext("2d")!
+        .getImageData(0, 0, canvas.width, canvas.height).data;
+      let colored = 0;
+      for (let i = 0; i < data.length; i += 16)
+        if (
+          data[i] !== data[0] ||
+          data[i + 1] !== data[1] ||
+          data[i + 2] !== data[2]
+        )
+          colored++;
+      return colored;
+    });
+  await expect.poll(pixels).toBeGreaterThan(0);
+  await view.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect.poll(pixels).toBe(0);
+  await page.emulateMedia({ colorScheme: "dark" });
+  await view.getByRole("button", { name: "XMB wave", exact: true }).click();
+  await view.getByRole("button", { name: "Geometry", exact: true }).click();
+  await expect.poll(pixels).toBe(0);
+  await view.getByRole("button", { name: "Play", exact: true }).click();
+  await expect.poll(pixels).toBeGreaterThan(0);
+  await view.getByRole("slider").focus();
+  await page.keyboard.press("End");
+  await expect(
+    view.getByRole("button", { name: "Play", exact: true }),
+  ).toBeVisible();
+  await expect.poll(pixels).toBe(0);
+});
+
 test("frequency colors and every scene follow live light/dark theme changes without restarting capture", async ({
   page,
 }) => {

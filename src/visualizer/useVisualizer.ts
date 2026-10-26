@@ -87,6 +87,7 @@ export function useVisualizer(
             dt || 1 / 60,
             latest.current.animate,
             now,
+            latest.current.playing,
           );
         } catch {
           stop();
