@@ -829,3 +829,9 @@ Implemented on `dev.adapt-sound-calibration`, following the user's authorization
 - Gave the Reduce Motion `Animate this session` button a dedicated scoped style with explicit theme foreground, surface, border and hover colors. Removed the superseded footer-wide secondary-button override. Presentation only; animation opt-in behavior is unchanged.
 - Production frontend build passed through the browser test gate. The affected reduced-motion browser journey passed (19.7 seconds), checking exact light/dark resting and hover colors, axe contrast/accessibility, narrow layout, animation opt-in and mode persistence. Inspected `artifacts/visualizer-animate-light.png` and `visualizer-animate-dark.png`. Early checks compared a hovered button against resting colors because the opening-menu click left the pointer over it; corrected the test to move the pointer explicitly and verify both states.
 - Rebuilt Windows development executable at 0.8.0 and verified embedded `index-ARQM9keU.js` / `index-OmjNZwwZ.css`. Executable SHA-256: `0e44c4700edddfb7e56e28645d52f0d14f6058da444313acfb787adbc98eaed7`. Existing compiler warnings remain. The APK was not rebuilt for this CSS/button-class correction; the previous APK evidence applies to the preceding refinement commit. No new device/runtime or performance acceptance is claimed.
+
+
+### 26 October 2026 - closer Geometry framing
+
+- Enlarged Origin of Symmetry's displayed scale by 25%, retaining its audio response and rendering budget. Production frontend build passed; the affected real-audio visualizer browser journey passed (21.8 seconds). Inspected the enlarged Geometry screenshot (`artifacts/visualizer-geometry.png`).
+- Windows development build passed at unchanged version 0.8.0; verified embedded frontend index-CFaxc2ko.js, index-OmjNZwwZ.css. The Android APK was not rebuilt for this scale-only revision. No new performance or physical-device claims.
