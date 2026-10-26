@@ -398,9 +398,9 @@
         "blend": "balanced"
       },
       "less": ["t00"],
-      "source": "favorites",
+      "source": "history",
       "count": 6,
-      "expectedIds": ["t00", "t08", "t04", "t01", "t05", "t03"]
+      "expectedIds": ["t00", "t08", "t04", "t05", "t03", "t01"]
     },
     {
       "name": "favorites",

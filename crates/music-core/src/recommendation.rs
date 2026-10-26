@@ -62,7 +62,7 @@ fn tags(s: &str) -> Vec<String> {
     v.dedup();
     v
 }
-pub fn analysis_order(tracks: &[Track], sessions: &[Session], less: &[String]) -> Vec<Track> {
+pub fn analysis_order(tracks: &[Track], sessions: &[Session]) -> Vec<Track> {
     let mut counts = BTreeMap::<String, u64>::new();
     for s in sessions
         .iter()
@@ -77,7 +77,7 @@ pub fn analysis_order(tracks: &[Track], sessions: &[Session], less: &[String]) -
     let mut anchors: Vec<_> = pool
         .iter()
         .copied()
-        .filter(|t| !less.contains(&t.id) && (t.favorite || counts.contains_key(&t.id)))
+        .filter(|t| t.favorite || counts.contains_key(&t.id))
         .collect();
     anchors.sort_by(|a, b| {
         counts
@@ -180,7 +180,7 @@ pub fn generate(
     }
     let positive: Vec<_> = tracks
         .iter()
-        .filter(|t| t.available && !t.hidden && !t.demo && !data.less.contains(&t.id))
+        .filter(|t| t.available && !t.hidden && !t.demo)
         .collect();
     let history = positive
         .iter()
