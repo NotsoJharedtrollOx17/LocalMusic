@@ -20,7 +20,6 @@
   z-index: -1;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 180ms ease;
 }
 .visualizer-view[data-scene-visible="true"] canvas {
   opacity: 1;

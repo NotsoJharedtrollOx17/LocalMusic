@@ -142,8 +142,8 @@ test("Geometry clears on pause and natural completion, and resumes after pause",
     });
   await expect.poll(pixels).toBeGreaterThan(0);
   await view.getByRole("button", { name: "Pause", exact: true }).click();
-  await expect(view).toHaveAttribute("data-scene-visible", "false");
-  await expect(view.locator("canvas")).toHaveCSS("opacity", "0");
+  await expect(view).toHaveAttribute("data-scene-visible", "true");
+  await expect(view.locator("canvas")).toHaveCSS("opacity", "1");
   await expect.poll(pixels).toBe(0);
   await page.emulateMedia({ colorScheme: "dark" });
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();

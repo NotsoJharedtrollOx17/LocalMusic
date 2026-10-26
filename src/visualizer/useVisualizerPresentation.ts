@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 
-/** Allow capture to warm up; retain the scene only for its brief exit fade. */
+/** Warm up on start/resume; keep the canvas mounted for mode-specific settling. */
 export function useVisualizerPresentation(playing: boolean) {
   const [ready, setReady] = useState(false);
+  const [running, setRunning] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setReady(playing), 180);
+    if (!playing) {
+      setRunning(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setReady(true);
+      setRunning(true);
+    }, 180);
     return () => clearTimeout(timer);
   }, [playing]);
-  return { ready, visible: playing && ready };
+  return { ready, visible: ready, running: playing && running };
 }

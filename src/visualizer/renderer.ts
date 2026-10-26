@@ -15,6 +15,7 @@ export class VisualizerRenderer {
   private height = 0;
   private phase = 0;
   private energy = 0;
+  private presence = 0;
   fps = 60;
   private cap = 2_000_000;
   private windowStart = 0;
@@ -23,7 +24,11 @@ export class VisualizerRenderer {
   private count = 0;
   private stableSince = 0;
   get moving() {
-    return this.energy > 0.0001 || this.peaks.some((v) => v > 0.002);
+    return (
+      (this.presence > 0 && this.presence < 1) ||
+      this.energy > 0.0001 ||
+      this.peaks.some((v) => v > 0.002)
+    );
   }
   readonly metrics = { frames: 0, drawMs: 0, maxDrawMs: 0, downgraded: false };
   constructor(private canvas: HTMLCanvasElement) {
@@ -73,6 +78,7 @@ export class VisualizerRenderer {
     now: number,
     sceneReady = true,
     gentleMotion = false,
+    scenePlaying = true,
   ) {
     const start = performance.now();
     const c = this.context,
@@ -82,16 +88,26 @@ export class VisualizerRenderer {
     c.fillStyle = this.background;
     c.fillRect(0, 0, w, h);
     if (!sceneReady) {
+      this.presence = 0;
       this.energy = 0;
       this.values.fill(0);
       this.peaks.fill(0);
       this.waveform.fill(0);
       return;
     }
+    this.presence = scenePlaying
+      ? Math.min(1, this.presence + dt / 0.18)
+      : Math.max(0, this.presence - dt / (gentleMotion ? 0.5 : 0.36));
+    const settle = this.presence * this.presence * (3 - 2 * this.presence);
+    if (!this.presence) {
+      this.energy = 0;
+      this.values.fill(0);
+      this.peaks.fill(0);
+    }
     const motion = gentleMotion ? 0.2 : 1;
     const a = animate ? 1 - Math.exp(-dt * (gentleMotion ? 6 : 14)) : 1;
     this.energy += ((animate ? f.rms : 0) - this.energy) * a;
-    if (animate && this.energy > 0.0001)
+    if (animate && scenePlaying && this.energy > 0.0001)
       this.phase += dt * Math.min(1.6, 0.1 + this.energy * 3) * motion;
     for (let i = 0; i < 64; i++) {
       const target = animate ? (f.spectrum[i] ?? 0) : 0;
@@ -123,18 +139,19 @@ export class VisualizerRenderer {
       c.stroke();
       for (let i = 0; i < 64; i++) {
         const x = w * 0.08 + i * bw,
-          bar = Math.max(2, this.values[i] * h * 0.48);
+          bar = Math.max(2, this.values[i] * h * 0.48) * settle;
         c.fillStyle = this.gradient!;
         c.fillRect(x, baseline - bar, Math.max(1, bw - gap), bar);
         c.fillStyle = this.gradient!;
         c.fillRect(
           x,
-          baseline - this.peaks[i] * h * 0.48 - 5,
+          baseline - (this.peaks[i] * h * 0.48 + 5) * settle,
           Math.max(1, bw - gap),
-          Math.max(1, h * 0.002),
+          Math.max(1, h * 0.002) * settle,
         );
       }
     } else if (mode === "geometry") {
+      if (!settle) return;
       // The original artwork projects both position axes from x, while y/z
       // determine rectangle dimensions. Keep that distinctive nested structure.
       const points = (this.trajectory ??= originTrajectory());
@@ -144,7 +161,10 @@ export class VisualizerRenderer {
       const cz = Math.cos(rotation),
         sz = Math.sin(rotation);
       const scale =
-        Math.min(w, h) * 1.25 * (0.007 + bass * this.energy * 0.003 * motion);
+        Math.min(w, h) *
+        settle *
+        1.25 *
+        (0.007 + bass * this.energy * 0.003 * motion);
       for (let i = 0; i < 60; i++) {
         // Ping-pong a finite deterministic orbit, avoiding a discontinuous wrap.
         const travel = (head + i) % 15998;
@@ -198,14 +218,16 @@ export class VisualizerRenderer {
             (0.065 + ribbon * 0.009) *
             (1 + this.energy * (1.6 + bass) * motion);
           const y =
-            0.4 +
-            ribbon * 0.045 +
+            0.5 +
+            (0.4 + ribbon * 0.045 - 0.5) * settle +
             amplitude *
+              settle *
               (0.68 * Math.sin(x * Math.PI * 2.15 - travel + offset) +
                 0.24 *
                   Math.sin(x * Math.PI * 4.4 + travel * 0.62 + offset * 1.4) +
                 0.08 * Math.cos(x * Math.PI * 7.1 - travel * 0.41)) +
             (i < 48 ? -1 : 1) *
+              settle *
               (0.007 +
                 0.012 * Math.sin(x * Math.PI + travel * 0.2) ** 2 +
                 mid * this.energy * 0.025 * motion);
@@ -221,7 +243,7 @@ export class VisualizerRenderer {
         c.fill();
         c.stroke();
       }
-      if (animate && this.energy > 0.0001)
+      if (animate && scenePlaying && this.energy > 0.0001)
         for (let i = 0; i < 12; i++) {
           const x = ((i / 12 + this.phase * 0.015) % 1) * w,
             y = h * (0.44 + 0.1 * Math.sin(i + this.phase));

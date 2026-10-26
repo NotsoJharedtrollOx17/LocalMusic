@@ -8,10 +8,11 @@ export function useVisualizer(
   playing: boolean,
   sceneReady: boolean,
   gentleMotion: boolean,
+  scenePlaying: boolean,
 ) {
   const canvas = useRef<HTMLCanvasElement>(null),
-    latest = useRef({ mode, playing, sceneReady, gentleMotion });
-  latest.current = { mode, playing, sceneReady, gentleMotion };
+    latest = useRef({ mode, playing, sceneReady, gentleMotion, scenePlaying });
+  latest.current = { mode, playing, sceneReady, gentleMotion, scenePlaying };
   const [error, setError] = useState(false),
     [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -84,12 +85,13 @@ export function useVisualizer(
         try {
           renderer.draw(
             latest.current.mode,
-            latest.current.playing ? frame : null,
+            latest.current.scenePlaying ? frame : null,
             dt || 1 / 60,
             true,
             now,
             latest.current.sceneReady,
             latest.current.gentleMotion,
+            latest.current.scenePlaying,
           );
         } catch {
           stop();
@@ -234,6 +236,6 @@ export function useVisualizer(
   }, [retry]);
   useEffect(() => {
     window.dispatchEvent(new Event("visualizer-state"));
-  }, [mode, playing, sceneReady, gentleMotion]);
+  }, [mode, playing, sceneReady, gentleMotion, scenePlaying]);
   return { canvas, error, retry: () => setRetry((n) => n + 1) };
 }

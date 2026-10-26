@@ -21,7 +21,13 @@ export default function VisualizerScene() {
     ),
     [idle, setIdle] = useState(false);
   const presentation = useVisualizerPresentation(player.playing);
-  const view = useVisualizer(mode, player.playing, presentation.ready, reduced),
+  const view = useVisualizer(
+      mode,
+      player.playing,
+      presentation.ready,
+      reduced,
+      presentation.running,
+    ),
     root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useFocusScope(root);
