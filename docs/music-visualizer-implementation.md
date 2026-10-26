@@ -1,6 +1,6 @@
 # Music visualizers: implementation and acceptance
 
-The archived [approved plan](music-visualizer-plan.md) defines the scope. This branch keeps version 0.8.0 and requires review before integration or release.
+The archived [approved plan](music-visualizer-plan.md) defines the scope. The reviewed feature ships in [v0.9.0](releases/v0.9.0.md).
 
 ## Ownership and data flow
 
