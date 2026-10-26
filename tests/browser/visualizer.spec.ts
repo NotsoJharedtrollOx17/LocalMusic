@@ -142,12 +142,22 @@ test("Geometry clears on pause and natural completion, and resumes after pause",
     });
   await expect.poll(pixels).toBeGreaterThan(0);
   await view.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect(view).toHaveAttribute("data-scene-visible", "false");
+  await expect(view.locator("canvas")).toHaveCSS("opacity", "0");
   await expect.poll(pixels).toBe(0);
   await page.emulateMedia({ colorScheme: "dark" });
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
   await view.getByRole("button", { name: "Geometry", exact: true }).click();
   await expect.poll(pixels).toBe(0);
   await view.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(view).toHaveAttribute("data-scene-visible", "true");
+  await expect(view.locator("canvas")).toHaveCSS("opacity", "1");
+  await expect.poll(pixels).toBeGreaterThan(0);
+  for (let i = 0; i < 2; i++) {
+    await view.getByRole("button", { name: "Pause", exact: true }).click();
+    await view.getByRole("button", { name: "Play", exact: true }).click();
+  }
+  await expect(view).toHaveAttribute("data-scene-visible", "true");
   await expect.poll(pixels).toBeGreaterThan(0);
   await view.getByRole("slider").focus();
   await page.keyboard.press("End");
@@ -260,60 +270,31 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
   await page.setViewportSize({ width: 320, height: 480 });
   const view = await open(page);
   await expect(
-    view.getByRole("button", { name: "Animate this session" }),
-  ).toBeVisible();
-  await expect
-    .poll(() =>
-      view
-        .locator("canvas")
-        .evaluate((c) =>
-          Array.from(
-            (c as HTMLCanvasElement).getContext("2d")!.getImageData(0, 0, 1, 1)
-              .data,
-          ).slice(0, 3),
-        ),
-    )
-    .toEqual([20, 22, 21]);
-  const animate = view.getByRole("button", { name: "Animate this session" });
+    view.getByRole("button", { name: /Animate this session/ }),
+  ).toHaveCount(0);
+  await expect(view).toHaveAttribute("data-motion", "gentle");
+  await expect(view).toHaveAttribute("data-scene-visible", "true");
+  await view.getByRole("button", { name: "Geometry", exact: true }).click();
+  const image = () =>
+    view
+      .locator("canvas")
+      .evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+  const initial = await image();
+  await expect.poll(image).not.toBe(initial);
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme });
-    await page.mouse.move(0, 0);
-    await expect
-      .poll(() =>
-        animate.evaluate((button) => {
-          const actual = getComputedStyle(button);
-          return { color: actual.color, background: actual.backgroundColor };
-        }),
-      )
-      .toEqual(
-        colorScheme === "light"
-          ? { color: "rgb(27, 27, 26)", background: "rgb(255, 253, 249)" }
-          : { color: "rgb(242, 240, 232)", background: "rgb(29, 32, 30)" },
-      );
-    await animate.hover();
-    await expect
-      .poll(() =>
-        animate.evaluate((button) => getComputedStyle(button).backgroundColor),
-      )
-      .toBe(colorScheme === "light" ? "rgb(241, 238, 231)" : "rgb(37, 41, 35)");
     expect(
       (await new AxeBuilder({ page }).include(".visualizer-view").analyze())
         .violations,
     ).toEqual([]);
-    await page.mouse.move(0, 0);
     await page.screenshot({
-      path: `artifacts/visualizer-animate-${colorScheme}.png`,
+      path: `artifacts/visualizer-auto-gentle-${colorScheme}.png`,
     });
   }
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
-  const result = await new AxeBuilder({ page })
-    .include(".visualizer-view")
-    .analyze();
-  expect(result.violations).toEqual([]);
   expect(
     await view.evaluate((node) => node.scrollWidth <= node.clientWidth),
   ).toBe(true);
-  await view.getByRole("button", { name: "Animate this session" }).click();
   await page.keyboard.press("Escape");
   await page.reload();
   await expect(page.locator(".visualizer-view")).toHaveCount(0);
@@ -328,5 +309,9 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("button", { name: "Animate this session" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.locator(".visualizer-view")).toHaveAttribute(
+    "data-motion",
+    "gentle",
+  );
 });

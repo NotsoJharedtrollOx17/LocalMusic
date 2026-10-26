@@ -6,11 +6,12 @@ import { VisualizerRenderer } from "./renderer";
 export function useVisualizer(
   mode: VisualizerMode,
   playing: boolean,
-  animate: boolean,
+  sceneReady: boolean,
+  gentleMotion: boolean,
 ) {
   const canvas = useRef<HTMLCanvasElement>(null),
-    latest = useRef({ mode, playing, animate });
-  latest.current = { mode, playing, animate };
+    latest = useRef({ mode, playing, sceneReady, gentleMotion });
+  latest.current = { mode, playing, sceneReady, gentleMotion };
   const [error, setError] = useState(false),
     [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -85,9 +86,10 @@ export function useVisualizer(
             latest.current.mode,
             latest.current.playing ? frame : null,
             dt || 1 / 60,
-            latest.current.animate,
+            true,
             now,
-            latest.current.playing,
+            latest.current.sceneReady,
+            latest.current.gentleMotion,
           );
         } catch {
           stop();
@@ -96,11 +98,10 @@ export function useVisualizer(
         }
         last = now;
       }
-      // Paused or Reduce Motion scenes need one draw, not a perpetual animation loop.
+      // Stop drawing once the scene has cleared or silent audio has settled.
       if (
-        latest.current.animate &&
-        ((latest.current.playing && (frame?.rms ?? 0) > 0.0001) ||
-          renderer.moving)
+        (latest.current.playing && (frame?.rms ?? 0) > 0.0001) ||
+        renderer.moving
       )
         raf = requestAnimationFrame(draw);
     };
@@ -121,12 +122,7 @@ export function useVisualizer(
           generation = next.generation;
           sequence = next.sequence;
           frame = next;
-          if (
-            !raf &&
-            latest.current.animate &&
-            latest.current.playing &&
-            next.rms > 0.0001
-          )
+          if (!raf && latest.current.playing && next.rms > 0.0001)
             raf = requestAnimationFrame(draw);
         } else if (!next) frame = null;
         updateWake();
@@ -238,6 +234,6 @@ export function useVisualizer(
   }, [retry]);
   useEffect(() => {
     window.dispatchEvent(new Event("visualizer-state"));
-  }, [mode, playing, animate]);
+  }, [mode, playing, sceneReady, gentleMotion]);
   return { canvas, error, retry: () => setRetry((n) => n + 1) };
 }

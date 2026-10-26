@@ -71,7 +71,8 @@ export class VisualizerRenderer {
     dt: number,
     animate: boolean,
     now: number,
-    playing = true,
+    sceneReady = true,
+    gentleMotion = false,
   ) {
     const start = performance.now();
     const c = this.context,
@@ -80,17 +81,18 @@ export class VisualizerRenderer {
       f = frame ?? empty;
     c.fillStyle = this.background;
     c.fillRect(0, 0, w, h);
-    if (mode === "geometry" && !playing) {
+    if (!sceneReady) {
       this.energy = 0;
       this.values.fill(0);
       this.peaks.fill(0);
       this.waveform.fill(0);
       return;
     }
-    const a = animate ? 1 - Math.exp(-dt * 14) : 1;
+    const motion = gentleMotion ? 0.2 : 1;
+    const a = animate ? 1 - Math.exp(-dt * (gentleMotion ? 6 : 14)) : 1;
     this.energy += ((animate ? f.rms : 0) - this.energy) * a;
     if (animate && this.energy > 0.0001)
-      this.phase += dt * Math.min(1.6, 0.1 + this.energy * 3);
+      this.phase += dt * Math.min(1.6, 0.1 + this.energy * 3) * motion;
     for (let i = 0; i < 64; i++) {
       const target = animate ? (f.spectrum[i] ?? 0) : 0;
       this.values[i] +=
@@ -138,11 +140,11 @@ export class VisualizerRenderer {
       const points = (this.trajectory ??= originTrajectory());
       const head = 160 + this.phase * 90;
       const rotation = this.phase * 0.2;
-      const cy = Math.cos(rotation * 0.7 + mid * this.energy * 0.15);
+      const cy = Math.cos(rotation * 0.7 + mid * this.energy * 0.15 * motion);
       const cz = Math.cos(rotation),
         sz = Math.sin(rotation);
       const scale =
-        Math.min(w, h) * 1.25 * (0.007 + bass * this.energy * 0.003);
+        Math.min(w, h) * 1.25 * (0.007 + bass * this.energy * 0.003 * motion);
       for (let i = 0; i < 60; i++) {
         // Ping-pong a finite deterministic orbit, avoiding a discontinuous wrap.
         const travel = (head + i) % 15998;
@@ -165,7 +167,7 @@ export class VisualizerRenderer {
           (this.dark ? "a6" : "85");
         c.fillStyle = this.colors[Math.min(4, Math.floor(i / 12))] + "04";
         c.lineWidth =
-          Math.max(0.75, w / 1400) * (1 + treble * this.energy * 0.5);
+          Math.max(0.75, w / 1400) * (1 + treble * this.energy * 0.5 * motion);
         c.beginPath();
         for (let corner = 0; corner < 4; corner++) {
           const px = origin + (corner === 1 || corner === 2 ? rw : 0);
@@ -194,7 +196,7 @@ export class VisualizerRenderer {
             x = point / 47;
           const amplitude =
             (0.065 + ribbon * 0.009) *
-            (1 + this.energy * 1.6 + bass * this.energy);
+            (1 + this.energy * (1.6 + bass) * motion);
           const y =
             0.4 +
             ribbon * 0.045 +
@@ -206,7 +208,7 @@ export class VisualizerRenderer {
             (i < 48 ? -1 : 1) *
               (0.007 +
                 0.012 * Math.sin(x * Math.PI + travel * 0.2) ** 2 +
-                mid * this.energy * 0.025);
+                mid * this.energy * 0.025 * motion);
           if (i) c.lineTo(x * w, y * h);
           else c.moveTo(x * w, y * h);
         }

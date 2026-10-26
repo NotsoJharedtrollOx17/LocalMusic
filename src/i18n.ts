@@ -6,7 +6,6 @@ export const en = {
   xmb: "XMB wave",
   visualizerError:
     "Visualization unavailable. Music playback is still available.",
-  animateVisualizer: "Animate this session",
 
   playerOptions: "Player options",
   albumSingular: "album",
@@ -257,7 +256,6 @@ export const es: typeof en = {
   xmb: "Onda XMB",
   visualizerError:
     "Visualización no disponible. Puedes seguir escuchando música.",
-  animateVisualizer: "Animar esta sesión",
 
   playerOptions: "Opciones del reproductor",
   albumSingular: "álbum",

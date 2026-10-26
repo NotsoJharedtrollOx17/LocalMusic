@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import { useVisualizer } from "../visualizer/useVisualizer";
+import { useVisualizerPresentation } from "../visualizer/useVisualizerPresentation";
 import { useFocusScope } from "../ux/useFocusScope";
 import { useBackLayer } from "../navigation";
 import { IconButton } from "../components";
@@ -18,10 +19,9 @@ export default function VisualizerScene() {
   const [reduced, setReduced] = useState(
       () => matchMedia("(prefers-reduced-motion: reduce)").matches,
     ),
-    [override, setOverride] = useState(false),
     [idle, setIdle] = useState(false);
-  const animate = !reduced || override,
-    view = useVisualizer(mode, player.playing, animate),
+  const presentation = useVisualizerPresentation(player.playing);
+  const view = useVisualizer(mode, player.playing, presentation.ready, reduced),
     root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useFocusScope(root);
@@ -29,14 +29,13 @@ export default function VisualizerScene() {
   const reveal = () => {
     setIdle(false);
     clearTimeout(timer.current);
-    if (player.playing && animate)
+    if (player.playing && !reduced)
       timer.current = setTimeout(() => setIdle(true), 3000);
   };
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => {
       setReduced(media.matches);
-      setOverride(false);
     };
     media.addEventListener("change", change);
     return () => media.removeEventListener("change", change);
@@ -44,7 +43,7 @@ export default function VisualizerScene() {
   useEffect(() => {
     reveal();
     return () => clearTimeout(timer.current);
-  }, [player.playing, animate]);
+  }, [player.playing, reduced]);
   const choose = (value: VisualizerMode) => {
     setMode(value);
     setSettings((s) => (s ? { ...s, visualizerMode: value } : s));
@@ -53,6 +52,8 @@ export default function VisualizerScene() {
     <div
       ref={root}
       className={`visualizer-view${idle && !view.error ? " controls-idle" : ""}`}
+      data-scene-visible={presentation.visible}
+      data-motion={reduced ? "gentle" : "full"}
       role="dialog"
       aria-modal="true"
       aria-label={t.visualizer}
@@ -96,14 +97,6 @@ export default function VisualizerScene() {
         </div>
       )}
       <footer className="visualizer-controls visualizer-footer">
-        {reduced && !override && (
-          <button
-            className="button secondary visualizer-animate"
-            onClick={() => setOverride(true)}
-          >
-            {t.animateVisualizer}
-          </button>
-        )}
         <h2>{current?.title ?? t.nowPlaying}</h2>
         <p>{current?.artist ?? t.unknownArtist}</p>
         <PlaybackProgress />

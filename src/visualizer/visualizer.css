@@ -19,6 +19,11 @@
   height: 100%;
   z-index: -1;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.visualizer-view[data-scene-visible="true"] canvas {
+  opacity: 1;
 }
 .visualizer-controls {
   transition: opacity 0.3s;
@@ -80,15 +85,6 @@
   margin: 16px auto 0;
   gap: clamp(16px, 4vw, 36px);
 }
-.visualizer-view .button.visualizer-animate {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  margin-bottom: 16px;
-}
-.visualizer-view .button.visualizer-animate:hover {
-  background: var(--hover);
-}
 .visualizer-error {
   text-align: center;
   align-self: center;
@@ -121,7 +117,8 @@
   }
 }
 @media (max-height: 480px) {
-  .visualizer-controls {
+  .visualizer-controls,
+  .visualizer-view canvas {
     padding: 8px 16px;
   }
   .visualizer-footer {
