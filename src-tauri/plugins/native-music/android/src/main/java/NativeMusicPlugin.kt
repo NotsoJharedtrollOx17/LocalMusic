@@ -18,6 +18,7 @@ import org.json.JSONObject
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+@InvokeArg class VisualizerArgs {var id:String?=null}
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
 @InvokeArg class ArtworkArgs { var uri:String?=null }
@@ -41,6 +42,23 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
   })
  }
  override fun onConfigurationChanged(newConfig:android.content.res.Configuration){musicWebView?.settings?.textZoom=(newConfig.fontScale*100).toInt()}
+ private val visualHandler=android.os.Handler(android.os.Looper.getMainLooper())
+ private val visualLease=object:Runnable {override fun run(){val service=PlaybackService.instance;val awake=service?.sound?.visualizer?.running()==true&&service.player.isPlaying&&!activity.isFinishing
+  if(awake)activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)else activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+  if(service?.sound?.visualizer?.running()==true)visualHandler.postDelayed(this,250)
+ }}
+ override fun onPause(activity:androidx.appcompat.app.AppCompatActivity){super.onPause(activity);PlaybackService.instance?.sound?.visualizer?.stopAll();visualHandler.removeCallbacks(visualLease);activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)}
+ @Command fun startVisualizer(invoke:Invoke){withService(invoke){service->
+  service.sound.visualizer.clock(service.player.currentPosition.coerceAtLeast(0),service.player.isPlaying)
+  val id=service.sound.visualizer.start();visualHandler.removeCallbacks(visualLease);visualHandler.post(visualLease);invoke.resolve(JSObject().put("id",id).put("capabilities",JSONObject().put("fftSize",2048).put("bands",64).put("waveformPoints",256).put("maxUpdatesPerSecond",30).put("postEffects",true)))
+ }}
+ @Command fun readVisualizer(invoke:Invoke){val args=invoke.parseArgs(VisualizerArgs::class.java);withService(invoke){service->
+  service.sound.visualizer.clock(service.player.currentPosition.coerceAtLeast(0),service.player.isPlaying)
+  val frame=service.sound.visualizer.read(args.id?:"");invoke.resolve(JSObject().put("frame",frame?.json()?:JSONObject.NULL))
+ }}
+ @Command fun stopVisualizer(invoke:Invoke){val args=invoke.parseArgs(VisualizerArgs::class.java);activity.runOnUiThread{
+  PlaybackService.instance?.sound?.visualizer?.stop(args.id?:"");visualHandler.removeCallbacks(visualLease);visualHandler.post(visualLease);invoke.resolve(JSObject())
+ }}
  private val worker=Executors.newSingleThreadExecutor()
  private val cancelled=AtomicBoolean(false)
  private var controllerFuture:com.google.common.util.concurrent.ListenableFuture<MediaController>?=null

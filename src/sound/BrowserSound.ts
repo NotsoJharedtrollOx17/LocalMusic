@@ -5,6 +5,11 @@ import type { SoundConfig, SoundState, SoundAction } from "./types";
 
 /** Separate preview engine; library audio remains the browser journal authority. */
 export class BrowserSound {
+  visualizerOutput() {
+    return this.context && this.worklet
+      ? { context: this.context, node: this.worklet }
+      : undefined;
+  }
   private config = defaultSound();
   private ready: Promise<void>;
   private context?: AudioContext;

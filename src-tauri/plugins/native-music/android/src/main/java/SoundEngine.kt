@@ -8,6 +8,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class SoundEngine(private val context: Context) {
+    val visualizer=MusicVisualizer()
     private val prefs = context.getSharedPreferences("playback", Context.MODE_PRIVATE)
     @Volatile
     private var config =

@@ -1,11 +1,14 @@
 import { SoundProcessor, type Coefficients } from "./dsp";
+import { VisualizerCapture } from "../visualizer/capture.worklet";
 declare const sampleRate: number;
+declare const currentTime: number;
 declare function registerProcessor(name: string, processor: unknown): void;
 declare class AudioWorkletProcessor {
   port: MessagePort;
 }
 class MusicSoundProcessor extends AudioWorkletProcessor {
   private dsp = new SoundProcessor(sampleRate);
+  private capture = new VisualizerCapture();
   constructor() {
     super();
     this.port.onmessage = ({
@@ -16,9 +19,23 @@ class MusicSoundProcessor extends AudioWorkletProcessor {
         gain: number;
         bypass: boolean;
         reset?: boolean;
+        visualizerPort?: MessagePort;
+        visualizerUntil?: number;
+        visualizerOffset?: number;
+        visualizerStop?: boolean;
       };
     }) => {
-      if (data.reset) this.dsp.reset();
+      if (
+        data.visualizerPort ||
+        data.visualizerUntil !== undefined ||
+        data.visualizerStop
+      ) {
+        try {
+          this.capture.configure(data, sampleRate);
+        } catch {
+          this.capture.configure({ visualizerStop: true }, sampleRate);
+        }
+      } else if (data.reset) this.dsp.reset();
       else this.dsp.configure(data.bank, data.gain, data.bypass);
     };
   }
@@ -32,6 +49,11 @@ class MusicSoundProcessor extends AudioWorkletProcessor {
       );
       const result = this.dsp.process(frame);
       for (let ch = 0; ch < output.length; ch++) output[ch][i] = result[ch];
+    }
+    try {
+      this.capture.capture(output, currentTime, sampleRate);
+    } catch {
+      this.capture.configure({ visualizerStop: true }, sampleRate);
     }
     return true;
   }

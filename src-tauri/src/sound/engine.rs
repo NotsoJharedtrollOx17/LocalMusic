@@ -7,6 +7,8 @@ use std::sync::{
     Mutex,
 };
 pub struct Engine {
+    #[cfg(not(target_os = "android"))]
+    pub visualizer: std::sync::Arc<crate::visualizer::Visualizer>,
     pub config: Mutex<Config>,
     pub prepared: Mutex<Prepared>,
     pub rate: AtomicU32,
@@ -83,6 +85,8 @@ impl Engine {
             generation: 1,
         };
         Self {
+            #[cfg(not(target_os = "android"))]
+            visualizer: crate::visualizer::Visualizer::new(),
             config: Mutex::new(config),
             prepared: Mutex::new(p),
             rate: AtomicU32::new(48000),

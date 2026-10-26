@@ -66,6 +66,7 @@ export interface RecapBucket {
   observed: boolean;
 }
 export interface Settings {
+  visualizerMode?: import("./visualizer/types").VisualizerMode;
   recapPeriod?: RecapKind;
   language: "en" | "es";
   theme: "system" | "light" | "dark";
@@ -136,6 +137,11 @@ export interface SearchResults {
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  startVisualizer(): Promise<import("./visualizer/types").VisualizerSession>;
+  readVisualizer(
+    id: string,
+  ): Promise<import("./visualizer/types").VisualizerFrame | null>;
+  stopVisualizer(id: string): Promise<void>;
   searchCatalog(query: string, limit?: number): Promise<SearchResults>;
   setLibraryVisibility(ids: string[], visible: boolean): Promise<void>;
   shareAudio(ids: string[]): Promise<ShareOutcome>;

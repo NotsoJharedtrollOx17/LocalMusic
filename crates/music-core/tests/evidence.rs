@@ -30,6 +30,7 @@ fn settings() -> Settings {
         history_enabled_since: "2025-01-01T00:00:00Z".into(),
         privacy_revision: 0,
         recap_period: RecapKind::Year,
+        visualizer_mode: None,
     }
 }
 #[test]

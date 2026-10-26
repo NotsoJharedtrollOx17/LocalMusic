@@ -2,6 +2,7 @@ import { normalizeRecap } from "../recap/periods";
 import { automaticPlaylists } from "../automaticPlaylists";
 import { ensureImportOrder, putImportedTrack } from "./browserImportOrder";
 import { BrowserSound } from "../sound/BrowserSound";
+import { BrowserVisualizer } from "../visualizer/BrowserVisualizer";
 import type {
   MusicApi,
   Track,
@@ -46,6 +47,18 @@ export class BrowserMusic implements MusicApi {
   private db: Promise<IDBDatabase>;
   private audio = new Audio();
   private sound: BrowserSound;
+  private visualizer?: BrowserVisualizer;
+  async startVisualizer() {
+    await this.sound.activate();
+    this.visualizer ??= new BrowserVisualizer(this.audio, this.sound);
+    return this.visualizer.start();
+  }
+  async readVisualizer(id: string) {
+    return this.visualizer?.read(id) ?? null;
+  }
+  async stopVisualizer(id: string) {
+    this.visualizer?.stop(id);
+  }
   private state = initialPlayback();
   private listeners = new Set<(s: PlaybackSnapshot) => void>();
   private urls = new Map<string, string>();

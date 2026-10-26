@@ -1,4 +1,13 @@
 export const en = {
+  visualizer: "Visualizer",
+  visualizerMode: "Visual style",
+  spectrum: "Spectrum",
+  geometry: "Geometry",
+  xmb: "XMB wave",
+  visualizerError:
+    "Visualization unavailable. Music playback is still available.",
+  animateVisualizer: "Animate this session",
+
   playerOptions: "Player options",
   albumSingular: "album",
   artistSingular: "artist",
@@ -241,6 +250,15 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  visualizer: "Visualizador",
+  visualizerMode: "Estilo visual",
+  spectrum: "Espectro",
+  geometry: "Geometría",
+  xmb: "Onda XMB",
+  visualizerError:
+    "Visualización no disponible. Puedes seguir escuchando música.",
+  animateVisualizer: "Animar esta sesión",
+
   playerOptions: "Opciones del reproductor",
   albumSingular: "álbum",
   artistSingular: "artista",

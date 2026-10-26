@@ -116,6 +116,11 @@ export default function TrackActionMenu() {
                 action: () => void openEqualizer(),
               },
               {
+                id: "visualizer",
+                label: t.visualizer,
+                action: () => setModal("visualizer"),
+              },
+              {
                 id: "privacy",
                 label: t.private,
                 checked: privacy.checked,

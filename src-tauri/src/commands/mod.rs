@@ -8,3 +8,5 @@ pub(crate) mod settings;
 pub(crate) mod sharing;
 pub(crate) mod sound;
 pub(crate) mod window;
+
+pub(crate) mod visualizer;

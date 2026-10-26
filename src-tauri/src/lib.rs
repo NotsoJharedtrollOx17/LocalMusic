@@ -7,6 +7,8 @@ mod commands;
 mod playback;
 mod sound;
 mod state;
+#[cfg(not(target_os = "android"))]
+mod visualizer;
 mod webview_policy;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -34,6 +36,9 @@ pub fn run() {
             commands::sound::sound_capabilities,
             commands::sound::set_sound,
             commands::sound::sound_action,
+            commands::visualizer::start_visualizer,
+            commands::visualizer::read_visualizer,
+            commands::visualizer::stop_visualizer,
             commands::window::show_main_window,
             commands::catalog::list_tracks,
             commands::catalog::list_groups,

@@ -74,6 +74,10 @@ pub(crate) fn save_settings(state: State<MusicState>, settings: Settings) -> Res
         .map_err(|_| "Invalid time zone")?;
     if !["en", "es"].contains(&settings.language.as_str())
         || !["light", "dark", "system"].contains(&settings.theme.as_str())
+        || settings
+            .visualizer_mode
+            .as_ref()
+            .is_some_and(|m| !["spectrum", "geometry", "xmb"].contains(&m.as_str()))
     {
         return Err("Invalid settings".into());
     }

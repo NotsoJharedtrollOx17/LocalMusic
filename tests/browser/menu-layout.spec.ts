@@ -178,6 +178,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Go to album",
               "Go to artist",
               "Equalizer",
+              "Visualizer",
               "Exclude from recap",
               "Remove from Library",
             ]
@@ -186,6 +187,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Ir al álbum",
               "Ir al artista",
               "Ecualizador",
+              "Visualizador",
               "Excluir del resumen",
               "Quitar de la biblioteca",
             ],

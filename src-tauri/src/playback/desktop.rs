@@ -58,16 +58,30 @@ pub fn launch(
             p.snapshot = s;
         }
         p.publish();
+        let mut maintenance = Instant::now();
         loop {
             match rx.recv_timeout(Duration::from_millis(250)) {
                 Ok(r) => {
-                    let result = p.command(&r.op, r.payload);
-                    if let Err(e) = &result {
-                        p.snapshot.error = Some(e.clone());
+                    if r.op == "visualizer-clock" {
+                        let position = p
+                            .sink
+                            .as_ref()
+                            .map(|s| s.get_pos().as_millis() as u64)
+                            .unwrap_or(p.snapshot.position_ms);
+                        p.sound.visualizer.clock(position, p.snapshot.playing);
+                        let _ = r.reply.send(Ok(()));
+                        if maintenance.elapsed() < Duration::from_millis(250) {
+                            continue;
+                        }
+                    } else {
+                        let result = p.command(&r.op, r.payload);
+                        if let Err(e) = &result {
+                            p.snapshot.error = Some(e.clone());
+                        }
+                        let _ = r.reply.send(result);
+                        p.persist();
+                        p.publish();
                     }
-                    let _ = r.reply.send(result);
-                    p.persist();
-                    p.publish();
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
                 Err(_) => {
@@ -75,6 +89,7 @@ pub fn launch(
                     break;
                 }
             }
+            maintenance = Instant::now();
             p.check_sound_interruptions();
             if p.snapshot.playing {
                 if p.sink.as_ref().is_some_and(|s| s.empty()) {
@@ -147,6 +162,13 @@ impl DesktopPlayer {
         }
     }
     fn publish(&self) {
+        self.sound.visualizer.clock(
+            self.sink
+                .as_ref()
+                .map(|s| s.get_pos().as_millis() as u64)
+                .unwrap_or(self.snapshot.position_ms),
+            self.snapshot.playing,
+        );
         self.sound
             .playing
             .store(self.snapshot.playing, Ordering::Relaxed);

@@ -56,6 +56,8 @@ pub struct Interval {
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     #[serde(default)]
+    pub visualizer_mode: Option<String>,
+    #[serde(default)]
     pub recap_period: RecapKind,
     pub language: String,
     pub theme: String,
@@ -67,6 +69,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            visualizer_mode: None,
             recap_period: RecapKind::Year,
             language: "en".into(),
             theme: "system".into(),

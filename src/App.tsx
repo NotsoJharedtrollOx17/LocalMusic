@@ -10,6 +10,7 @@ import TrackActionMenu from "./app/TrackActionMenu";
 import AppContextMenu from "./app/AppContextMenu";
 import RemoveLibraryDialog from "./app/RemoveLibraryDialog";
 import AddPlaylistDialog from "./app/AddPlaylistDialog";
+import VisualizerView from "./app/VisualizerView";
 import SoundDialog from "./app/SoundDialog";
 import SettingsDialog from "./app/SettingsDialog";
 import PlayerDialog from "./app/PlayerDialog";
@@ -38,6 +39,7 @@ export default function App({
         <RemoveLibraryDialog />
         <AddPlaylistDialog />
         <SoundDialog />
+        <VisualizerView />
         <SettingsDialog />
         <PlayerDialog />
         <ManualPlaylistDialog />

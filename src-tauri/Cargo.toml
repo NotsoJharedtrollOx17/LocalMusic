@@ -34,7 +34,7 @@ tauri-plugin-native-music = { path = "plugins/native-music" }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
-windows = { version = "0.62.2", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_Media_Audio", "Win32_System_Com", "Win32_Foundation"] }
+windows = { version = "0.62.2", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_Media_Audio", "Win32_System_Com", "Win32_Foundation", "Win32_System_Power"] }
 
 [features]
 default = ["custom-protocol"]

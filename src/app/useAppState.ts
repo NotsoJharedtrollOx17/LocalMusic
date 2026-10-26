@@ -97,6 +97,7 @@ export function useAppState(initialSettings?: Settings) {
       | "story"
       | "remove"
       | "add"
+      | "visualizer"
       | "equalizer"
       | null
     >(null),

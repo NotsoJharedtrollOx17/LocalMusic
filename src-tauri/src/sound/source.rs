@@ -14,6 +14,8 @@ pub struct SoundSource<S: Source> {
     rate: u32,
     generation: u64,
     blocks: usize,
+    visual_epoch: u64,
+    position: f64,
 }
 impl<S: Source> SoundSource<S> {
     pub fn new(inner: S, engine: Arc<Engine>) -> Self {
@@ -23,7 +25,10 @@ impl<S: Source> SoundSource<S> {
         engine.channels.store(channels, Ordering::Relaxed);
         engine.prepare();
         let p = engine.prepared.lock().unwrap().clone();
+        let visual_epoch = engine.visualizer.reset(rate);
         Self {
+            visual_epoch,
+            position: 0.,
             inner,
             engine,
             dsp: Processor::new(&p, rate, channels),
@@ -57,6 +62,10 @@ impl<S: Source> Iterator for SoundSource<S> {
             }
             self.blocks += 1;
             self.dsp.process(&mut self.frame);
+            self.position += 1000. / self.rate as f64;
+            self.engine
+                .visualizer
+                .capture(self.visual_epoch, &self.frame, self.position);
             self.index = 0;
         }
         let x = self.frame[self.index] as f32;
@@ -82,6 +91,8 @@ impl<S: Source> Source for SoundSource<S> {
     fn try_seek(&mut self, pos: Duration) -> Result<(), SeekError> {
         self.inner.try_seek(pos)?;
         self.dsp.reset();
+        self.position = pos.as_secs_f64() * 1000.;
+        self.visual_epoch = self.engine.visualizer.reset(self.rate);
         self.index = self.channels;
         Ok(())
     }
@@ -90,6 +101,33 @@ impl<S: Source> Source for SoundSource<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn analysis_is_read_only_after_eq_and_limiting() {
+        let render = |enabled: bool| {
+            let mut config = super::super::model::Config::default();
+            config.gains[5] = 10.;
+            let engine = Arc::new(Engine::new(config));
+            let input = rodio::buffer::SamplesBuffer::new(
+                ChannelCount::new(6).unwrap(),
+                SampleRate::new(48000).unwrap(),
+                (0..48000)
+                    .map(|i| ((i / 6) as f32 * 0.13).sin() * 0.8)
+                    .collect::<Vec<_>>(),
+            );
+            let source = SoundSource::new(input, engine.clone());
+            let session = if enabled {
+                Some(engine.visualizer.start())
+            } else {
+                None
+            };
+            let output = source.collect::<Vec<_>>();
+            if let Some(id) = session {
+                engine.visualizer.stop(&id);
+            }
+            output
+        };
+        assert_eq!(render(false), render(true));
+    }
     #[test]
     fn mono_is_promoted_without_changing_duration_or_seek() {
         let input = rodio::buffer::SamplesBuffer::new(

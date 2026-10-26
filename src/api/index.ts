@@ -16,6 +16,20 @@ export const native = isTauri();
 const cmd = <T>(name: string, args?: Record<string, unknown>) =>
   invoke<T>(name, args);
 class NativeMusic implements MusicApi {
+  startVisualizer() {
+    return cmd<import("../visualizer/types").VisualizerSession>(
+      "start_visualizer",
+    );
+  }
+  readVisualizer(id: string) {
+    return cmd<import("../visualizer/types").VisualizerFrame | null>(
+      "read_visualizer",
+      { id },
+    );
+  }
+  stopVisualizer(id: string) {
+    return cmd<void>("stop_visualizer", { id });
+  }
   private playbackUpdates = new PlaybackUpdates();
   searchCatalog(query: string, limit = 30) {
     return cmd<import("../types").SearchResults>("search_catalog", {
