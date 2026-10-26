@@ -118,6 +118,56 @@ test("real post-EQ analysis, modes, seek, pause, blur and focus return", async (
   ).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test("frequency colors and every scene follow live light/dark theme changes without restarting capture", async ({
+  page,
+}) => {
+  const view = await open(page);
+  for (const theme of ["light", "dark"]) {
+    await page.emulateMedia({ colorScheme: theme as "light" | "dark" });
+    for (const name of ["Spectrum", "Geometry", "XMB wave"]) {
+      await view.getByRole("button", { name, exact: true }).click();
+      await expect
+        .poll(() =>
+          view.locator("canvas").evaluate((node) => {
+            const c = node as HTMLCanvasElement;
+            return Array.from(
+              c.getContext("2d")!.getImageData(0, 0, 1, 1).data,
+            ).slice(0, 3);
+          }),
+        )
+        .toEqual(theme === "light" ? [250, 248, 244] : [20, 22, 21]);
+      if (name === "Spectrum") {
+        const colors = await view.locator("canvas").evaluate((node) => {
+          const c = node as HTMLCanvasElement,
+            ctx = c.getContext("2d")!;
+          const sample = (band: number) =>
+            Array.from(
+              ctx.getImageData(
+                Math.floor(c.width * (0.08 + ((band + 0.25) * 0.84) / 64)),
+                Math.floor(c.height * 0.76 - 1),
+                1,
+                1,
+              ).data,
+            );
+          return [sample(0), sample(63)];
+        });
+        expect(colors[0][0]).toBeGreaterThan(colors[0][2]);
+        expect(colors[1][2]).toBeGreaterThan(colors[1][0]);
+      }
+      await page.screenshot({
+        path: `artifacts/visualizer-refined-${theme}-${name.split(" ")[0]}.png`,
+      });
+      expect(
+        (await new AxeBuilder({ page }).include(".visualizer-view").analyze())
+          .violations,
+      ).toEqual([]);
+    }
+  }
+  expect(await page.evaluate(() => (window as any).__visualTest.created)).toBe(
+    1,
+  );
+});
 test("worker failure retries, hidden view stops and resume starts a fresh generation", async ({
   page,
 }) => {
@@ -185,7 +235,7 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
           ).slice(0, 3),
         ),
     )
-    .toEqual([20, 22, 23]);
+    .toEqual([20, 22, 21]);
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
   const result = await new AxeBuilder({ page })
     .include(".visualizer-view")

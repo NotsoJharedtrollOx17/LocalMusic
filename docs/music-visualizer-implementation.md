@@ -4,11 +4,11 @@ The archived [approved plan](music-visualizer-plan.md) defines the scope. This b
 
 ## Ownership and data flow
 
-| Platform | Read-only tap | Analysis | Display transport |
-| --- | --- | --- | --- |
-| Windows | `SoundSource`, after EQ and linked limiter | Rust worker; atomic sample ring | Dedicated Tauri start/read/stop commands |
-| Android | `SoundAudioProcessor`, after final PCM16 conversion | Kotlin worker; atomic sample ring | Dedicated native plugin commands through Tauri |
-| Browser preview | Existing audio processor, after EQ and limiter | Web Worker | Three recycled stereo buffers through a direct MessageChannel |
+| Platform        | Read-only tap                                       | Analysis                          | Display transport                                             |
+| --------------- | --------------------------------------------------- | --------------------------------- | ------------------------------------------------------------- |
+| Windows         | `SoundSource`, after EQ and linked limiter          | Rust worker; atomic sample ring   | Dedicated Tauri start/read/stop commands                      |
+| Android         | `SoundAudioProcessor`, after final PCM16 conversion | Kotlin worker; atomic sample ring | Dedicated native plugin commands through Tauri                |
+| Browser preview | Existing audio processor, after EQ and limiter      | Web Worker                        | Three recycled stereo buffers through a direct MessageChannel |
 
 React owns the dedicated view, controls and lifecycle. Canvas 2D draws imperatively; analysis frames never enter React state. No microphone, system loopback, downloaded model, network endpoint, recording, export or new listening session is involved. Analysis failure affects the view only. The browser worklet guards visual transport errors separately from ordinary DSP.
 
@@ -30,7 +30,7 @@ Windows obtains `Player.get_pos()` through a read-only playback-worker request. 
 
 ## Scenes and lifecycle
 
-Spectrum is the first default. Geometry uses original mirrored paths; XMB uses the local prototype's traveling-wave mathematics in the app palette. Neither mode uses an independent decorative timer. Motion stops with silence; paused scenes settle. Surface bounds are DPR 1.5 and two million pixels, with a one-million-pixel fallback. Scenes are bounded to 64 bars, 512 geometry segments, or two 96-point ribbons plus twelve highlights. Gradients and analysis workspaces are reused.
+Spectrum is the first default, mapping orange bass to blue treble. Geometry adapts the Lorenz-driven rectangle mapping of Abraham Jhared Flores Azcona's _Origin of Symmetry_ (2022); XMB layers four traveling ribbons at different speeds and directions. All scenes and controls follow the app's light/dark/system theme. See [refinement notes and attribution](visualizer-refinements.md). Neither animated mode uses an independent decorative timer. Motion stops with silence; paused scenes settle. Surface bounds are DPR 1.5 and two million pixels, with a one-million-pixel fallback. Scenes are bounded to 64 bars, 60 four-corner rectangles, or four 96-point ribbons plus twelve highlights. The 8,000-point Lorenz trajectory is generated once per view on first Geometry use. Gradients and analysis workspaces are reused.
 
 Over a two-second window, expensive drawing or more than 5% missed frame opportunities lowers 60 fps to 30 fps, then reduces surface resolution. Recovery requires ten stable seconds. These are controls on workload, not a guarantee of physical-device performance.
 

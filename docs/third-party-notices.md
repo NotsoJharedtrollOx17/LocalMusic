@@ -23,3 +23,5 @@ No GPL/AGPL source from the guide's reference applications has been transplanted
 - TanStack Virtual: MIT.
 
 Portable Windows builds include LLVM libunwind; its distribution license is preserved in public/licenses/llvm-runtime.txt and copied beside the executable. WebView2Loader.dll comes from the Microsoft WebView2 SDK used by webview2-com-sys. Review Microsoft redistribution terms before public release packaging.
+
+Geometry visualizer adapts _Origin of Symmetry_ (2022), copyright Abraham Jhared Flores Azcona, under MIT. Full notice: [origin-of-symmetry.txt](../public/licenses/origin-of-symmetry.txt). The Canvas adaptation does not bundle p5.js.

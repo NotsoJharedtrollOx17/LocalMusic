@@ -2,8 +2,8 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #141617;
-  color: #fff9f2;
+  background: var(--paper);
+  color: var(--ink);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -29,7 +29,7 @@
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: start;
-  background: linear-gradient(#141617d9, transparent);
+  background: linear-gradient(var(--paper), transparent);
   gap: 8px;
 }
 .visualizer-view button {
@@ -38,7 +38,7 @@
   min-height: 44px;
 }
 .visualizer-view .icon-button:hover {
-  background: #ffffff18;
+  background: var(--hover);
 }
 .visualizer-modes {
   display: flex;
@@ -47,19 +47,19 @@
   gap: 4px;
 }
 .visualizer-modes button {
-  background: #141617b3;
-  border: 1px solid #ffffff30;
+  background: var(--surface);
+  border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 8px 14px;
 }
 .visualizer-modes button[aria-pressed="true"] {
-  background: #ff650d;
-  color: #141617;
-  border-color: #ff650d;
+  background: var(--accent);
+  color: #141615;
+  border-color: var(--accent);
 }
 .visualizer-footer {
   text-align: center;
-  background: linear-gradient(transparent, #141617ed 35%);
+  background: linear-gradient(transparent, var(--paper) 35%);
   padding-top: 60px;
 }
 .visualizer-footer h2 {
@@ -69,7 +69,7 @@
   overflow-wrap: anywhere;
 }
 .visualizer-footer p {
-  color: #cbc5bf;
+  color: var(--muted);
   margin: 0 0 20px;
 }
 .visualizer-footer .progress {
@@ -81,16 +81,16 @@
   gap: clamp(16px, 4vw, 36px);
 }
 .visualizer-footer .secondary {
-  background: #222;
-  color: #fff;
-  border-color: #6c6259;
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--rule);
   margin-bottom: 16px;
 }
 .visualizer-error {
   text-align: center;
   align-self: center;
   padding: 24px;
-  background: #141617ed;
+  background: var(--surface);
   border-radius: 12px;
   margin: 24px;
 }

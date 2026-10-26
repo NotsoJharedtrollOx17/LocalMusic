@@ -165,6 +165,11 @@ export function useVisualizer(
       else void start();
     };
     const redraw = () => {
+      const theme = document.documentElement.dataset.theme;
+      renderer.setTheme(
+        theme === "dark" ||
+          ((theme === "system" || !theme) && colorScheme.matches),
+      );
       renderer.resize();
       forceDraw = true;
       cancelAnimationFrame(raf);
@@ -177,6 +182,14 @@ export function useVisualizer(
       return;
     }
     const observer = new ResizeObserver(redraw);
+    const colorScheme = matchMedia("(prefers-color-scheme: dark)");
+    const themeObserver = new MutationObserver(redraw);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    colorScheme.addEventListener("change", redraw);
+    redraw();
     observer.observe(canvas.current!);
     document.addEventListener("visibilitychange", visibility);
     // State updates are signaled without tearing down the analysis session.
@@ -215,6 +228,8 @@ export function useVisualizer(
       disposed = true;
       stop();
       observer.disconnect();
+      themeObserver.disconnect();
+      colorScheme.removeEventListener("change", redraw);
       unlisten.forEach((off) => off());
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("visualizer-state", redraw);
