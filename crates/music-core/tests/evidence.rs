@@ -31,6 +31,7 @@ fn settings() -> Settings {
         privacy_revision: 0,
         recap_period: RecapKind::Year,
         visualizer_mode: None,
+        playlist_blend: None,
     }
 }
 #[test]
@@ -192,6 +193,8 @@ fn search_is_paged_and_treats_input_as_text() {
 #[test]
 fn excluded_artist_and_budget_are_hard_constraints() {
     let req = PlaylistRequest {
+        blend: None,
+        seed: None,
         title: "Mix".into(),
         target_count: None,
         target_minutes: Some(1),

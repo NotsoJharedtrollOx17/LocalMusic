@@ -56,6 +56,8 @@ pub struct Interval {
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     #[serde(default)]
+    pub playlist_blend: Option<String>,
+    #[serde(default)]
     pub visualizer_mode: Option<String>,
     #[serde(default)]
     pub recap_period: RecapKind,
@@ -69,6 +71,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            playlist_blend: None,
             visualizer_mode: None,
             recap_period: RecapKind::Year,
             language: "en".into(),
@@ -90,6 +93,10 @@ pub struct Playlist {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistRequest {
+    #[serde(default)]
+    pub blend: Option<String>,
+    #[serde(default)]
+    pub seed: Option<u32>,
     pub title: String,
     pub target_count: Option<usize>,
     pub target_minutes: Option<u64>,

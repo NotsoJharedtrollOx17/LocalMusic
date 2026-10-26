@@ -20,7 +20,9 @@ CREATE INDEX IF NOT EXISTS idx_sessions_start ON sessions(started_utc);
 CREATE INDEX IF NOT EXISTS idx_intervals_start ON intervals(start_utc);
 CREATE INDEX IF NOT EXISTS idx_sources_track ON track_sources(track_id);
 CREATE TABLE IF NOT EXISTS hidden_tracks(track_id TEXT PRIMARY KEY REFERENCES tracks(id));
-PRAGMA user_version=2;
+CREATE TABLE IF NOT EXISTS suggestion_less(track_id TEXT PRIMARY KEY REFERENCES tracks(id));
+CREATE TABLE IF NOT EXISTS acoustic_features(track_id TEXT PRIMARY KEY REFERENCES tracks(id),data TEXT NOT NULL);
+PRAGMA user_version=3;
 "#;
 pub type Result<T> = std::result::Result<T, String>;
 impl Store {

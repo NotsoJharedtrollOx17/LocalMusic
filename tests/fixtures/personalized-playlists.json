@@ -1,0 +1,477 @@
+{
+  "now": "2026-10-26T12:00:00Z",
+  "zone": "UTC",
+  "tracks": [
+    {
+      "id": "t00",
+      "title": "Song 0",
+      "artist": "A",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/0",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t01",
+      "title": "Song 1",
+      "artist": "B",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/1",
+      "favorite": true,
+      "available": true
+    },
+    {
+      "id": "t02",
+      "title": "Song 2",
+      "artist": "C",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/2",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t03",
+      "title": "Song 3",
+      "artist": "D",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/3",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t04",
+      "title": "Song 4",
+      "artist": "",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/4",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t05",
+      "title": "Song 5",
+      "artist": "",
+      "album": "Album",
+      "genre": "Rock",
+      "releaseYear": 2000,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/5",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t06",
+      "title": "Song 6",
+      "artist": "E",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/6",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t07",
+      "title": "Song 7",
+      "artist": "F",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/7",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t08",
+      "title": "Song 8",
+      "artist": "G",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/8",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t09",
+      "title": "Song 9",
+      "artist": "H",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/9",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t10",
+      "title": "Song 10",
+      "artist": "I",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/10",
+      "favorite": false,
+      "available": true
+    },
+    {
+      "id": "t11",
+      "title": "Song 11",
+      "artist": "J",
+      "album": "Album",
+      "genre": "Electronic",
+      "releaseYear": 2020,
+      "durationMs": 60000,
+      "sourceUri": "/fixture/11",
+      "favorite": false,
+      "available": true
+    }
+  ],
+  "sessions": [
+    {
+      "id": "s0",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s1",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s2",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s3",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s4",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s5",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s6",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "s7",
+      "trackId": "t00",
+      "startedAtUtc": "2026-10-25T12:00:00Z",
+      "playedMs": 60000,
+      "excluded": false
+    },
+    {
+      "id": "private",
+      "trackId": "t06",
+      "startedAtUtc": "2026-10-26T11:00:00Z",
+      "playedMs": 90000,
+      "excluded": true
+    },
+    {
+      "id": "short",
+      "trackId": "t07",
+      "startedAtUtc": "2026-10-26T11:00:00Z",
+      "playedMs": 1000,
+      "excluded": false
+    }
+  ],
+  "data": {
+    "less": [],
+    "features": {
+      "t00": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t01": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t02": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t03": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t04": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t05": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t06": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t07": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t08": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t09": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t10": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      },
+      "t11": {
+        "version": 1,
+        "fingerprint": "fixture",
+        "bands": [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 0, 0, 0, 0, 0, 0
+        ],
+        "seconds": 8
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "familiar",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "familiar"
+      },
+      "source": "history",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t04", "t05", "t03", "t01"]
+    },
+    {
+      "name": "balanced",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "balanced"
+      },
+      "source": "history",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t04", "t05", "t03", "t01"]
+    },
+    {
+      "name": "explore",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "explore"
+      },
+      "source": "history",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t04", "t05", "t03", "t01"]
+    },
+    {
+      "name": "soft-feedback",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "balanced"
+      },
+      "less": ["t00"],
+      "source": "favorites",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t04", "t01", "t05", "t03"]
+    },
+    {
+      "name": "favorites",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "balanced"
+      },
+      "sessions": [],
+      "source": "favorites",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t04", "t01", "t05", "t03"]
+    },
+    {
+      "name": "discovery",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "explore"
+      },
+      "sessions": [],
+      "favorites": false,
+      "source": "discovery",
+      "count": 6,
+      "expectedIds": ["t00", "t08", "t10", "t04", "t05", "t03"]
+    },
+    {
+      "name": "duration",
+      "request": {
+        "title": "Fixture",
+        "genre": "",
+        "includeArtist": "",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "balanced",
+        "targetMinutes": 3
+      },
+      "source": "history",
+      "count": 3,
+      "expectedIds": ["t00", "t08", "t04"]
+    },
+    {
+      "name": "hard-filter-shortage",
+      "request": {
+        "title": "Fixture",
+        "targetCount": 6,
+        "genre": "",
+        "includeArtist": "A",
+        "excludeArtist": "",
+        "preferFavorites": false,
+        "avoidHeardToday": false,
+        "seed": 314159,
+        "blend": "balanced"
+      },
+      "source": "history",
+      "count": 1,
+      "expectedIds": ["t00"]
+    }
+  ]
+}
