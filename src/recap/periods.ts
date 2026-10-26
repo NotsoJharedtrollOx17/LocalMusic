@@ -1,11 +1,5 @@
-import type {
-  Recap,
-  RecapKind,
-  RecapPeriod,
-  RecapRequest,
-  Settings,
-} from "../types";
-import { addDays, calendarDate, dateBoundary, localDate } from "./calendar";
+import type { Recap, RecapPeriod, RecapRequest } from "../types";
+import { addDays, calendarDate, dateBoundary } from "./calendar";
 export { addDays, dateBoundary, localDate } from "./calendar";
 export function periodFor(request: RecapRequest): RecapPeriod {
   const d = calendarDate(request.anchorDate);
@@ -42,23 +36,21 @@ export function bucketDates(p: RecapPeriod): string[] {
   }
   return dates;
 }
-export function periodOptions(
-  kind: RecapKind,
-  s: Settings,
-  now = new Date(),
-): RecapPeriod[] {
-  const oldest = periodFor({
-    kind,
-    anchorDate: localDate(new Date(s.historyEnabledSince), s.timeZone),
-  }).startDate;
-  let p = periodFor({ kind, anchorDate: localDate(now, s.timeZone) });
-  const out: RecapPeriod[] = [];
-  while (true) {
-    out.push(p);
-    if (p.startDate <= oldest) break;
-    p = periodFor({ kind, anchorDate: addDays(p.startDate, -1) });
-  }
-  return out;
+export function isoWeek(p: RecapPeriod): { week: number; year: number } {
+  const thursday = calendarDate(addDays(p.startDate, 3)),
+    year = thursday.getUTCFullYear();
+  const first = periodFor({
+    kind: "week",
+    anchorDate: `${String(year).padStart(4, "0")}-01-04`,
+  });
+  return {
+    year,
+    week:
+      Math.round(
+        (+calendarDate(p.startDate) - +calendarDate(first.startDate)) /
+          604800000,
+      ) + 1,
+  };
 }
 export function periodLabel(p: RecapPeriod, language = "en"): string {
   const f = (date: string, options: Intl.DateTimeFormatOptions) =>
@@ -68,7 +60,8 @@ export function periodLabel(p: RecapPeriod, language = "en"): string {
   if (p.kind === "year") return p.startDate.slice(0, 4);
   if (p.kind === "month")
     return f(p.startDate, { month: "long", year: "numeric" });
-  return `${f(p.startDate, { month: "short", day: "numeric", year: "numeric" })} – ${f(addDays(p.endDate, -1), { month: "short", day: "numeric", year: "numeric" })}`;
+  const { week, year } = isoWeek(p);
+  return `${language === "es" ? "Semana" : "Week"} ${week} \u00b7 ${year}`;
 }
 export function bucketLabel(
   r: Recap,

@@ -7,6 +7,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   page,
 }) => {
   const lastYear = new Date().getFullYear() - 1;
+  await page.clock.setFixedTime(new Date(`${lastYear}-12-31T23:59:59Z`));
   await page.goto("/");
   await page.evaluate(async (year) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -75,12 +76,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   }, lastYear);
   await page.reload();
   await page.getByRole("tab", { name: "Your Recap", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Export image", exact: true }),
-  ).toBeDisabled();
-  await page
-    .locator(".recap-period-navigation select")
-    .selectOption(`${lastYear}-01-01`);
+
   await expect(page.locator(".recap-total strong")).toHaveText("21,604");
   await page.getByRole("button", { name: "Export image", exact: true }).click();
   const share = page.getByRole("dialog", { name: "Export image" });
@@ -123,15 +119,14 @@ test("social recap preview is the saved image and snapshots select their own yea
     .getByRole("button", { name: "Save snapshot", exact: true })
     .click();
   await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
-  await page
-    .locator(".recap-period-navigation select")
-    .selectOption(`${lastYear + 1}-01-01`);
+  await page.clock.setFixedTime(new Date(`${lastYear + 1}-01-02T12:00:00Z`));
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
     .click();
   await page.getByRole("dialog").locator(".snapshot-row").first().click();
-  await expect(page.locator(".recap-period-navigation select")).toHaveValue(
-    `${lastYear}-01-01`,
+  await expect(page.locator(".orbit-poster strong")).toHaveText(
+    String(lastYear),
   );
   await expect(page.locator(".recap-total strong")).toHaveText("21,604");
   await expect(
@@ -188,8 +183,8 @@ test("social recap preview is the saved image and snapshots select their own yea
   await page
     .getByRole("button", { name: "Borrar historial", exact: true })
     .click();
-  await expect(page.locator(".recap-period-navigation select")).toHaveValue(
-    `${lastYear + 1}-01-01`,
+  await expect(page.locator(".orbit-poster strong")).toHaveText(
+    String(lastYear + 1),
   );
   await expect(page.locator(".recap-total strong")).toHaveText("0");
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();

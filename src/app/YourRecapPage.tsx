@@ -1,5 +1,5 @@
 import RecapPeriodControls from "./RecapPeriodControls";
-import { periodFor, periodLabel, periodRequest } from "../recap/periods";
+import { periodFor, periodLabel } from "../recap/periods";
 import {
   ArrowUpRight,
   Play,
@@ -25,7 +25,7 @@ export default function YourRecapPage() {
     snapshotMode,
     setSnapshots,
     recapSelection,
-    choosePeriod,
+    returnToLive,
     settings,
     setNotice,
     setModal,
@@ -54,11 +54,7 @@ export default function YourRecapPage() {
           <IconButton
             label={snapshotMode ? t.liveRecap : t.refreshRecap}
             onClick={() => {
-              choosePeriod(
-                snapshotMode && recap
-                  ? periodRequest(recap.period)
-                  : recapSelection,
-              );
+              if (snapshotMode) returnToLive();
               setRecapRevision((v) => v + 1);
             }}
           >
@@ -81,7 +77,7 @@ export default function YourRecapPage() {
         seed={shown ? recap!.visualSeed : "ff6600"}
         label={t.inSound}
       />
-      {(recapLoading || (!shown && !recapError)) && (
+      {!shown && !recapError && (
         <p role="status" className="small-muted">
           {t.loading}
         </p>

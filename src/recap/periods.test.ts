@@ -4,7 +4,8 @@ import { aggregate, safeRecap } from "../domain";
 import {
   normalizeRecap,
   periodFor,
-  periodOptions,
+  periodLabel,
+  isoWeek,
   bucketLabel,
 } from "./periods";
 import type { RecapKind, Track, Settings } from "../types";
@@ -119,14 +120,20 @@ describe("shared calendar aggregation", () => {
     expect(JSON.stringify(old)).toBe(before);
     expect(normalizeRecap(r)).toEqual(r);
   });
-  it("offers only intersecting past/current periods and sparse monthly labels", () => {
+  it("labels ISO weeks with their week-year in English and Spanish", () => {
+    for (const [anchorDate, week, year] of [
+      ["2026-10-25", 43, 2026],
+      ["2025-12-29", 1, 2026],
+      ["2021-01-01", 53, 2020],
+    ] as const) {
+      const p = periodFor({ kind: "week", anchorDate });
+      expect(isoWeek(p)).toEqual({ week, year });
+      expect(periodLabel(p)).toBe(`Week ${week} \u00b7 ${year}`);
+      expect(periodLabel(p, "es")).toBe(`Semana ${week} \u00b7 ${year}`);
+    }
+  });
+  it("keeps sparse monthly labels", () => {
     const s = { ...settings, historyEnabledSince: "2026-01-01T12:00:00Z" };
-    const options = periodOptions("week", s, new Date("2026-01-14T00:00:00Z"));
-    expect(options.map((p) => p.startDate)).toEqual([
-      "2026-01-12",
-      "2026-01-05",
-      "2025-12-29",
-    ]);
     const r = aggregate(
       { kind: "month", anchorDate: "2026-01-01" },
       s,

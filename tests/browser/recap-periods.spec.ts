@@ -7,7 +7,7 @@ import { openSettings } from "./navigationHelpers";
 async function seed(page: Page) {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setTimezoneOverride", { timezoneId: "UTC" });
-  await page.clock.setFixedTime(new Date("2026-10-25T12:00:00Z"));
+  await page.clock.install({ time: new Date("2026-10-25T12:00:00Z") });
   await page.goto("/");
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
@@ -119,86 +119,84 @@ async function preference(page: Page) {
   });
 }
 
-test("calendar navigation, remembered timeframe and immutable legacy/new snapshots", async ({
+test("current periods update automatically without saving snapshots and retain manual snapshots", async ({
   page,
 }) => {
   await seed(page);
-  const select = page.getByRole("combobox", { name: "Recap period" });
-  await expect(select).toHaveValue("2026-01-01");
+  await expect(page.locator(".recap-period-controls select")).toHaveCount(0);
+  await expect(page.locator(".recap-period-navigation")).toHaveCount(0);
+  const snapshotCount = () =>
+    page.evaluate(async () => {
+      const db = await new Promise<IDBDatabase>((resolve) => {
+        const r = indexedDB.open("local-music-v1", 1);
+        r.onsuccess = () => resolve(r.result);
+      });
+      return new Promise<number>((resolve) => {
+        const r = db.transaction("snapshots").objectStore("snapshots").count();
+        r.onsuccess = () => {
+          db.close();
+          resolve(r.result);
+        };
+      });
+    });
   await page.getByRole("button", { name: "Weekly", exact: true }).click();
-  await expect(select).toHaveValue("2026-10-19");
+  await expect(page.locator(".orbit-poster strong")).toHaveText(
+    "Week 43 \u00b7 2026",
+  );
   await expect(page.locator(".recap-total strong")).toHaveText("1");
-  await expect(page.locator(".month-chart > div")).toHaveCount(7);
-  await page
-    .getByRole("button", { name: "Previous period", exact: true })
-    .click();
-  await expect(select).toHaveValue("2026-10-12");
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open("local-music-v1", 1);
+      r.onsuccess = () => resolve(r.result);
+    });
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction("intervals", "readwrite");
+      tx.objectStore("intervals").put(
+        {
+          sessionId: "period-session-0",
+          sequence: 1,
+          startUtc: "2026-10-20T12:00:00Z",
+          playedMs: 60000,
+        },
+        "period-session-0:1",
+      );
+      tx.oncomplete = () => resolve();
+    });
+    db.close();
+  });
+  await page.clock.fastForward(61000);
   await expect(page.locator(".recap-total strong")).toHaveText("2");
-  await page
-    .getByRole("button", { name: "Current period", exact: true })
-    .click();
-  await expect(select).toHaveValue("2026-10-19");
+  expect(await snapshotCount()).toBe(1);
   await page
     .getByRole("button", { name: "Save snapshot", exact: true })
     .click();
+  await expect.poll(snapshotCount).toBe(2);
   await page.getByRole("button", { name: "Monthly", exact: true }).click();
-  await expect(select).toHaveValue("2026-10-01");
-  await expect(page.locator(".recap-total strong")).toHaveText("3");
-  await expect(page.locator(".month-chart > div")).toHaveCount(31);
+  await expect(page.locator(".recap-total strong")).toHaveText("4");
   await expect.poll(() => preference(page)).toBe("month");
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
     .click();
   await page.locator(".snapshot-row").filter({ hasText: "2025" }).click();
-  await expect(select).toHaveValue("2025-01-01");
   await expect(page.locator(".recap-total strong")).toHaveText("7");
   await expect.poll(() => preference(page)).toBe("month");
-  const schema = await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
-      r.onsuccess = () => resolve(r.result);
-    });
-    return new Promise((resolve) => {
-      const r = db
-        .transaction("snapshots")
-        .objectStore("snapshots")
-        .get("legacy");
-      r.onsuccess = () => {
-        db.close();
-        resolve(r.result.schemaVersion);
-      };
-    });
-  });
-  expect(schema).toBe(1);
   await page
     .getByRole("button", { name: "Return to live recap", exact: true })
     .click();
-  await expect(select).toHaveValue("2025-01-01");
-  await expect(page.locator(".recap-total strong")).toHaveText("0");
+  await expect(page.locator(".orbit-poster strong")).toHaveText("2026");
+  await expect(page.locator(".recap-total strong")).toHaveText("7");
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
     .click();
-  await page.locator(".snapshot-row").filter({ hasText: "Oct 19" }).click();
-  await expect(
-    page.getByRole("button", { name: "Weekly", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator(".recap-total strong")).toHaveText("1");
+  await page.locator(".snapshot-row").filter({ hasText: "Week 43" }).click();
+  await expect(page.locator(".recap-total strong")).toHaveText("2");
   await page.reload();
   await page.getByRole("tab", { name: "Your Recap", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Monthly", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(select).toHaveValue("2026-10-01");
-  await select.selectOption("2025-01-01");
-  await expect(
-    page.getByRole("button", { name: "Previous period", exact: true }),
-  ).toBeDisabled();
-  await page
-    .getByRole("button", { name: "Current period", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Next period", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator(".orbit-poster strong")).toHaveText("October 2026");
+  expect(await snapshotCount()).toBe(2);
 });
 
 test("delayed period reads never replace a newer selection and failed loading is retryable", async ({
@@ -219,9 +217,7 @@ test("delayed period reads never replace a newer selection and failed loading is
   await page.getByRole("button", { name: "Monthly", exact: true }).click();
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await release(page);
-  await expect(
-    page.getByRole("combobox", { name: "Recap period" }),
-  ).toHaveValue("2026-10-01");
+  await expect(page.locator(".orbit-poster strong")).toHaveText("October 2026");
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.getAll;
@@ -247,7 +243,7 @@ test("delayed period reads never replace a newer selection and failed loading is
   await page
     .getByRole("button", { name: "Return to live recap", exact: true })
     .click();
-  await expect(page.locator(".recap-total strong")).toHaveText("0");
+  await expect(page.locator(".recap-total strong")).toHaveText("6");
   await page.getByRole("button", { name: "Weekly", exact: true }).click();
   await page
     .getByRole("button", { name: "Refresh recap", exact: true })
@@ -256,31 +252,20 @@ test("delayed period reads never replace a newer selection and failed loading is
   await expect(page.locator(".year-page [role=alert]")).toHaveCount(0);
 });
 
-test("current weeks follow rollover and device zone; historical selection stays fixed", async ({
-  page,
-}) => {
+test("live week numbers follow rollover and device zone", async ({ page }) => {
   const cdp = await seed(page);
   await page.getByRole("button", { name: "Weekly", exact: true }).click();
-  const select = page.getByRole("combobox", { name: "Recap period" });
-  await expect(select).toHaveValue("2026-10-19");
+  const label = page.locator(".orbit-poster strong");
+  await expect(label).toHaveText("Week 43 \u00b7 2026");
   await page.clock.setFixedTime(new Date("2026-10-26T00:01:00Z"));
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(select).toHaveValue("2026-10-26");
-  await page
-    .getByRole("button", { name: "Previous period", exact: true })
-    .click();
-  await page.clock.setFixedTime(new Date("2026-11-02T00:01:00Z"));
-  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(select).toHaveValue("2026-10-19");
+  await expect(label).toHaveText("Week 44 \u00b7 2026");
   await page.clock.setFixedTime(new Date("2026-11-01T23:30:00Z"));
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await page
-    .getByRole("button", { name: "Current period", exact: true })
-    .click();
-  await expect(select).toHaveValue("2026-10-26");
+  await expect(label).toHaveText("Week 44 \u00b7 2026");
   await cdp.send("Emulation.setTimezoneOverride", { timezoneId: "Asia/Tokyo" });
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(select).toHaveValue("2026-11-02");
+  await expect(label).toHaveText("Week 45 \u00b7 2026");
 });
 
 test("weekly/monthly exports, EN/ES and narrow high-zoom layouts retain readable period data", async ({
@@ -303,7 +288,7 @@ test("weekly/monthly exports, EN/ES and narrow high-zoom layouts retain readable
         )
         .toBeLessThanOrEqual(1);
       await expect(
-        page.getByRole("combobox", { name: "Recap period" }),
+        page.getByRole("group", { name: "Timeframe" }),
       ).toBeVisible();
     }
     await page
@@ -349,9 +334,9 @@ test("weekly/monthly exports, EN/ES and narrow high-zoom layouts retain readable
   await expect(
     page.getByRole("button", { name: "Mensual", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    page.getByRole("combobox", { name: "Periodo del resumen" }),
-  ).toContainText("octubre de 2026");
+  await expect(page.locator(".orbit-poster strong")).toHaveText(
+    "octubre de 2026",
+  );
   const scan = await new AxeBuilder({ page }).analyze();
   expect(scan.violations).toEqual([]);
   await page.screenshot({

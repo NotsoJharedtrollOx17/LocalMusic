@@ -54,3 +54,8 @@ Confirmed choices: calendar periods; Monday–Sunday weeks; Yearly initially; re
 - Inspect EN/ES, light/dark, keyboard/focus, Reduce Motion, narrow/short windows and native high zoom. Check Story/Feed PNGs, privacy invalidation and cancellation.
 - Run frontend checks, complete browser suite, Rust core/native and Kotlin regression tests. Build Windows/ARM64 Android; verify versions/signature/library hashes/frozen assets.
 - Record actual results in docs/verification.md. Device/background/headphone/screen-reader/performance acceptance requires separate evidence.
+
+
+## Current-period UI revision - 25 October 2026
+
+User correction supersedes historical period browsing above. Remove the complete date dropdown, Previous/Next arrows and Current period action. Weekly/Monthly/Yearly always resolve to the current device-calendar period and refresh dynamically while visible (15 seconds playing, 60 seconds paused, plus resume/focus). Weekly presentation uses localized ISO week number plus ISO week-year, with actual coverage dates retained below. Current views roll over automatically; saved snapshots stay frozen and remain accessible only through deliberate manual saving/opening. Returning from a snapshot opens the current period of that timeframe. No automatic snapshot creation or archival of completed periods is introduced; listening history and timeframe preference still persist normally.

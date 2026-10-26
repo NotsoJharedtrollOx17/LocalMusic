@@ -371,13 +371,15 @@ export function useMusicApp(initialSettings?: Settings) {
   ]);
   useEffect(() => {
     if (section !== "year" || snapshotMode || shareRecap) return;
-    const refresh = () => setRecapRevision((v) => v + 1);
+    const refresh = () => {
+      if (!document.hidden) setRecapRevision((v) => v + 1);
+    };
     window.addEventListener("focus", refresh);
-    const timer = player.playing
-      ? window.setInterval(refresh, 15000)
-      : undefined;
+    document.addEventListener("visibilitychange", refresh);
+    const timer = window.setInterval(refresh, player.playing ? 15000 : 60000);
     return () => {
       window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
       if (timer) window.clearInterval(timer);
     };
   }, [section, snapshotMode, shareRecap, player.playing]);
