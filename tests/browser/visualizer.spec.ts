@@ -236,6 +236,37 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
         ),
     )
     .toEqual([20, 22, 21]);
+  const animate = view.getByRole("button", { name: "Animate this session" });
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.mouse.move(0, 0);
+    await expect
+      .poll(() =>
+        animate.evaluate((button) => {
+          const actual = getComputedStyle(button);
+          return { color: actual.color, background: actual.backgroundColor };
+        }),
+      )
+      .toEqual(
+        colorScheme === "light"
+          ? { color: "rgb(27, 27, 26)", background: "rgb(255, 253, 249)" }
+          : { color: "rgb(242, 240, 232)", background: "rgb(29, 32, 30)" },
+      );
+    await animate.hover();
+    await expect
+      .poll(() =>
+        animate.evaluate((button) => getComputedStyle(button).backgroundColor),
+      )
+      .toBe(colorScheme === "light" ? "rgb(241, 238, 231)" : "rgb(37, 41, 35)");
+    expect(
+      (await new AxeBuilder({ page }).include(".visualizer-view").analyze())
+        .violations,
+    ).toEqual([]);
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      path: `artifacts/visualizer-animate-${colorScheme}.png`,
+    });
+  }
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
   const result = await new AxeBuilder({ page })
     .include(".visualizer-view")

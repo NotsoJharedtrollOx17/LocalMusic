@@ -98,7 +98,7 @@ export default function VisualizerScene() {
       <footer className="visualizer-controls visualizer-footer">
         {reduced && !override && (
           <button
-            className="button secondary"
+            className="button secondary visualizer-animate"
             onClick={() => setOverride(true)}
           >
             {t.animateVisualizer}

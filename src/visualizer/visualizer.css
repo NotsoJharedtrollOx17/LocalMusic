@@ -80,11 +80,14 @@
   margin: 16px auto 0;
   gap: clamp(16px, 4vw, 36px);
 }
-.visualizer-footer .secondary {
+.visualizer-view .button.visualizer-animate {
   background: var(--surface);
   color: var(--ink);
-  border-color: var(--rule);
+  border: 1px solid var(--rule);
   margin-bottom: 16px;
+}
+.visualizer-view .button.visualizer-animate:hover {
+  background: var(--hover);
 }
 .visualizer-error {
   text-align: center;
