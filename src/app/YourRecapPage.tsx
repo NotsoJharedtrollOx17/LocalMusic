@@ -1,22 +1,16 @@
 import RecapPeriodControls from "./RecapPeriodControls";
 import { periodFor, periodLabel } from "../recap/periods";
-import {
-  ArrowUpRight,
-  Play,
-  Repeat,
-  Share2,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowUpRight, Repeat, Share2, MoreHorizontal } from "lucide-react";
 import { api } from "../api";
 import { coverageThrough } from "../domain";
 import { IconButton, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
-import TrackRows from "./TrackRows";
+import RecapRankings from "./RecapRankings";
+import RecapTopTen from "./RecapTopTen";
 import RecapListening from "./RecapListening";
 
 export default function YourRecapPage() {
   const {
-    cache,
     recap,
     setShareRecap,
     recapLoading,
@@ -126,40 +120,8 @@ export default function YourRecapPage() {
           <p className="month-caption">
             {recap.listenedMs ? t.monthStory : t.recapEmpty}
           </p>
-          <div className="recap-highlights">
-            <div>
-              <span className="eyebrow">01 / {t.topArtist}</span>
-              <h2>{recap.topArtist?.name || "—"}</h2>
-              <span>
-                {recap.topArtist
-                  ? recap.topArtist.plays + " " + t.plays
-                  : t.noPlays}
-              </span>
-            </div>
-            <div>
-              <span className="eyebrow">02 / {t.topTrack}</span>
-              <h2>{recap.topTracks[0]?.track.title || "—"}</h2>
-              <span>
-                {recap.topTracks[0]
-                  ? recap.topTracks[0].plays + " " + t.plays
-                  : t.noPlays}
-              </span>
-            </div>
-            <div>
-              <span className="eyebrow">03 / {t.topAlbum}</span>
-              <h2>{recap.topAlbum?.name || "—"}</h2>
-              <span>{recap.topAlbum?.artist || t.noPlays}</span>
-            </div>
-          </div>
+          <RecapRankings />
           <div className="recap-actions">
-            <button
-              className="button primary"
-              disabled={!recap.trackIds.length}
-              onClick={() => void act(() => api.play(recap.trackIds))}
-            >
-              <Play size={18} />
-              {t.playYear}
-            </button>
             <button
               className="button secondary"
               disabled={!recap.listenedMs || recapLoading}
@@ -188,20 +150,7 @@ export default function YourRecapPage() {
             <p className="small-muted">{t.recapEmptyBody}</p>
           )}
           <p className="method-note">{t.coverageNote}</p>
-          {!!recap.topTracks.length && (
-            <div className="recap-track-list">
-              <p className="eyebrow">{t.yearTracks}</p>
-              {
-                <TrackRows
-                  ts={recap.topTracks.slice(0, 25).map((x) => ({
-                    ...x.track,
-                    hidden: cache[x.track.id]?.hidden ?? x.track.hidden,
-                  }))}
-                  queueIds={recap.trackIds}
-                />
-              }
-            </div>
-          )}
+          <RecapTopTen />
         </>
       )}
     </section>

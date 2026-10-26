@@ -236,38 +236,47 @@ export async function renderRecapCard(
   ctx.lineTo(1016, highlightsY);
   ctx.stroke();
   const gap = story ? 155 : 125;
-  const highlight = (
-    heading: string,
-    value: string,
-    detail: string,
-    i: number,
-  ) => {
-    const y = highlightsY + 50 + gap * i;
+  const highlight = (heading: string, values: string[], i: number) => {
+    const y = highlightsY + 35 + gap * i;
     label(heading, y);
-    text(value, pad, y + 53, story ? 53 : 45, w, ink, 700);
-    if (detail) text(detail, pad, y + 87, 23, w, muted);
+    const items = values.length
+      ? values
+      : [es ? "Sin reproducciones" : "No qualified plays yet"];
+    items.slice(0, 3).forEach((value, rank) => {
+      text(
+        `${rank + 1}. ${value}`,
+        pad,
+        y + [42, 73, 100][rank],
+        [story ? 42 : 36, 26, 22][rank],
+        w,
+        rank ? muted : ink,
+        rank ? 400 : 700,
+      );
+    });
   };
-  const empty = es
-    ? "Aún sin reproducciones calificadas"
-    : "No qualified plays yet";
   highlight(
-    es ? "01 / ARTISTA PRINCIPAL" : "01 / TOP ARTIST",
-    recap.topArtist?.name ?? empty,
-    recap.topArtist
-      ? `${recap.topArtist.plays} ${es ? "reproducciones" : "plays"}`
-      : "",
+    es ? "ARTISTAS PRINCIPALES" : "TOP ARTISTS",
+    (safe.topArtists?.length
+      ? safe.topArtists
+      : safe.topArtist
+        ? [safe.topArtist]
+        : []
+    ).map((x) => x.name),
     0,
   );
   highlight(
-    es ? "02 / CANCIÓN PRINCIPAL" : "02 / TOP TRACK",
-    recap.topTracks[0]?.track.title ?? empty,
-    recap.topTracks[0]?.track.artist ?? "",
+    es ? "CANCIONES PRINCIPALES" : "TOP SONGS",
+    safe.topTracks.slice(0, 3).map((x) => x.title),
     1,
   );
   highlight(
-    es ? "03 / ÁLBUM PRINCIPAL" : "03 / TOP ALBUM",
-    recap.topAlbum?.name ?? (es ? "Sin álbum registrado" : "No album recorded"),
-    recap.topAlbum?.artist ?? "",
+    es ? "ÁLBUMES PRINCIPALES" : "TOP ALBUMS",
+    (safe.topAlbums?.length
+      ? safe.topAlbums
+      : safe.topAlbum
+        ? [safe.topAlbum]
+        : []
+    ).map((x) => x.name),
     2,
   );
   const date = (value: string) =>

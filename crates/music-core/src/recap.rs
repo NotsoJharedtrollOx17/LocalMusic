@@ -297,8 +297,10 @@ pub fn aggregate(
         active_days: days.len(),
         buckets,
         top_tracks: top,
-        top_artist: ar.into_iter().next(),
-        top_album: al.into_iter().next(),
+        top_artist: ar.first().cloned(),
+        top_album: al.first().cloned(),
+        top_artists: ar.into_iter().take(3).collect(),
+        top_albums: al.into_iter().take(3).collect(),
         track_ids: ids,
         visual_seed: seed,
     })

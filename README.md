@@ -101,3 +101,5 @@ v0.7.0 removes Adapt Sound across all adapters and exposes Equalizer directly. C
 
 
 The `dev.your-recap-periods` review branch adds calendar recaps; application versions remain 0.7.0 until a separate release request. See [the archived specification](docs/your-recap-periods-plan.md) and [verification](docs/verification.md).
+
+Your Recap shows the top three songs, artists and albums with descending rank emphasis. Its ranked top-ten song list can be played or explicitly saved as an editable playlist for that period; unavailable or removed tracks are not queued or saved.

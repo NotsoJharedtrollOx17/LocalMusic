@@ -96,6 +96,8 @@ export interface Recap {
   activeDays: number;
   buckets: RecapBucket[];
   topTracks: { track: Track; plays: number; playedMs: number }[];
+  topArtists?: { name: string; plays: number }[];
+  topAlbums?: { name: string; artist: string; plays: number }[];
   topArtist?: { name: string; plays: number };
   topAlbum?: { name: string; artist: string; plays: number };
   trackIds: string[];

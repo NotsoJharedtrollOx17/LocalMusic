@@ -256,10 +256,17 @@ export function aggregate(
       albums.set(bk, b);
     }
   }
-  const rank = <T extends { name: string; plays: number }>(m: Map<string, T>) =>
-    [...m.values()].sort(
-      (a, b) => b.plays - a.plays || key(a.name).localeCompare(key(b.name)),
-    )[0];
+  const rank = <T extends { name: string; artist?: string; plays: number }>(
+    m: Map<string, T>,
+  ) =>
+    [...m.values()]
+      .sort(
+        (a, b) =>
+          b.plays - a.plays ||
+          key(a.name).localeCompare(key(b.name)) ||
+          key(a.artist ?? "").localeCompare(key(b.artist ?? "")),
+      )
+      .slice(0, 3);
   const available = topTracks.filter(
     (t) => t.track.available && !t.track.hidden,
   );
@@ -289,8 +296,10 @@ export function aggregate(
     activeDays: days.size,
     buckets,
     topTracks,
-    topArtist: rank(artists),
-    topAlbum: rank(albums),
+    topArtists: rank(artists),
+    topAlbums: rank(albums),
+    topArtist: rank(artists)[0],
+    topAlbum: rank(albums)[0],
     trackIds: ids,
     visualSeed: hash(
       period.kind + "|" + period.startDate + "|" + coveredFrom + "|" + total,
@@ -342,6 +351,8 @@ export function safeRecap(recap: Recap) {
       album: track.album,
       plays,
     })),
+    topArtists: recap.topArtists,
+    topAlbums: recap.topAlbums,
     topArtist: recap.topArtist,
     topAlbum: recap.topAlbum,
     visualSeed: recap.visualSeed,

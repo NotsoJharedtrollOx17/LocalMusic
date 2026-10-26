@@ -8,10 +8,12 @@ export default function TrackRows({
   ts,
   queueIds = ts.map((x) => x.id),
   editable,
+  numbered,
 }: {
   ts: Track[];
   queueIds?: string[];
   editable?: boolean;
+  numbered?: boolean;
 }) {
   const {
     player,
@@ -36,7 +38,7 @@ export default function TrackRows({
           <TrackRow
             key={track.id}
             track={track}
-            index={editable ? i : undefined}
+            index={editable || numbered ? i : undefined}
             playing={player.trackId === track.id && player.playing}
             unknownArtist={t.unknownArtist}
             labels={t}

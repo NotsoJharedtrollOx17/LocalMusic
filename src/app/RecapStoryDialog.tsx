@@ -1,9 +1,10 @@
 import { periodLabel } from "../recap/periods";
 import { ArrowLeft, ArrowRight, Play, Share2 } from "lucide-react";
 import { api } from "../api";
-import { Cover, IconButton, Modal, OrbitPoster } from "../components";
+import { IconButton, Modal, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import RecapListening from "./RecapListening";
+import RecapRankings from "./RecapRankings";
 
 export default function RecapStoryDialog() {
   const {
@@ -22,6 +23,11 @@ export default function RecapStoryDialog() {
     formatDate,
   } = useMusicAppContext();
 
+  const topIds =
+    recap?.topTracks
+      .slice(0, 10)
+      .filter((x) => x.track.available && !x.track.hidden)
+      .map((x) => x.track.id) ?? [];
   return (
     <>
       {modal === "story" && recap && (
@@ -64,20 +70,11 @@ export default function RecapStoryDialog() {
                 </p>
               </>
             ) : story === 2 ? (
-              <>
-                <p className="eyebrow">{t.topTrack}</p>
-                {recap.topTracks[0] && (
-                  <Cover track={recap.topTracks[0].track} large />
-                )}
-                <h2>{recap.topTracks[0]?.track.title || t.noPlays}</h2>
-                <p>{recap.topTracks[0]?.track.artist}</p>
-              </>
+              <RecapRankings category="songs" />
             ) : story === 3 ? (
               <>
-                <p className="eyebrow">{t.topArtist}</p>
-                <h2>{recap.topArtist?.name || t.noPlays}</h2>
-                <p className="eyebrow">{t.topAlbum}</p>
-                <h2>{recap.topAlbum?.name || "—"}</h2>
+                <RecapRankings category="artists" />
+                <RecapRankings category="albums" />
               </>
             ) : story === 4 ? (
               <>
@@ -87,15 +84,15 @@ export default function RecapStoryDialog() {
               </>
             ) : (
               <>
-                <p className="eyebrow">{t.yearTracks}</p>
-                <h2>{formatMusicCount(recap.trackIds.length)}</h2>
+                <p className="eyebrow">{t.recapTopTen}</p>
+                <h2>{formatMusicCount(topIds.length)}</h2>
                 <button
                   className="button primary"
-                  disabled={!recap.trackIds.length}
-                  onClick={() => void act(() => api.play(recap.trackIds))}
+                  disabled={!topIds.length}
+                  onClick={() => void act(() => api.play(topIds))}
                 >
                   <Play size={18} />
-                  {t.playYear}
+                  {t.playTopTen}
                 </button>
                 <button
                   className="button secondary"

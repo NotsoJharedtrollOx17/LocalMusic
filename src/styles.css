@@ -1138,29 +1138,94 @@ input[type="range"] {
   letter-spacing: 0.035em;
   margin: 30px 0 28px;
 }
-.recap-highlights {
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+.recap-rankings {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  padding: 25px 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+  border-block: 1px solid var(--rule);
+  padding-block: 24px;
 }
-.recap-highlights > div + div {
-  border-left: 1px solid var(--rule);
-  padding-left: 24px;
+.recap-rankings > section {
+  min-width: 0;
 }
-.recap-highlights .eyebrow {
-  font-size: 8px;
+.recap-rankings h2 {
+  font-size: 16px;
+  margin: 0 0 18px;
 }
-.recap-highlights h2 {
-  font-size: clamp(23px, 2.8vw, 36px);
-  margin: 15px 0 8px;
-  overflow-wrap: anywhere;
+.recap-rankings ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-.recap-highlights > div > span:last-child {
-  font-size: 11px;
+.recap-rank {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--rule);
+  text-align: start;
+}
+.recap-rank-number {
   color: var(--muted);
+  font-size: 18px;
+  font-weight: 600;
+}
+.recap-rank h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.recap-rank p {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.recap-rank small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.recap-rank.rank-1 h3 {
+  font-size: clamp(26px, 2.5vw, 34px);
+}
+.recap-rank.rank-1 .recap-rank-number {
+  color: var(--accent);
+  font-size: 26px;
+}
+.recap-rank.rank-2 h3 {
+  font-size: 22px;
+}
+.story-scene .recap-rankings {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+.recap-playlist-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.recap-playlist-heading h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.recap-playlist-heading > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 700px) {
+  .recap-rankings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .recap-playlist-heading > div {
+    width: 100%;
+  }
+  .recap-playlist-heading .button {
+    flex: 1;
+  }
 }
 .recap-actions {
   display: flex;
@@ -1514,12 +1579,6 @@ input[type="range"] {
   }
   .playlist-collection {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .recap-highlights {
-    gap: 16px;
-  }
-  .recap-highlights > div + div {
-    padding-left: 16px;
   }
   .recap-total .text-button {
     margin-left: 0;
@@ -1891,30 +1950,6 @@ input[type="range"] {
   .month-caption {
     font-size: 13px;
     margin: 25px 0;
-  }
-  .recap-highlights {
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding: 22px 0;
-  }
-  .recap-highlights > div:nth-child(3) {
-    grid-column: span 2;
-    border: 0;
-    border-top: 1px solid var(--rule);
-    padding: 20px 0 0;
-  }
-  .recap-highlights > div:nth-child(2) {
-    padding-left: 20px;
-  }
-  .recap-highlights .eyebrow {
-    font-size: 7px;
-  }
-  .recap-highlights h2 {
-    font-size: 27px;
-    margin: 13px 0 7px;
-  }
-  .recap-highlights > div > span:last-child {
-    font-size: 9px;
   }
   .recap-actions {
     gap: 10px;

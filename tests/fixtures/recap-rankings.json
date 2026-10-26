@@ -1,0 +1,76 @@
+{
+  "tracks": [
+    {
+      "id": "a",
+      "title": "First Song",
+      "artist": "Zed",
+      "album": "First",
+      "plays": 4,
+      "available": false,
+      "excluded": false
+    },
+    {
+      "id": "b",
+      "title": "Second Song",
+      "artist": "Beta",
+      "album": "Shared",
+      "plays": 3,
+      "available": true,
+      "excluded": false
+    },
+    {
+      "id": "c",
+      "title": "Third Song",
+      "artist": "Alpha",
+      "album": "Shared",
+      "plays": 3,
+      "available": true,
+      "excluded": false
+    },
+    {
+      "id": "d",
+      "title": "Fourth Song",
+      "artist": "Delta",
+      "album": "Last",
+      "plays": 1,
+      "available": true,
+      "excluded": false
+    },
+    {
+      "id": "e",
+      "title": "Private Song",
+      "artist": "Private",
+      "album": "Private",
+      "plays": 20,
+      "available": true,
+      "excluded": true
+    }
+  ],
+  "expected": {
+    "songs": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ],
+    "artists": [
+      "Zed",
+      "Alpha",
+      "Beta"
+    ],
+    "albums": [
+      [
+        "First",
+        "Zed"
+      ],
+      [
+        "Shared",
+        "Alpha"
+      ],
+      [
+        "Shared",
+        "Beta"
+      ]
+    ]
+  }
+}

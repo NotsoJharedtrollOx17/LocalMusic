@@ -144,6 +144,10 @@ pub struct Recap {
     pub active_days: usize,
     pub buckets: Vec<RecapBucket>,
     pub top_tracks: Vec<RankedTrack>,
+    #[serde(default)]
+    pub top_artists: Vec<ArtistRank>,
+    #[serde(default)]
+    pub top_albums: Vec<AlbumRank>,
     pub top_artist: Option<ArtistRank>,
     pub top_album: Option<AlbumRank>,
     pub track_ids: Vec<String>,
