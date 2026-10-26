@@ -97,9 +97,14 @@ export interface Recap {
   buckets: RecapBucket[];
   topTracks: { track: Track; plays: number; playedMs: number }[];
   topArtists?: { name: string; plays: number }[];
-  topAlbums?: { name: string; artist: string; plays: number }[];
+  topAlbums?: {
+    name: string;
+    artist: string;
+    plays: number;
+    trackId?: string;
+  }[];
   topArtist?: { name: string; plays: number };
-  topAlbum?: { name: string; artist: string; plays: number };
+  topAlbum?: { name: string; artist: string; plays: number; trackId?: string };
   trackIds: string[];
   visualSeed: string;
 }

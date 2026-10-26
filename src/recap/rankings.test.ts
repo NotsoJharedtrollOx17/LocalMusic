@@ -38,6 +38,8 @@ it("ranks complete artist/album totals with stable ties and excludes private pla
   expect(r.topAlbums?.map((x) => [x.name, x.artist])).toEqual(
     fixture.expected.albums,
   );
+  expect(r.topAlbums?.map((x) => x.trackId)).toEqual(["a", "c", "b"]);
+  expect(JSON.stringify(safeRecap(r))).not.toContain("trackId");
   expect(r.topArtist).toEqual(r.topArtists?.[0]);
   expect(r.topAlbum).toEqual(r.topAlbums?.[0]);
   expect(JSON.stringify(safeRecap(r))).not.toContain("/private/");

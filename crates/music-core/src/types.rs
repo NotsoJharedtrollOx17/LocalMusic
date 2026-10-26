@@ -123,10 +123,13 @@ pub struct ArtistRank {
     pub plays: u64,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AlbumRank {
     pub name: String,
     pub artist: String,
     pub plays: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub track_id: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1165,6 +1165,33 @@ input[type="range"] {
   border-top: 1px solid var(--rule);
   text-align: start;
 }
+.recap-rank.has-artwork {
+  --rank-art-size: 52px;
+  grid-template-columns: 28px var(--rank-art-size) minmax(0, 1fr);
+  align-items: start;
+}
+.recap-rank.has-artwork.rank-1 {
+  --rank-art-size: 84px;
+}
+.recap-rank.has-artwork.rank-2 {
+  --rank-art-size: 64px;
+}
+.recap-rank .recap-rank-artwork.cover {
+  width: var(--rank-art-size);
+  height: var(--rank-art-size);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.story-scene .recap-rank.has-artwork.rank-1 {
+  --rank-art-size: clamp(72px, 20vw, 112px);
+}
+.story-scene .recap-rank.has-artwork.rank-2 {
+  --rank-art-size: clamp(60px, 16vw, 88px);
+}
+.story-scene .recap-rank.has-artwork.rank-3 {
+  --rank-art-size: clamp(48px, 13vw, 68px);
+}
 .recap-rank-number {
   color: var(--muted);
   font-size: 18px;

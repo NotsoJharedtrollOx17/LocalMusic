@@ -319,7 +319,12 @@ export function useMusicApp(initialSettings?: Settings) {
         ...(player.trackId ? [player.trackId] : []),
         ...(modal === "queue" ? player.queue.slice(0, queueLimit) : []),
         ...(section === "year" && recap
-          ? recap.topTracks.map((item) => item.track.id)
+          ? [
+              ...recap.topTracks.map((item) => item.track.id),
+              ...(recap.topAlbums ?? []).flatMap((item) =>
+                item.trackId ? [item.trackId] : [],
+              ),
+            ]
           : []),
       ]),
     ].filter((id) => !cache[id]);

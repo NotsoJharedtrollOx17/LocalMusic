@@ -1,3 +1,4 @@
+import { seedExistingSnapshot } from "./recapSnapshotFixture";
 import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -115,10 +116,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   ).toEqual([]);
   await page.screenshot({ path: "artifacts/recap-share-mobile.png" });
   await share.getByRole("button", { name: "Close", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Save snapshot", exact: true })
-    .click();
-  await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
+  await seedExistingSnapshot(page);
   await page.clock.setFixedTime(new Date(`${lastYear + 1}-01-02T12:00:00Z`));
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await page

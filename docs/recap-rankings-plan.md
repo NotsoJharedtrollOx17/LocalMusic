@@ -8,3 +8,7 @@ Extend the current `dev.your-recap-periods` revision without changing versions o
 - Provide explicit Play top 10 and Save playlist actions. Saving creates an ordinary editable playlist with a period-specific name; it does not happen automatically or modify snapshots. Guard duplicate clicks while saving and refresh the Playlists collection afterward.
 - Reuse top-three presentation in the story. Include runner-up names in privacy-safe Story/Feed exports while preserving image dimensions and privacy checks.
 - Verify rankings, ties, old snapshots, top-ten order, manual playlist persistence, EN/ES, responsive sizes, accessible lists and no overflow. Run frontend checks, affected browser journeys and Rust core tests; record actual evidence and platform limits in `docs/verification.md`.
+
+## Presentation correction
+
+Add cover artwork to ranked songs/albums, decreasing in size by rank. Retain an optional private representative track reference for album artwork beyond the song-list cutoff; strip it from display exports. Give artists and albums independent story steps, bringing the sequence to seven. Remove the Save snapshot button and its unused translations; preserve prior snapshots and their compatibility readers. Keep explicit top-ten playlist saving. Verify artwork loading, fallback covers, separate steps, navigation, small screens and absence of the removed action.

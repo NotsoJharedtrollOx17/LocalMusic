@@ -236,7 +236,10 @@ export function aggregate(
         a.track.id.localeCompare(b.track.id),
     );
   const artists = new Map<string, { name: string; plays: number }>(),
-    albums = new Map<string, { name: string; artist: string; plays: number }>();
+    albums = new Map<
+      string,
+      { name: string; artist: string; plays: number; trackId?: string }
+    >();
   for (const x of topTracks) {
     const ak = key(x.track.artist) || "unknown";
     const a = artists.get(ak) ?? {
@@ -251,6 +254,7 @@ export function aggregate(
         name: x.track.album,
         artist: x.track.artist,
         plays: 0,
+        trackId: x.track.id,
       };
       b.plays += x.plays;
       albums.set(bk, b);
@@ -352,9 +356,19 @@ export function safeRecap(recap: Recap) {
       plays,
     })),
     topArtists: recap.topArtists,
-    topAlbums: recap.topAlbums,
+    topAlbums: recap.topAlbums?.map(({ name, artist, plays }) => ({
+      name,
+      artist,
+      plays,
+    })),
     topArtist: recap.topArtist,
-    topAlbum: recap.topAlbum,
+    topAlbum: recap.topAlbum
+      ? {
+          name: recap.topAlbum.name,
+          artist: recap.topAlbum.artist,
+          plays: recap.topAlbum.plays,
+        }
+      : undefined,
     visualSeed: recap.visualSeed,
   };
 }

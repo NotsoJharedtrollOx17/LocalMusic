@@ -1,3 +1,4 @@
+import { seedExistingSnapshot } from "./recapSnapshotFixture";
 import { openSettings } from "./navigationHelpers";
 import { wav, taggedWav, numberedWav } from "./fixtures";
 import { test, expect } from "@playwright/test";
@@ -73,10 +74,9 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
   await feed.saveAs("artifacts/recap-feed.png");
   await page.screenshot({ path: "artifacts/recap-export-preview.png" });
   await share.getByRole("button", { name: "Close", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Save snapshot", exact: true })
-    .click();
-  await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save snapshot", exact: true }),
+  ).toHaveCount(0);
   await page.screenshot({
     path: "artifacts/recap-desktop.png",
     fullPage: true,
@@ -214,10 +214,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
   await expect(
     page.getByRole("heading", { name: "Qualified tone", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Save snapshot", exact: true })
-    .click();
-  await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
+  await seedExistingSnapshot(page);
   await page
     .locator(".mini-actions")
     .getByRole("button", { name: "Now playing" })

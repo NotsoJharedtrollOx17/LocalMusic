@@ -119,7 +119,7 @@ async function preference(page: Page) {
   });
 }
 
-test("current periods update automatically without saving snapshots and retain manual snapshots", async ({
+test("current periods update automatically without a save action and retain existing snapshots", async ({
   page,
 }) => {
   await seed(page);
@@ -167,10 +167,10 @@ test("current periods update automatically without saving snapshots and retain m
   await page.clock.fastForward(61000);
   await expect(page.locator(".recap-total strong")).toHaveText("2");
   expect(await snapshotCount()).toBe(1);
-  await page
-    .getByRole("button", { name: "Save snapshot", exact: true })
-    .click();
-  await expect.poll(snapshotCount).toBe(2);
+  await expect(
+    page.getByRole("button", { name: "Save snapshot", exact: true }),
+  ).toHaveCount(0);
+  expect(await snapshotCount()).toBe(1);
   await page.getByRole("button", { name: "Monthly", exact: true }).click();
   await expect(page.locator(".recap-total strong")).toHaveText("4");
   await expect.poll(() => preference(page)).toBe("month");
@@ -185,18 +185,13 @@ test("current periods update automatically without saving snapshots and retain m
     .click();
   await expect(page.locator(".orbit-poster strong")).toHaveText("2026");
   await expect(page.locator(".recap-total strong")).toHaveText("7");
-  await page
-    .getByRole("button", { name: "Saved snapshots", exact: true })
-    .click();
-  await page.locator(".snapshot-row").filter({ hasText: "Week 43" }).click();
-  await expect(page.locator(".recap-total strong")).toHaveText("2");
   await page.reload();
   await page.getByRole("tab", { name: "Your Recap", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Monthly", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".orbit-poster strong")).toHaveText("October 2026");
-  expect(await snapshotCount()).toBe(2);
+  expect(await snapshotCount()).toBe(1);
 });
 
 test("delayed period reads never replace a newer selection and failed loading is retryable", async ({

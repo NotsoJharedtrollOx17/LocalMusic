@@ -237,6 +237,7 @@ pub fn aggregate(
                     name: x.track.album.clone(),
                     artist: x.track.artist.clone(),
                     plays: 0,
+                    track_id: Some(x.track.id.clone()),
                 });
             b.plays += x.plays;
         }

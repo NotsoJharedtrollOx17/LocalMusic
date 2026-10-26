@@ -188,7 +188,6 @@ export const en = {
   refreshRecap: "Refresh recap",
   liveRecap: "Return to live recap",
   viewRecap: "View recap",
-  saveSnapshot: "Save snapshot",
   savedSnapshots: "Saved snapshots",
   recapEmpty: "Your recap starts with a song.",
   recapEmptyBody:
@@ -221,7 +220,6 @@ export const en = {
   of: "of",
   chooseTracks: "Choose tracks",
   playlistSaved: "Playlist saved",
-  snapshotSaved: "Snapshot saved",
   snapshot: "Saved snapshot",
   noSnapshot: "No saved snapshots yet",
   privateHint: "Excluded sessions contribute neither time nor ranking.",
@@ -432,7 +430,6 @@ export const es: typeof en = {
   refreshRecap: "Actualizar resumen",
   liveRecap: "Volver al resumen actual",
   viewRecap: "Ver resumen",
-  saveSnapshot: "Guardar resumen",
   savedSnapshots: "Resúmenes guardados",
   recapEmpty: "Tu resumen empieza con una canción.",
   recapEmptyBody:
@@ -465,7 +462,6 @@ export const es: typeof en = {
   of: "de",
   chooseTracks: "Elige canciones",
   playlistSaved: "Lista guardada",
-  snapshotSaved: "Resumen guardado",
   snapshot: "Resumen guardado",
   noSnapshot: "Aún no hay resúmenes guardados",
   privateHint:

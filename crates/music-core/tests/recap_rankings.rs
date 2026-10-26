@@ -60,9 +60,17 @@ fn shared_top_three_rankings() {
     );
     assert_eq!(r.top_artist.as_ref().unwrap().name, r.top_artists[0].name);
     assert_eq!(r.top_album.as_ref().unwrap().name, r.top_albums[0].name);
+    assert_eq!(
+        r.top_albums
+            .iter()
+            .map(|x| x.track_id.as_deref().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["a", "c", "b"]
+    );
     let mut old = serde_json::to_value(&r).unwrap();
     old.as_object_mut().unwrap().remove("topArtists");
     old.as_object_mut().unwrap().remove("topAlbums");
+    old["topAlbum"].as_object_mut().unwrap().remove("trackId");
     let restored: Recap = serde_json::from_value(old).unwrap();
     assert!(restored.top_artists.is_empty());
     assert!(restored.top_albums.is_empty());

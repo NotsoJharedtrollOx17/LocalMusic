@@ -37,7 +37,7 @@ export default function RecapStoryDialog() {
           onClose={() => setModal(null)}
         >
           <div className="story-progress">
-            {Array.from({ length: 6 }, (_, i) => (
+            {Array.from({ length: 7 }, (_, i) => (
               <button
                 key={i}
                 aria-label={String(i + 1)}
@@ -72,11 +72,10 @@ export default function RecapStoryDialog() {
             ) : story === 2 ? (
               <RecapRankings category="songs" />
             ) : story === 3 ? (
-              <>
-                <RecapRankings category="artists" />
-                <RecapRankings category="albums" />
-              </>
+              <RecapRankings category="artists" />
             ) : story === 4 ? (
+              <RecapRankings category="albums" />
+            ) : story === 5 ? (
               <>
                 <p className="eyebrow">{t.monthTitle}</p>
                 <RecapListening />
@@ -117,9 +116,9 @@ export default function RecapStoryDialog() {
               <ArrowLeft />
             </IconButton>
             <span>
-              {story + 1} {t.of} 6
+              {story + 1} {t.of} 7
             </span>
-            {story < 5 ? (
+            {story < 6 ? (
               <IconButton label={t.next} onClick={() => setStory(story + 1)}>
                 <ArrowRight />
               </IconButton>

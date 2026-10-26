@@ -1,3 +1,4 @@
+import { seedExistingSnapshot } from "./recapSnapshotFixture";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { openSettings } from "./navigationHelpers";
@@ -65,6 +66,12 @@ async function seed(page: Page) {
             releaseMetadataRead: true,
             audioChannels: 1,
             file: new Blob([wav], { type: "audio/wav" }),
+            cover: new Blob(
+              [
+                `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" fill="hsl(${i * 29},65%,35%)"/><circle cx="80" cy="80" r="50" fill="#ff6816"/><text x="80" y="92" font-size="34" text-anchor="middle" fill="white">${i + 1}</text></svg>`,
+              ],
+              { type: "image/svg+xml" },
+            ),
           },
           id,
         );
@@ -122,6 +129,21 @@ test("top three scale by rank and top ten saves the exact playable order", async
     expect(sizes[0]).toBeGreaterThan(sizes[1]);
     expect(sizes[1]).toBeGreaterThan(sizes[2]);
   }
+  await expect(
+    page.getByRole("button", { name: "Save snapshot", exact: true }),
+  ).toHaveCount(0);
+  const albums = page.getByRole("region", { name: "Top albums", exact: true });
+  await expect(songs.locator(".recap-rank-artwork")).toHaveCount(3);
+  await expect(albums.locator(".recap-rank-artwork")).toHaveCount(3);
+  await expect(songs.locator(".recap-rank-artwork").first()).toHaveAttribute(
+    "src",
+    /^blob:/,
+  );
+  expect(
+    await albums.locator(".recap-rank-artwork").first().getAttribute("src"),
+  ).toBe(
+    await songs.locator(".recap-rank-artwork").first().getAttribute("src"),
+  );
   const list = page.getByRole("region", {
     name: "Your recap top 10",
     exact: true,
@@ -224,8 +246,34 @@ test("rankings and story reflow in EN/ES and retain accessible lists", async ({
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "3", exact: true }).click();
   await expect(dialog.getByRole("listitem")).toHaveCount(3);
+  await expect(dialog.locator(".recap-rank-artwork")).toHaveCount(3);
+  await page.screenshot({ path: "artifacts/recap-artwork-songs-story.png" });
   await dialog.getByRole("button", { name: "4", exact: true }).click();
-  await expect(dialog.getByRole("listitem")).toHaveCount(6);
+  await expect(dialog.getByRole("listitem")).toHaveCount(3);
+  await expect(
+    dialog.getByRole("region", { name: "Top albums", exact: true }),
+  ).toHaveCount(0);
+  await dialog.getByRole("button", { name: "5", exact: true }).click();
+  await expect(
+    dialog.getByRole("region", { name: "Top artists", exact: true }),
+  ).toHaveCount(0);
+  await expect(dialog.locator(".recap-rank-artwork")).toHaveCount(3);
+  await expect(dialog.locator(".recap-rank-artwork").first()).toBeVisible();
+  expect(
+    await dialog
+      .locator(".recap-rank-artwork")
+      .evaluateAll((images) =>
+        images.every(
+          (image) =>
+            (image as HTMLImageElement).complete &&
+            (image as HTMLImageElement).naturalWidth > 0,
+        ),
+      ),
+  ).toBe(true);
+  await expect(
+    dialog.getByRole("button", { name: "7", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({ path: "artifacts/recap-artwork-albums-story.png" });
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 390, height: 800 });
   await openSettings(page);
@@ -258,10 +306,7 @@ test("exports include three ranks and old snapshots keep only recorded winners",
   await dialog.getByRole("button", { name: "Save PNG", exact: true }).click();
   await (await wait).saveAs("artifacts/recap-rankings-feed.png");
   await page.keyboard.press("Escape");
-  await page
-    .getByRole("button", { name: "Save snapshot", exact: true })
-    .click();
-  await expect(page.getByText("Snapshot saved", { exact: true })).toBeVisible();
+  await seedExistingSnapshot(page);
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
       const r = indexedDB.open("local-music-v1", 1);

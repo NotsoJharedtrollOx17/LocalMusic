@@ -1,7 +1,6 @@
 import RecapPeriodControls from "./RecapPeriodControls";
 import { periodFor, periodLabel } from "../recap/periods";
 import { ArrowUpRight, Repeat, Share2, MoreHorizontal } from "lucide-react";
-import { api } from "../api";
 import { coverageThrough } from "../domain";
 import { IconButton, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -17,15 +16,12 @@ export default function YourRecapPage() {
     recapError,
     setRecapRevision,
     snapshotMode,
-    setSnapshots,
     recapSelection,
     returnToLive,
     settings,
-    setNotice,
     setModal,
     setStory,
     t,
-    act,
     formatMinutes,
     formatDate,
   } = useMusicAppContext();
@@ -132,18 +128,6 @@ export default function YourRecapPage() {
             >
               <Share2 size={18} />
               {t.shareCard}
-            </button>
-            <button
-              className="text-button"
-              onClick={() =>
-                void act(async () => {
-                  await api.saveSnapshot(recap);
-                  setSnapshots(await api.snapshots());
-                  setNotice(t.snapshotSaved);
-                })
-              }
-            >
-              {t.saveSnapshot}
             </button>
           </div>
           {!recap.listenedMs && (
