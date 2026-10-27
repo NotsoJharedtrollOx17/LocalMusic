@@ -20,7 +20,7 @@ export default function PlaylistBuilder() {
         </div>
         <span className="generator-mark creation-mark" aria-hidden="true">
           <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-            <g transform="rotate(45 32 23)">
+            <g transform="rotate(25 32 23)">
               <Hammer x={17} y={8} size={30} strokeWidth={2} />
             </g>
             <g transform="rotate(-15 42 47)">
