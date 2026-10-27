@@ -17,6 +17,7 @@ import "./ux.css";
 import "./polish.css";
 import "./player.css";
 import "./playlists.css";
+import "./focus.css";
 installNativeShortcuts(native);
 async function start() {
   const settings = await api.settings().catch(() => undefined);

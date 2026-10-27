@@ -127,3 +127,10 @@ Use the shared recap period request/types; do not pass a bare year to MusicApi.r
 Rust/browser share calendar fixtures under tests/fixtures/recap-periods.json. New schema-two results use period, completePeriod and buckets; compatibility readers project legacy yearly snapshots without rewriting records. Charts/posters/story and both PNG formats consume this same period metadata. Preserve playback/listening/seek/privacy invariants and keep actual device acceptance separate from test/build evidence.
 
 The current-only UI revision removes period browsing entirely. ISO week labels use the week-year, which may differ from the calendar year near New Year. Live recaps refresh without saving snapshots; the Save snapshot action has been removed from the current UI. Previously stored snapshots remain readable. Returning from a frozen snapshot opens the current period.
+
+
+## Focus and Recap presentation
+
+Keyboard focus frames are centralized in `src/focus.css` and are independent of circular control backgrounds. Keep keyboard frames visible inside scrolling surfaces and maintain selected-state contrast and forced-color support.
+
+Recap view and PNG export consume the shared ranking presentation helper. Export artwork is resolved locally with bounded loading, deterministic cover fallbacks and cancellation; only display values and decoded images reach the canvas ranking renderer. Story and Feed retain their existing dimensions. Preview readiness is tied to its format, language and source Recap, with privacy rechecked after preparation and before saving.

@@ -33,10 +33,6 @@
   color: #1b1b1a;
   font-weight: 600;
 }
-.playlist-blend button:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
 .generator .analysis-coverage {
   width: fit-content;
   max-width: min(100%, 650px);

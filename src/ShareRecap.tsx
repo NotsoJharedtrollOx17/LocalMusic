@@ -23,17 +23,22 @@ export default function ShareRecap({
   onClose: () => void;
 }) {
   const t = language === "es" ? es : en;
+  const [attempt, setAttempt] = useState(0);
   const [format, setFormat] = useState<CardFormat>("story"),
     [prepared, setPrepared] = useState<{
       url: string;
       blob: Blob;
       recap: Recap;
+      source: Recap;
+      format: CardFormat;
+      language: "en" | "es";
     } | null>(null),
     [preparing, setPreparing] = useState(true),
     [saving, setSaving] = useState(false),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
   useEffect(() => {
+    const controller = new AbortController();
     let active = true,
       url: string | undefined;
     setPreparing(true);
@@ -43,10 +48,24 @@ export default function ShareRecap({
     void (async () => {
       const current = await checkPrivacy(recap, language);
       const rendered = frozen ? recap : current;
-      const blob = await renderRecapCard(rendered, language, format);
+      const blob = await renderRecapCard(
+        rendered,
+        language,
+        format,
+        controller.signal,
+      );
+      if (!active) return;
+      await checkPrivacy(rendered, language);
       if (!active) return;
       url = URL.createObjectURL(blob);
-      setPrepared({ url, blob, recap: rendered });
+      setPrepared({
+        url,
+        blob,
+        recap: rendered,
+        source: recap,
+        format,
+        language,
+      });
     })()
       .catch((e) => {
         if (active) setError(String(e instanceof Error ? e.message : e));
@@ -56,19 +75,26 @@ export default function ShareRecap({
       });
     return () => {
       active = false;
+      controller.abort();
       if (url) URL.revokeObjectURL(url);
     };
-  }, [recap, language, format, frozen]);
+  }, [recap, language, format, frozen, attempt]);
+  const ready =
+    prepared?.format === format &&
+    prepared.source === recap &&
+    prepared.language === language
+      ? prepared
+      : null;
   const size = cardDimensions(format);
   const download = async () => {
-    if (!prepared || saving) return;
+    if (!ready || saving) return;
     setSaving(true);
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(prepared.recap, language);
+      await checkPrivacy(ready.recap, language);
       const result = await saveBlob(
-        prepared.blob,
+        ready.blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result !== false) setSaved(true);
@@ -106,22 +132,30 @@ export default function ShareRecap({
             {t.preparingImage}
           </div>
         ) : (
-          prepared && (
+          ready && (
             <img
               className="recap-image-preview"
-              src={prepared.url}
+              src={ready.url}
               alt={t.imagePreview + " " + periodLabel(recap.period, language)}
             />
           )
         )}
         {error && (
-          <p role="alert" className="share-error">
-            {error}
-          </p>
+          <div className="share-error">
+            <p role="alert">{error}</p>
+            {!ready && (
+              <button
+                className="button secondary"
+                onClick={() => setAttempt((value) => value + 1)}
+              >
+                {t.retry}
+              </button>
+            )}
+          </div>
         )}
         <button
           className="button primary full-width"
-          disabled={preparing || saving || !prepared}
+          disabled={preparing || saving || !ready}
           onClick={() => void download()}
         >
           {saving ? (

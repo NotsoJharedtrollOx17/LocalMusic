@@ -296,15 +296,76 @@ test("exports include three ranks and old snapshots keep only recorded winners",
   page,
 }) => {
   await seed(page);
+  await page.evaluate(() => {
+    const state = window as any;
+    state.cardCovers = [];
+    const original = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      (original as any).apply(this, args);
+      if (
+        this.canvas.width === 2160 &&
+        args.length === 9 &&
+        args[0] instanceof HTMLImageElement
+      ) {
+        const probe = document.createElement("canvas");
+        probe.width = probe.height = 1;
+        const ctx = probe.getContext("2d")!;
+        original.call(ctx, args[0], 0, 0);
+        state.cardCovers.push({
+          x: args[5],
+          y: args[6],
+          size: args[7],
+          color: [...ctx.getImageData(0, 0, 1, 1).data],
+        });
+      }
+    } as typeof original;
+  });
   await page.getByRole("button", { name: "Export image", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: /^Feed/ }).click();
-  await expect(
-    dialog.getByRole("button", { name: "Save PNG", exact: true }),
-  ).toBeEnabled();
-  const wait = page.waitForEvent("download");
-  await dialog.getByRole("button", { name: "Save PNG", exact: true }).click();
-  await (await wait).saveAs("artifacts/recap-rankings-feed.png");
+  for (const format of ["Story", "Feed"]) {
+    if (format === "Feed") {
+      await page.evaluate(() => {
+        (window as any).cardCovers = [];
+      });
+      await dialog.getByRole("button", { name: /^Feed/ }).click();
+    }
+    await expect(
+      dialog.getByRole("button", { name: "Save PNG", exact: true }),
+    ).toBeEnabled();
+    const covers = await page.evaluate(
+      () =>
+        (window as any).cardCovers as {
+          x: number;
+          y: number;
+          size: number;
+          color: number[];
+        }[],
+    );
+    expect(covers).toHaveLength(6);
+    for (const group of [covers.slice(0, 3), covers.slice(3)]) {
+      expect(group[0].size).toBeGreaterThan(group[1].size);
+      expect(group[1].size).toBeGreaterThan(group[2].size);
+    }
+    const image = dialog.locator(".recap-image-preview");
+    const pixels = await image.evaluate(async (node, covers) => {
+      const img = node as HTMLImageElement;
+      await img.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      return covers.map(({ x, y }) => [
+        ...ctx.getImageData(x * 2 + 16, y * 2 + 16, 1, 1).data,
+      ]);
+    }, covers);
+    pixels.forEach((color, i) => expect(color).toEqual(covers[i].color));
+    const wait = page.waitForEvent("download");
+    await dialog.getByRole("button", { name: "Save PNG", exact: true }).click();
+    await (
+      await wait
+    ).saveAs(`artifacts/recap-rankings-${format.toLowerCase()}.png`);
+  }
   await page.keyboard.press("Escape");
   await seedExistingSnapshot(page);
   await page.evaluate(async () => {
@@ -350,4 +411,139 @@ test("exports include three ranks and old snapshots keep only recorded winners",
       .getByRole("region", { name: "Top albums", exact: true })
       .getByRole("listitem"),
   ).toHaveCount(1);
+});
+
+async function holdArtwork(page: Page) {
+  await page.evaluate(() => {
+    const state = window as any;
+    state.heldCovers = [];
+    const original = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      return new Promise<void>((resolve, reject) => {
+        state.heldCovers.push(() => original.call(this).then(resolve, reject));
+      });
+    };
+    state.releaseCovers = () => {
+      HTMLImageElement.prototype.decode = original;
+      state.heldCovers.splice(0).forEach((release: () => void) => release());
+    };
+  });
+}
+
+test("delayed artwork cannot publish an old format or reopen a dismissed export", async ({
+  page,
+}) => {
+  await seed(page);
+  await holdArtwork(page);
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect
+    .poll(() => page.evaluate(() => (window as any).heldCovers.length))
+    .toBeGreaterThan(0);
+  await dialog.getByRole("button", { name: /^Feed/ }).click();
+  await expect(
+    dialog.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeDisabled();
+  await expect(dialog.locator(".recap-image-preview")).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).heldCovers.length))
+    .toBeGreaterThan(5);
+  await page.evaluate(() => (window as any).releaseCovers());
+  await expect(
+    dialog.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeEnabled();
+  expect(
+    await dialog.locator(".recap-image-preview").evaluate(async (node) => {
+      const img = node as HTMLImageElement;
+      await img.decode();
+      return img.naturalHeight;
+    }),
+  ).toBe(2700);
+  await holdArtwork(page);
+  await dialog.getByRole("button", { name: /^Story/ }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).heldCovers.length))
+    .toBeGreaterThan(0);
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => (window as any).releaseCovers());
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("privacy changes during artwork preparation prevent preview and saving", async ({
+  page,
+}) => {
+  await seed(page);
+  await holdArtwork(page);
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).heldCovers.length))
+    .toBeGreaterThan(0);
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open("local-music-v1");
+      r.onsuccess = () => resolve(r.result);
+    });
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction("settings", "readwrite"),
+        store = tx.objectStore("settings"),
+        r = store.get("preferences");
+      r.onsuccess = () =>
+        store.put({ ...r.result, privacyRevision: 1 }, "preferences");
+      tx.oncomplete = () => resolve();
+    });
+    db.close();
+    (window as any).releaseCovers();
+  });
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("alert")).toContainText(
+    "History privacy changed",
+  );
+  await expect(dialog.locator(".recap-image-preview")).toHaveCount(0);
+  await expect(
+    dialog.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeDisabled();
+});
+
+test("missing and corrupt covers fall back and a rendering failure can retry", async ({
+  page,
+}) => {
+  await seed(page);
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open("local-music-v1");
+      r.onsuccess = () => resolve(r.result);
+    });
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction("tracks", "readwrite"),
+        store = tx.objectStore("tracks");
+      for (const [id, cover] of [
+        ["rank-00", new Blob(["invalid image"], { type: "image/png" })],
+        ["rank-01", undefined],
+      ] as const) {
+        const r = store.get(id);
+        r.onsuccess = () => store.put({ ...r.result, cover }, id);
+      }
+      tx.oncomplete = () => resolve();
+    });
+    db.close();
+    const original = HTMLCanvasElement.prototype.getContext;
+    let failed = false;
+    HTMLCanvasElement.prototype.getContext = function (...args: any[]) {
+      if (this.width === 2160 && !failed) {
+        failed = true;
+        return null;
+      }
+      return (original as any).apply(this, args);
+    } as typeof original;
+  });
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Image rendering unavailable",
+  );
+  await dialog.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(dialog.locator(".recap-image-preview")).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Save PNG", exact: true }),
+  ).toBeEnabled();
 });

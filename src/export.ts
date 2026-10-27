@@ -1,4 +1,6 @@
 import { periodRequest, periodLabel, bucketLabel } from "./recap/periods";
+import { prepareRecapRankings, throwIfAborted } from "./recap/exportArtwork";
+import { drawRankings } from "./recap/drawRankings";
 import type { Recap } from "./types";
 import { safeRecap } from "./domain";
 import { native, api } from "./api";
@@ -93,11 +95,14 @@ export async function renderRecapCard(
   recap: Recap,
   language: "en" | "es",
   format: CardFormat,
+  signal?: AbortSignal,
 ): Promise<Blob> {
   await Promise.all([
     document.fonts.load('700 60px "Space Grotesk"'),
     document.fonts.load("500 28px Inter"),
   ]);
+  const rankings = await prepareRecapRankings(recap, signal);
+  throwIfAborted(signal);
   const dimensions = cardDimensions(format);
   const canvas = document.createElement("canvas");
   canvas.width = dimensions.width;
@@ -148,7 +153,7 @@ export async function renderRecapCard(
   const label = (value: string, y: number) => text(value, pad, y, 25, w, muted);
   ctx.fillStyle = paper;
   ctx.fillRect(0, 0, 1080, h);
-  const heroHeight = story ? 560 : 300;
+  const heroHeight = story ? 400 : 280;
   drawOrbit(ctx, 32, 32, 1016, heroHeight, recap.visualSeed);
   text(
     periodLabel(recap.period, language),
@@ -167,7 +172,7 @@ export async function renderRecapCard(
   text(
     recap.completePeriod
       ? es
-        ? "AÑO COMPLETO"
+        ? "PERÍODO COMPLETO"
         : "COMPLETE PERIOD"
       : es
         ? "ESCUCHA REGISTRADA"
@@ -178,14 +183,14 @@ export async function renderRecapCard(
     850,
     paper,
   );
-  const totalY = heroHeight + (story ? 205 : 160);
+  const totalY = story ? 570 : 420;
   text(
     recap.listenedMs > 0 && recap.listenedMs < 60000
       ? "<1"
       : safe.minutesListened.toLocaleString(language),
     pad,
     totalY,
-    story ? 152 : 130,
+    story ? 132 : 100,
     w,
     ink,
     700,
@@ -199,9 +204,9 @@ export async function renderRecapCard(
     w,
     muted,
   );
-  const chartBottom = totalY + (story ? 325 : 225);
+  const chartBottom = story ? 850 : 620;
   const max = Math.max(...recap.buckets.map((b) => b.listenedMs), 1),
-    chartHeight = story ? 135 : 95;
+    chartHeight = story ? 135 : 80;
   recap.buckets.forEach((bucket, i) => {
     const x = pad + i * (w / recap.buckets.length),
       cell = w / recap.buckets.length;
@@ -228,57 +233,7 @@ export async function renderRecapCard(
     w,
     muted,
   );
-  const highlightsY = chartBottom + 115;
-  ctx.strokeStyle = "#caccc5";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad, highlightsY);
-  ctx.lineTo(1016, highlightsY);
-  ctx.stroke();
-  const gap = story ? 155 : 125;
-  const highlight = (heading: string, values: string[], i: number) => {
-    const y = highlightsY + 35 + gap * i;
-    label(heading, y);
-    const items = values.length
-      ? values
-      : [es ? "Sin reproducciones" : "No qualified plays yet"];
-    items.slice(0, 3).forEach((value, rank) => {
-      text(
-        `${rank + 1}. ${value}`,
-        pad,
-        y + [42, 73, 100][rank],
-        [story ? 42 : 36, 26, 22][rank],
-        w,
-        rank ? muted : ink,
-        rank ? 400 : 700,
-      );
-    });
-  };
-  highlight(
-    es ? "ARTISTAS PRINCIPALES" : "TOP ARTISTS",
-    (safe.topArtists?.length
-      ? safe.topArtists
-      : safe.topArtist
-        ? [safe.topArtist]
-        : []
-    ).map((x) => x.name),
-    0,
-  );
-  highlight(
-    es ? "CANCIONES PRINCIPALES" : "TOP SONGS",
-    safe.topTracks.slice(0, 3).map((x) => x.title),
-    1,
-  );
-  highlight(
-    es ? "ÁLBUMES PRINCIPALES" : "TOP ALBUMS",
-    (safe.topAlbums?.length
-      ? safe.topAlbums
-      : safe.topAlbum
-        ? [safe.topAlbum]
-        : []
-    ).map((x) => x.name),
-    2,
-  );
+  drawRankings(ctx, rankings, language, story);
   const date = (value: string) =>
     new Intl.DateTimeFormat(language, {
       month: "short",
@@ -312,6 +267,7 @@ export async function renderRecapCard(
     w,
     ink,
   );
+  throwIfAborted(signal);
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (blob) =>

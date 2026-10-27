@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import fixture from "../../tests/fixtures/recap-rankings.json";
+import { recapRankings } from "./rankings";
 import { aggregate, safeRecap } from "../domain";
 import type { Session, Track } from "../types";
 
@@ -40,6 +41,37 @@ it("ranks complete artist/album totals with stable ties and excludes private pla
   );
   expect(r.topAlbums?.map((x) => x.trackId)).toEqual(["a", "c", "b"]);
   expect(JSON.stringify(safeRecap(r))).not.toContain("trackId");
+  const groups = recapRankings(r);
+  expect(groups.map((group) => group.key)).toEqual([
+    "songs",
+    "artists",
+    "albums",
+  ]);
+  expect(groups[0].items.map((item) => item.name)).toEqual(
+    r.topTracks.slice(0, 3).map((item) => item.track.title),
+  );
+  expect(groups[2].items.map((item) => item.artwork?.id)).toEqual([
+    "a",
+    "c",
+    "b",
+  ]);
+  const legacy = recapRankings({
+    ...r,
+    topArtists: undefined,
+    topAlbums: undefined,
+  });
+  expect(legacy[1].items).toHaveLength(1);
+  expect(legacy[2].items).toHaveLength(1);
+  const missing = recapRankings({
+    ...r,
+    topTracks: [],
+    topAlbums: [{ name: "Missing album", artist: "Missing artist", plays: 3 }],
+  });
+  expect(missing[2].items[0].artwork).toMatchObject({
+    album: "Missing album",
+    artist: "Missing artist",
+    sourceUri: "",
+  });
   expect(r.topArtist).toEqual(r.topArtists?.[0]);
   expect(r.topAlbum).toEqual(r.topAlbums?.[0]);
   expect(JSON.stringify(safeRecap(r))).not.toContain("/private/");

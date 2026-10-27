@@ -182,10 +182,6 @@
   color: #1b1b1a;
   font-weight: 600;
 }
-.settings-choice button:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
 .action-menu button {
   display: block;
   width: 100%;
@@ -195,8 +191,7 @@
   border-radius: 5px;
   font-size: 13px;
 }
-.action-menu button:hover,
-.action-menu button:focus-visible {
+.action-menu button:hover {
   background: var(--hover);
 }
 .action-menu button[role="menuitemcheckbox"] {
