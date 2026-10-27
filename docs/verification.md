@@ -994,3 +994,11 @@ Verified development outputs (ignored, not a new release):
 
 - Playlist generation keeps the existing one-second spinner in normal motion and uses a slower three-second rotation under Reduce Motion. The exception is scoped to playlist generation; other loading indicators retain their reduced-motion behavior.
 - Frontend check passed 95 unit tests. Targeted browser tests passed for held playlist generation in both motion modes and for library loading under Reduce Motion. Windows development build passed at 0.9.0, with `index-BvVvnZ8k.js` and `index-MgbSGI-J.css` verified in the executable. Android was not rebuilt or tested on a device for this presentation change.
+
+
+### 27 October 2026 - v0.10.0 personalized playlists local release
+
+- Release gates: `npm.cmd run check` passed 95 unit tests; the complete browser suite passed 82 tests; Rust core passed 25 tests; native Rust passed 18 tests. Fresh Kotlin/JVM reports contain nine tests, zero failures and zero errors (two acoustic, four sound and three visualizer tests). Existing compiler and Gradle warnings remain.
+- Windows development executable reports file and product version 0.10.0. Its portable ZIP was checked against its five staged members. Android ARM64 native compilation succeeded; Tauri could not create a Windows symlink, so the project copy fallback built the APK. Its package is `app.localmusic.year`, version 0.10.0/code 10000, and its v2 signature verifies. Packaged native-library SHA-256 matches the compiled library: `2512d54f1de54c77d003288db82183fb39102d5033517c602fcf84225dc37fc1`. Both native builds contain frontend `index-BvVvnZ8k.js` and `index-MgbSGI-J.css`.
+- Local development packages and checksums are in `artifacts/releases/v0.10.0/`: Windows ZIP SHA-256 `1c950cd612bb6f03fb9865bdb3026fb26229741332a5c22ad4c0798a8b423922`; Android APK SHA-256 `9fbfb0dd8757ffcea0092538b1aa5769f8a7ae728ce30d32ee9e6c784eec0734`. These are not production-signed hosted distribution.
+- Android runtime/background behavior, physical-device and headphone acceptance, analysis performance, battery/thermal behavior, manual screen-reader checks and recommendation listening quality remain unverified gates. Builds and browser tests do not establish those claims.
