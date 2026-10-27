@@ -86,35 +86,33 @@ export function drawRankings(
     ctx.restore();
   };
   groups.forEach((group, category) => {
-    const x = story ? 64 : 64 + category * 325;
-    const y = story ? [970, 1300, 1470][category] : 750;
-    const width = story ? 952 : 302;
+    const x = 64 + category * 325;
+    const dividerY = story ? 1120 : 725;
+    const y = dividerY + 46;
+    const width = 302;
     ctx.strokeStyle = "#caccc5";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x, y - 25);
-    ctx.lineTo(x + width, y - 25);
+    ctx.moveTo(x, dividerY);
+    ctx.lineTo(x + width, dividerY);
     ctx.stroke();
-    line(t[group.titleKey], x, y, story ? 28 : 24, width, 700);
+    line(t[group.titleKey], x, y, 24, width, 700);
     if (!group.items.length) {
       line(t.noPlays, x, y + 50, 22, width, 500, muted, 2);
       return;
     }
+    let itemY = y + 26;
     group.items.forEach((item, rank) => {
-      const itemX = story ? x + rank * 325 : x;
-      const itemY = story ? y + 25 : [780, 940, 1080][rank];
-      const size = (story ? [132, 108, 88] : [80, 64, 52])[rank];
-      const titleSize = story ? [34, 29, 25][rank] : [27, 24, 22][rank];
+      const itemX = x;
+      const size = [80, 64, 52][rank];
+      const titleSize = [27, 24, 22][rank];
       let textX = itemX,
         textY = itemY + titleSize;
       let available = 302;
       if (item.image) {
         cover(item.image, itemX, itemY, size);
-        if (story) textY = itemY + size + titleSize + 14;
-        else {
-          textX += size + 12;
-          available -= size + 12;
-        }
+        textX += size + 12;
+        available -= size + 12;
       }
       const titleHeight = line(
         `${rank + 1}. ${item.name}`,
@@ -126,9 +124,9 @@ export function drawRankings(
         ink,
         2,
       );
-      let detailY = textY + titleHeight + (story ? 26 : 23);
+      let detailY = textY + titleHeight + 23;
       if (item.detail) {
-        const detailSize = story ? 21 : 18;
+        const detailSize = 18;
         detailY +=
           line(
             item.detail,
@@ -138,18 +136,21 @@ export function drawRankings(
             available,
             500,
             muted,
-            story ? 1 : 2,
-          ) + (story ? 26 : 23);
+            2,
+          ) + 23;
       }
       line(
         `${item.plays.toLocaleString(language)} ${t.plays}`,
         textX,
         detailY,
-        story ? 21 : 18,
+        18,
         available,
         500,
         accent,
       );
+      const textBottom = detailY + 4;
+      const artworkBottom = itemY + (item.image ? size : 0);
+      itemY = Math.max(textBottom, artworkBottom) + 18;
     });
   });
 }

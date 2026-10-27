@@ -345,6 +345,13 @@ test("exports include three ranks and old snapshots keep only recorded winners",
     for (const group of [covers.slice(0, 3), covers.slice(3)]) {
       expect(group[0].size).toBeGreaterThan(group[1].size);
       expect(group[1].size).toBeGreaterThan(group[2].size);
+      expect(group.map((cover) => cover.x)).toEqual([
+        group[0].x,
+        group[0].x,
+        group[0].x,
+      ]);
+      expect(group[1].y).toBeGreaterThan(group[0].y + group[0].size);
+      expect(group[2].y).toBeGreaterThan(group[1].y + group[1].size);
     }
     const image = dialog.locator(".recap-image-preview");
     const pixels = await image.evaluate(async (node, covers) => {

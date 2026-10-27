@@ -1013,3 +1013,12 @@ Verified development outputs (ignored, not a new release):
 - Browser export tests compare cover pixels in both PNGs, assert descending cover sizes and preserve preview/download byte equality. They also exercise legacy snapshots, partial rankings, delayed artwork, format changes, dismissal, privacy invalidation, corrupt/missing covers, rendering Retry and existing weekly/monthly/yearly exports. Inspected `artifacts/recap-rankings-story.png`, `artifacts/recap-rankings-feed.png` and `artifacts/focus-rounded-player.png`.
 - Final Windows and ARM64 Android development builds passed at 0.10.0. Both embed `index-B0bMuGqZ.js` and `index-DS6-S8zz.css`. Android packaging used the established copy fallback after the Windows symlink restriction. The APK reports `app.localmusic.year`, version 0.10.0/code 10000, and its v2 signature verifies. Its packaged native library matches the compiled SHA-256 `4b6e6a7b18d948b01ff03862b45f94e0c4c1c331eb792779b278e514d3436c0d`. Existing compiler warnings remain.
 - Android runtime/physical-device acceptance, actual Windows 200% zoom and Windows high-contrast inspection, and manual screen-reader acceptance remain pending. Browser emulation and build evidence do not establish those native/manual observations. Native Rust and Kotlin tests were not rerun for this presentation revision; their source is unchanged. No merge, version bump or release was performed.
+
+
+### 27 October 2026 - compact, consistent Recap ranking spacing
+
+- Increased divider-to-heading clearance. Both PNG formats now use the same three-column layout with vertical ranks, matching artwork sizes and type hierarchy. Rank positions follow the taller of their artwork and wrapped text plus an 18 px logical gap; artists no longer inherit the fixed gaps of artwork rows. Story's poster/summary proportions were rebalanced for its portrait canvas.
+- Frontend checks passed 95 unit tests. Three targeted browser journeys passed, covering weekly/monthly EN/ES exports, artwork pixels and descending rank sizes in both layouts, legacy snapshots, and preview/download equality. Export assertions verify vertical rank alignment. Inspected the Story and Feed ranking PNGs after regeneration.
+- Windows development build passed at version 0.10.0 and its embedded assets were verified. Android and native domain tests were not repeated for this canvas layout revision; the previous revision's native runtime/manual acceptance gates remain pending.
+
+- Final Windows assets: `index-BLA8Nk92.js`, `index-DS6-S8zz.css`.

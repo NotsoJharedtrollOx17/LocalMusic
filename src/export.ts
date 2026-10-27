@@ -153,7 +153,7 @@ export async function renderRecapCard(
   const label = (value: string, y: number) => text(value, pad, y, 25, w, muted);
   ctx.fillStyle = paper;
   ctx.fillRect(0, 0, 1080, h);
-  const heroHeight = story ? 400 : 280;
+  const heroHeight = story ? 560 : 280;
   drawOrbit(ctx, 32, 32, 1016, heroHeight, recap.visualSeed);
   text(
     periodLabel(recap.period, language),
@@ -183,7 +183,7 @@ export async function renderRecapCard(
     850,
     paper,
   );
-  const totalY = story ? 570 : 420;
+  const totalY = story ? 730 : 420;
   text(
     recap.listenedMs > 0 && recap.listenedMs < 60000
       ? "<1"
@@ -204,7 +204,7 @@ export async function renderRecapCard(
     w,
     muted,
   );
-  const chartBottom = story ? 850 : 620;
+  const chartBottom = story ? 1010 : 620;
   const max = Math.max(...recap.buckets.map((b) => b.listenedMs), 1),
     chartHeight = story ? 135 : 80;
   recap.buckets.forEach((bucket, i) => {
