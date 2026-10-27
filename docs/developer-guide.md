@@ -131,7 +131,7 @@ The current-only UI revision removes period browsing entirely. ISO week labels u
 
 ## Focus and Recap presentation
 
-Keyboard focus frames are centralized in `src/focus.css` and are independent of circular control backgrounds. Keep keyboard frames visible inside scrolling surfaces and maintain selected-state contrast and forced-color support.
+Keyboard focus frames are centralized in `src/focus.css`, use contrasting orange strokes in each theme and are independent of circular transport surfaces. Icon hover shares the unfilled rounded frame. Library entries reserve padding around artwork and text so the whole frame remains visible within scroll containers. Keep keyboard frames visible inside scrolling surfaces and maintain selected-state contrast and forced-color support.
 
 Recap view and PNG export consume the shared ranking presentation helper. Export artwork is resolved locally with bounded loading, deterministic cover fallbacks and cancellation; only display values and decoded images reach the canvas ranking renderer. Story and Feed retain their existing dimensions and share three ranking columns with content-sized vertical rows and consistent padding below section dividers. Preview readiness is tied to its format, language and source Recap, with privacy rechecked after preparation and before saving.
 

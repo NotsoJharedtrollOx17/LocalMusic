@@ -35,3 +35,11 @@
 - Exercise delayed artwork, rapid format changes, dismissal, privacy invalidation and canceled saving.
 - Run frontend checks, the complete browser suite and Rust core tests. Build Windows and ARM64 Android; verify embedded assets, APK metadata/signature and native-library hashes.
 - Record actual results in docs/verification.md, keeping device runtime and manual accessibility acceptance distinct from browser/build evidence.
+
+
+## Review correction: focus color, bounds and icon hover
+
+- Use contrasting orange focus strokes in light/dark themes instead of the text color. Keep the rounded, unfilled frame and forced-color fallback.
+- Reserve space around song/album/artist content so artwork and labels sit entirely inside the frame. Keep its full bounds within the interactive entry to avoid clipping in scroll containers.
+- Replace circular icon hover fills with the same rounded outline; preserve existing transport and selected-state semantics.
+- Verify real library entries and icon hover at 1280/320 px in both themes, in addition to keyboard/menu/forced-color regressions. Rebuild Windows and record the actual scope of verification.

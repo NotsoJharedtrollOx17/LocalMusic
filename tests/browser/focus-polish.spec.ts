@@ -163,3 +163,79 @@ test("keyboard frames stay rounded across buttons, menus, themes and forced colo
     fullPage: true,
   });
 });
+
+test("library frames enclose covers and text, with orange outline-only icon hover", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate(
+        (theme) => (document.documentElement.dataset.theme = theme),
+        theme,
+      );
+      for (const tab of ["Songs", "Albums", "Artists"]) {
+        await page.getByRole("tab", { name: tab, exact: true }).click();
+        const entry = page
+          .locator(tab === "Songs" ? ".track-hit" : ".album-card")
+          .first();
+        await entry.scrollIntoViewIfNeeded();
+        const style = await frame(page, entry);
+        expect(style.color).toBe(
+          theme === "light" ? "rgb(184, 68, 11)" : "rgb(255, 153, 93)",
+        );
+        const geometry = await entry.evaluate((node) => {
+          const box = node.getBoundingClientRect(),
+            ring = getComputedStyle(node, "::before");
+          return {
+            width: box.width,
+            height: box.height,
+            ringWidth: parseFloat(ring.width),
+            ringHeight: parseFloat(ring.height),
+            border: parseFloat(ring.borderTopWidth),
+            children: [...node.children].map((child) => {
+              const r = child.getBoundingClientRect();
+              return {
+                left: r.left - box.left,
+                top: r.top - box.top,
+                right: box.right - r.right,
+                bottom: box.bottom - r.bottom,
+              };
+            }),
+          };
+        });
+        expect(
+          Math.abs(geometry.ringWidth + 2 * geometry.border - geometry.width),
+        ).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(geometry.ringHeight + 2 * geometry.border - geometry.height),
+        ).toBeLessThanOrEqual(1);
+        for (const child of geometry.children)
+          for (const gap of Object.values(child))
+            expect(gap).toBeGreaterThanOrEqual(5);
+        await page.screenshot({
+          path: `artifacts/focus-${tab.toLowerCase()}-${theme}-${width}.png`,
+          fullPage: true,
+        });
+      }
+      const icon = page.getByRole("button", {
+        name: "Library actions",
+        exact: true,
+      });
+      await icon.hover();
+      const hover = await icon.evaluate((node) => ({
+        background: getComputedStyle(node).backgroundColor,
+        radius: getComputedStyle(node, "::before").borderRadius,
+        color: getComputedStyle(node, "::before").borderTopColor,
+      }));
+      expect(hover.background).toBe("rgba(0, 0, 0, 0)");
+      expect(hover.radius).toBe("8px");
+      expect(hover.color).toBe(
+        theme === "light" ? "rgb(184, 68, 11)" : "rgb(255, 153, 93)",
+      );
+    }
+  }
+});

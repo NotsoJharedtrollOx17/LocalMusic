@@ -41,9 +41,6 @@
   min-width: 44px;
   min-height: 44px;
 }
-.visualizer-view .icon-button:hover {
-  background: var(--hover);
-}
 .visualizer-modes {
   display: flex;
   justify-content: center;

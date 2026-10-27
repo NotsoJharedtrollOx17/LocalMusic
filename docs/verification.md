@@ -1031,3 +1031,12 @@ Verified development outputs (ignored, not a new release):
 - Six targeted browser Recap journeys passed their assertions, including ranked views, artwork exports, legacy snapshots, privacy invalidation and export failure recovery. Complete-suite, Android build/runtime and manual/device gates were not repeated for this focused ranking revision.
 - Windows development build passed at version 0.10.0 with final frontend assets verified in the executable. Existing DSP dead-code warnings remain. No merge or release was performed.
 - Browser-runner caveat: all six tests reported `ok`, but cleanup did not exit; the runner was interrupted after several minutes without further output. This is test-assertion evidence, not a clean complete browser-suite exit.
+
+
+### 27 October 2026 - focus-frame bounds and icon hover correction
+
+- Replaced text-colored button/link frames with contrasting warm orange in light mode and pale orange in dark mode, including system-dark appearance. Retained the surface separator and Windows forced-color fallback. Song, album and artist entries reserve 6 px content padding and use a frame at their full bounds so images/text no longer meet or obscure the stroke.
+- Removed circular icon hover fills from shared and Visualizer styles. Enabled icon hover uses the same unfilled rounded 2 px frame as keyboard focus, without changing selected-state dots or persistent transport styling.
+- Frontend production build and all 96 unit tests passed. Both targeted focus browser journeys passed with a clean runner exit: actual Tab/Shift+Tab, menu navigation, EN/ES, themes, Reduce Motion and forced-color emulation; library-entry frame bounds and content clearance at 1280/320 px in both themes; and transparent outlined icon hover. Geometry tolerates at most 1 CSS px rounding. Inspected the generated album desktop/light and song narrow/dark screenshots, including the complete surrounding frame.
+- This presentation revision does not change native domain rules. Rust/Kotlin tests, full browser suite, Android packaging/runtime, actual Windows high contrast/200% zoom and manual screen-reader acceptance were not repeated; prior device/manual gates remain pending.
+- Windows development build passed at version 0.10.0. Embedded frontend assets verified: `index-ozhjAve0.js`, `index-CkaW0P8n.css`. Existing DSP dead-code warnings remain. No merge or release was performed.

@@ -190,13 +190,10 @@ input[type="range"] {
   width: 44px;
   min-width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 8px;
   color: var(--ink);
-  transition: background 0.16s;
 }
-.icon-button:hover {
-  background: var(--hover);
-}
+
 .icon-button.active {
   color: var(--accent);
 }
@@ -439,7 +436,8 @@ input[type="range"] {
   flex: 1;
   min-width: 0;
   text-align: left;
-  padding: 0;
+  padding: 6px;
+  border-radius: 8px;
 }
 .cover {
   display: block;
@@ -629,7 +627,8 @@ input[type="range"] {
 .album-card {
   text-align: left;
   min-width: 0;
-  padding: 0;
+  padding: 6px;
+  border-radius: 8px;
 }
 .album-card .cover {
   width: 100%;
