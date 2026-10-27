@@ -46,3 +46,7 @@ Actual recommendation quality requires listening review. Galaxy Note10 CPU/memor
 ## Explicit generation revision
 
 Acoustic analysis no longer starts automatically while idle. Only pressing Generate playlist authorizes a batch of up to three source-analysis attempts, while visible and paused, before ranking. The lease renews only during that request and is revoked afterward, on playback, backgrounding or unmount. Cached descriptors carry forward; subsequent explicit generations can extend coverage. Failed/refused analysis retains metadata/history matching. Coverage refreshes after the batch rather than polling during browsing. The creator exposes an editable 1?100 track count, initially 30; the Length/count-versus-duration selector is removed. Backend duration contracts remain compatible with existing callers.
+
+## Creator presentation revision
+
+The redundant no-duplicates caption is removed; duplicate prevention remains a hard constraint. The source-analysis count appears in a contrasting panel directly after the preference options. Crossed creation tools replace the shuffle decoration. Generate immediately enters a dedicated busy state, changes the submit label, displays an accessible spinner and explains that matching may take a moment. Progress clears on success, errors and stale-result rejection through a finally block; generation does not show fabricated percentages.

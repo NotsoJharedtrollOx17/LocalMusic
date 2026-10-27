@@ -103,6 +103,24 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
   await expect
     .poll(() => page.evaluate(() => (window as any).rankingHeld))
     .toBe(true);
+  await expect(
+    page.getByRole("button", { name: "Creating your playlist…", exact: true }),
+  ).toBeDisabled();
+  await expect(page.locator(".playlist-generation-status")).toContainText(
+    "Matching songs from your library",
+  );
+  await expect(
+    page
+      .locator(".generator")
+      .getByText("No duplicate tracks", { exact: true }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: "artifacts/personalized-creator-progress.png",
+    fullPage: true,
+  });
+  const options = await page.locator(".generator-options").boundingBox();
+  const coverage = await page.locator(".analysis-coverage").boundingBox();
+  expect(coverage!.y).toBeGreaterThanOrEqual(options!.y + options!.height);
   await page.getByLabel("Exclude artist", { exact: true }).fill("Artist 0");
   await page.evaluate(() => (window as any).releaseRanking());
   await expect(
@@ -207,7 +225,7 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   expect(await stored(page, "sessions")).toEqual([]);
   expect(await stored(page, "intervals")).toEqual([]);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
-  await expect(page.locator(".playlist-blend")).toContainText(
+  await expect(page.locator(".analysis-coverage")).toContainText(
     "0 of 4 songs ready",
   );
   await expect(

@@ -1,11 +1,13 @@
-import { ArrowRight, Shuffle, Shield } from "lucide-react";
+import { ArrowRight, Hammer, Wrench, Shield } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlaylistFilters from "./PlaylistFilters";
 import PlaylistOptions from "./PlaylistOptions";
 import PlaylistBlend from "./PlaylistBlend";
+import PlaylistAnalysis from "./PlaylistAnalysis";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 export default function PlaylistBuilder() {
-  const { catalogTotal, busy, t, buildMix } = useMusicAppContext();
+  const { catalogTotal, busy, buildingMix, t, buildMix } = useMusicAppContext();
 
   return (
     <div className="generator">
@@ -15,8 +17,9 @@ export default function PlaylistBuilder() {
           <h2>{t.makePlaylist}</h2>
           <p>{t.mixSubtitle}</p>
         </div>
-        <span className="generator-mark">
-          <Shuffle />
+        <span className="generator-mark creation-mark" aria-hidden="true">
+          <Hammer />
+          <Wrench />
         </span>
       </div>
       <form
@@ -28,6 +31,21 @@ export default function PlaylistBuilder() {
         <PlaylistFilters />
         <PlaylistBlend />
         <PlaylistOptions />
+        <PlaylistAnalysis />
+        <div
+          className="playlist-generation-status"
+          role="status"
+          aria-live="polite"
+        >
+          {buildingMix && (
+            <>
+              <span aria-hidden="true">
+                <LoadingIndicator label={t.generatingPlaylist} compact />
+              </span>
+              <span>{t.preparingPlaylist}</span>
+            </>
+          )}
+        </div>
         <div className="generator-bottom">
           <span className="small-muted">
             <Shield size={16} />
@@ -37,9 +55,10 @@ export default function PlaylistBuilder() {
             className="button primary"
             disabled={busy || !catalogTotal}
             type="submit"
+            aria-busy={buildingMix}
           >
-            {t.generate}
-            <ArrowRight size={18} />
+            {buildingMix ? t.generatingPlaylist : t.generate}
+            {!buildingMix && <ArrowRight size={18} />}
           </button>
         </div>
       </form>

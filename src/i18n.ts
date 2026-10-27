@@ -1,4 +1,7 @@
 export const en = {
+  generatingPlaylist: "Creating your playlist…",
+  preparingPlaylist:
+    "Matching songs from your library. This may take a moment.",
   mixBalance: "Mix balance",
   familiar: "Familiar",
   balanced: "Balanced",
@@ -264,6 +267,9 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  generatingPlaylist: "Creando tu lista…",
+  preparingPlaylist:
+    "Buscando canciones de tu biblioteca. Puede tardar un momento.",
   mixBalance: "Equilibrio de la mezcla",
   familiar: "Familiar",
   balanced: "Equilibrada",

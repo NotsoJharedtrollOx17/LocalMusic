@@ -1,9 +1,7 @@
 import { useMusicAppContext } from "./MusicAppContext";
 import type { PlaylistBlend as Blend } from "../playlists/types";
-import LoadingIndicator from "../components/LoadingIndicator";
 export default function PlaylistBlend() {
-  const { request, chooseBlend, playlistContext, playlistContextLoaded, t } =
-    useMusicAppContext();
+  const { request, chooseBlend, t } = useMusicAppContext();
   return (
     <fieldset className="playlist-blend">
       <legend>{t.mixBalance}</legend>
@@ -18,15 +16,6 @@ export default function PlaylistBlend() {
             {t[blend]}
           </button>
         ))}
-      </div>
-      <div className="small-muted analysis-coverage">
-        {playlistContextLoaded ? (
-          t.analysisCoverage
-            .replace("{count}", String(playlistContext.analyzed))
-            .replace("{total}", String(playlistContext.total))
-        ) : (
-          <LoadingIndicator label={t.loading} compact />
-        )}
       </div>
     </fieldset>
   );

@@ -1,6 +1,6 @@
 import { api, native } from "../api";
 import { en } from "../i18n";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { type Track, type Playlist } from "../types";
 import type { MusicAppState } from "./useAppState";
@@ -27,6 +27,7 @@ export function useMusicActions(
   },
 ) {
   const generating = useRef(false);
+  const [buildingMix, setBuildingMix] = useState(false);
   const {
     setTracks,
     query,
@@ -155,30 +156,35 @@ export function useMusicActions(
   async function buildMix() {
     if (generating.current) return;
     generating.current = true;
+    setBuildingMix(true);
     const revision = generationRevision.current;
     setBusy(true);
-    await act(async () => {
-      await prepareAnalysis();
-      if (revision !== generationRevision.current) return;
-      const p = await api.generatePlaylist({
-        ...request,
-        seed: crypto.getRandomValues(new Uint32Array(1))[0],
-        title: request.title || t.makePlaylist,
-        targetCount: target,
-        targetMinutes: undefined,
+    try {
+      await act(async () => {
+        await prepareAnalysis();
+        if (revision !== generationRevision.current) return;
+        const p = await api.generatePlaylist({
+          ...request,
+          seed: crypto.getRandomValues(new Uint32Array(1))[0],
+          title: request.title || t.makePlaylist,
+          targetCount: target,
+          targetMinutes: undefined,
+        });
+        if (revision !== generationRevision.current) return;
+        if (!p.trackIds.length) {
+          setError(t.noCandidates);
+          return;
+        }
+        const resultTracks = await api.tracksById(p.trackIds);
+        if (revision !== generationRevision.current) return;
+        remember(resultTracks);
+        setGenerated(p);
       });
-      if (revision !== generationRevision.current) return;
-      if (!p.trackIds.length) {
-        setError(t.noCandidates);
-        return;
-      }
-      const resultTracks = await api.tracksById(p.trackIds);
-      if (revision !== generationRevision.current) return;
-      remember(resultTracks);
-      setGenerated(p);
-    });
-    setBusy(false);
-    generating.current = false;
+    } finally {
+      setBusy(false);
+      setBuildingMix(false);
+      generating.current = false;
+    }
   }
   return {
     favorite,
@@ -188,5 +194,6 @@ export function useMusicActions(
     moveList,
     saveList,
     buildMix,
+    buildingMix,
   };
 }

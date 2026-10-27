@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistOptions() {
@@ -32,10 +31,6 @@ export default function PlaylistOptions() {
         />
         {t.avoidToday}
       </label>
-      <span className="small-muted">
-        <Check size={15} />
-        {t.noRepeats}
-      </span>
     </div>
   );
 }
