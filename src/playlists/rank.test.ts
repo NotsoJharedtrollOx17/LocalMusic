@@ -144,6 +144,16 @@ describe("personalized policy shared fixtures", () => {
       ).toEqual([...c.expectedArtists].sort());
     }
   });
+  it("treats genre as a preference for selected artists and a filter otherwise", () => {
+    const tracks = ["Alpha", "Beta", "Gamma"].map((artist, i) => ({
+      ...fixture.tracks[0], id: `genre-${i}`, artist, genre: i === 0 ? "Rock" : "Jazz",
+    }));
+    const request = { ...fixture.cases[0].request, includeArtist: "Alpha", includeArtists: ["Beta", "Gamma"], excludeArtist: "", genre: "Rock", targetCount: 3 } as PlaylistRequest;
+    const generate = (r: PlaylistRequest) => personalized(r, tracks, [], "UTC", { less: [], features: {} }, now).ids;
+    expect(new Set(generate(request))).toEqual(new Set(tracks.map(t => t.id)));
+    expect(generate({ ...request, includeArtist: "", includeArtists: [] })).toEqual(["genre-0"]);
+    expect(generate({ ...request, excludeArtist: "Beta" })).not.toContain("genre-1");
+  });
   it("private/short/future evidence cannot change any score or seed result", () => {
     const req = fixture.cases[1].request as PlaylistRequest,
       tracks = fixture.tracks,

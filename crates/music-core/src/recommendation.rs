@@ -270,7 +270,7 @@ pub fn generate(
                 && !t.hidden
                 && !exclude.contains(&normalize(&t.artist))
                 && (include.is_empty() || include.contains(&normalize(&t.artist)))
-                && (genre.is_empty() || tags(&t.genre).contains(&genre))
+                && (genre.is_empty() || !include.is_empty() || tags(&t.genre).contains(&genre))
                 && (!request.avoid_heard_today || !heard.contains(t.id.as_str()))
         })
         .collect();
@@ -372,6 +372,11 @@ pub fn generate(
             + parts.iter().map(|(v, w)| v * w).sum::<f64>()
                 / parts.iter().map(|(_, w)| w).sum::<f64>())
             * if request.prefer_favorites && t.favorite {
+                1.25
+            } else {
+                1.0
+            }
+            * if !include.is_empty() && !genre.is_empty() && gs.contains(&genre) {
                 1.25
             } else {
                 1.0

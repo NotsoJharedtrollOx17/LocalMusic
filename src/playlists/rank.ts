@@ -197,7 +197,7 @@ export function personalized(
         !t.hidden &&
         !excluded.has(key(t.artist)) &&
         (!included.size || included.has(key(t.artist))) &&
-        (!key(request.genre) || tags(t.genre).includes(key(request.genre))) &&
+        (!key(request.genre) || included.size > 0 || tags(t.genre).includes(key(request.genre))) &&
         (!request.avoidHeardToday || !heard.has(t.id)),
     )
     .sort((a, b) => compare(a.id, b.id))
@@ -286,6 +286,7 @@ export function personalized(
           parts.reduce((s, [v, w]) => s + v * w, 0) /
             parts.reduce((s, [, w]) => s + w, 0)) *
         (request.preferFavorites && t.favorite ? 1.25 : 1) *
+        (included.size && key(request.genre) && gs.includes(key(request.genre)) ? 1.25 : 1) *
         (data.less.includes(t.id) ? 0.1 : 1);
       if (data.less.includes(t.id)) why.push("less");
       reasons[t.id] = why;

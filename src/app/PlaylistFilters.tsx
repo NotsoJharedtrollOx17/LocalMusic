@@ -37,6 +37,7 @@ export default function PlaylistFilters() {
         {t.genre}
         <input
           list="genres"
+          aria-label={t.genre}
           value={request.genre}
           placeholder={t.anyGenre}
           onChange={(e) =>
@@ -46,6 +47,9 @@ export default function PlaylistFilters() {
             })
           }
         />
+        {request.genre.trim() && [request.includeArtist, ...(request.includeArtists ?? [])].some((name) => key(name)) && (
+          <small>{t.genreArtistPreference}</small>
+        )}
         <datalist id="genres">
           {playlistContext.genres.map((g) => (
             <option key={g} value={g} />

@@ -627,6 +627,8 @@ test("multiple included and excluded artists yield a varied mix and report confl
   ).toBeFocused();
   await page.getByLabel("Include artist 3", { exact: true }).fill("AC/DC");
   await expect(addInclude).toHaveCount(0);
+  await page.getByLabel("Genre", { exact: true }).fill("Unmatched genre");
+  await expect(page.getByText("With selected artists, genre is a preference, not a restriction.")).toBeVisible();
   await page.getByLabel("Exclude artist", { exact: true }).fill("AC/DC");
   const addExclude = page.getByRole("button", {
     name: "Add artist: Exclude artist",

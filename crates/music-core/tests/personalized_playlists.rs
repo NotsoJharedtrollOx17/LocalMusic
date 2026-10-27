@@ -228,3 +228,46 @@ fn shared_multi_artist_fixtures() {
         );
     }
 }
+
+#[test]
+fn genre_is_a_preference_for_included_artists_and_a_filter_otherwise() {
+    let f: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/personalized-playlists.json"
+    ))
+    .unwrap();
+    let template: Track = serde_json::from_value(f["tracks"][0].clone()).unwrap();
+    let tracks: Vec<Track> = ["Alpha", "Beta", "Gamma"]
+        .iter()
+        .enumerate()
+        .map(|(i, artist)| {
+            let mut t = template.clone();
+            t.id = format!("genre-{i}");
+            t.artist = (*artist).into();
+            t.genre = if i == 0 { "Rock" } else { "Jazz" }.into();
+            t
+        })
+        .collect();
+    let mut request: PlaylistRequest =
+        serde_json::from_value(f["cases"][0]["request"].clone()).unwrap();
+    request.include_artist = "Alpha".into();
+    request.include_artists = vec!["Beta".into(), "Gamma".into()];
+    request.exclude_artist.clear();
+    request.genre = "Rock".into();
+    request.target_count = Some(3);
+    let now = f["now"].as_str().unwrap().parse().unwrap();
+    let generate = |r: &PlaylistRequest| {
+        recommendation::generate(r, &tracks, &[], "UTC", now, &RecommendationData::default())
+            .unwrap()
+            .playlist
+            .track_ids
+    };
+    let ids = generate(&request);
+    assert_eq!(ids.len(), 3);
+    assert!(tracks.iter().all(|t| ids.contains(&t.id)));
+    request.exclude_artist = "Beta".into();
+    assert!(!generate(&request).contains(&"genre-1".into()));
+    request.include_artist.clear();
+    request.include_artists.clear();
+    request.exclude_artist.clear();
+    assert_eq!(generate(&request), vec!["genre-0"]);
+}

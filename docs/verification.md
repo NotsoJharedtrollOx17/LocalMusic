@@ -981,3 +981,10 @@ Verified development outputs (ignored, not a new release):
 - `npm.cmd run check` passed 94 unit tests; the complete browser suite passed 82 tests, including the new 320 px artist selection, conflict and generation journey. Inspected the narrow creator screenshot. Shared TypeScript/Rust fixtures cover inclusion, exclusion, conflicts, duplicate values and literal artist names. Rust core passed 24 tests and native Rust passed 18 tests.
 - Windows development build passed at 0.9.0. Android ARM64 cross-compilation and development APK packaging passed using the project copy fallback after Tauri hit the Windows symlink restriction. The APK identifies version 0.9.0, its v2 signature verifies, and its packaged native library SHA-256 matches the compiled library (`3ae347f8189ec8c874b35ad82224166797f8ba84830ce11432f30d8dc3661ab1`). Both native builds contain frontend `index-DPYYSa7h.js`.
 - Physical Android runtime and device acceptance were not tested. Browser and build results do not establish native device behavior.
+
+
+### 27 October 2026 - genre preference with selected artists
+
+- Personalized generation now retains tracks by explicitly included artists regardless of the selected genre, and gives matching genre tags a 1.25x preference. Without an included artist, genre remains a strict filter; excluded artists and other filters remain in force. Legacy filter-only requests retain their previous behavior. The creator explains the preference when both fields are filled.
+- Frontend check passed 95 unit tests; Rust core passed 25 tests. The complete browser suite passed 82 tests, including the journey with three included artists, an unmatched genre and an exclusion; the 320 px creator was inspected. Windows development build passed at version 0.9.0 with `index-C2JQh1S7.js` embedded.
+- Android was not rebuilt or tested on a device for this revision.
