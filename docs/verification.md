@@ -941,3 +941,11 @@ Verified development outputs (ignored, not a new release):
 - Production frontend check passed **93 unit tests**. Both affected browser journeys passed in **1.1 minutes**, checking initial/reopened guidance, explicit-only analysis and the narrow Spanish creator. Inspected `artifacts/personalized-creator-es-320.png`; text remains within the screen. No ranking, storage or native playback rules changed.
 
 - Windows development rebuild passed at **0.9.0**; verified embedded frontend index-C1GUsWRf.js, index-BwqKT_jw.css. Existing warnings remain. Android was not rebuilt for this copy/layout revision.
+
+
+### 27 October 2026 - separate creator tools
+
+- Replaced the overlapping hammer/wrench arrangement with two individually sized icons laid out side by side with a fixed gap. Kept the filled orange badge and dark strokes, removed mirrored/absolute positioning and consolidated the affected rules. Narrow layouts reduce icon sizes at the same breakpoint as the badge.
+- Production check passed **93 unit tests**. The existing playlist-layout browser journey passed in **37 seconds**, exercising English/Spanish and desktop/narrow widths. Inspected the desktop screenshot to confirm clear separation. No recommendation, persistence or playback behavior changed.
+
+- Windows development build passed at **0.9.0**; verified embedded assets index-B9EvkJ_J.js, index-FEKvfnud.css. Android was not rebuilt for this decorative CSS change. Existing compiler warnings remain.
