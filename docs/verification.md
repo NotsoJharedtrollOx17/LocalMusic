@@ -894,3 +894,11 @@ Verified development outputs (ignored, not a new release):
 80fc5d564a4643fc1fb5dfce850058fd7c5ef1e54660ff3725b381b3d9b4cc75  compiled and packaged ARM64 liblocal_music_lib.so
 8d98f2ad2df96ef720dede8ce43cbbdff97e6b8f034fdceb4dc0efcfb6913aa4  src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk
 ```
+
+
+### 26 October 2026 - explicit playlist analysis and 30-track default
+
+- Removed the automatic idle-analysis loop. Only Generate playlist authorizes up to three sequential source-analysis attempts before ranking; the renewable lease ends after the batch and cancels on playback, backgrounding or unmount. Existing cached features are reused. Coverage is refreshed at request completion rather than advancing during browsing. Playback-active generation uses existing metadata/history/cache without starting source analysis.
+- Removed the Length/count-versus-duration selector and its presentation state. The creator now has a single editable count (1?100), initially **30 tracks**. Backend duration requests remain supported for compatibility; hard constraints still explain a shorter result when the catalog cannot fill the count.
+- Production frontend check passed **92 unit tests across nineteen files**. All **five personalized-playlist browser journeys passed their assertions**, including new checks for zero idle analysis before Generate, a bounded three-track batch, no continued scanning afterward or after reload, explicit next-generation coverage progress, the 30 default and absent Length selector. Retained feedback/Undo, stale-result, storage migration and Spanish narrow-layout journeys passed. The runner hung during web-server cleanup after reporting all five cases successful and was interrupted (exit 1); this is assertion evidence, not a clean full-suite exit. A final Spanish explanatory-copy correction was followed by a successful production rebuild.
+- Windows development rebuild passed at unchanged **0.9.0**, embedding `index-CwtKy6-a.js` and `index-Dt28EaQZ.css`. Existing two dead-code warnings remain. No real-profile input automation was performed. The Android APK was not rebuilt for this shared frontend scheduling/control revision; Android runtime and physical performance remain separate pending gates.

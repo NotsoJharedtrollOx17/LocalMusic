@@ -4,7 +4,7 @@ export const en = {
   balanced: "Balanced",
   explore: "Explore",
   analysisCoverage:
-    "Sound matching: {count} of {total} songs ready. Metadata works immediately; sound matching improves while paused.",
+    "Sound matching: {count} of {total} songs ready. Analysis runs only when you generate a playlist.",
   suggestLess: "Suggest less",
   restoreSuggestions: "Restore normal suggestions",
   suggestLessSaved: "This song will be suggested less in future mixes.",
@@ -269,7 +269,7 @@ export const es: typeof en = {
   balanced: "Equilibrada",
   explore: "Explorar",
   analysisCoverage:
-    "Afinidad sonora: {count} de {total} canciones listas. Los metadatos ya funcionan; el análisis avanza en pausa.",
+    "Afinidad sonora: {count} de {total} canciones listas. El análisis solo se ejecuta al generar una lista.",
   suggestLess: "Sugerir menos",
   restoreSuggestions: "Restaurar sugerencias normales",
   suggestLessSaved: "Esta canción se sugerirá menos en futuras mezclas.",

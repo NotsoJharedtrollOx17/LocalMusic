@@ -29,7 +29,6 @@ export function usePersonalizedPlaylists(state: MusicAppState, t: typeof en) {
     state.player.excluded,
     state.request,
     state.target,
-    state.targetMode,
   ]);
   const previousKey = useRef(inputKey);
   if (previousKey.current !== inputKey) {
@@ -64,57 +63,53 @@ export function usePersonalizedPlaylists(state: MusicAppState, t: typeof en) {
   useEffect(() => {
     void refresh().catch((e) => state.setError(String(e)));
   }, [state.catalogRevision]);
+  // Analysis is authorized only by an explicit Generate action.
+  const analysisRun = useRef(0);
   useEffect(() => {
-    let disposed = false,
-      inFlight = false,
-      scanning = false;
-    const tick = async () => {
-      const current = latest.current;
-      const active =
-        !document.hidden &&
-        !current.player.playing &&
-        !current.busy &&
-        !current.importActive.current;
-      if (inFlight) return;
-      inFlight = true;
-      try {
-        await api.analysisActivity(active);
-        if (disposed) return;
-        if (active && !scanning) {
-          scanning = true;
-          void api
-            .analyzeNext()
-            .then(() => (disposed ? undefined : refresh()))
-            .catch(() => {
-              /* Metadata matching remains available. */
-            })
-            .finally(() => {
-              scanning = false;
-            });
-        }
-      } catch {
-        /* A refused idle scan must not interrupt playback. */
-      } finally {
-        inFlight = false;
+    const stop = () => {
+      if (document.hidden) {
+        analysisRun.current++;
+        void api.analysisActivity(false);
       }
     };
-    void tick();
-    const timer = window.setInterval(() => void tick(), 1500);
-    const visibility = () => {
-      if (document.hidden) void api.analysisActivity(false);
-      else void tick();
-    };
-    document.addEventListener("visibilitychange", visibility);
+    document.addEventListener("visibilitychange", stop);
     return () => {
-      disposed = true;
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", visibility);
+      analysisRun.current++;
+      document.removeEventListener("visibilitychange", stop);
       void api.analysisActivity(false);
     };
   }, []);
   useEffect(() => {
-    if (state.player.playing || state.busy) void api.analysisActivity(false);
-  }, [state.player.playing, state.busy]);
+    if (state.player.playing) {
+      analysisRun.current++;
+      void api.analysisActivity(false);
+    }
+  }, [state.player.playing]);
+  async function prepareAnalysis() {
+    const run = ++analysisRun.current;
+    const allowed = () =>
+      run === analysisRun.current &&
+      !document.hidden &&
+      !latest.current.player.playing &&
+      !latest.current.importActive.current;
+    if (!allowed()) return;
+    // Bound each explicit request; cached descriptors accumulate across generations.
+    const renew = window.setInterval(() => {
+      if (allowed()) void api.analysisActivity(true).catch(() => {});
+    }, 1500);
+    try {
+      await api.analysisActivity(true);
+      for (let i = 0; i < 3 && allowed(); i++) {
+        await api.analyzeNext();
+      }
+    } catch {
+      // Metadata/history ranking remains available if source analysis fails.
+    } finally {
+      clearInterval(renew);
+      await api.analysisActivity(false).catch(() => {});
+      await refresh();
+    }
+  }
   async function suggestionFeedback(id: string, less: boolean) {
     if (feedbackBusy.current) return;
     feedbackBusy.current = true;
@@ -158,5 +153,6 @@ export function usePersonalizedPlaylists(state: MusicAppState, t: typeof en) {
     setFeedbackUndo,
     chooseBlend,
     generationRevision,
+    prepareAnalysis,
   };
 }

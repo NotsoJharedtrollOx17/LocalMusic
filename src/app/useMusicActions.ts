@@ -15,6 +15,7 @@ export function useMusicActions(
     refreshLists,
     t,
     generationRevision,
+    prepareAnalysis,
   }: {
     act: (fn: () => Promise<unknown>) => Promise<unknown>;
     remember: (tracks: Track[]) => void;
@@ -22,6 +23,7 @@ export function useMusicActions(
     refreshLists: CatalogReads["refreshLists"];
     t: typeof en;
     generationRevision: React.RefObject<number>;
+    prepareAnalysis: () => Promise<void>;
   },
 ) {
   const generating = useRef(false);
@@ -42,7 +44,6 @@ export function useMusicActions(
     setDetail,
     setEditingList,
     request,
-    targetMode,
     target,
     setCatalogRevision,
     setChooserOpen,
@@ -157,12 +158,14 @@ export function useMusicActions(
     const revision = generationRevision.current;
     setBusy(true);
     await act(async () => {
+      await prepareAnalysis();
+      if (revision !== generationRevision.current) return;
       const p = await api.generatePlaylist({
         ...request,
         seed: crypto.getRandomValues(new Uint32Array(1))[0],
         title: request.title || t.makePlaylist,
-        targetCount: targetMode === "count" ? target : undefined,
-        targetMinutes: targetMode === "duration" ? target : undefined,
+        targetCount: target,
+        targetMinutes: undefined,
       });
       if (revision !== generationRevision.current) return;
       if (!p.trackIds.length) {

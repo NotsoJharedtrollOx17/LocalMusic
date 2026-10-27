@@ -1,16 +1,8 @@
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistFilters() {
-  const {
-    playlistContext,
-    request,
-    setRequest,
-    targetMode,
-    setTargetMode,
-    target,
-    setTarget,
-    t,
-  } = useMusicAppContext();
+  const { playlistContext, request, setRequest, target, setTarget, t } =
+    useMusicAppContext();
 
   return (
     <div className="generator-fields">
@@ -28,30 +20,16 @@ export default function PlaylistFilters() {
         />
       </label>
       <label>
-        {t.target}
-        <div className="joined-input">
-          <select
-            aria-label={t.target}
-            value={targetMode}
-            onChange={(e) => {
-              const mode = e.target.value as typeof targetMode;
-              setTargetMode(mode);
-              setTarget(mode === "count" ? 25 : 45);
-            }}
-          >
-            <option value="count">{t.trackCount}</option>
-            <option value="duration">{t.minutes}</option>
-          </select>
-          <input
-            aria-label={targetMode === "count" ? t.count : t.minutes}
-            type="number"
-            min="1"
-            max={targetMode === "count" ? 100 : 600}
-            value={target}
-            onChange={(e) => setTarget(Number(e.target.value))}
-            required
-          />
-        </div>
+        {t.trackCount}
+        <input
+          aria-label={t.count}
+          type="number"
+          min="1"
+          max="100"
+          value={target}
+          onChange={(e) => setTarget(Number(e.target.value))}
+          required
+        />
       </label>
       <label>
         {t.genre}

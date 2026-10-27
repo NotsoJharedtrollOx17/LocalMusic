@@ -202,17 +202,22 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await library(page);
-  await expect
-    .poll(async () => (await stored(page, "acousticFeatures")).length, {
-      timeout: 20000,
-    })
-    .toBe(4);
+  await page.waitForTimeout(3500);
+  expect(await stored(page, "acousticFeatures")).toEqual([]);
   expect(await stored(page, "sessions")).toEqual([]);
   expect(await stored(page, "intervals")).toEqual([]);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(page.locator(".playlist-blend")).toContainText(
-    "4 of 4 songs ready",
+    "0 of 4 songs ready",
   );
+  await expect(
+    page.getByRole("spinbutton", { name: "Count", exact: true }),
+  ).toHaveValue("30");
+  await expect(
+    page.getByRole("combobox", { name: "Length", exact: true }),
+  ).toHaveCount(0);
+  await page.waitForTimeout(2000);
+  expect(await stored(page, "acousticFeatures")).toEqual([]);
   await expect(page.locator("#artists option")).toHaveCount(4);
   await page.getByRole("button", { name: "Explore", exact: true }).click();
   await page
@@ -221,6 +226,12 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   const result = page.locator(".generated-result");
   await expect(result).toBeVisible();
   await expect(result).toContainText("Library discovery");
+  expect((await stored(page, "acousticFeatures")).length).toBe(3);
+  await page.waitForTimeout(2000);
+  expect((await stored(page, "acousticFeatures")).length).toBe(3);
+  expect(await stored(page, "sessions")).toEqual([]);
+  expect(await stored(page, "intervals")).toEqual([]);
+
   const ids = await result
     .locator(".track-row")
     .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-track-id")));

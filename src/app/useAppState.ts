@@ -117,15 +117,14 @@ export function useAppState(initialSettings?: Settings) {
   const [request, setRequest] = useState<PlaylistRequest>({
       blend: initialSettings?.playlistBlend ?? "balanced",
       title: "",
-      targetCount: 25,
+      targetCount: 30,
       genre: "",
       includeArtist: "",
       excludeArtist: "",
       preferFavorites: false,
       avoidHeardToday: false,
     }),
-    [targetMode, setTargetMode] = useState<"count" | "duration">("count"),
-    [target, setTarget] = useState(25);
+    [target, setTarget] = useState(30);
   const [sharing, setSharing] = useState(false);
   const [catalogRevision, setCatalogRevision] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]),
@@ -247,8 +246,6 @@ export function useAppState(initialSettings?: Settings) {
     setEditingList,
     request,
     setRequest,
-    targetMode,
-    setTargetMode,
     target,
     setTarget,
     catalogRevision,

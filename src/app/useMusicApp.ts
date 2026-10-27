@@ -634,6 +634,7 @@ export function useMusicApp(initialSettings?: Settings) {
     refreshLists,
     t,
     generationRevision: personalization.generationRevision,
+    prepareAnalysis: personalization.prepareAnalysis,
   });
 
   const playlistTracks =
