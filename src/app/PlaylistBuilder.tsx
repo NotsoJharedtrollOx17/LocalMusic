@@ -1,4 +1,4 @@
-import { ArrowRight, Hammer, Wrench, Shield } from "lucide-react";
+import { ArrowRight, Hammer, Shuffle, Shield } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlaylistFilters from "./PlaylistFilters";
 import PlaylistOptions from "./PlaylistOptions";
@@ -19,8 +19,18 @@ export default function PlaylistBuilder() {
           <p>{t.mixSubtitle}</p>
         </div>
         <span className="generator-mark creation-mark" aria-hidden="true">
-          <Hammer />
-          <Wrench />
+          <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <g transform="rotate(90 24 22)">
+              <Hammer x={11} y={9} size={26} strokeWidth={2} />
+            </g>
+            <Shuffle x={24} y={34} size={24} strokeWidth={2} />
+            <path
+              d="m39 29 3-3m0 8h4"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+            />
+          </svg>
         </span>
       </div>
       <form

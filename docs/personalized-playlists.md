@@ -49,7 +49,7 @@ Acoustic analysis no longer starts automatically while idle. Only pressing Gener
 
 ## Creator presentation revision
 
-The redundant no-duplicates caption is removed; duplicate prevention remains a hard constraint. The source-analysis count appears in a contrasting panel directly after the preference options. Separate hammer and wrench icons replace the shuffle decoration. Generate immediately enters a dedicated busy state, changes the submit label, displays an accessible spinner and explains that matching may take a moment. Progress clears on success, errors and stale-result rejection through a finally block; generation does not show fabricated percentages.
+The redundant no-duplicates caption is removed; duplicate prevention remains a hard constraint. The source-analysis count appears in a contrasting panel directly after the preference options. A hammer poised above shuffle arrows, with clear separation and restrained impact marks, forms the creator badge. It uses the theme surface with an orange outline. Generate immediately enters a dedicated busy state, changes the submit label, displays an accessible spinner and explains that matching may take a moment. Progress clears on success, errors and stale-result rejection through a finally block; generation does not show fabricated percentages.
 
 ## Playlist sections and explicit-artist revision
 

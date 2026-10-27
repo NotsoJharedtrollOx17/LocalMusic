@@ -949,3 +949,11 @@ Verified development outputs (ignored, not a new release):
 - Production check passed **93 unit tests**. The existing playlist-layout browser journey passed in **37 seconds**, exercising English/Spanish and desktop/narrow widths. Inspected the desktop screenshot to confirm clear separation. No recommendation, persistence or playback behavior changed.
 
 - Windows development build passed at **0.9.0**; verified embedded assets index-B9EvkJ_J.js, index-FEKvfnud.css. Android was not rebuilt for this decorative CSS change. Existing compiler warnings remain.
+
+
+### 27 October 2026 - outlined hammer-and-shuffle creator badge
+
+- Restored the theme surface background with an orange contour. Removed the wrench and composed a hammer above the shuffle arrows in a single proportional SVG, using distinct positions and small impact marks. The decorative badge scales as one unit at narrow sizes and remains hidden from assistive technology.
+- Production check passed **93 unit tests**. The existing EN/ES desktop/narrow playlist-layout journey passed in **32.7 seconds**. Inspected the desktop screenshot to confirm a clear hammer-to-shuffle gesture without overlapping outlines. No playlist or audio behavior changed.
+
+- Windows development rebuild passed at **0.9.0** with embedded assets index-D7JS0DVL.js, index-CrTvCtb3.css. Existing two compiler warnings remain. Android was not rebuilt for this decorative revision.
