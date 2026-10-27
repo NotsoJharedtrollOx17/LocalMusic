@@ -957,3 +957,11 @@ Verified development outputs (ignored, not a new release):
 - Production check passed **93 unit tests**. The existing EN/ES desktop/narrow playlist-layout journey passed in **32.7 seconds**. Inspected the desktop screenshot to confirm a clear hammer-to-shuffle gesture without overlapping outlines. No playlist or audio behavior changed.
 
 - Windows development rebuild passed at **0.9.0** with embedded assets index-D7JS0DVL.js, index-CrTvCtb3.css. Existing two compiler warnings remain. Android was not rebuilt for this decorative revision.
+
+
+### 27 October 2026 - downward hammer and smaller arrow target
+
+- Removed the impact marks. Rotated the hammer so its flat striking face points down, and moved the shuffle arrows into the badge's lower-right corner. Reduced the arrows from 24 to 18 viewBox units and tilted them 15 degrees upward to the right. Retained the surface background and orange contour.
+- Production check passed **93 unit tests**. The EN/ES desktop/narrow playlist-layout browser journey passed in **40.9 seconds**; inspected the desktop rendering for strike direction and separation. No new behavioral tests were added for this decorative adjustment.
+
+- Windows development build passed at **0.9.0** with embedded assets index-CeJjGDaB.js, index-CrTvCtb3.css. Existing warnings remain. Android was not rebuilt for this decorative revision.
