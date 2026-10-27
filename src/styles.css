@@ -348,7 +348,8 @@ input[type="range"] {
   font-family: "Space Grotesk", Inter, sans-serif;
   font-size: 23px;
   color: var(--muted);
-  padding: 0 0 20px;
+  padding: 8px;
+  margin-bottom: 10px;
   position: relative;
   min-height: 44px;
   letter-spacing: -0.04em;
@@ -1656,7 +1657,6 @@ input[type="range"] {
   }
   .section-tabs button {
     font-size: 19px;
-    padding-bottom: 16px;
   }
   .library-toolbar {
     font-size: 11px;

@@ -33,7 +33,7 @@ a[href]:focus-visible::before,
   z-index: 1;
 }
 /* Cover and text sit inside one uninterrupted frame, away from its stroke. */
-:is(.track-hit, .album-card):focus-visible::before {
+:is(.track-hit, .album-card, [role="tab"]):focus-visible::before {
   inset: 0;
 }
 /* Small story markers keep their larger, existing interaction area. */

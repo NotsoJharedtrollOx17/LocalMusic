@@ -43,3 +43,5 @@
 - Reserve space around song/album/artist content so artwork and labels sit entirely inside the frame. Keep its full bounds within the interactive entry to avoid clipping in scroll containers.
 - Replace circular icon hover fills with the same rounded outline; preserve existing transport and selected-state semantics.
 - Verify real library entries and icon hover at 1280/320 px in both themes, in addition to keyboard/menu/forced-color regressions. Rebuild Windows and record the actual scope of verification.
+
+- Follow-up: give Library navigation tabs symmetric label padding and a full-bounds frame, retain a separate selection underline, and reveal the entire focused tab inside the horizontal scroller on Tab/arrow navigation. Verify text clearance and complete scroller visibility at desktop/narrow widths.

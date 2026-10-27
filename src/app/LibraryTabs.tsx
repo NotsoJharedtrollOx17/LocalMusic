@@ -27,6 +27,13 @@ export default function LibraryTabs() {
           tabIndex={section === x ? 0 : -1}
           id={"tab-" + x}
           aria-controls="library-content"
+          onFocus={(e) =>
+            e.currentTarget.scrollIntoView({
+              block: "nearest",
+              inline: "nearest",
+              behavior: "instant",
+            })
+          }
           onKeyDown={(e) => {
             if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
               e.preventDefault();

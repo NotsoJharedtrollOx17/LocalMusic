@@ -239,3 +239,71 @@ test("library frames enclose covers and text, with orange outline-only icon hove
     }
   }
 });
+
+test("Tab and arrow navigation frame the whole library tab without touching its label", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate(
+        (theme) => (document.documentElement.dataset.theme = theme),
+        theme,
+      );
+      const songs = page.getByRole("tab", { name: "Songs", exact: true });
+      await songs.click();
+      await songs.focus();
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(songs).toBeFocused();
+      for (const name of [
+        "Songs",
+        "Albums",
+        "Artists",
+        "Playlists",
+        "Your Recap",
+      ]) {
+        const tab = page.getByRole("tab", { name, exact: true });
+        await expect(tab).toBeFocused();
+        await frame(page, tab);
+        const geometry = await tab.evaluate((node) => {
+          const b = node.getBoundingClientRect(),
+            style = getComputedStyle(node, "::before");
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          const text = range.getBoundingClientRect();
+          const scroller = node.parentElement!.getBoundingClientRect();
+          return {
+            width: b.width,
+            height: b.height,
+            ringWidth: parseFloat(style.width) + 4,
+            ringHeight: parseFloat(style.height) + 4,
+            left: text.left - b.left,
+            right: b.right - text.right,
+            top: text.top - b.top,
+            bottom: b.bottom - text.bottom,
+            visibleLeft: b.left - scroller.left,
+            visibleRight: scroller.right - b.right,
+          };
+        });
+        expect(
+          Math.abs(geometry.ringWidth - geometry.width),
+        ).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(geometry.ringHeight - geometry.height),
+        ).toBeLessThanOrEqual(1);
+        for (const side of ["left", "right", "top", "bottom"] as const)
+          expect(geometry[side]).toBeGreaterThanOrEqual(5);
+        expect(geometry.visibleLeft).toBeGreaterThanOrEqual(-1);
+        expect(geometry.visibleRight).toBeGreaterThanOrEqual(-1);
+        await page.keyboard.press("ArrowRight");
+      }
+      await page.screenshot({
+        path: `artifacts/focus-tabs-${theme}-${width}.png`,
+      });
+    }
+  }
+});

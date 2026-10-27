@@ -1040,3 +1040,12 @@ Verified development outputs (ignored, not a new release):
 - Frontend production build and all 96 unit tests passed. Both targeted focus browser journeys passed with a clean runner exit: actual Tab/Shift+Tab, menu navigation, EN/ES, themes, Reduce Motion and forced-color emulation; library-entry frame bounds and content clearance at 1280/320 px in both themes; and transparent outlined icon hover. Geometry tolerates at most 1 CSS px rounding. Inspected the generated album desktop/light and song narrow/dark screenshots, including the complete surrounding frame.
 - This presentation revision does not change native domain rules. Rust/Kotlin tests, full browser suite, Android packaging/runtime, actual Windows high contrast/200% zoom and manual screen-reader acceptance were not repeated; prior device/manual gates remain pending.
 - Windows development build passed at version 0.10.0. Embedded frontend assets verified: `index-ozhjAve0.js`, `index-CkaW0P8n.css`. Existing DSP dead-code warnings remain. No merge or release was performed.
+
+
+### 27 October 2026 - Library tab focus sizing and scroll visibility
+
+- Corrected the Songs/Albums/Artists/Playlists/Your Recap navigation buttons: symmetric 8 px padding, a frame at the complete button bounds, and 10 px separation from the selection underline. Removed the mobile bottom-only padding override.
+- Keyboard testing exposed a partially clipped focused tab in the narrow horizontal scroller. Tabs now reveal their full bounds with immediate nearest-edge scrolling on focus, without selecting another tab or adding motion.
+- Frontend build and 96 unit tests passed. All three focus browser tests passed with a clean exit, including existing card/icon regressions and a new actual Tab/Shift+Tab/arrow-key journey through every Library tab in light/dark themes at 1280/320 px. Tests check full-frame dimensions, label clearance and complete scroller visibility with at most 1 CSS px rounding. Inspected desktop/light and narrow/dark tab screenshots.
+- Native domain tests, Android packaging/runtime, full browser suite, physical-device checks, actual Windows 200% zoom/high contrast and manual screen-reader acceptance were not repeated for this presentation change. No merge or release was performed.
+- Windows development build passed at version 0.10.0 with verified embedded assets: `index-Ciau92zG.js`, `index-BXHiLqPK.css`. Existing DSP dead-code warnings remain.
