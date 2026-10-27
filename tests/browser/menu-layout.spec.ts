@@ -496,7 +496,7 @@ test("playlist headings share the creation toolbar and detail metadata wraps wit
       })
       .click();
     await page
-      .locator(".playlists-page > .playlist-collection .playlist-tile")
+      .locator(".saved-playlists .playlist-tile")
       .filter({ hasText: title })
       .click();
     await expect(page.locator(".playlist-toolbar h2")).toHaveCount(1);

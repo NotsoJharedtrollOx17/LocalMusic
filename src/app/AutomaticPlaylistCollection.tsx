@@ -33,8 +33,11 @@ export default function AutomaticPlaylistCollection() {
   return (
     <section
       className="automatic-playlists"
-      aria-labelledby="automatic-playlists-heading"
+      aria-labelledby="default-playlists-heading"
     >
+      <h2 id="default-playlists-heading" className="playlist-section-heading">
+        {t.defaultPlaylists}
+      </h2>
       <div className="playlist-collection" aria-busy={automatic.loading}>
         {definitions.map(({ key, title, description, Icon }) => {
           const p = automatic.playlists.find(

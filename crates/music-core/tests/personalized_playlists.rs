@@ -130,3 +130,23 @@ fn shared_pcm_descriptors() {
         }
     }
 }
+
+#[test]
+fn explicit_artist_can_fill_mix_without_relaxing_other_filters() {
+    let f: Value = serde_json::from_str(include_str!("../../../tests/fixtures/personalized-playlists.json")).unwrap();
+    let mut tracks: Vec<Track> = serde_json::from_value(f["tracks"].clone()).unwrap();
+    tracks.truncate(5);
+    for t in &mut tracks { t.artist = "A".into(); }
+    let mut req: PlaylistRequest = serde_json::from_value(f["cases"][1]["request"].clone()).unwrap();
+    req.target_count = Some(5);
+    let data: RecommendationData = serde_json::from_value(f["data"].clone()).unwrap();
+    let now = f["now"].as_str().unwrap().parse().unwrap();
+    let generate = |r: &PlaylistRequest| recommendation::generate(r, &tracks, &[], "UTC", now, &data).unwrap().playlist.track_ids.len();
+    assert_eq!(generate(&req), 2);
+    req.include_artist = " A ".into();
+    assert_eq!(generate(&req), 5);
+    assert_eq!(music_core::playlist::generate(&req, &tracks, &[], "UTC", now).unwrap().track_ids.len(), 5);
+    req.exclude_artist = "A".into();
+    assert_eq!(generate(&req), 0);
+    assert_eq!(music_core::playlist::generate(&req, &tracks, &[], "UTC", now).unwrap().track_ids.len(), 0);
+}

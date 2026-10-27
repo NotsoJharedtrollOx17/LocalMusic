@@ -1,36 +1,91 @@
-import { ListMusic, ArrowUpRight } from "lucide-react";
+import { useState } from "react";
+import { ListMusic, ArrowUpRight, MoreHorizontal } from "lucide-react";
+import { ActionMenu } from "../ux";
+import { api } from "../api";
+import type { Playlist } from "../types";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistCollection() {
-  const { lists, t, openPlaylist, formatMusicCount } = useMusicAppContext();
-  if (!lists.length) return null;
-
+  const { lists, t, openPlaylist, formatMusicCount, act, refreshLists } =
+    useMusicAppContext();
+  const [menu, setMenu] = useState<{
+    playlist: Playlist;
+    anchor: HTMLElement;
+  } | null>(null);
   return (
-    <div className="playlist-collection">
-      {lists.map((p) => (
-        <button
-          key={p.id}
-          className="playlist-tile"
-          onClick={() => void openPlaylist(p)}
-        >
-          <div className="playlist-tile-art">
-            <ListMusic size={35} />
-            <span>{String(p.trackIds.length).padStart(2, "0")}</span>
-          </div>
-          <div>
-            <p className="eyebrow">
-              {p.kind === "generated"
-                ? t.generated
-                : p.kind === "recap"
-                  ? t.year
-                  : t.manual}
-            </p>
-            <h3>{p.title}</h3>
-            <span>{formatMusicCount(p.trackIds.length)}</span>
-          </div>
-          <ArrowUpRight size={22} />
-        </button>
-      ))}
-    </div>
+    <section
+      className="saved-playlists"
+      aria-labelledby="saved-playlists-heading"
+    >
+      <h2 id="saved-playlists-heading" className="playlist-section-heading">
+        {t.yourPlaylists}
+      </h2>
+      {lists.length ? (
+        <div className="playlist-collection">
+          {lists.map((p) => (
+            <div className="saved-playlist-card" key={p.id}>
+              <button
+                className="playlist-tile"
+                onClick={() => void openPlaylist(p)}
+              >
+                <div className="playlist-tile-art">
+                  <ListMusic size={35} />
+                  <span>{String(p.trackIds.length).padStart(2, "0")}</span>
+                </div>
+                <div>
+                  <p className="eyebrow">
+                    {p.kind === "generated"
+                      ? t.generated
+                      : p.kind === "recap"
+                        ? t.year
+                        : t.manual}
+                  </p>
+                  <h3>{p.title}</h3>
+                  <span>{formatMusicCount(p.trackIds.length)}</span>
+                </div>
+                <ArrowUpRight size={22} />
+              </button>
+              <button
+                className="saved-playlist-menu icon-button"
+                type="button"
+                aria-label={`${t.playlistActions}: ${p.title}`}
+                aria-haspopup="menu"
+                aria-expanded={menu?.playlist.id === p.id}
+                onClick={(e) =>
+                  setMenu({ playlist: p, anchor: e.currentTarget })
+                }
+              >
+                <MoreHorizontal size={21} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="saved-playlists-empty">{t.noSavedPlaylists}</p>
+      )}
+      {menu && (
+        <ActionMenu
+          anchor={menu.anchor}
+          label={t.playlistActions}
+          onClose={() => setMenu(null)}
+          items={[
+            {
+              id: "delete",
+              label: t.deletePlaylist,
+              danger: true,
+              action: () => {
+                const playlist = menu.playlist;
+                void act(async () => {
+                  if (window.confirm(`${t.delete} ${playlist.title}?`)) {
+                    await api.deletePlaylist(playlist.id);
+                    await refreshLists();
+                  }
+                });
+              },
+            },
+          ]}
+        />
+      )}
+    </section>
   );
 }

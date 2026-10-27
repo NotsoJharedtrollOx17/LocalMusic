@@ -12,7 +12,7 @@ React owns presentation and an app-scoped explicit-generation coordinator. Rust 
 
 ## Ranking method, version one
 
-Hard constraints run before weighted selection: visible available tracks, explicit artist/genre matching/exclusions, no duplicates, a two-track cap per known artist, and count/duration bounds. Unknown artist values do not share a cap. Hard constraints are never relaxed to fill a mix. Duration mode excludes unknown durations. Requests without a blend retain the previous filter-only policy.
+Hard constraints run before weighted selection: visible available tracks, explicit artist/genre matching/exclusions, no duplicates, a two-track cap per known artist in general mixes, and count/duration bounds. An explicit Include artist request lifts that artist cap, so a single-artist mix can fill the requested count. Unknown artist values do not share a cap. Hard constraints are never relaxed to fill a mix. Duration mode excludes unknown durations. Requests without a blend retain the previous filter-only policy.
 
 - Qualified evidence means an unexcluded session with at least 30,000 played milliseconds. Ignore future or invalid timestamps. Use the last 90 days, otherwise older eligible history, otherwise favorites. Native journals/browser checkpoints flush before generation.
 - Listening affinity sums `2^(-ageDays/30)` and normalizes with `log1p(weight)/log1p(maxWeight)`.
@@ -50,3 +50,9 @@ Acoustic analysis no longer starts automatically while idle. Only pressing Gener
 ## Creator presentation revision
 
 The redundant no-duplicates caption is removed; duplicate prevention remains a hard constraint. The source-analysis count appears in a contrasting panel directly after the preference options. Crossed creation tools replace the shuffle decoration. Generate immediately enters a dedicated busy state, changes the submit label, displays an accessible spinner and explains that matching may take a moment. Progress clears on success, errors and stale-result rejection through a finally block; generation does not show fabricated percentages.
+
+## Playlist sections and explicit-artist revision
+
+The overview separates the four automatic collections from saved playlists. Each saved playlist has an accessible action menu with a confirmed deletion; automatic collections cannot be deleted. An explicit artist filter permits all matching songs up to the requested count, while genre, exclusions, availability and the other selected filters still apply. General mixes retain the two-per-known-artist diversity cap. Empty generation results remove any previous preview and explain that no tracks match, leaving filters editable for a retry.
+
+Generation reports the sound-analysis step, then matching of the available sound, listening and metadata signals. These are actual stages, not percentages or a claim that unavailable analysis ran. The sound step may use cached features or be skipped when playback/visibility prevents analysis.

@@ -386,7 +386,7 @@ pub fn generate(
             break;
         }
         let a = normalize(&t.artist);
-        if !a.is_empty() && *counts.get(&a).unwrap_or(&0) >= 2 {
+        if include.is_empty() && !a.is_empty() && *counts.get(&a).unwrap_or(&0) >= 2 {
             continue;
         }
         if request

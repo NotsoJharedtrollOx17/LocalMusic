@@ -28,6 +28,9 @@ export function useMusicActions(
 ) {
   const generating = useRef(false);
   const [buildingMix, setBuildingMix] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<"sound" | "matching">(
+    "sound",
+  );
   const {
     setTracks,
     query,
@@ -157,12 +160,14 @@ export function useMusicActions(
     if (generating.current) return;
     generating.current = true;
     setBuildingMix(true);
+    setGenerationPhase("sound");
     const revision = generationRevision.current;
     setBusy(true);
     try {
       await act(async () => {
         await prepareAnalysis();
         if (revision !== generationRevision.current) return;
+        setGenerationPhase("matching");
         const p = await api.generatePlaylist({
           ...request,
           seed: crypto.getRandomValues(new Uint32Array(1))[0],
@@ -172,6 +177,7 @@ export function useMusicActions(
         });
         if (revision !== generationRevision.current) return;
         if (!p.trackIds.length) {
+          setGenerated(null);
           setError(t.noCandidates);
           return;
         }
@@ -195,5 +201,6 @@ export function useMusicActions(
     saveList,
     buildMix,
     buildingMix,
+    generationPhase,
   };
 }

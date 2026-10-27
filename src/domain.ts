@@ -140,7 +140,8 @@ export function generate(
   const max = request.targetCount ?? 100;
   for (const t of pool) {
     if (out.length >= max) break;
-    if ((counts.get(key(t.artist)) ?? 0) >= 2) continue;
+    if (!included && key(t.artist) && (counts.get(key(t.artist)) ?? 0) >= 2)
+      continue;
     if (
       ms + t.durationMs > budget ||
       (budget !== Infinity && t.durationMs <= 0)

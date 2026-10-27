@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fixture from "../../tests/fixtures/personalized-playlists.json";
 import { personalized, validFeature } from "./rank";
+import { generate as legacyGenerate } from "../domain";
 import type { PlaylistRequest, Track, Session } from "../types";
 import type { RecommendationData } from "./types";
 const now = new Date(fixture.now);
@@ -70,6 +71,48 @@ describe("personalized policy shared fixtures", () => {
       for (const a of artists)
         expect(artists.filter((x) => x === a).length).toBeLessThanOrEqual(2);
     });
+  it("allows an explicitly requested artist to fill the mix while general mixes remain diverse", () => {
+    const tracks = fixture.tracks
+      .slice(0, 5)
+      .map((track) => ({ ...track, artist: "A" }));
+    const request = {
+      ...fixture.cases[1].request,
+      targetCount: 5,
+    } as PlaylistRequest;
+    expect(
+      personalized(
+        { ...request, includeArtist: " A " },
+        tracks,
+        [],
+        "UTC",
+        fixture.data,
+        now,
+      ).ids,
+    ).toHaveLength(5);
+    expect(
+      personalized(request, tracks, [], "UTC", fixture.data, now).ids,
+    ).toHaveLength(2);
+    expect(
+      legacyGenerate(
+        { ...request, includeArtist: "A" },
+        tracks,
+        [],
+        "UTC",
+        now,
+      ),
+    ).toHaveLength(5);
+    expect(legacyGenerate(request, tracks, [], "UTC", now)).toHaveLength(2);
+    expect(
+      personalized(
+        { ...request, includeArtist: "A", excludeArtist: "A" },
+        tracks,
+        [],
+        "UTC",
+        fixture.data,
+        now,
+      ).ids,
+    ).toHaveLength(0);
+  });
   it("private/short/future evidence cannot change any score or seed result", () => {
     const req = fixture.cases[1].request as PlaylistRequest,
       tracks = fixture.tracks,

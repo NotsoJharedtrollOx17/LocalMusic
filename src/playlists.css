@@ -115,7 +115,7 @@
 .playlists-page .playlist-tile > div:nth-child(2) {
   overflow: hidden;
 }
-.playlists-page > .playlist-collection,
+.playlists-page > .saved-playlists,
 .playlists-page > .generator {
   margin-top: 28px;
 }
@@ -157,4 +157,42 @@
     grid-column: 2;
     grid-row: 1;
   }
+}
+
+.playlist-section-heading {
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+.saved-playlists {
+  margin-top: 28px;
+}
+.saved-playlists-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+.saved-playlist-card {
+  position: relative;
+  min-width: 0;
+}
+.saved-playlist-card > .playlist-tile {
+  width: 100%;
+  height: 100%;
+  padding-right: 58px;
+}
+.saved-playlist-menu {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.creation-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1b1b1a;
+}
+.creation-mark svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 2.4;
 }

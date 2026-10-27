@@ -70,7 +70,7 @@ pub fn generate(
         }
         let artist = normalize(&t.artist);
         let count = counts.entry(artist).or_default();
-        if *count >= 2
+        if (included.is_empty() && !normalize(&t.artist).is_empty() && *count >= 2)
             || seen.contains(&t.id)
             || elapsed.saturating_add(t.duration_ms) > budget
             || (budget != u64::MAX && t.duration_ms == 0)

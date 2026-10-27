@@ -1,4 +1,11 @@
 export const en = {
+  defaultPlaylists: "Default playlists",
+  yourPlaylists: "Your playlists",
+  noSavedPlaylists: "Your saved playlists will appear here.",
+  playlistActions: "Playlist options",
+  deletePlaylist: "Delete playlist",
+  checkingSound: "Checking available sound analysis\u2026",
+  matchingPlaylist: "Sound step complete. Matching listening, metadata and available sound\u2026",
   generatingPlaylist: "Creating your playlist…",
   preparingPlaylist:
     "Matching songs from your library. This may take a moment.",
@@ -15,8 +22,7 @@ export const en = {
   libraryDiscovery: "Library discovery · A varied mix from your library",
   favoriteMix: "Inspired by your favorites",
   historyMix: "Inspired by your listening in this app",
-  mixShortage:
-    "Your filters, artist limit and length budget leave fewer matching songs.",
+  mixShortage: "Not enough tracks match your filters and mix limits.",
   visualizer: "Visualizer",
   visualizerMode: "Visual style",
   spectrum: "Spectrum",
@@ -267,6 +273,13 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  defaultPlaylists: "Listas predeterminadas",
+  yourPlaylists: "Tus listas",
+  noSavedPlaylists: "Tus listas guardadas aparecer\u00e1n aqu\u00ed.",
+  playlistActions: "Opciones de la lista",
+  deletePlaylist: "Eliminar lista",
+  checkingSound: "Comprobando el an\u00e1lisis de sonido disponible\u2026",
+  matchingPlaylist: "Sonido comprobado. Combinando escuchas, metadatos y sonido disponible\u2026",
   generatingPlaylist: "Creando tu lista…",
   preparingPlaylist:
     "Buscando canciones de tu biblioteca. Puede tardar un momento.",
@@ -284,7 +297,7 @@ export const es: typeof en = {
   favoriteMix: "Inspirada en tus favoritas",
   historyMix: "Inspirada en tus escuchas en esta app",
   mixShortage:
-    "Los filtros, el límite por artista y la duración dejan menos canciones compatibles.",
+    "No hay suficientes canciones que cumplan tus filtros y los l\u00edmites de la mezcla.",
   visualizer: "Visualizador",
   visualizerMode: "Estilo visual",
   spectrum: "Espectro",

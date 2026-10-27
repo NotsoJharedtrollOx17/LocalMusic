@@ -290,7 +290,8 @@ export function personalized(
   for (const { t } of scored) {
     const artist = key(t.artist);
     if (selected.length >= (request.targetCount ?? 100)) break;
-    if (artist && (counts.get(artist) ?? 0) >= 2) continue;
+    if (!key(request.includeArtist) && artist && (counts.get(artist) ?? 0) >= 2)
+      continue;
     if (
       request.targetMinutes != null &&
       (t.durationMs <= 0 ||

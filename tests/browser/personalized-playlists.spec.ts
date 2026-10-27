@@ -85,12 +85,17 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
     const state = window as any;
     window.Worker = class extends Original {
       private ranking: boolean;
+      private acoustic: boolean;
       constructor(url: string | URL, options?: WorkerOptions) {
         super(url, options);
         this.ranking = String(url).includes("rank.worker");
+        this.acoustic = String(url).includes("acoustic.worker");
       }
       postMessage(value: any, transfer: any = []) {
-        if (this.ranking && !state.rankingHeld) {
+        if (this.acoustic && !state.acousticHeld) {
+          state.acousticHeld = true;
+          state.releaseAcoustic = () => super.postMessage(value, transfer);
+        } else if (this.ranking && !state.rankingHeld) {
           state.rankingHeld = true;
           state.releaseRanking = () => super.postMessage(value, transfer);
         } else super.postMessage(value, transfer);
@@ -101,13 +106,20 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
     .getByRole("button", { name: "Generate playlist", exact: true })
     .click();
   await expect
+    .poll(() => page.evaluate(() => (window as any).acousticHeld))
+    .toBe(true);
+  await expect(page.locator(".playlist-generation-status")).toContainText(
+    "Checking available sound analysis",
+  );
+  await page.evaluate(() => (window as any).releaseAcoustic());
+  await expect
     .poll(() => page.evaluate(() => (window as any).rankingHeld))
     .toBe(true);
   await expect(
     page.getByRole("button", { name: "Creating your playlist…", exact: true }),
   ).toBeDisabled();
   await expect(page.locator(".playlist-generation-status")).toContainText(
-    "Matching songs from your library",
+    "Matching listening, metadata and available sound",
   );
   await expect(
     page
@@ -342,4 +354,101 @@ test("feedback persistence failure rolls back, EN/ES narrow creator remains reac
     path: "artifacts/personalized-creator-es-320.png",
     fullPage: true,
   });
+});
+
+test("explicit artist fills the preview and an empty result permits correction", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles(
+      Array.from({ length: 5 }, (_, i) => ({
+        name: `Focus ${i}.wav`,
+        mimeType: "audio/wav",
+        buffer: taggedWav(`Focus ${i}`, i + 1, 1, {
+          artist: "Focus Artist",
+          album: `Album ${i}`,
+        }),
+      })),
+    );
+  await expect(page.locator(".track-row")).toHaveCount(5);
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  const artist = page.getByLabel("Include artist", { exact: true });
+  await artist.fill("Focus Artist");
+  await page
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  await expect(page.locator(".generated-result .track-row")).toHaveCount(5);
+  await artist.fill("No such artist");
+  await page
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("No tracks match");
+  await expect(page.locator(".generated-result")).toHaveCount(0);
+  await page
+    .getByRole("alert")
+    .getByRole("button", { name: "Close", exact: true })
+    .click();
+  await artist.fill("Focus Artist");
+  await page
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  await expect(page.locator(".generated-result .track-row")).toHaveCount(5);
+});
+
+test("default and saved playlists are separate and saved playlists can be deleted", async ({
+  page,
+}) => {
+  await library(page);
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Default playlists", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Your playlists", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await page.getByRole("button", { name: "New playlist", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Playlist name", { exact: true })
+    .fill("My saved mix");
+  await dialog.getByRole("checkbox").first().check();
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  const card = page
+    .locator(".saved-playlist-card")
+    .filter({ hasText: "My saved mix" });
+  await expect(card).toBeVisible();
+  await card
+    .getByRole("button", {
+      name: "Playlist options: My saved mix",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("menu", { name: "Playlist options" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    card.getByRole("button", { name: "Playlist options: My saved mix" }),
+  ).toBeFocused();
+  await card
+    .getByRole("button", { name: "Playlist options: My saved mix" })
+    .click();
+  page.once("dialog", (d) => d.dismiss());
+  await page
+    .getByRole("menuitem", { name: "Delete playlist", exact: true })
+    .click();
+  await expect(card).toBeVisible();
+  await card
+    .getByRole("button", { name: "Playlist options: My saved mix" })
+    .click();
+  page.once("dialog", (d) => d.accept());
+  await page
+    .getByRole("menuitem", { name: "Delete playlist", exact: true })
+    .click();
+  await expect(card).toHaveCount(0);
+  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
 });

@@ -7,7 +7,8 @@ import PlaylistAnalysis from "./PlaylistAnalysis";
 import LoadingIndicator from "../components/LoadingIndicator";
 
 export default function PlaylistBuilder() {
-  const { catalogTotal, busy, buildingMix, t, buildMix } = useMusicAppContext();
+  const { catalogTotal, busy, buildingMix, generationPhase, t, buildMix } =
+    useMusicAppContext();
 
   return (
     <div className="generator">
@@ -42,7 +43,11 @@ export default function PlaylistBuilder() {
               <span aria-hidden="true">
                 <LoadingIndicator label={t.generatingPlaylist} compact />
               </span>
-              <span>{t.preparingPlaylist}</span>
+              <span>
+                {generationPhase === "sound"
+                  ? t.checkingSound
+                  : t.matchingPlaylist}
+              </span>
             </>
           )}
         </div>
