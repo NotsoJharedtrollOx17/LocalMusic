@@ -235,7 +235,10 @@ export function aggregate(
       }
     }
   }
-  const counts = new Map<string, { plays: number; playedMs: number }>();
+  const counts = new Map<
+    string,
+    { plays: number; playedMs: number; latest: number }
+  >();
   for (const s of sessions) {
     const t = Date.parse(s.startedAtUtc);
     if (
@@ -245,57 +248,71 @@ export function aggregate(
       t < end &&
       t <= now.getTime()
     ) {
-      const c = counts.get(s.trackId) ?? { plays: 0, playedMs: 0 };
+      const c = counts.get(s.trackId) ?? { plays: 0, playedMs: 0, latest: t };
       c.plays++;
       c.playedMs += s.playedMs;
+      c.latest = Math.max(c.latest, t);
       counts.set(s.trackId, c);
     }
   }
   const topTracks = tracks
     .filter((t) => counts.has(t.id))
-    .map((track) => ({ track, ...counts.get(track.id)! }))
+    .map((track) => {
+      const { plays, playedMs } = counts.get(track.id)!;
+      return { track, plays, playedMs };
+    })
     .sort(
       (a, b) =>
         b.plays - a.plays ||
+        counts.get(b.track.id)!.latest - counts.get(a.track.id)!.latest ||
         b.playedMs - a.playedMs ||
         a.track.id.localeCompare(b.track.id),
     );
-  const artists = new Map<string, { name: string; plays: number }>(),
+  type Recent<T> = { value: T; latest: number };
+  const artists = new Map<string, Recent<{ name: string; plays: number }>>(),
     albums = new Map<
       string,
-      { name: string; artist: string; plays: number; trackId?: string }
+      Recent<{ name: string; artist: string; plays: number; trackId?: string }>
     >();
   for (const x of topTracks) {
+    const latest = counts.get(x.track.id)!.latest;
     const ak = key(x.track.artist) || "unknown";
     const a = artists.get(ak) ?? {
-      name: x.track.artist || "Unknown artist",
-      plays: 0,
+      value: { name: x.track.artist || "Unknown artist", plays: 0 },
+      latest,
     };
-    a.plays += x.plays;
+    a.value.plays += x.plays;
+    a.latest = Math.max(a.latest, latest);
     artists.set(ak, a);
     if (x.track.album) {
       const bk = key(x.track.artist + "|" + x.track.album);
       const b = albums.get(bk) ?? {
-        name: x.track.album,
-        artist: x.track.artist,
-        plays: 0,
-        trackId: x.track.id,
+        value: {
+          name: x.track.album,
+          artist: x.track.artist,
+          plays: 0,
+          trackId: x.track.id,
+        },
+        latest,
       };
-      b.plays += x.plays;
+      b.value.plays += x.plays;
+      b.latest = Math.max(b.latest, latest);
       albums.set(bk, b);
     }
   }
   const rank = <T extends { name: string; artist?: string; plays: number }>(
-    m: Map<string, T>,
+    m: Map<string, Recent<T>>,
   ) =>
     [...m.values()]
       .sort(
         (a, b) =>
-          b.plays - a.plays ||
-          key(a.name).localeCompare(key(b.name)) ||
-          key(a.artist ?? "").localeCompare(key(b.artist ?? "")),
+          b.value.plays - a.value.plays ||
+          b.latest - a.latest ||
+          key(a.value.name).localeCompare(key(b.value.name)) ||
+          key(a.value.artist ?? "").localeCompare(key(b.value.artist ?? "")),
       )
-      .slice(0, 3);
+      .slice(0, 3)
+      .map((item) => item.value);
   const available = topTracks.filter(
     (t) => t.track.available && !t.track.hidden,
   );

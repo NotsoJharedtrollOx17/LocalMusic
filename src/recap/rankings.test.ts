@@ -77,3 +77,38 @@ it("ranks complete artist/album totals with stable ties and excludes private pla
   expect(JSON.stringify(safeRecap(r))).not.toContain("/private/");
   expect(JSON.stringify(safeRecap(r))).not.toContain("Private Song");
 });
+
+it("uses recent qualifying plays for ties, including group members and exact-time fallbacks", async () => {
+  const { default: f } =
+    await import("../../tests/fixtures/recap-recency.json");
+  for (const c of f.cases)
+    for (const reverse of [false, true]) {
+      const tracks = [...f.tracks];
+      const sessions = f.sessions.map((s) => ({
+        ...s,
+        startedAtUtc:
+          c.sameTime && s.eligible ? "2026-10-20T12:00:00Z" : s.startedAtUtc,
+      }));
+      if (reverse) {
+        tracks.reverse();
+        sessions.reverse();
+      }
+      const r = aggregate(
+        { kind: "week", anchorDate: "2026-10-25" },
+        {
+          language: "en",
+          theme: "light",
+          timeZone: "UTC",
+          historyEnabledSince: "2026-01-01T00:00:00Z",
+        },
+        tracks,
+        sessions,
+        [],
+        new Date("2026-10-25T12:00:00Z"),
+      );
+      expect(r.topTracks.map((x) => x.track.id)).toEqual(c.songs);
+      expect(r.topArtists?.map((x) => x.name)).toEqual(c.artists);
+      expect(r.topAlbums?.map((x) => [x.name, x.artist])).toEqual(c.albums);
+      expect(JSON.stringify(r)).not.toContain('"latest"');
+    }
+});

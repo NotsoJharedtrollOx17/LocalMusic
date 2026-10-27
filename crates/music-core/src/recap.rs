@@ -189,13 +189,14 @@ pub fn aggregate(
             }
         }
     }
-    let mut counts: HashMap<&str, (u64, u64)> = HashMap::new();
+    let mut counts: HashMap<&str, (u64, u64, DateTime<Utc>)> = HashMap::new();
     for s in sessions {
         let d = date(&s.started_at_utc)?;
         if !s.excluded && s.played_ms >= 30000 && d >= from && d < end && d <= now {
-            let c = counts.entry(&s.track_id).or_default();
+            let c = counts.entry(&s.track_id).or_insert((0, 0, d));
             c.0 += 1;
             c.1 += s.played_ms;
+            c.2 = c.2.max(d);
         }
     }
     let mut top: Vec<RankedTrack> = tracks
@@ -203,7 +204,7 @@ pub fn aggregate(
         .filter_map(|t| {
             counts
                 .get(t.id.as_str())
-                .map(|(plays, played)| RankedTrack {
+                .map(|(plays, played, _)| RankedTrack {
                     track: t.clone(),
                     plays: *plays,
                     played_ms: *played,
@@ -213,48 +214,64 @@ pub fn aggregate(
     top.sort_by(|a, b| {
         b.plays
             .cmp(&a.plays)
+            .then_with(|| {
+                counts[b.track.id.as_str()]
+                    .2
+                    .cmp(&counts[a.track.id.as_str()].2)
+            })
             .then_with(|| b.played_ms.cmp(&a.played_ms))
             .then_with(|| a.track.id.cmp(&b.track.id))
     });
-    let mut artists: BTreeMap<String, ArtistRank> = BTreeMap::new();
-    let mut albums: BTreeMap<String, AlbumRank> = BTreeMap::new();
+    let mut artists: BTreeMap<String, (ArtistRank, DateTime<Utc>)> = BTreeMap::new();
+    let mut albums: BTreeMap<String, (AlbumRank, DateTime<Utc>)> = BTreeMap::new();
     for x in &top {
-        let a = artists
-            .entry(normalize(&x.track.artist))
-            .or_insert(ArtistRank {
+        let latest = counts[x.track.id.as_str()].2;
+        let a = artists.entry(normalize(&x.track.artist)).or_insert((
+            ArtistRank {
                 name: if x.track.artist.is_empty() {
                     "Unknown artist".into()
                 } else {
                     x.track.artist.clone()
                 },
                 plays: 0,
-            });
-        a.plays += x.plays;
+            },
+            latest,
+        ));
+        a.0.plays += x.plays;
+        a.1 = a.1.max(latest);
         if !x.track.album.is_empty() {
             let b = albums
                 .entry(normalize(&format!("{}|{}", x.track.artist, x.track.album)))
-                .or_insert(AlbumRank {
-                    name: x.track.album.clone(),
-                    artist: x.track.artist.clone(),
-                    plays: 0,
-                    track_id: Some(x.track.id.clone()),
-                });
-            b.plays += x.plays;
+                .or_insert((
+                    AlbumRank {
+                        name: x.track.album.clone(),
+                        artist: x.track.artist.clone(),
+                        plays: 0,
+                        track_id: Some(x.track.id.clone()),
+                    },
+                    latest,
+                ));
+            b.0.plays += x.plays;
+            b.1 = b.1.max(latest);
         }
     }
     let mut ar: Vec<_> = artists.into_values().collect();
-    ar.sort_by(|a, b| {
+    ar.sort_by(|(a, at), (b, bt)| {
         b.plays
             .cmp(&a.plays)
+            .then_with(|| bt.cmp(at))
             .then_with(|| normalize(&a.name).cmp(&normalize(&b.name)))
     });
+    let ar: Vec<_> = ar.into_iter().map(|(rank, _)| rank).collect();
     let mut al: Vec<_> = albums.into_values().collect();
-    al.sort_by(|a, b| {
+    al.sort_by(|(a, at), (b, bt)| {
         b.plays
             .cmp(&a.plays)
+            .then_with(|| bt.cmp(at))
             .then_with(|| normalize(&a.name).cmp(&normalize(&b.name)))
             .then_with(|| normalize(&a.artist).cmp(&normalize(&b.artist)))
     });
+    let al: Vec<_> = al.into_iter().map(|(rank, _)| rank).collect();
     let available: Vec<_> = top
         .iter()
         .filter(|t| t.track.available && !t.track.hidden)

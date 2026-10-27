@@ -76,3 +76,63 @@ fn shared_top_three_rankings() {
     assert!(restored.top_albums.is_empty());
     assert_eq!(restored.top_artist.unwrap().name, "Zed");
 }
+
+#[test]
+fn shared_recent_qualifying_play_ties() {
+    let f: Value =
+        serde_json::from_str(include_str!("../../../tests/fixtures/recap-recency.json")).unwrap();
+    for c in f["cases"].as_array().unwrap() {
+        for reverse in [false, true] {
+            let mut tracks: Vec<Track> = serde_json::from_value(f["tracks"].clone()).unwrap();
+            let mut sessions: Vec<Session> = f["sessions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|s| {
+                    let mut s = s.clone();
+                    if c["sameTime"] == true && s["eligible"] == true {
+                        s["startedAtUtc"] = json!("2026-10-20T12:00:00Z");
+                    }
+                    serde_json::from_value(s).unwrap()
+                })
+                .collect();
+            if reverse {
+                tracks.reverse();
+                sessions.reverse();
+            }
+            let r = recap::aggregate(
+                &RecapRequest {
+                    kind: RecapKind::Week,
+                    anchor_date: "2026-10-25".into(),
+                },
+                &Settings {
+                    time_zone: "UTC".into(),
+                    history_enabled_since: "2026-01-01T00:00:00Z".into(),
+                    ..Default::default()
+                },
+                &tracks,
+                &sessions,
+                &[],
+                "2026-10-25T12:00:00Z".parse::<DateTime<Utc>>().unwrap(),
+            )
+            .unwrap();
+            assert_eq!(
+                json!(r.top_tracks.iter().map(|x| &x.track.id).collect::<Vec<_>>()),
+                c["songs"]
+            );
+            assert_eq!(
+                json!(r.top_artists.iter().map(|x| &x.name).collect::<Vec<_>>()),
+                c["artists"]
+            );
+            assert_eq!(
+                json!(r
+                    .top_albums
+                    .iter()
+                    .map(|x| [&x.name, &x.artist])
+                    .collect::<Vec<_>>()),
+                c["albums"]
+            );
+            assert!(!serde_json::to_string(&r).unwrap().contains("\"latest\""));
+        }
+    }
+}

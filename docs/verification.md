@@ -1022,3 +1022,12 @@ Verified development outputs (ignored, not a new release):
 - Windows development build passed at version 0.10.0 and its embedded assets were verified. Android and native domain tests were not repeated for this canvas layout revision; the previous revision's native runtime/manual acceptance gates remain pending.
 
 - Final Windows assets: `index-BLA8Nk92.js`, `index-DS6-S8zz.css`.
+
+
+### 27 October 2026 - recent-listening Recap tie breaks
+
+- Songs, artists and albums retain qualified play count as their primary rank. Equal counts now use the most recent eligible session start in the selected period, including every contributing song for grouped ranks. Exact-time ties retain prior duration/ID or alphabetical fallbacks. Saved snapshots and public Recap/export schemas are unchanged.
+- A shared Rust/TypeScript fixture covers count priority, recent member tracks, duration/alphabetical fallbacks, reversed catalog/session input and excluded, short, future and out-of-period sessions. Frontend build and all 96 unit tests passed; all 26 Rust core tests passed.
+- Six targeted browser Recap journeys passed their assertions, including ranked views, artwork exports, legacy snapshots, privacy invalidation and export failure recovery. Complete-suite, Android build/runtime and manual/device gates were not repeated for this focused ranking revision.
+- Windows development build passed at version 0.10.0 with final frontend assets verified in the executable. Existing DSP dead-code warnings remain. No merge or release was performed.
+- Browser-runner caveat: all six tests reported `ok`, but cleanup did not exit; the runner was interrupted after several minutes without further output. This is test-assertion evidence, not a clean complete browser-suite exit.
