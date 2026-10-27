@@ -60,6 +60,11 @@
   color: var(--ink);
   font-size: 14px;
 }
+@media (prefers-reduced-motion: reduce) {
+  .playlist-generation-status .loading-indicator svg {
+    animation: import-spin 3s linear infinite !important;
+  }
+}
 .creation-mark {
   transform: none;
   flex-shrink: 0;

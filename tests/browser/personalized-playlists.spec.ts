@@ -111,6 +111,27 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
   await expect(page.locator(".playlist-generation-status")).toContainText(
     "Checking available sound analysis",
   );
+  const spinner = page.locator(".playlist-generation-status .loading-indicator svg");
+  await expect(spinner).toBeVisible();
+  for (const motion of ["no-preference", "reduce"] as const) {
+    await page.emulateMedia({ reducedMotion: motion });
+    const animation = await spinner.evaluate((node) => {
+      const active = node.getAnimations()[0];
+      if (!active) return null;
+      active.pause();
+      active.currentTime = 0;
+      const start = getComputedStyle(node).transform;
+      active.currentTime = 500;
+      const end = getComputedStyle(node).transform;
+      const duration = active.effect?.getComputedTiming().duration;
+      active.play();
+      return { start, end, duration };
+    });
+    expect(animation).not.toBeNull();
+    expect(animation!.start).not.toBe(animation!.end);
+    expect(animation!.duration).toBe(motion === "reduce" ? 3000 : 1000);
+  }
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.evaluate(() => (window as any).releaseAcoustic());
   await expect
     .poll(() => page.evaluate(() => (window as any).rankingHeld))

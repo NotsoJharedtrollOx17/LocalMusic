@@ -988,3 +988,9 @@ Verified development outputs (ignored, not a new release):
 - Personalized generation now retains tracks by explicitly included artists regardless of the selected genre, and gives matching genre tags a 1.25x preference. Without an included artist, genre remains a strict filter; excluded artists and other filters remain in force. Legacy filter-only requests retain their previous behavior. The creator explains the preference when both fields are filled.
 - Frontend check passed 95 unit tests; Rust core passed 25 tests. The complete browser suite passed 82 tests, including the journey with three included artists, an unmatched genre and an exclusion; the 320 px creator was inspected. Windows development build passed at version 0.9.0 with `index-C2JQh1S7.js` embedded.
 - Android was not rebuilt or tested on a device for this revision.
+
+
+### 27 October 2026 - playlist progress rotation
+
+- Playlist generation keeps the existing one-second spinner in normal motion and uses a slower three-second rotation under Reduce Motion. The exception is scoped to playlist generation; other loading indicators retain their reduced-motion behavior.
+- Frontend check passed 95 unit tests. Targeted browser tests passed for held playlist generation in both motion modes and for library loading under Reduce Motion. Windows development build passed at 0.9.0, with `index-BvVvnZ8k.js` and `index-MgbSGI-J.css` verified in the executable. Android was not rebuilt or tested on a device for this presentation change.
