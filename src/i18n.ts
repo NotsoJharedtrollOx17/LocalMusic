@@ -1,5 +1,6 @@
 export const en = {
-  analysisPlaceholder: "Analysis\u2026",
+  analysisPlaceholder:
+    "Preference analysis runs only when you generate a playlist. Generate one to check your preferences.",
   renamePlaylist: "Rename playlist",
   playlistRenamed: "Playlist renamed",
   defaultPlaylists: "The Default Ones",
@@ -17,8 +18,7 @@ export const en = {
   familiar: "Familiar",
   balanced: "Balanced",
   explore: "Explore",
-  analysisCoverage:
-    "Sound matching: {count} of {total} songs ready. Analysis runs only when you generate a playlist.",
+  analysisCoverage: "Sound matching: {count} of {total} songs ready.",
   suggestLess: "Suggest less",
   restoreSuggestions: "Restore normal suggestions",
   suggestLessSaved: "This song will be suggested less in future mixes.",
@@ -277,7 +277,8 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
-  analysisPlaceholder: "An\u00e1lisis\u2026",
+  analysisPlaceholder:
+    "El an\u00e1lisis de preferencias solo se ejecuta al generar una lista. Genera una para revisar tus preferencias.",
   renamePlaylist: "Cambiar nombre",
   playlistRenamed: "Nombre actualizado",
   defaultPlaylists: "Las de siempre",
@@ -295,8 +296,7 @@ export const es: typeof en = {
   familiar: "Familiar",
   balanced: "Equilibrada",
   explore: "Explorar",
-  analysisCoverage:
-    "Afinidad sonora: {count} de {total} canciones listas. El análisis solo se ejecuta al generar una lista.",
+  analysisCoverage: "Afinidad sonora: {count} de {total} canciones listas.",
   suggestLess: "Sugerir menos",
   restoreSuggestions: "Restaurar sugerencias normales",
   suggestLessSaved: "Esta canción se sugerirá menos en futuras mezclas.",

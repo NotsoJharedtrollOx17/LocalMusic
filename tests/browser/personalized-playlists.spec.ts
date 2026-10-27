@@ -238,7 +238,7 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   expect(await stored(page, "intervals")).toEqual([]);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(page.locator(".analysis-coverage")).toContainText(
-    "Analysis\u2026",
+    "Preference analysis runs only when you generate a playlist. Generate one to check your preferences.",
   );
   await expect(
     page.getByRole("spinbutton", { name: "Count", exact: true }),
@@ -262,7 +262,9 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   );
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
-  await expect(page.locator(".analysis-coverage")).toHaveText("Analysis\u2026");
+  await expect(page.locator(".analysis-coverage")).toHaveText(
+    "Preference analysis runs only when you generate a playlist. Generate one to check your preferences.",
+  );
   await page.waitForTimeout(2000);
   expect((await stored(page, "acousticFeatures")).length).toBe(3);
   expect(await stored(page, "sessions")).toEqual([]);

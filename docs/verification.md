@@ -933,3 +933,11 @@ Verified development outputs (ignored, not a new release):
 - Production frontend check passed **93 unit tests across nineteen files**. The final menu/layout/personalized browser run passed **16 journeys in 2.7 minutes**, including press/hold/release geometry within 1 CSS px, rename cancellation, injected save failure/retry, content preservation, focus restoration and analysis reset with cached descriptors. A final focused journey passed in **25.4 seconds** with the actual italic font, Spanish dark mode and Escape. Inspected `artifacts/playlist-rename-es-dark.png`. An earlier browser run was stopped to include the final initial-focus refinement and is not counted as a completed passing run.
 
 - Windows development rebuild passed at unchanged **0.9.0**, with embedded frontend index-wG-ZgLyZ.js, index-BnjB9q37.css. Two existing Rust dead-code warnings remain. Android was not rebuilt for this shared presentation/rename revision; Android runtime and device acceptance remain separate. No native real-profile input automation was performed.
+
+
+### 27 October 2026 - compact preference-analysis guidance
+
+- Capped the analysis panel at 650 px with content-sized width and responsive wrapping. Replaced the initial Analysis label with an explanation that preference analysis runs only when generating a playlist and invites generating one to check preferences. Completed results show the concise sound-matching count. Updated EN/ES and retained reset-on-reopen behavior.
+- Production frontend check passed **93 unit tests**. Both affected browser journeys passed in **1.1 minutes**, checking initial/reopened guidance, explicit-only analysis and the narrow Spanish creator. Inspected `artifacts/personalized-creator-es-320.png`; text remains within the screen. No ranking, storage or native playback rules changed.
+
+- Windows development rebuild passed at **0.9.0**; verified embedded frontend index-C1GUsWRf.js, index-BwqKT_jw.css. Existing warnings remain. Android was not rebuilt for this copy/layout revision.

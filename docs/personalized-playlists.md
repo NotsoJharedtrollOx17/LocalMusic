@@ -59,4 +59,7 @@ Generation reports the sound-analysis step, then matching of the available sound
 
 ## Analysis label and saved-playlist refinement
 
-The creator starts each visit with Analysis, without displaying a previous visit's count. Generation fills the count after the sound step; another generation resets the presentation while the new calculation runs. Source descriptors remain cached. Playlist subsection headings use a smaller italic face, with The Default Ones identifying the automatic collections. Saved-playlist menus use stable vertical positioning and provide Rename before Delete. Rename preserves identity, kind and ordered track IDs, rejects blank titles, supports cancellation and keeps errors in the dialog for retry.
+The creator starts each visit with a compact explanation that preference analysis runs only when generating a playlist, without displaying a previous visit's count. Generation fills the count after the sound step; another generation resets the presentation while the new calculation runs. Source descriptors remain cached. Playlist subsection headings use a smaller italic face, with The Default Ones identifying the automatic collections. Saved-playlist menus use stable vertical positioning and provide Rename before Delete. Rename preserves identity, kind and ordered track IDs, rejects blank titles, supports cancellation and keeps errors in the dialog for retry.
+
+
+The analysis panel fits its content up to 650 px and the available screen width. Initial guidance invites generating a playlist to check preferences; completed results show only the acoustic coverage count, without repeating the guidance.

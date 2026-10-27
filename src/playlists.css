@@ -38,6 +38,8 @@
   outline-offset: 2px;
 }
 .generator .analysis-coverage {
+  width: fit-content;
+  max-width: min(100%, 650px);
   margin: 0 0 20px;
   padding: 12px 16px;
   border-left: 3px solid var(--accent);
