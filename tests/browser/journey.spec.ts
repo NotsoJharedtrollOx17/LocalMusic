@@ -2,7 +2,7 @@ import { seedExistingSnapshot } from "./recapSnapshotFixture";
 import { openSettings } from "./navigationHelpers";
 import { wav, taggedWav, numberedWav } from "./fixtures";
 import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
 
 test("import, actual listening, seek, recap and privacy-safe exports", async ({
   page,
@@ -176,7 +176,7 @@ test("30 seconds qualify a play and excluding a session removes its evidence", a
         page.evaluate(
           () =>
             new Promise<number>((resolve, reject) => {
-              const request = indexedDB.open("local-music-v1", 1);
+              const request = indexedDB.open("local-music-v1");
               request.onerror = () => reject(request.error);
               request.onsuccess = () => {
                 const db = request.result;
@@ -310,7 +310,7 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
 
 test("import publishes ten tracks before the remaining files finish", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/");
   await page.evaluate(() => {
     const original = crypto.subtle.digest.bind(crypto.subtle);
@@ -326,11 +326,16 @@ test("import publishes ten tracks before the remaining files finish", async ({
       return original(algorithm, data);
     };
   });
-  const files = Array.from({ length: 11 }, (_, i) => {
-    const buffer = wav(1);
-    buffer.writeInt16LE(i, 44);
-    return { name: "Batch " + i + ".wav", mimeType: "audio/wav", buffer };
-  });
+  await mkdir(testInfo.outputDir, { recursive: true });
+  const files = await Promise.all(
+    Array.from({ length: 11 }, async (_, i) => {
+      const buffer = wav(1);
+      buffer.writeInt16LE(i, 44);
+      const path = testInfo.outputPath("Batch " + i + ".wav");
+      await writeFile(path, buffer);
+      return path;
+    }),
+  );
   await page.locator("input[type=file]").first().setInputFiles(files);
   await expect(page.locator(".import-status")).toBeVisible();
   await expect(page.locator(".import-spinner")).toBeVisible();
@@ -426,7 +431,10 @@ test("artist and album details stay populated as import batches arrive", async (
       release;
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
-      if (this.name === "tracks") {
+      if (
+        this.name === "tracks" &&
+        this.transaction.objectStoreNames.length === 1
+      ) {
         IDBObjectStore.prototype.getAll = original;
         request.addEventListener(
           "success",
@@ -561,7 +569,7 @@ test("album disc order is preserved in views, queue and legacy library migration
   // Simulate the previous catalog format; retained audio blobs must restore the tags.
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("local-music-v1", 1);
+      const request = indexedDB.open("local-music-v1");
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

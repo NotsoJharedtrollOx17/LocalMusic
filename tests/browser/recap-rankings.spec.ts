@@ -13,7 +13,7 @@ async function seed(page: Page) {
   ).toBeVisible();
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     const wav = new ArrayBuffer(16044),
@@ -173,7 +173,7 @@ test("top three scale by rank and top ten saves the exact playable order", async
   await expect(page.getByText("Playlist saved", { exact: true })).toBeVisible();
   const saved = await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     return await new Promise<any[]>((resolve) => {
@@ -201,7 +201,7 @@ test("top three scale by rank and top ten saves the exact playable order", async
     .poll(() =>
       page.evaluate(async () => {
         const db = await new Promise<IDBDatabase>((resolve) => {
-          const r = indexedDB.open("local-music-v1", 1);
+          const r = indexedDB.open("local-music-v1");
           r.onsuccess = () => resolve(r.result);
         });
         return await new Promise<unknown>((resolve) => {
@@ -309,7 +309,7 @@ test("exports include three ranks and old snapshots keep only recorded winners",
   await seedExistingSnapshot(page);
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     await new Promise<void>((resolve) => {

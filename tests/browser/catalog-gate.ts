@@ -12,7 +12,7 @@ export async function holdNextTrackRead(page: Page) {
       release;
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
-      if (this.name === "tracks") {
+      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
         state.catalogReadHeld = true;
         IDBObjectStore.prototype.getAll = original;
         request.addEventListener(

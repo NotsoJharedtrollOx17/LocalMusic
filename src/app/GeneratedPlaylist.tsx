@@ -29,6 +29,16 @@ export default function GeneratedPlaylist() {
           {t.save}
         </button>
       </div>
+      {generated.recommendation && (
+        <p className="small-muted">
+          {generated.recommendation.source === "discovery"
+            ? t.libraryDiscovery
+            : generated.recommendation.source === "favorites"
+              ? t.favoriteMix
+              : t.historyMix}
+          {generated.recommendation.shortage ? ` · ${t.mixShortage}` : ""}
+        </p>
+      )}
       {<TrackRows ts={playlistTracks} queueIds={generated.trackIds} />}
       <button
         className="button primary full-width"

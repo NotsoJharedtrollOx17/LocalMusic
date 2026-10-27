@@ -12,7 +12,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   await page.goto("/");
   await page.evaluate(async (year) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });
@@ -147,7 +147,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   await (await spanishWait).saveAs("artifacts/recap-design-es.png");
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     await new Promise<void>((resolve, reject) => {

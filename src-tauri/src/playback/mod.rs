@@ -58,6 +58,9 @@ pub(crate) async fn dispatch(
     op: &str,
     payload: serde_json::Value,
 ) -> Result<()> {
+    if matches!(op, "play" | "toggle" | "next" | "previous") {
+        state.analysis.stop();
+    }
     command(
         app,
         state.core.clone(),

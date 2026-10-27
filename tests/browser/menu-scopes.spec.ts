@@ -185,6 +185,7 @@ test("localized long collection names and menus remain usable in desktop and nar
       "Detalles de la canción",
       "Ir al álbum",
       "Ir al artista",
+      "Sugerir menos",
       "Quitar de la biblioteca",
     ]);
     const box = (await menu.boundingBox())!;
@@ -263,7 +264,7 @@ test("unavailable audio keeps details without copy actions or invented destinati
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open("local-music-v1", 1);
+        const request = indexedDB.open("local-music-v1");
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
           const db = request.result,
@@ -294,6 +295,7 @@ test("unavailable audio keeps details without copy actions or invented destinati
   await expect(page.getByRole("menuitem")).toHaveText([
     "Add to playlist",
     "Track details",
+    "Suggest less",
     "Remove from Library",
   ]);
   await expect(

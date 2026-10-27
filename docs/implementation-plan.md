@@ -49,3 +49,7 @@ The recap export, loading/startup and playlist navigation revisions above are in
 ## Calendar recap revision - 25 October 2026
 
 The approved Your Recap revision adds calendar weeks/months/years, Monday week boundaries, remembered timeframe preference and period-aware snapshots/charts/PNG exports. It supersedes year-only presentation and aggregation inputs; historical plan entries above remain archival. See [approved specification](your-recap-periods-plan.md), [current methodology](recap-methodology.md) and [verification](verification.md). Playback accounting and Android journal ownership remain unchanged.
+
+## Personalized playlist revision - 26 October 2026
+
+The user approved offline listening/metadata/acoustic ranking in the existing creator, with Familiar/Balanced/Explore choices, reversible song-specific feedback and gradual silent analysis while paused. This supersedes the initial filter-only generation scope for requests opting into personalization; hard constraints and legacy requests remain supported. No semantic model, enrichment provider or cloud service is added. See [approved specification](personalized-playlists-plan.md), [implementation method](personalized-playlists.md) and [verification](verification.md). Version remains 0.9.0 on the feature branch pending review; integration/release requires another request.

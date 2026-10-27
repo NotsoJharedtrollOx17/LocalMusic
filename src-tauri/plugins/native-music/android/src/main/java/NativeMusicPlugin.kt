@@ -19,6 +19,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 @InvokeArg class VisualizerArgs {var id:String?=null}
+@InvokeArg class AnalysisArgs {var active:Boolean=false;var uri:String?=null;var durationMs:Long=0}
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
 @InvokeArg class ArtworkArgs { var uri:String?=null }
@@ -32,6 +33,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  Permission(strings=[Manifest.permission.READ_EXTERNAL_STORAGE],alias="legacyAudio")
 ])
 class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
+ private val analysisWorker=Executors.newSingleThreadExecutor()
+ @Command fun analysisSources(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);worker.execute{try{val sources=org.json.JSONArray(args.payload?:"[]");val result=JSObject();val decoder=AcousticDecoder(activity.applicationContext);for(i in 0 until sources.length()){val s=sources.getJSONObject(i);val revision=try{decoder.fingerprint(Uri.parse(s.getString("uri")))}catch(_:Exception){"unavailable"};result.put(s.getString("id"),revision)};invoke.resolve(result)}catch(e:Exception){invoke.reject(e.message?:"Audio sources unavailable")}}}
+ @Command fun analysisActivity(invoke:Invoke){val args=invoke.parseArgs(AnalysisArgs::class.java);PlaylistScanGate.activity(args.active);invoke.resolve(JSObject())}
+ @Command fun analyzeTrack(invoke:Invoke){val args=invoke.parseArgs(AnalysisArgs::class.java);analysisWorker.execute{try{val feature=AcousticDecoder(activity.applicationContext).decode(Uri.parse(args.uri?:""),args.durationMs);invoke.resolve(JSObject().put("feature",feature?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Audio analysis unavailable")}}}
  private var musicWebView:android.webkit.WebView?=null
  override fun load(webView:android.webkit.WebView){
   musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()
@@ -47,7 +52,8 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
   if(awake)activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)else activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
   if(service?.sound?.visualizer?.running()==true)visualHandler.postDelayed(this,250)
  }}
- override fun onPause(activity:androidx.appcompat.app.AppCompatActivity){super.onPause(activity);PlaybackService.instance?.sound?.visualizer?.stopAll();visualHandler.removeCallbacks(visualLease);activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)}
+ override fun onResume(activity:androidx.appcompat.app.AppCompatActivity){super.onResume(activity);PlaylistScanGate.foreground.set(true)}
+ override fun onPause(activity:androidx.appcompat.app.AppCompatActivity){super.onPause(activity);PlaylistScanGate.foreground.set(false);PlaylistScanGate.stop();PlaybackService.instance?.sound?.visualizer?.stopAll();visualHandler.removeCallbacks(visualLease);activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)}
  @Command fun startVisualizer(invoke:Invoke){withService(invoke){service->
   service.sound.visualizer.clock(service.player.currentPosition.coerceAtLeast(0),service.player.isPlaying)
   val id=service.sound.visualizer.start();visualHandler.removeCallbacks(visualLease);visualHandler.post(visualLease);invoke.resolve(JSObject().put("id",id).put("capabilities",JSONObject().put("fftSize",2048).put("bands",64).put("waveformPoints",256).put("maxUpdatesPerSecond",30).put("postEffects",true)))

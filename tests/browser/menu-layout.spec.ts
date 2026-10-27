@@ -177,6 +177,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Track details",
               "Go to album",
               "Go to artist",
+              "Suggest less",
               "Equalizer",
               "Visualizer",
               "Exclude from recap",
@@ -186,6 +187,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
               "Detalles de la canción",
               "Ir al álbum",
               "Ir al artista",
+              "Sugerir menos",
               "Ecualizador",
               "Visualizador",
               "Excluir del resumen",
@@ -323,7 +325,10 @@ test("privacy pending and failure states recover while menus and queue actions r
     (window as any).releasePrivacy = release;
     IDBObjectStore.prototype.get = function (...args) {
       const request = original.apply(this, args);
-      if (this.name === "tracks") {
+      if (
+        this.name === "tracks" &&
+        this.transaction.objectStoreNames.length === 1
+      ) {
         IDBObjectStore.prototype.get = original;
         request.addEventListener(
           "success",
@@ -352,7 +357,10 @@ test("privacy pending and failure states recover while menus and queue actions r
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.get;
     IDBObjectStore.prototype.get = function (...args) {
-      if (this.name === "tracks") {
+      if (
+        this.name === "tracks" &&
+        this.transaction.objectStoreNames.length === 1
+      ) {
         IDBObjectStore.prototype.get = original;
         throw new Error("Privacy fixture read failed");
       }

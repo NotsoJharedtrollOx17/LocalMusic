@@ -9,7 +9,7 @@ async function preferences(page: Page) {
   return page.evaluate(
     () =>
       new Promise<any>((resolve, reject) => {
-        const open = indexedDB.open("local-music-v1", 1);
+        const open = indexedDB.open("local-music-v1");
         open.onsuccess = () => {
           const db = open.result;
           const request = db
@@ -359,6 +359,8 @@ test("missing native output keeps configuration editable and Retry updates runti
               repeat: "off",
               excluded: false,
             };
+          case "playlist_context":
+            return {artists:[],genres:[],less:[],analyzed:0,total:0,scanning:false};
           case "list_tracks":
             return { tracks: [], total: 0 };
           case "list_playlists":
@@ -420,7 +422,7 @@ test("legacy disabled EQ and manual gain migrate without losing archived curves"
   await page.evaluate(
     (config) =>
       new Promise<void>((resolve) => {
-        const request = indexedDB.open("local-music-v1", 1);
+        const request = indexedDB.open("local-music-v1");
         request.onsuccess = () => {
           const db = request.result,
             tx = db.transaction("settings", "readwrite");

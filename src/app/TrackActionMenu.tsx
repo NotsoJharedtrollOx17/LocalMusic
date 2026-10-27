@@ -24,6 +24,10 @@ export default function TrackActionMenu() {
     openGroup,
     openEqualizer,
     player,
+    playlistContext,
+    playlistContextLoaded,
+    suggestionFeedback,
+    feedbackPending,
   } = useMusicAppContext();
   const privacy = usePlaybackPrivacy();
   if (!menu) return null;
@@ -106,8 +110,24 @@ export default function TrackActionMenu() {
       onClose={() => setMenu(null)}
       items={[
         ...available
-          .filter((id) => !playerMenu || (id !== "add" && id !== "remove"))
+          .filter((id) => id !== "remove" && (!playerMenu || id !== "add"))
           .map((id) => actions[id]),
+        ...(!track.demo
+          ? [
+              {
+                id: "suggestion",
+                label: playlistContext.less.includes(track.id)
+                  ? t.restoreSuggestions
+                  : t.suggestLess,
+                disabled: feedbackPending || !playlistContextLoaded,
+                action: () =>
+                  void suggestionFeedback(
+                    track.id,
+                    !playlistContext.less.includes(track.id),
+                  ),
+              },
+            ]
+          : []),
         ...(playerMenu
           ? [
               {
@@ -133,7 +153,7 @@ export default function TrackActionMenu() {
               },
             ]
           : []),
-        ...(playerMenu && available.includes("remove") ? [actions.remove] : []),
+        ...(available.includes("remove") ? [actions.remove] : []),
       ]}
     />
   );

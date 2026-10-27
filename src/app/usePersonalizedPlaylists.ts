@@ -1,0 +1,162 @@
+import { useEffect, useRef, useState } from "react";
+import { api } from "../api";
+import type { PlaylistContext, PlaylistBlend } from "../playlists/types";
+import type { MusicAppState } from "./useAppState";
+import type { en } from "../i18n";
+
+export function usePersonalizedPlaylists(state: MusicAppState, t: typeof en) {
+  const [playlistContextLoaded, setPlaylistContextLoaded] = useState(false);
+  const [context, setContext] = useState<PlaylistContext>({
+    artists: [],
+    genres: [],
+    less: [],
+    analyzed: 0,
+    total: 0,
+    scanning: false,
+  });
+  const [feedbackPending, setFeedbackPending] = useState(false);
+  const [feedbackUndo, setFeedbackUndo] = useState<{
+    id: string;
+    less: boolean;
+  } | null>(null);
+  const version = useRef(0),
+    feedbackBusy = useRef(false),
+    generationRevision = useRef(0);
+  const inputKey = JSON.stringify([
+    state.catalogRevision,
+    state.settings?.privacyRevision,
+    state.settings?.historyEnabledSince,
+    state.player.excluded,
+    state.request,
+    state.target,
+    state.targetMode,
+  ]);
+  const previousKey = useRef(inputKey);
+  if (previousKey.current !== inputKey) {
+    generationRevision.current++;
+    previousKey.current = inputKey;
+  }
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (state.settings && !initialized.current) {
+      initialized.current = true;
+      state.setRequest((r) => ({
+        ...r,
+        blend: state.settings?.playlistBlend ?? "balanced",
+      }));
+    }
+  }, [state.settings]);
+  useEffect(() => {
+    if (!state.notice) setFeedbackUndo(null);
+  }, [state.notice]);
+  const latest = useRef(state);
+  latest.current = state;
+  const refresh = async () => {
+    const token = ++version.current;
+    const next = await api.playlistContext();
+    if (token === version.current && !feedbackBusy.current) {
+      setContext((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next,
+      );
+      setPlaylistContextLoaded(true);
+    }
+  };
+  useEffect(() => {
+    void refresh().catch((e) => state.setError(String(e)));
+  }, [state.catalogRevision]);
+  useEffect(() => {
+    let disposed = false,
+      inFlight = false,
+      scanning = false;
+    const tick = async () => {
+      const current = latest.current;
+      const active =
+        !document.hidden &&
+        !current.player.playing &&
+        !current.busy &&
+        !current.importActive.current;
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        await api.analysisActivity(active);
+        if (disposed) return;
+        if (active && !scanning) {
+          scanning = true;
+          void api
+            .analyzeNext()
+            .then(() => (disposed ? undefined : refresh()))
+            .catch(() => {
+              /* Metadata matching remains available. */
+            })
+            .finally(() => {
+              scanning = false;
+            });
+        }
+      } catch {
+        /* A refused idle scan must not interrupt playback. */
+      } finally {
+        inFlight = false;
+      }
+    };
+    void tick();
+    const timer = window.setInterval(() => void tick(), 1500);
+    const visibility = () => {
+      if (document.hidden) void api.analysisActivity(false);
+      else void tick();
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", visibility);
+      void api.analysisActivity(false);
+    };
+  }, []);
+  useEffect(() => {
+    if (state.player.playing || state.busy) void api.analysisActivity(false);
+  }, [state.player.playing, state.busy]);
+  async function suggestionFeedback(id: string, less: boolean) {
+    if (feedbackBusy.current) return;
+    feedbackBusy.current = true;
+    setFeedbackPending(true);
+    version.current++;
+    generationRevision.current++;
+    const previous = context.less.includes(id);
+    setContext((c) => ({
+      ...c,
+      less: less
+        ? [...new Set([...c.less, id])]
+        : c.less.filter((x) => x !== id),
+    }));
+    try {
+      await api.setSuggestionFeedback(id, less);
+      setFeedbackUndo({ id, less: previous });
+      state.setNotice(less ? t.suggestLessSaved : t.suggestionsRestored);
+    } catch (e) {
+      setContext((c) => ({
+        ...c,
+        less: previous
+          ? [...new Set([...c.less, id])]
+          : c.less.filter((x) => x !== id),
+      }));
+      state.setError(String(e));
+    } finally {
+      feedbackBusy.current = false;
+      setFeedbackPending(false);
+    }
+  }
+  function chooseBlend(blend: PlaylistBlend) {
+    state.setRequest((r) => ({ ...r, blend }));
+    state.setSettings((s) => (s ? { ...s, playlistBlend: blend } : s));
+  }
+  return {
+    playlistContextLoaded,
+    playlistContext: context,
+    suggestionFeedback,
+    feedbackPending,
+    feedbackUndo,
+    setFeedbackUndo,
+    chooseBlend,
+    generationRevision,
+  };
+}

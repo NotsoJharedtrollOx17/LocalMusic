@@ -1,4 +1,19 @@
 export const en = {
+  mixBalance: "Mix balance",
+  familiar: "Familiar",
+  balanced: "Balanced",
+  explore: "Explore",
+  analysisCoverage:
+    "Sound matching: {count} of {total} songs ready. Metadata works immediately; sound matching improves while paused.",
+  suggestLess: "Suggest less",
+  restoreSuggestions: "Restore normal suggestions",
+  suggestLessSaved: "This song will be suggested less in future mixes.",
+  suggestionsRestored: "Normal suggestions restored.",
+  libraryDiscovery: "Library discovery · A varied mix from your library",
+  favoriteMix: "Inspired by your favorites",
+  historyMix: "Inspired by your listening in this app",
+  mixShortage:
+    "Your filters, artist limit and length budget leave fewer matching songs.",
   visualizer: "Visualizer",
   visualizerMode: "Visual style",
   spectrum: "Spectrum",
@@ -35,7 +50,7 @@ export const en = {
   libraryActions: "Library actions",
   libraryFilters: "Filter and sort",
   historyHint:
-    "Listening history powers Your Recap, Recently played, and Most played.",
+    "Listening history powers Your Recap, recent and most-played collections, and personalized mixes.",
   songSingular: "song",
   appActions: "App actions",
   textActions: "Text actions",
@@ -126,7 +141,7 @@ export const en = {
   history: "Listening history",
   deleteHistory: "Delete listening history",
   deleteWarning:
-    "Delete all listening history and saved recap snapshots? Your music and playlists will stay.",
+    "Delete all listening history and saved recap snapshots? Learned listening preferences reset. Your music, playlists, favorites, suggestion feedback and sound descriptors stay.",
   cancel: "Cancel",
   delete: "Delete",
   save: "Save",
@@ -249,6 +264,21 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  mixBalance: "Equilibrio de la mezcla",
+  familiar: "Familiar",
+  balanced: "Equilibrada",
+  explore: "Explorar",
+  analysisCoverage:
+    "Afinidad sonora: {count} de {total} canciones listas. Los metadatos ya funcionan; el análisis avanza en pausa.",
+  suggestLess: "Sugerir menos",
+  restoreSuggestions: "Restaurar sugerencias normales",
+  suggestLessSaved: "Esta canción se sugerirá menos en futuras mezclas.",
+  suggestionsRestored: "Sugerencias normales restauradas.",
+  libraryDiscovery: "Descubre tu biblioteca · Una mezcla variada de tu música",
+  favoriteMix: "Inspirada en tus favoritas",
+  historyMix: "Inspirada en tus escuchas en esta app",
+  mixShortage:
+    "Los filtros, el límite por artista y la duración dejan menos canciones compatibles.",
   visualizer: "Visualizador",
   visualizerMode: "Estilo visual",
   spectrum: "Espectro",
@@ -284,7 +314,7 @@ export const es: typeof en = {
   libraryActions: "Acciones de la biblioteca",
   libraryFilters: "Filtrar y ordenar",
   historyHint:
-    "El historial alimenta Tu resumen, Reproducidas recientemente y Más reproducidas.",
+    "El historial alimenta Tu resumen, las listas recientes y más reproducidas, y las mezclas personalizadas.",
   actions: "Acciones de la canción",
   songSingular: "canción",
   appActions: "Acciones de la app",
@@ -377,7 +407,7 @@ export const es: typeof en = {
   history: "Historial de escucha",
   deleteHistory: "Borrar historial",
   deleteWarning:
-    "¿Borrar todo el historial y los resúmenes guardados? Tu música y tus listas se conservarán.",
+    "¿Borrar todo el historial y los resúmenes guardados? Se reinician las preferencias aprendidas. Se conservan tu música, listas, favoritas, sugerencias explícitas y descriptores sonoros.",
   cancel: "Cancelar",
   delete: "Borrar",
   save: "Guardar",

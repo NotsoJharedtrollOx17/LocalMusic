@@ -14,6 +14,10 @@ export default function AppFeedback() {
     t,
     act,
     changeVisibility,
+    feedbackUndo,
+    setFeedbackUndo,
+    suggestionFeedback,
+    feedbackPending,
   } = useMusicAppContext();
 
   return (
@@ -28,6 +32,21 @@ export default function AppFeedback() {
         <div className="toast" role="status">
           <Check size={18} />
           {notice}
+          {feedbackUndo &&
+            (notice === t.suggestLessSaved ||
+              notice === t.suggestionsRestored) && (
+              <button
+                className="text-button"
+                disabled={feedbackPending}
+                onClick={() => {
+                  const previous = feedbackUndo;
+                  setFeedbackUndo(null);
+                  void suggestionFeedback(previous.id, previous.less);
+                }}
+              >
+                {t.undo}
+              </button>
+            )}
         </div>
       )}
       {error && (

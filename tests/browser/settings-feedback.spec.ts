@@ -24,7 +24,7 @@ test("recap follows the device at startup and resume without a dropdown", async 
       page.evaluate(
         () =>
           new Promise<string>((resolve, reject) => {
-            const open = indexedDB.open("local-music-v1", 1);
+            const open = indexedDB.open("local-music-v1");
             open.onsuccess = () => {
               const db = open.result;
               const request = db
@@ -67,7 +67,7 @@ test("recap follows the device at startup and resume without a dropdown", async 
       page.evaluate(
         () =>
           new Promise<string>((resolve) => {
-            const request = indexedDB.open("local-music-v1", 1);
+            const request = indexedDB.open("local-music-v1");
             request.onsuccess = () => {
               const db = request.result,
                 read = db
@@ -127,6 +127,15 @@ test("dismissed playback errors stay dismissed across native polls and recover",
             timeZone: "America/Los_Angeles",
             historyEnabledSince: "2026-10-01T00:00:00Z",
             privacyRevision: 0,
+          };
+        if (command === "playlist_context")
+          return {
+            artists: ["Artist"],
+            genres: [],
+            less: [],
+            analyzed: 0,
+            total: 1,
+            scanning: false,
           };
         if (command === "list_tracks") return { tracks: [track], total: 1 };
         if (command === "tracks_by_id") return [track];

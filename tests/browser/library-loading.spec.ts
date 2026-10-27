@@ -17,7 +17,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
     .poll(() =>
       page.evaluate(async () => {
         const db = await new Promise<IDBDatabase>((resolve) => {
-          const r = indexedDB.open("local-music-v1", 1);
+          const r = indexedDB.open("local-music-v1");
           r.onsuccess = () => resolve(r.result);
         });
         const theme = await new Promise<string>((resolve) => {
@@ -54,7 +54,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
       };
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
-      if (this.name === "tracks") {
+      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
         // Hold both startup reads, including the debounced Library refresh.
         request.addEventListener(
           "success",

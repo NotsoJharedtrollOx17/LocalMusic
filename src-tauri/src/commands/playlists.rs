@@ -29,9 +29,13 @@ pub(crate) fn delete_playlist(state: State<MusicState>, id: String) -> Result<()
 
 #[tauri::command]
 pub(crate) async fn generate_playlist(
+    app: tauri::AppHandle,
     state: State<'_, MusicState>,
     request: PlaylistRequest,
-) -> Result<Playlist> {
+) -> Result<music_core::recommendation::GeneratedMix> {
+    crate::playback::dispatch(app.clone(), &state, "flush", serde_json::json!({})).await?;
+    #[cfg(target_os = "android")]
+    crate::commands::recommendations::refresh_sources(app, &state.core).await?;
     let core = state.core.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let mut store = core.lock().map_err(|e| e.to_string())?;
@@ -40,12 +44,13 @@ pub(crate) async fn generate_playlist(
         let settings = store
             .get_setting::<Settings>("preferences")?
             .unwrap_or_default();
-        music_core::playlist::generate(
+        music_core::recommendation::generate(
             &request,
             &store.all_tracks()?,
             &store.sessions()?,
             &settings.time_zone,
             chrono::Utc::now(),
+            &store.recommendation_data()?,
         )
     })
     .await

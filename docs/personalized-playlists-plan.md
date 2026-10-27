@@ -1,6 +1,6 @@
 # Personalized playlists: fresh but familiar
 
-> Archived 26 October 2026 on `dev.personalized-playlists`, created from clean `dev` at `fdb85f5`. This delivery is documentation-only; feature implementation requires a subsequent request. The planning-mode wording below records the approved specification's original context.
+> Archived 26 October 2026 on `dev.personalized-playlists`, created from clean `dev` at `fdb85f5`. The user subsequently authorized implementation. The delivery/Plan Mode wording below preserves the approved specification's original context. See [implementation method](personalized-playlists.md) and [verification](verification.md) for current behavior and actual evidence.
 
 ## 1. Delivery and research direction
 

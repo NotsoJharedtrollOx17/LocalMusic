@@ -7,7 +7,7 @@ import type { Interval, Session, Settings, Track } from "../../src/types";
 export async function seedExistingSnapshot(page: Page) {
   const data = await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     const read = (store: string, key?: string) =>
@@ -44,7 +44,7 @@ export async function seedExistingSnapshot(page: Page) {
   );
   await page.evaluate(async (recap) => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     await new Promise<void>((resolve) => {

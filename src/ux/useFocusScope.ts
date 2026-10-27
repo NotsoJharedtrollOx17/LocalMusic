@@ -35,7 +35,11 @@ export function useFocusScope(
     background.forEach((el) => (el.inert = true));
     const scope = () => [
       node,
-      ...Array.from(document.querySelectorAll<HTMLElement>(".error-banner")),
+      ...Array.from(
+        document.querySelectorAll<HTMLElement>(
+          ".error-banner,.toast:has(button)",
+        ),
+      ),
       ...(keepPlayer
         ? Array.from(
             document.querySelectorAll<HTMLElement>(".mini-player,.undo-banner"),

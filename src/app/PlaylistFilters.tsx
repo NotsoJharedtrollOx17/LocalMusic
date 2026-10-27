@@ -2,7 +2,7 @@ import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistFilters() {
   const {
-    cache,
+    playlistContext,
     request,
     setRequest,
     targetMode,
@@ -67,13 +67,7 @@ export default function PlaylistFilters() {
           }
         />
         <datalist id="genres">
-          {[
-            ...new Set(
-              Object.values(cache)
-                .map((x) => x.genre)
-                .filter(Boolean),
-            ),
-          ].map((g) => (
+          {playlistContext.genres.map((g) => (
             <option key={g} value={g} />
           ))}
         </datalist>
@@ -106,13 +100,7 @@ export default function PlaylistFilters() {
           }
         />
         <datalist id="artists">
-          {[
-            ...new Set(
-              Object.values(cache)
-                .map((x) => x.artist)
-                .filter(Boolean),
-            ),
-          ].map((g) => (
+          {playlistContext.artists.map((g) => (
             <option key={g} value={g} />
           ))}
         </datalist>

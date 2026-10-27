@@ -65,7 +65,9 @@ export function useAppState(initialSettings?: Settings) {
     [player, setPlayer] = useState(blank),
     [lists, setLists] = useState<Playlist[]>([]),
     [selectedList, setSelectedList] = useState<Playlist | null>(null),
-    [generated, setGenerated] = useState<Playlist | null>(null),
+    [generated, setGenerated] = useState<
+      import("../playlists/types").GeneratedMix | null
+    >(null),
     [recap, setRecap] = useState<Recap>(),
     [shareRecap, setShareRecap] = useState<Recap | null>(null),
     [recapLoading, setRecapLoading] = useState(false),
@@ -113,6 +115,7 @@ export function useAppState(initialSettings?: Settings) {
     null,
   );
   const [request, setRequest] = useState<PlaylistRequest>({
+      blend: initialSettings?.playlistBlend ?? "balanced",
       title: "",
       targetCount: 25,
       genre: "",

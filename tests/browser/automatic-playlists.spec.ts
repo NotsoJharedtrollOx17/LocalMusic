@@ -88,7 +88,7 @@ test("automatic playlists stay live, preserve import order and play their derive
   const playedMs = await page.evaluate(
     () =>
       new Promise<number>((resolve) => {
-        const request = indexedDB.open("local-music-v1", 1);
+        const request = indexedDB.open("local-music-v1");
         request.onsuccess = () => {
           const db = request.result,
             read = db.transaction("sessions").objectStore("sessions").getAll();
@@ -125,7 +125,7 @@ test("automatic history ranking excludes private music and localizes without cha
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
-        const request = indexedDB.open("local-music-v1", 1);
+        const request = indexedDB.open("local-music-v1");
         request.onsuccess = () => {
           const db = request.result,
             tx = db.transaction(

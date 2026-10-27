@@ -9,4 +9,5 @@ pub(crate) mod sharing;
 pub(crate) mod sound;
 pub(crate) mod window;
 
+pub(crate) mod recommendations;
 pub(crate) mod visualizer;

@@ -2,6 +2,7 @@ import { ArrowRight, Shuffle, Shield } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlaylistFilters from "./PlaylistFilters";
 import PlaylistOptions from "./PlaylistOptions";
+import PlaylistBlend from "./PlaylistBlend";
 
 export default function PlaylistBuilder() {
   const { catalogTotal, busy, t, buildMix } = useMusicAppContext();
@@ -25,6 +26,7 @@ export default function PlaylistBuilder() {
         }}
       >
         <PlaylistFilters />
+        <PlaylistBlend />
         <PlaylistOptions />
         <div className="generator-bottom">
           <span className="small-muted">

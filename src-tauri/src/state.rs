@@ -6,6 +6,7 @@ use std::sync::{atomic::AtomicBool, Arc, Mutex};
 use tauri::Manager;
 
 pub(crate) struct MusicState {
+    pub(crate) analysis: Arc<crate::commands::recommendations::AnalysisControl>,
     pub(crate) core: Arc<Mutex<Store>>,
     pub(crate) order_ready: Arc<Mutex<bool>>,
     pub(crate) snapshot: Arc<Mutex<PlaybackSnapshot>>,
@@ -49,6 +50,7 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
         sound.clone(),
     );
     app.manage(MusicState {
+        analysis: Arc::new(Default::default()),
         core,
         order_ready: Arc::new(Mutex::new(false)),
         snapshot,

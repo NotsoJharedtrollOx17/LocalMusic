@@ -6,7 +6,7 @@ async function stored(page: Page) {
   return page.evaluate(
     () =>
       new Promise<any>((resolve, reject) => {
-        const open = indexedDB.open("local-music-v1", 1);
+        const open = indexedDB.open("local-music-v1");
         open.onsuccess = () => {
           const db = open.result,
             request = db
@@ -27,7 +27,7 @@ async function seed(page: Page, value: unknown) {
   await page.evaluate(
     (value) =>
       new Promise<void>((resolve, reject) => {
-        const open = indexedDB.open("local-music-v1", 1);
+        const open = indexedDB.open("local-music-v1");
         open.onsuccess = () => {
           const db = open.result,
             tx = db.transaction("settings", "readwrite");

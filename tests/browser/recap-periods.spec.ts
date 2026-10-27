@@ -14,7 +14,7 @@ async function seed(page: Page) {
   ).toBeVisible();
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });
@@ -104,7 +104,7 @@ async function seed(page: Page) {
 async function preference(page: Page) {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     const value = await new Promise<Record<string, unknown>>((resolve) => {
@@ -128,7 +128,7 @@ test("current periods update automatically without a save action and retain exis
   const snapshotCount = () =>
     page.evaluate(async () => {
       const db = await new Promise<IDBDatabase>((resolve) => {
-        const r = indexedDB.open("local-music-v1", 1);
+        const r = indexedDB.open("local-music-v1");
         r.onsuccess = () => resolve(r.result);
       });
       return new Promise<number>((resolve) => {
@@ -146,7 +146,7 @@ test("current periods update automatically without a save action and retain exis
   await expect(page.locator(".recap-total strong")).toHaveText("1");
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1");
       r.onsuccess = () => resolve(r.result);
     });
     await new Promise<void>((resolve) => {
@@ -217,7 +217,7 @@ test("delayed period reads never replace a newer selection and failed loading is
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.getAll;
     IDBObjectStore.prototype.getAll = function (...args) {
-      if (this.name === "tracks") {
+      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
         IDBObjectStore.prototype.getAll = original;
         throw new Error("Injected recap read failure");
       }

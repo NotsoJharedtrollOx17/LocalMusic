@@ -16,6 +16,20 @@ export const native = isTauri();
 const cmd = <T>(name: string, args?: Record<string, unknown>) =>
   invoke<T>(name, args);
 class NativeMusic implements MusicApi {
+  playlistContext() {
+    return cmd<import("../playlists/types").PlaylistContext>(
+      "playlist_context",
+    );
+  }
+  setSuggestionFeedback(id: string, less: boolean) {
+    return cmd<void>("set_suggestion_feedback", { id, less });
+  }
+  analysisActivity(active: boolean) {
+    return cmd<void>("analysis_activity", { active });
+  }
+  analyzeNext() {
+    return cmd<void>("analyze_next");
+  }
   startVisualizer() {
     return cmd<import("../visualizer/types").VisualizerSession>(
       "start_visualizer",
@@ -122,7 +136,9 @@ class NativeMusic implements MusicApi {
     return cmd<void>("delete_playlist", { id });
   }
   generatePlaylist(request: PlaylistRequest) {
-    return cmd<Playlist>("generate_playlist", { request });
+    return cmd<import("../playlists/types").GeneratedMix>("generate_playlist", {
+      request,
+    });
   }
   settings() {
     return cmd<Settings>("get_settings", {

@@ -15,7 +15,7 @@ An offline local music player with weekly, monthly and yearly recaps based on ac
 - **Context actions:** Track menus and selection through long press, the menu's Edit action, mouse or keyboard. Play, favorite, add to playlists, share audio/save copies, and remove from Library with Undo. Removal preserves audio files and listening history; reimport restores visibility. Resolvable Android system-effects panels remain separate from the app's equalizer.
   Right-click menus use the app's design, including text actions and keyboard navigation. The native shell blocks F5/F12 and reload/inspector shortcut variants; Windows retains editing and zoom controls. Browser preview keeps its developer shortcuts.
 
-The app works locally without an account, metadata service or downloaded model. Generated playlists use explicit filters; semantic AI is a future feature. Library demo tracks are available only in browser preview. Browser demo audio is excluded from recap.
+The app works locally without an account, metadata service or downloaded model. The personalized-playlists branch adds Familiar/Balanced/Explore mixes using eligible listening, metadata and gradual source-audio matching, with reversible Suggest less feedback. Explicit filters remain hard constraints; semantic AI is a future feature. Library demo tracks are available only in browser preview. Browser demo audio is excluded from recap. See [playlist methodology](docs/personalized-playlists.md) for ranking, analysis limits and acceptance boundaries.
 
 ## Browser preview
 

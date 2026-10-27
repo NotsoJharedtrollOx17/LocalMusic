@@ -43,6 +43,15 @@ export async function delayedPlayback(page: Page) {
             historyEnabledSince: "2026-10-01T00:00:00Z",
             privacyRevision: 0,
           };
+        if (command === "playlist_context")
+          return {
+            artists: ["Artist"],
+            genres: [],
+            less: [],
+            analyzed: 0,
+            total: 1,
+            scanning: false,
+          };
         if (command === "list_tracks") return { tracks: [track], total: 1 };
         if (command === "tracks_by_id") return [track];
         if (command === "resolve_cover") return cover;

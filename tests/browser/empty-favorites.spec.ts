@@ -215,7 +215,7 @@ test("Favorites recovers after a failed read and after removing its last song", 
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.getAll;
     IDBObjectStore.prototype.getAll = function (...args) {
-      if (this.name === "tracks") {
+      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
         IDBObjectStore.prototype.getAll = original;
         throw new Error("Deliberate catalog read failure");
       }

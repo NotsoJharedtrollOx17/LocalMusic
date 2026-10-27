@@ -3,6 +3,13 @@ import { automaticPlaylists } from "../automaticPlaylists";
 import { ensureImportOrder, putImportedTrack } from "./browserImportOrder";
 import { BrowserSound } from "../sound/BrowserSound";
 import { BrowserVisualizer } from "../visualizer/BrowserVisualizer";
+import { analysisOrder, validFeature } from "../playlists/rank";
+import { browserRanking } from "../playlists/browserRanking";
+import {
+  BrowserAnalysis,
+  browserFingerprint,
+} from "../playlists/BrowserAnalysis";
+import type { AcousticFeature, RecommendationData } from "../playlists/types";
 import type {
   MusicApi,
   Track,
@@ -44,6 +51,110 @@ const initialPlayback = (): PlaybackSnapshot => ({
   excluded: false,
 });
 export class BrowserMusic implements MusicApi {
+  private analysis = new BrowserAnalysis(
+    () => !this.audio.paused || this.changing,
+  );
+  private recommendationRevision = 0;
+  async analysisActivity(active: boolean) {
+    this.analysis.activity(active);
+  }
+  private async recommendationSnapshot() {
+    const db = await this.db;
+    return new Promise<{
+      tracks: StoredTrack[];
+      sessions: Session[];
+      settings: Settings | undefined;
+      data: RecommendationData;
+    }>((resolve, reject) => {
+      const tx = db.transaction([
+        "tracks",
+        "sessions",
+        "settings",
+        "suggestionLess",
+        "acousticFeatures",
+      ]);
+      const tracks = tx.objectStore("tracks").getAll(),
+        sessions = tx.objectStore("sessions").getAll(),
+        settings = tx.objectStore("settings").get("preferences"),
+        less = tx.objectStore("suggestionLess").getAllKeys(),
+        features = tx.objectStore("acousticFeatures").getAll(),
+        featureIds = tx.objectStore("acousticFeatures").getAllKeys();
+      tx.oncomplete = () => {
+        const byId = new Map<string, StoredTrack>(
+          tracks.result.map((t: StoredTrack) => [t.id, t]),
+        );
+        resolve({
+          tracks: tracks.result,
+          sessions: sessions.result,
+          settings: settings.result,
+          data: {
+            less: less.result as string[],
+            features: Object.fromEntries(
+              features.result
+                .map((f: AcousticFeature, i: number) => [
+                  String(featureIds.result[i]),
+                  f,
+                ])
+                .filter(([id, f]) => {
+                  const t = byId.get(id as string);
+                  return (
+                    t &&
+                    validFeature(f as AcousticFeature) &&
+                    (f as AcousticFeature).fingerprint === browserFingerprint(t)
+                  );
+                }),
+            ),
+          },
+        });
+      };
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  }
+  async playlistContext() {
+    const { tracks, data } = await this.recommendationSnapshot();
+    const pool = tracks.filter((t) => t.available && !t.hidden);
+    return {
+      artists: [
+        ...new Set(pool.map((t) => t.artist.trim()).filter(Boolean)),
+      ].sort(),
+      genres: [
+        ...new Set(
+          pool
+            .flatMap((t) => t.genre.split(/[;,/]/).map((s) => s.trim()))
+            .filter(Boolean),
+        ),
+      ].sort(),
+      less: data.less,
+      analyzed: pool.filter((t) => !!data.features[t.id]).length,
+      total: pool.length,
+      scanning: this.analysis.busy,
+    };
+  }
+  async setSuggestionFeedback(id: string, less: boolean) {
+    if (!(await this.get("tracks", id))) throw new Error("Unknown track");
+    if (less) await this.put("suggestionLess", id, true);
+    else await this.remove("suggestionLess", id);
+    this.recommendationRevision++;
+  }
+  async analyzeNext() {
+    const { tracks, sessions, data } = await this.recommendationSnapshot();
+    const next = analysisOrder(tracks, sessions).find(
+      (t) =>
+        !data.features[t.id] &&
+        (this.analysis.failed.get(browserFingerprint(t)) ?? 0) <= Date.now(),
+    );
+    if (next)
+      await this.analysis.analyze(next, async (f, active) => {
+        const current = await this.get<StoredTrack>("tracks", next.id);
+        if (
+          active() &&
+          current &&
+          browserFingerprint(current) === f.fingerprint
+        )
+          await this.put("acousticFeatures", next.id, f);
+      });
+  }
   private db: Promise<IDBDatabase>;
   private audio = new Audio();
   private sound: BrowserSound;
@@ -77,7 +188,7 @@ export class BrowserMusic implements MusicApi {
   private orderReady?: Promise<void>;
   constructor() {
     this.db = new Promise((resolve, reject) => {
-      const r = indexedDB.open("local-music-v1", 1);
+      const r = indexedDB.open("local-music-v1", 2);
       r.onupgradeneeded = () => {
         for (const name of [
           "tracks",
@@ -86,8 +197,11 @@ export class BrowserMusic implements MusicApi {
           "playlists",
           "settings",
           "snapshots",
+          "suggestionLess",
+          "acousticFeatures",
         ])
-          r.result.createObjectStore(name);
+          if (!r.result.objectStoreNames.contains(name))
+            r.result.createObjectStore(name);
       };
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
@@ -105,6 +219,7 @@ export class BrowserMusic implements MusicApi {
       }
     });
     this.audio.addEventListener("playing", () => {
+      this.analysis.activity(false);
       if (!this.session && this.state.trackId) {
         this.session = {
           id: crypto.randomUUID(),
@@ -415,6 +530,7 @@ export class BrowserMusic implements MusicApi {
     };
   }
   async setLibraryVisibility(ids: string[], visible: boolean) {
+    this.recommendationRevision++;
     const db = await this.db;
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("tracks", "readwrite");
@@ -670,6 +786,7 @@ export class BrowserMusic implements MusicApi {
     return names.length;
   }
   async setFavorite(id: string, favorite: boolean) {
+    this.recommendationRevision++;
     const t = await this.get<StoredTrack>("tracks", id);
     if (t) await this.put("tracks", id, { ...t, favorite });
   }
@@ -703,7 +820,12 @@ export class BrowserMusic implements MusicApi {
   async savePlaylist(p: Playlist) {
     if (p.kind === "automatic" || p.id.startsWith("automatic:"))
       throw new Error("Automatic collections cannot be edited");
-    await this.put("playlists", p.id, p);
+    await this.put("playlists", p.id, {
+      id: p.id,
+      title: p.title,
+      kind: p.kind,
+      trackIds: [...p.trackIds],
+    });
   }
   async deletePlaylist(id: string) {
     if (id.startsWith("automatic:"))
@@ -711,19 +833,42 @@ export class BrowserMusic implements MusicApi {
     await this.remove("playlists", id);
   }
   async generatePlaylist(request: PlaylistRequest) {
+    this.checkpoint();
+    if (!this.audio.paused && !this.audio.ended && this.audio.readyState >= 3) {
+      this.startedPosition = this.audio.currentTime;
+      this.startedMono = performance.now();
+      this.startedUtc = new Date().toISOString();
+    }
     await this.writes;
     const settings = await this.settings();
+    const revision = this.recommendationRevision;
+    const snapshot = await this.recommendationSnapshot();
+    const ranked = request.blend
+      ? await browserRanking({
+          request,
+          tracks: snapshot.tracks.map(
+            ({ file: _, cover: __, ...track }) => track,
+          ),
+          sessions: snapshot.sessions,
+          zone: snapshot.settings?.timeZone ?? settings.timeZone,
+          data: snapshot.data,
+          now: new Date().toISOString(),
+        })
+      : undefined;
     const ids = generate(
       request,
-      await this.all<StoredTrack>("tracks"),
-      await this.all<Session>("sessions"),
+      snapshot.tracks,
+      snapshot.sessions,
       settings.timeZone,
     );
+    if (revision !== this.recommendationRevision)
+      throw new Error("Suggestions changed. Generate again.");
     return {
       id: crypto.randomUUID(),
-      title: request.title || "A mix for you",
+      title: request.title.trim() || "A mix for you",
       kind: "generated" as const,
-      trackIds: ids,
+      trackIds: ranked?.ids ?? ids,
+      recommendation: ranked?.recommendation,
     };
   }
   async settings() {
@@ -794,6 +939,7 @@ export class BrowserMusic implements MusicApi {
     return (await this.all<unknown>("snapshots")).map(normalizeRecap);
   }
   async deleteHistory() {
+    this.recommendationRevision++;
     this.finish("history-deleted");
     await this.writes;
     const db = await this.db;
@@ -839,6 +985,7 @@ export class BrowserMusic implements MusicApi {
     };
   }
   async play(ids: string[], index?: number) {
+    this.analysis.activity(false);
     await this.ready;
     if (this.changing) return;
     this.changing = true;
@@ -950,6 +1097,7 @@ export class BrowserMusic implements MusicApi {
     this.emit();
   }
   async setExcluded(value: boolean) {
+    this.recommendationRevision++;
     this.checkpoint();
     const t = this.state.trackId
       ? await this.get<StoredTrack>("tracks", this.state.trackId)

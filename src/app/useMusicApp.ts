@@ -4,6 +4,7 @@ import { dismissMenu, hasOpenMenu } from "../ux/menuLayer";
 import { audioShareLabel } from "../ux/sharing";
 import { useSoundController } from "../sound/useSoundController";
 import { useMusicActions } from "./useMusicActions";
+import { usePersonalizedPlaylists } from "./usePersonalizedPlaylists";
 import { useAppState } from "./useAppState";
 import { useCatalogReads } from "./useCatalogReads";
 import {
@@ -147,6 +148,7 @@ export function useMusicApp(initialSettings?: Settings) {
   latestQuery.current = query;
 
   const t = settings?.language === "es" ? es : en;
+  const personalization = usePersonalizedPlaylists(state, t);
   useEffect(() => {
     const sync = () => {
       if (document.hidden) return;
@@ -416,7 +418,15 @@ export function useMusicApp(initialSettings?: Settings) {
   }, [modal, shareRecap, player.trackId, act, menu, searchOpen, selectionMode]);
   useEffect(() => {
     if (!notice) return;
-    const timeout = setTimeout(() => setNotice(""), 4500);
+    let timeout: ReturnType<typeof setTimeout>;
+    const dismiss = () => {
+      if (document.querySelector(".toast:focus-within")) {
+        timeout = setTimeout(dismiss, 1000);
+        return;
+      }
+      setNotice("");
+    };
+    timeout = setTimeout(dismiss, 4500);
     return () => clearTimeout(timeout);
   }, [notice]);
   const current = player.trackId ? cache[player.trackId] : undefined;
@@ -623,6 +633,7 @@ export function useMusicApp(initialSettings?: Settings) {
     refresh,
     refreshLists,
     t,
+    generationRevision: personalization.generationRevision,
   });
 
   const playlistTracks =
@@ -631,6 +642,7 @@ export function useMusicApp(initialSettings?: Settings) {
       .filter((x): x is Track => !!x && !x.hidden) ?? [];
   return {
     ...state,
+    ...personalization,
     soundController,
     automatic,
     setModal,

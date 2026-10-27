@@ -75,6 +75,10 @@ DSP helpers remain in TypeScript, Rust and Kotlin, with shared `sound-dsp.csv` c
 
 ## Current boundaries
 
+The personalized-playlists feature branch adds typed blend/seed generation, reversible feedback and source-descriptor caches. Native rules/storage live in `music-core::recommendation`, `recommendation_store` and `acoustic`; app IPC/lifecycle is in `commands/recommendations.rs`. Browser counterparts are under `src/playlists/`, with separate ranking/analysis workers and an IndexedDB upgrade. Android `AcousticDecoder` is independent of Media3 and the listening journal. See [playlist methodology](personalized-playlists.md) and the [approved plan](personalized-playlists-plan.md) before changing weights, analysis or privacy behavior. Do not save transient recommendation fields with playlists.
+
+Use a temporary unique application identifier and a synthetic catalog for native UI automation. Keep that QA executable separate from the normal development package, verify its data-directory isolation before interaction, and restore the verified development binary afterward. Foreground ownership checks must pass before sending OS input. Record incomplete native/device checks explicitly.
+
 The browser preview, desktop startup checks and a built/signed ARM64 debug APK are recorded in the verification log. Android runtime acceptance has not completed on a connected emulator or phone; the x86_64 APK is older than the latest UI changes. Semantic playlist interpretation, online enrichment and model downloads remain deferred. Treat the original plan's JSON export and 1080 × 1920 card targets as superseded by its dated recap export revision.
 
 See [Phase 2](phase-two-ux-flow.md) for the motion/interaction contract and [verification](verification.md) for current results. Browser accessibility automation is separate from Narrator/TalkBack and native gesture acceptance.

@@ -30,6 +30,10 @@ pub fn run() {
     builder
         .setup(state::setup)
         .invoke_handler(tauri::generate_handler![
+            commands::recommendations::playlist_context,
+            commands::recommendations::set_suggestion_feedback,
+            commands::recommendations::analysis_activity,
+            commands::recommendations::analyze_next,
             commands::catalog::search_catalog,
             commands::catalog::set_library_visibility,
             commands::sharing::share_audio,

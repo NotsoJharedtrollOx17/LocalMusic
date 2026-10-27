@@ -66,6 +66,7 @@ export interface RecapBucket {
   observed: boolean;
 }
 export interface Settings {
+  playlistBlend?: import("./playlists/types").PlaylistBlend;
   visualizerMode?: import("./visualizer/types").VisualizerMode;
   recapPeriod?: RecapKind;
   language: "en" | "es";
@@ -75,6 +76,8 @@ export interface Settings {
   privacyRevision?: number;
 }
 export interface PlaylistRequest {
+  blend?: import("./playlists/types").PlaylistBlend;
+  seed?: number;
   title: string;
   targetCount?: number;
   targetMinutes?: number;
@@ -137,6 +140,10 @@ export interface SearchResults {
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  playlistContext(): Promise<import("./playlists/types").PlaylistContext>;
+  setSuggestionFeedback(id: string, less: boolean): Promise<void>;
+  analysisActivity(active: boolean): Promise<void>;
+  analyzeNext(): Promise<void>;
   startVisualizer(): Promise<import("./visualizer/types").VisualizerSession>;
   readVisualizer(
     id: string,
@@ -181,7 +188,9 @@ export interface MusicApi {
   playlists(): Promise<Playlist[]>;
   savePlaylist(playlist: Playlist): Promise<void>;
   deletePlaylist(id: string): Promise<void>;
-  generatePlaylist(request: PlaylistRequest): Promise<Playlist>;
+  generatePlaylist(
+    request: PlaylistRequest,
+  ): Promise<import("./playlists/types").GeneratedMix>;
   settings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
   recap(request: RecapRequest): Promise<Recap>;
