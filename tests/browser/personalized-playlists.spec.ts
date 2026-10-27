@@ -238,7 +238,7 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   expect(await stored(page, "intervals")).toEqual([]);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(page.locator(".analysis-coverage")).toContainText(
-    "0 of 4 songs ready",
+    "Analysis\u2026",
   );
   await expect(
     page.getByRole("spinbutton", { name: "Count", exact: true }),
@@ -257,6 +257,12 @@ test("source analysis stays silent; feedback/Undo, stable saved preview and reme
   await expect(result).toBeVisible();
   await expect(result).toContainText("Library discovery");
   expect((await stored(page, "acousticFeatures")).length).toBe(3);
+  await expect(page.locator(".analysis-coverage")).toContainText(
+    "3 of 4 songs ready",
+  );
+  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await expect(page.locator(".analysis-coverage")).toHaveText("Analysis\u2026");
   await page.waitForTimeout(2000);
   expect((await stored(page, "acousticFeatures")).length).toBe(3);
   expect(await stored(page, "sessions")).toEqual([]);
@@ -404,7 +410,7 @@ test("default and saved playlists are separate and saved playlists can be delete
   await library(page);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Default playlists", exact: true }),
+    page.getByRole("heading", { name: "The Default Ones", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Your playlists", exact: true }),
@@ -451,4 +457,133 @@ test("default and saved playlists are separate and saved playlists can be delete
     .click();
   await expect(card).toHaveCount(0);
   await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+});
+
+test("saved playlist menu stays centered while pressed and rename preserves its contents", async ({
+  page,
+}) => {
+  await library(page);
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page.getByRole("button", { name: "New playlist", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Playlist name", { exact: true })
+    .fill("Original title");
+  await dialog.getByRole("checkbox").first().check();
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  const original = (await stored(page, "playlists"))[0];
+  await page.setViewportSize({ width: 390, height: 700 });
+  const opener = page.getByRole("button", {
+    name: "Playlist options: Original title",
+    exact: true,
+  });
+  await opener.scrollIntoViewIfNeeded();
+  const initial = (await opener.boundingBox())!;
+  await page.mouse.move(
+    initial.x + initial.width / 2,
+    initial.y + initial.height / 2,
+  );
+  await page.mouse.down();
+  await page.waitForTimeout(220);
+  const pressed = (await opener.boundingBox())!;
+  expect(Math.abs(pressed.y - initial.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(pressed.x - initial.x)).toBeLessThanOrEqual(1);
+  await page.mouse.up();
+  await expect(
+    page.getByRole("menu", { name: "Playlist options" }),
+  ).toBeVisible();
+  const released = (await opener.boundingBox())!;
+  expect(Math.abs(released.y - initial.y)).toBeLessThanOrEqual(1);
+  await page
+    .getByRole("menuitem", { name: "Rename playlist", exact: true })
+    .click();
+  dialog = page.getByRole("dialog", { name: "Rename playlist", exact: true });
+  await expect(
+    dialog.getByLabel("Playlist name", { exact: true }),
+  ).toBeFocused();
+  await dialog
+    .getByLabel("Playlist name", { exact: true })
+    .fill("Canceled title");
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(opener).toBeFocused();
+  expect((await stored(page, "playlists"))[0]).toEqual(original);
+  await opener.click();
+  await page
+    .getByRole("menuitem", { name: "Rename playlist", exact: true })
+    .click();
+  await dialog.getByLabel("Playlist name", { exact: true }).fill("   ");
+  await expect(
+    dialog.getByRole("button", { name: "Save", exact: true }),
+  ).toBeDisabled();
+  await dialog.getByLabel("Playlist name", { exact: true }).fill("Renamed mix");
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put;
+    let fail = true;
+    IDBObjectStore.prototype.put = function (...args) {
+      if (this.name === "playlists" && fail) {
+        fail = false;
+        throw new DOMException("Disk full", "QuotaExceededError");
+      }
+      return put.apply(this, args);
+    };
+  });
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Disk full");
+  expect((await stored(page, "playlists"))[0]).toEqual(original);
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect((await stored(page, "playlists"))[0]).toEqual({
+    ...original,
+    title: "Renamed mix",
+  });
+  await expect(
+    page.getByRole("button", {
+      name: "Playlist options: Renamed mix",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await expect(page.locator("#default-playlists-heading")).toHaveCSS(
+    "font-style",
+    "italic",
+  );
+  await expect(page.locator("#saved-playlists-heading")).toHaveCSS(
+    "font-size",
+    "14px",
+  );
+  await openSettings(page);
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
+  await page.getByRole("button", { name: "Espa\u00f1ol", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cerrar", exact: true })
+    .click();
+  await expect(page.locator("#default-playlists-heading")).toHaveText(
+    "Las de siempre",
+  );
+  await page
+    .getByRole("button", {
+      name: "Opciones de la lista: Renamed mix",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("menuitem", { name: "Cambiar nombre", exact: true })
+    .click();
+  const spanishDialog = page.getByRole("dialog", {
+    name: "Cambiar nombre",
+    exact: true,
+  });
+  await expect(
+    spanishDialog.getByLabel("Nombre de la lista", { exact: true }),
+  ).toBeFocused();
+  await page.screenshot({
+    path: "artifacts/playlist-rename-es-dark.png",
+    fullPage: true,
+  });
+  await page.keyboard.press("Escape");
+  await expect(spanishDialog).toHaveCount(0);
+  expect((await stored(page, "playlists"))[0]).toEqual({
+    ...original,
+    title: "Renamed mix",
+  });
 });

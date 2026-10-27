@@ -1,11 +1,15 @@
 export const en = {
-  defaultPlaylists: "Default playlists",
+  analysisPlaceholder: "Analysis\u2026",
+  renamePlaylist: "Rename playlist",
+  playlistRenamed: "Playlist renamed",
+  defaultPlaylists: "The Default Ones",
   yourPlaylists: "Your playlists",
   noSavedPlaylists: "Your saved playlists will appear here.",
   playlistActions: "Playlist options",
   deletePlaylist: "Delete playlist",
   checkingSound: "Checking available sound analysis\u2026",
-  matchingPlaylist: "Sound step complete. Matching listening, metadata and available sound\u2026",
+  matchingPlaylist:
+    "Sound step complete. Matching listening, metadata and available sound\u2026",
   generatingPlaylist: "Creating your playlist…",
   preparingPlaylist:
     "Matching songs from your library. This may take a moment.",
@@ -273,13 +277,17 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
-  defaultPlaylists: "Listas predeterminadas",
+  analysisPlaceholder: "An\u00e1lisis\u2026",
+  renamePlaylist: "Cambiar nombre",
+  playlistRenamed: "Nombre actualizado",
+  defaultPlaylists: "Las de siempre",
   yourPlaylists: "Tus listas",
   noSavedPlaylists: "Tus listas guardadas aparecer\u00e1n aqu\u00ed.",
   playlistActions: "Opciones de la lista",
   deletePlaylist: "Eliminar lista",
   checkingSound: "Comprobando el an\u00e1lisis de sonido disponible\u2026",
-  matchingPlaylist: "Sonido comprobado. Combinando escuchas, metadatos y sonido disponible\u2026",
+  matchingPlaylist:
+    "Sonido comprobado. Combinando escuchas, metadatos y sonido disponible\u2026",
   generatingPlaylist: "Creando tu lista…",
   preparingPlaylist:
     "Buscando canciones de tu biblioteca. Puede tardar un momento.",

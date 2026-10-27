@@ -160,7 +160,9 @@
 }
 
 .playlist-section-heading {
-  font-size: 18px;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 500;
   margin: 0 0 16px;
   color: var(--ink);
 }
@@ -183,8 +185,11 @@
 .saved-playlist-menu {
   position: absolute;
   right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin-block: auto;
+  height: 44px;
+  transform: none;
 }
 .creation-mark {
   background: var(--accent);
@@ -195,4 +200,22 @@
   width: 32px;
   height: 32px;
   stroke-width: 2.4;
+}
+
+.saved-playlist-menu:active:not(:disabled) {
+  transform: none;
+}
+.rename-playlist-form {
+  display: grid;
+  gap: 20px;
+}
+.rename-playlist-form label {
+  display: grid;
+  gap: 8px;
+}
+.rename-playlist-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
 }

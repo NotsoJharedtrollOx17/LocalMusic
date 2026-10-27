@@ -56,3 +56,7 @@ The redundant no-duplicates caption is removed; duplicate prevention remains a h
 The overview separates the four automatic collections from saved playlists. Each saved playlist has an accessible action menu with a confirmed deletion; automatic collections cannot be deleted. An explicit artist filter permits all matching songs up to the requested count, while genre, exclusions, availability and the other selected filters still apply. General mixes retain the two-per-known-artist diversity cap. Empty generation results remove any previous preview and explain that no tracks match, leaving filters editable for a retry.
 
 Generation reports the sound-analysis step, then matching of the available sound, listening and metadata signals. These are actual stages, not percentages or a claim that unavailable analysis ran. The sound step may use cached features or be skipped when playback/visibility prevents analysis.
+
+## Analysis label and saved-playlist refinement
+
+The creator starts each visit with Analysis, without displaying a previous visit's count. Generation fills the count after the sound step; another generation resets the presentation while the new calculation runs. Source descriptors remain cached. Playlist subsection headings use a smaller italic face, with The Default Ones identifying the automatic collections. Saved-playlist menus use stable vertical positioning and provide Rename before Delete. Rename preserves identity, kind and ordered track IDs, rejects blank titles, supports cancellation and keeps errors in the dialog for retry.

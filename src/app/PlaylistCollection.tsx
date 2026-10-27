@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
+import RenamePlaylistDialog from "./RenamePlaylistDialog";
 import { ListMusic, ArrowUpRight, MoreHorizontal } from "lucide-react";
 import { ActionMenu } from "../ux";
 import { api } from "../api";
@@ -6,12 +8,20 @@ import type { Playlist } from "../types";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function PlaylistCollection() {
-  const { lists, t, openPlaylist, formatMusicCount, act, refreshLists } =
-    useMusicAppContext();
+  const {
+    lists,
+    t,
+    openPlaylist,
+    formatMusicCount,
+    act,
+    refreshLists,
+    setNotice,
+  } = useMusicAppContext();
   const [menu, setMenu] = useState<{
     playlist: Playlist;
     anchor: HTMLElement;
   } | null>(null);
+  const [renaming, setRenaming] = useState<Playlist | null>(null);
   return (
     <section
       className="saved-playlists"
@@ -70,6 +80,11 @@ export default function PlaylistCollection() {
           onClose={() => setMenu(null)}
           items={[
             {
+              id: "rename",
+              label: t.renamePlaylist,
+              action: () => setRenaming(menu.playlist),
+            },
+            {
               id: "delete",
               label: t.deletePlaylist,
               danger: true,
@@ -86,6 +101,24 @@ export default function PlaylistCollection() {
           ]}
         />
       )}
+      {renaming &&
+        createPortal(
+          <RenamePlaylistDialog
+            playlist={renaming}
+            onClose={() => setRenaming(null)}
+            onSave={async (title) => {
+              const latest = lists.find(
+                (playlist) => playlist.id === renaming.id,
+              );
+              if (!latest) throw new Error(t.unavailable);
+              await api.savePlaylist({ ...latest, title });
+              await refreshLists();
+              setNotice(t.playlistRenamed);
+              setRenaming(null);
+            }}
+          />,
+          document.body,
+        )}
     </section>
   );
 }
