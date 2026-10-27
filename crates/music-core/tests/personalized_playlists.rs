@@ -133,20 +133,98 @@ fn shared_pcm_descriptors() {
 
 #[test]
 fn explicit_artist_can_fill_mix_without_relaxing_other_filters() {
-    let f: Value = serde_json::from_str(include_str!("../../../tests/fixtures/personalized-playlists.json")).unwrap();
+    let f: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/personalized-playlists.json"
+    ))
+    .unwrap();
     let mut tracks: Vec<Track> = serde_json::from_value(f["tracks"].clone()).unwrap();
     tracks.truncate(5);
-    for t in &mut tracks { t.artist = "A".into(); }
-    let mut req: PlaylistRequest = serde_json::from_value(f["cases"][1]["request"].clone()).unwrap();
+    for t in &mut tracks {
+        t.artist = "A".into();
+    }
+    let mut req: PlaylistRequest =
+        serde_json::from_value(f["cases"][1]["request"].clone()).unwrap();
     req.target_count = Some(5);
     let data: RecommendationData = serde_json::from_value(f["data"].clone()).unwrap();
     let now = f["now"].as_str().unwrap().parse().unwrap();
-    let generate = |r: &PlaylistRequest| recommendation::generate(r, &tracks, &[], "UTC", now, &data).unwrap().playlist.track_ids.len();
+    let generate = |r: &PlaylistRequest| {
+        recommendation::generate(r, &tracks, &[], "UTC", now, &data)
+            .unwrap()
+            .playlist
+            .track_ids
+            .len()
+    };
     assert_eq!(generate(&req), 2);
     req.include_artist = " A ".into();
     assert_eq!(generate(&req), 5);
-    assert_eq!(music_core::playlist::generate(&req, &tracks, &[], "UTC", now).unwrap().track_ids.len(), 5);
+    assert_eq!(
+        music_core::playlist::generate(&req, &tracks, &[], "UTC", now)
+            .unwrap()
+            .track_ids
+            .len(),
+        5
+    );
     req.exclude_artist = "A".into();
     assert_eq!(generate(&req), 0);
-    assert_eq!(music_core::playlist::generate(&req, &tracks, &[], "UTC", now).unwrap().track_ids.len(), 0);
+    assert_eq!(
+        music_core::playlist::generate(&req, &tracks, &[], "UTC", now)
+            .unwrap()
+            .track_ids
+            .len(),
+        0
+    );
+}
+
+#[test]
+fn shared_multi_artist_fixtures() {
+    let base: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/personalized-playlists.json"
+    ))
+    .unwrap();
+    let multi: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/multi-artist-playlists.json"
+    ))
+    .unwrap();
+    let template: Track = serde_json::from_value(base["tracks"][0].clone()).unwrap();
+    let mut tracks = Vec::new();
+    for artist in multi["artists"].as_array().unwrap() {
+        for _ in 0..3 {
+            let mut t = template.clone();
+            t.id = format!("m{:02}", tracks.len());
+            t.artist = artist.as_str().unwrap().into();
+            tracks.push(t);
+        }
+    }
+    let now = base["now"].as_str().unwrap().parse().unwrap();
+    for c in multi["cases"].as_array().unwrap() {
+        let mut request: PlaylistRequest =
+            serde_json::from_value(base["cases"][0]["request"].clone()).unwrap();
+        request.include_artist = c["includeArtist"].as_str().unwrap().into();
+        request.include_artists = serde_json::from_value(c["includeArtists"].clone()).unwrap();
+        request.exclude_artist = c["excludeArtist"].as_str().unwrap().into();
+        request.exclude_artists = serde_json::from_value(c["excludeArtists"].clone()).unwrap();
+        request.target_count = Some(c["targetCount"].as_u64().unwrap() as usize);
+        let generated = recommendation::generate(
+            &request,
+            &tracks,
+            &[],
+            "UTC",
+            now,
+            &RecommendationData::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(generated.playlist.track_ids).unwrap(),
+            c["expectedIds"],
+            "{}",
+            c["name"]
+        );
+        let legacy = music_core::playlist::generate(&request, &tracks, &[], "UTC", now).unwrap();
+        assert_eq!(
+            serde_json::to_value(legacy.track_ids).unwrap(),
+            c["expectedLegacyIds"],
+            "{}",
+            c["name"]
+        );
+    }
 }

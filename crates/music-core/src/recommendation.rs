@@ -252,16 +252,24 @@ pub fn generate(
         .filter(|(_, d)| d.with_timezone(&tz).date_naive() == today)
         .map(|(s, _)| s.track_id.as_str())
         .collect();
-    let exclude = normalize(&request.exclude_artist);
-    let include = normalize(&request.include_artist);
+    let exclude: HashSet<String> = std::iter::once(&request.exclude_artist)
+        .chain(request.exclude_artists.iter())
+        .map(|v| normalize(v))
+        .filter(|v| !v.is_empty())
+        .collect();
+    let include: HashSet<String> = std::iter::once(&request.include_artist)
+        .chain(request.include_artists.iter())
+        .map(|v| normalize(v))
+        .filter(|v| !v.is_empty())
+        .collect();
     let genre = normalize(&request.genre);
     let mut pool: Vec<_> = tracks
         .iter()
         .filter(|t| {
             t.available
                 && !t.hidden
-                && (exclude.is_empty() || normalize(&t.artist) != exclude)
-                && (include.is_empty() || normalize(&t.artist) == include)
+                && !exclude.contains(&normalize(&t.artist))
+                && (include.is_empty() || include.contains(&normalize(&t.artist)))
                 && (genre.is_empty() || tags(&t.genre).contains(&genre))
                 && (!request.avoid_heard_today || !heard.contains(t.id.as_str()))
         })
@@ -378,6 +386,22 @@ pub fn generate(
         scored.push((t, -u.ln() / score));
     }
     scored.sort_by(|(a, sa), (b, sb)| sa.total_cmp(sb).then(a.id.cmp(&b.id)));
+    if include.len() > 1 {
+        let mut ranks = BTreeMap::<String, usize>::new();
+        let mut ranked: Vec<_> = scored
+            .into_iter()
+            .map(|(t, score)| {
+                let count = ranks.entry(normalize(&t.artist)).or_default();
+                let round = *count;
+                *count += 1;
+                (t, score, round)
+            })
+            .collect();
+        ranked.sort_by(|(a, sa, ra), (b, sb, rb)| {
+            ra.cmp(rb).then(sa.total_cmp(sb)).then(a.id.cmp(&b.id))
+        });
+        scored = ranked.into_iter().map(|(t, score, _)| (t, score)).collect();
+    }
     let mut selected = Vec::new();
     let mut counts = BTreeMap::<String, usize>::new();
     let mut elapsed = 0u64;

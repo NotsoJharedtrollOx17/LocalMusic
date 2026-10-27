@@ -589,3 +589,92 @@ test("saved playlist menu stays centered while pressed and rename preserves its 
     title: "Renamed mix",
   });
 });
+
+test("multiple included and excluded artists yield a varied mix and report conflicts", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const artists = ["Alpha", "Alpha", "Alpha", "Beta", "Beta", "Beta", "AC/DC"];
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles(
+      artists.map((artist, i) => ({
+        name: `Multi ${i}.wav`,
+        mimeType: "audio/wav",
+        buffer: taggedWav(`Multi ${i}`, i + 1, 1, {
+          artist,
+          album: `Album ${i}`,
+        }),
+      })),
+    );
+  await expect(page.locator(".track-row")).toHaveCount(7);
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.getByLabel("Include artist", { exact: true }).fill("Alpha");
+  const addInclude = page.getByRole("button", {
+    name: "Add artist: Include artist",
+    exact: true,
+  });
+  await addInclude.click();
+  await expect(
+    page.getByLabel("Include artist 2", { exact: true }),
+  ).toBeFocused();
+  await page.getByLabel("Include artist 2", { exact: true }).fill("Beta");
+  await addInclude.click();
+  await expect(
+    page.getByLabel("Include artist 3", { exact: true }),
+  ).toBeFocused();
+  await page.getByLabel("Include artist 3", { exact: true }).fill("AC/DC");
+  await expect(addInclude).toHaveCount(0);
+  await page.getByLabel("Exclude artist", { exact: true }).fill("AC/DC");
+  const addExclude = page.getByRole("button", {
+    name: "Add artist: Exclude artist",
+    exact: true,
+  });
+  await addExclude.click();
+  await page.getByLabel("Exclude artist 2", { exact: true }).fill("Delta");
+  await addExclude.click();
+  await page.getByLabel("Exclude artist 3", { exact: true }).fill("Echo");
+  await expect(addExclude).toHaveCount(0);
+  await expect(page.locator(".artist-conflict")).toContainText(
+    "Excluded artists take priority: AC/DC",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "artifacts/multi-artist-320.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  const rows = page.locator(".generated-result .track-row");
+  await expect(rows).toHaveCount(6);
+  const names = await rows
+    .locator(".track-copy > span:first-of-type")
+    .allTextContents();
+  expect(names.filter((name) => name === "Alpha")).toHaveLength(3);
+  expect(names.filter((name) => name === "Beta")).toHaveLength(3);
+  expect(names[0]).not.toBe(names[1]);
+  await page.getByLabel("Exclude artist", { exact: true }).fill("");
+  await expect(page.locator(".artist-conflict")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  await expect(rows).toHaveCount(7);
+  await expect(rows.getByText("AC/DC", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Remove artist: Exclude artist 3",
+      exact: true,
+    })
+    .click();
+  await expect(addExclude).toBeFocused();
+  await expect(
+    page.getByLabel("Exclude artist 3", { exact: true }),
+  ).toHaveCount(0);
+});

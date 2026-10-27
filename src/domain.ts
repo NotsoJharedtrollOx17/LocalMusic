@@ -108,8 +108,16 @@ export function generate(
   timeZone: string,
   now = new Date(),
 ): string[] {
-  const excluded = key(request.excludeArtist),
-    included = key(request.includeArtist),
+  const excluded = new Set(
+      [request.excludeArtist, ...(request.excludeArtists ?? [])]
+        .map(key)
+        .filter(Boolean),
+    ),
+    included = new Set(
+      [request.includeArtist, ...(request.includeArtists ?? [])]
+        .map(key)
+        .filter(Boolean),
+    ),
     genre = key(request.genre);
   const today = localDate(now, timeZone);
   const heard = new Set(
@@ -117,12 +125,12 @@ export function generate(
       .filter((s) => localDate(new Date(s.startedAtUtc), timeZone) === today)
       .map((s) => s.trackId),
   );
-  const pool = tracks.filter(
+  let pool = tracks.filter(
     (t) =>
       t.available &&
       !t.hidden &&
-      (!excluded || key(t.artist) !== excluded) &&
-      (!included || key(t.artist) === included) &&
+      !excluded.has(key(t.artist)) &&
+      (!included.size || included.has(key(t.artist))) &&
       (!genre || key(t.genre).split(/[;,/]/).map(key).includes(genre)) &&
       (!request.avoidHeardToday || !heard.has(t.id)),
   );
@@ -131,6 +139,18 @@ export function generate(
       (request.preferFavorites ? Number(b.favorite) - Number(a.favorite) : 0) ||
       a.id.localeCompare(b.id),
   );
+  if (included.size > 1) {
+    const ranks = new Map<string, number>();
+    const ranked = pool
+      .map((track, order) => {
+        const artist = key(track.artist),
+          round = ranks.get(artist) ?? 0;
+        ranks.set(artist, round + 1);
+        return { track, order, round };
+      })
+      .sort((a, b) => a.round - b.round || a.order - b.order);
+    pool = ranked.map((item) => item.track);
+  }
   const out: string[] = [];
   const counts = new Map<string, number>();
   let ms = 0;
@@ -140,7 +160,11 @@ export function generate(
   const max = request.targetCount ?? 100;
   for (const t of pool) {
     if (out.length >= max) break;
-    if (!included && key(t.artist) && (counts.get(key(t.artist)) ?? 0) >= 2)
+    if (
+      !included.size &&
+      key(t.artist) &&
+      (counts.get(key(t.artist)) ?? 0) >= 2
+    )
       continue;
     if (
       ms + t.durationMs > budget ||

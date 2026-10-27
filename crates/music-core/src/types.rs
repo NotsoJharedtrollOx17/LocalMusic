@@ -103,6 +103,10 @@ pub struct PlaylistRequest {
     pub genre: String,
     pub include_artist: String,
     pub exclude_artist: String,
+    #[serde(default)]
+    pub include_artists: Vec<String>,
+    #[serde(default)]
+    pub exclude_artists: Vec<String>,
     pub prefer_favorites: bool,
     pub avoid_heard_today: bool,
 }

@@ -180,15 +180,23 @@ export function personalized(
       .filter((s) => localDate(new Date(s.startedAtUtc), zone) === today)
       .map((s) => s.trackId),
   );
+  const excluded = new Set(
+    [request.excludeArtist, ...(request.excludeArtists ?? [])]
+      .map(key)
+      .filter(Boolean),
+  );
+  const included = new Set(
+    [request.includeArtist, ...(request.includeArtists ?? [])]
+      .map(key)
+      .filter(Boolean),
+  );
   const pool = tracks
     .filter(
       (t) =>
         t.available &&
         !t.hidden &&
-        (!key(request.excludeArtist) ||
-          key(t.artist) !== key(request.excludeArtist)) &&
-        (!key(request.includeArtist) ||
-          key(t.artist) === key(request.includeArtist)) &&
+        !excluded.has(key(t.artist)) &&
+        (!included.size || included.has(key(t.artist))) &&
         (!key(request.genre) || tags(t.genre).includes(key(request.genre))) &&
         (!request.avoidHeardToday || !heard.has(t.id)),
     )
@@ -206,7 +214,7 @@ export function personalized(
     return (seed + 0.5) / 4294967296;
   };
   const reasons: Record<string, string[]> = {};
-  const scored = pool
+  let scored = pool
     .map((t) => {
       const parts: [number, number][] = [],
         why: string[] = [];
@@ -284,14 +292,25 @@ export function personalized(
       return { t, priority: -Math.log(random()) / score };
     })
     .sort((a, b) => a.priority - b.priority || compare(a.t.id, b.t.id));
+  if (included.size > 1) {
+    const ranks = new Map<string, number>();
+    const ranked = scored
+      .map((entry, order) => {
+        const artist = key(entry.t.artist),
+          round = ranks.get(artist) ?? 0;
+        ranks.set(artist, round + 1);
+        return { entry, order, round };
+      })
+      .sort((a, b) => a.round - b.round || a.order - b.order);
+    scored = ranked.map((item) => item.entry);
+  }
   let elapsed = 0;
   const selected: Track[] = [],
     counts = new Map<string, number>();
   for (const { t } of scored) {
     const artist = key(t.artist);
     if (selected.length >= (request.targetCount ?? 100)) break;
-    if (!key(request.includeArtist) && artist && (counts.get(artist) ?? 0) >= 2)
-      continue;
+    if (!included.size && artist && (counts.get(artist) ?? 0) >= 2) continue;
     if (
       request.targetMinutes != null &&
       (t.durationMs <= 0 ||

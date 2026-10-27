@@ -1,4 +1,6 @@
 import { useMusicAppContext } from "./MusicAppContext";
+import ArtistFilter from "./ArtistFilter";
+import { key } from "../domain";
 
 export default function PlaylistFilters() {
   const { playlistContext, request, setRequest, target, setTarget, t } =
@@ -50,39 +52,36 @@ export default function PlaylistFilters() {
           ))}
         </datalist>
       </label>
-      <label>
-        {t.includeArtist}
-        <input
-          list="artists"
-          value={request.includeArtist}
-          placeholder={t.anyArtist}
-          onChange={(e) =>
-            setRequest({
-              ...request,
-              includeArtist: e.target.value,
-            })
-          }
-        />
-      </label>
-      <label>
-        {t.excludeArtist}
-        <input
-          list="artists"
-          value={request.excludeArtist}
-          placeholder="—"
-          onChange={(e) =>
-            setRequest({
-              ...request,
-              excludeArtist: e.target.value,
-            })
-          }
-        />
-        <datalist id="artists">
-          {playlistContext.artists.map((g) => (
-            <option key={g} value={g} />
-          ))}
-        </datalist>
-      </label>
+      <ArtistFilter mode="include" />
+      <ArtistFilter mode="exclude" />
+      <datalist id="artists">
+        {playlistContext.artists.map((artist) => (
+          <option key={artist} value={artist} />
+        ))}
+      </datalist>
+      {(() => {
+        const included = [
+          request.includeArtist,
+          ...(request.includeArtists ?? []),
+        ].filter((name) => key(name));
+        const excluded = new Set(
+          [request.excludeArtist, ...(request.excludeArtists ?? [])]
+            .map(key)
+            .filter(Boolean),
+        );
+        const conflicts = [
+          ...new Map(
+            included
+              .filter((name) => excluded.has(key(name)))
+              .map((name) => [key(name), name.trim()]),
+          ).values(),
+        ];
+        return conflicts.length ? (
+          <p className="artist-conflict" role="status">
+            {t.artistConflict.replace("{artists}", conflicts.join(", "))}
+          </p>
+        ) : null;
+      })()}
     </div>
   );
 }

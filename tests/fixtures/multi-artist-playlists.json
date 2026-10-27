@@ -1,0 +1,153 @@
+{
+  "artists": [
+    "A",
+    "B",
+    "AC/DC",
+    "D"
+  ],
+  "cases": [
+    {
+      "name": "three included artists share the mix",
+      "includeArtist": " A ",
+      "includeArtists": [
+        "B",
+        "AC/DC"
+      ],
+      "excludeArtist": "",
+      "excludeArtists": [],
+      "targetCount": 7,
+      "expectedArtists": [
+        "A",
+        "B",
+        "AC/DC"
+      ],
+      "expectedIds": [
+        "m00",
+        "m08",
+        "m04",
+        "m01",
+        "m05",
+        "m06",
+        "m03"
+      ],
+      "expectedLegacyIds": [
+        "m00",
+        "m03",
+        "m06",
+        "m01",
+        "m04",
+        "m07",
+        "m02"
+      ]
+    },
+    {
+      "name": "three exclusions leave one artist",
+      "includeArtist": "",
+      "includeArtists": [],
+      "excludeArtist": "B",
+      "excludeArtists": [
+        "AC/DC",
+        "D"
+      ],
+      "targetCount": 6,
+      "expectedArtists": [
+        "A"
+      ],
+      "expectedIds": [
+        "m00",
+        "m01"
+      ],
+      "expectedLegacyIds": [
+        "m00",
+        "m01"
+      ]
+    },
+    {
+      "name": "exclusion wins and remaining requested artists still participate",
+      "includeArtist": "A",
+      "includeArtists": [
+        "B",
+        "AC/DC"
+      ],
+      "excludeArtist": " b ",
+      "excludeArtists": [],
+      "targetCount": 6,
+      "expectedArtists": [
+        "A",
+        "AC/DC"
+      ],
+      "expectedIds": [
+        "m00",
+        "m07",
+        "m01",
+        "m08",
+        "m02",
+        "m06"
+      ],
+      "expectedLegacyIds": [
+        "m00",
+        "m06",
+        "m01",
+        "m07",
+        "m02",
+        "m08"
+      ]
+    },
+    {
+      "name": "slash in artist name remains literal",
+      "includeArtist": "ac/dc",
+      "includeArtists": [],
+      "excludeArtist": "",
+      "excludeArtists": [],
+      "targetCount": 5,
+      "expectedArtists": [
+        "AC/DC"
+      ],
+      "expectedIds": [
+        "m06",
+        "m07",
+        "m08"
+      ],
+      "expectedLegacyIds": [
+        "m06",
+        "m07",
+        "m08"
+      ]
+    },
+    {
+      "name": "duplicate and empty selections are harmless",
+      "includeArtist": "A",
+      "includeArtists": [
+        " a ",
+        ""
+      ],
+      "excludeArtist": "",
+      "excludeArtists": [],
+      "targetCount": 5,
+      "expectedArtists": [
+        "A"
+      ],
+      "expectedIds": [
+        "m00",
+        "m01",
+        "m02"
+      ],
+      "expectedLegacyIds": [
+        "m00",
+        "m01",
+        "m02"
+      ]
+    },
+    {
+      "name": "opposing filters can leave no candidates",
+      "includeArtist": "A",
+      "includeArtists": [],
+      "excludeArtist": "a",
+      "excludeArtists": [],
+      "targetCount": 5,
+      "expectedArtists": [],
+      "expectedIds": [],
+      "expectedLegacyIds": []
+    }
+  ]
+}

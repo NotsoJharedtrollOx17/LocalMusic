@@ -84,6 +84,8 @@ export interface PlaylistRequest {
   genre: string;
   includeArtist: string;
   excludeArtist: string;
+  includeArtists?: string[];
+  excludeArtists?: string[];
   preferFavorites: boolean;
   avoidHeardToday: boolean;
 }

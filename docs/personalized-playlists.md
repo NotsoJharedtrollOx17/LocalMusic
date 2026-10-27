@@ -53,7 +53,7 @@ The redundant no-duplicates caption is removed; duplicate prevention remains a h
 
 ## Playlist sections and explicit-artist revision
 
-The overview separates the four automatic collections from saved playlists. Each saved playlist has an accessible action menu with a confirmed deletion; automatic collections cannot be deleted. An explicit artist filter permits all matching songs up to the requested count, while genre, exclusions, availability and the other selected filters still apply. General mixes retain the two-per-known-artist diversity cap. Empty generation results remove any previous preview and explain that no tracks match, leaving filters editable for a retry.
+The overview separates the four automatic collections from saved playlists. Each saved playlist has an accessible action menu with a confirmed deletion; automatic collections cannot be deleted. Up to three included and three excluded artists can be entered independently. Included artists are alternatives; exclusions take priority, and genre, availability and other selected filters still apply. Artist names are treated as whole values, including names containing commas or slashes. When multiple artists are included, the generator cycles through available matches by artist before filling later rounds, while retaining weighted selection within each artist. General mixes retain the two-per-known-artist diversity cap. Empty generation results remove any previous preview and explain that no tracks match, leaving filters editable for a retry.
 
 Generation reports the sound-analysis step, then matching of the available sound, listening and metadata signals. These are actual stages, not percentages or a claim that unavailable analysis ran. The sound step may use cached features or be skipped when playback/visibility prevents analysis.
 
@@ -63,3 +63,8 @@ The creator starts each visit with a compact explanation that preference analysi
 
 
 The analysis panel fits its content up to 650 px and the available screen width. Initial guidance invites generating a playlist to check preferences; completed results show only the acoustic coverage count, without repeating the guidance.
+
+
+## Multiple artist filters
+
+The creator allows one to three entries in each artist group. The original `includeArtist`/`excludeArtist` string fields remain supported; optional `includeArtists`/`excludeArtists` arrays supply additional whole names. Empty values are ignored, matching is normalized and case-insensitive, duplicates are deduplicated, and exclusions win if a name appears in both groups. A visible conflict notice explains that priority. Other chosen filters still intersect with the artist rules; an empty match reports that the artist, genre and listening filters can be checked. The browser and Rust implementations apply the same artist rounds, including filter-only legacy requests, so fixed inputs and seeds remain reproducible.

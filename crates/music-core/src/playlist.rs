@@ -31,16 +31,24 @@ pub fn generate(
         })
         .map(|s| s.track_id.as_str())
         .collect();
-    let excluded = normalize(&request.exclude_artist);
-    let included = normalize(&request.include_artist);
+    let excluded: HashSet<String> = std::iter::once(&request.exclude_artist)
+        .chain(request.exclude_artists.iter())
+        .map(|v| normalize(v))
+        .filter(|v| !v.is_empty())
+        .collect();
+    let included: HashSet<String> = std::iter::once(&request.include_artist)
+        .chain(request.include_artists.iter())
+        .map(|v| normalize(v))
+        .filter(|v| !v.is_empty())
+        .collect();
     let genre = normalize(&request.genre);
     let mut pool: Vec<_> = tracks
         .iter()
         .filter(|t| {
             t.available
                 && !t.hidden
-                && (excluded.is_empty() || normalize(&t.artist) != excluded)
-                && (included.is_empty() || normalize(&t.artist) == included)
+                && !excluded.contains(&normalize(&t.artist))
+                && (included.is_empty() || included.contains(&normalize(&t.artist)))
                 && (genre.is_empty()
                     || t.genre
                         .split([',', ';', '/'])
@@ -56,6 +64,21 @@ pub fn generate(
         };
         pref.then_with(|| a.id.cmp(&b.id))
     });
+    if included.len() > 1 {
+        let mut ranks = HashMap::<String, usize>::new();
+        let mut ranked: Vec<_> = pool
+            .into_iter()
+            .enumerate()
+            .map(|(order, t)| {
+                let count = ranks.entry(normalize(&t.artist)).or_default();
+                let round = *count;
+                *count += 1;
+                (round, order, t)
+            })
+            .collect();
+        ranked.sort_by_key(|(round, order, _)| (*round, *order));
+        pool = ranked.into_iter().map(|(_, _, t)| t).collect();
+    }
     let mut ids = Vec::new();
     let mut counts: HashMap<String, usize> = HashMap::new();
     let mut seen = HashSet::new();

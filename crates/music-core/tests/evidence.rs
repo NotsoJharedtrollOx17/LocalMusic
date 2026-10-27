@@ -201,6 +201,8 @@ fn excluded_artist_and_budget_are_hard_constraints() {
         genre: "Rock".into(),
         include_artist: "".into(),
         exclude_artist: "A".into(),
+        include_artists: vec![],
+        exclude_artists: vec![],
         prefer_favorites: false,
         avoid_heard_today: false,
     };

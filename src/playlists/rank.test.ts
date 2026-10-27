@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import fixture from "../../tests/fixtures/personalized-playlists.json";
+import multi from "../../tests/fixtures/multi-artist-playlists.json";
 import { personalized, validFeature } from "./rank";
 import { generate as legacyGenerate } from "../domain";
 import type { PlaylistRequest, Track, Session } from "../types";
@@ -112,6 +113,36 @@ describe("personalized policy shared fixtures", () => {
         now,
       ).ids,
     ).toHaveLength(0);
+  });
+  it("shared multi-artist fixtures preserve matches, exclusions and balanced rounds", () => {
+    const tracks = multi.artists.flatMap((artist, group) =>
+      Array.from({ length: 3 }, (_, index) => ({
+        ...fixture.tracks[0],
+        id: `m${String(group * 3 + index).padStart(2, "0")}`,
+        artist,
+      })),
+    );
+    for (const c of multi.cases) {
+      const request = {
+        ...fixture.cases[0].request,
+        ...c,
+        seed: 314159,
+      } as PlaylistRequest;
+      const data = { less: [], features: {} };
+      const result = personalized(request, tracks, [], "UTC", data, now);
+      expect(result.ids, c.name).toEqual(c.expectedIds);
+      expect(legacyGenerate(request, tracks, [], "UTC", now), c.name).toEqual(
+        c.expectedLegacyIds,
+      );
+      expect(
+        [
+          ...new Set(
+            result.ids.map((id) => tracks.find((t) => t.id === id)!.artist),
+          ),
+        ].sort(),
+        c.name,
+      ).toEqual([...c.expectedArtists].sort());
+    }
   });
   it("private/short/future evidence cannot change any score or seed result", () => {
     const req = fixture.cases[1].request as PlaylistRequest,

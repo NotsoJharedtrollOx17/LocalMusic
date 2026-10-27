@@ -121,6 +121,8 @@ export function useAppState(initialSettings?: Settings) {
       genre: "",
       includeArtist: "",
       excludeArtist: "",
+      includeArtists: [],
+      excludeArtists: [],
       preferFavorites: false,
       avoidHeardToday: false,
     }),

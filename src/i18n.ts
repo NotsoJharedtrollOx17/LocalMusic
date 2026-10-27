@@ -1,4 +1,7 @@
 export const en = {
+  addArtist: "Add artist",
+  removeArtist: "Remove artist",
+  artistConflict: "Excluded artists take priority: {artists}.",
   analysisPlaceholder:
     "Preference analysis runs only when you generate a playlist. Generate one to check your preferences.",
   renamePlaylist: "Rename playlist",
@@ -190,7 +193,8 @@ export const en = {
   tracks: "tracks",
   generated: "Generated",
   manual: "Your playlist",
-  noCandidates: "No tracks match these filters. Try a wider selection.",
+  noCandidates:
+    "No tracks match these filters. Check your artists, genre and listening filters.",
   emptySelection: "Choose at least one track.",
   yearLabel: "YOUR RECAP /",
   inSound: "IN SOUND",
@@ -277,6 +281,9 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  addArtist: "Agregar artista",
+  removeArtist: "Quitar artista",
+  artistConflict: "Los artistas excluidos tienen prioridad: {artists}.",
   analysisPlaceholder:
     "El an\u00e1lisis de preferencias solo se ejecuta al generar una lista. Genera una para revisar tus preferencias.",
   renamePlaylist: "Cambiar nombre",
@@ -469,7 +476,8 @@ export const es: typeof en = {
   tracks: "canciones",
   generated: "Generada",
   manual: "Tu lista",
-  noCandidates: "Ninguna canción coincide. Prueba filtros más amplios.",
+  noCandidates:
+    "Ninguna canción coincide. Revisa los artistas, el género y los filtros de escucha.",
   emptySelection: "Elige al menos una canción.",
   yearLabel: "TU RESUMEN /",
   inSound: "EN SONIDO",
