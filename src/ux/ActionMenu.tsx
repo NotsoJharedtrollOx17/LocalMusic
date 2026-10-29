@@ -171,7 +171,7 @@ export function ActionMenu({
           restore();
           latestClose.current();
           const scope =
-            anchor.closest('[role="dialog"],.search-surface') ?? document.body;
+            anchor.closest('[role="dialog"]') ?? document.body;
           const controls = Array.from(
             scope.querySelectorAll<HTMLElement>(
               'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]',

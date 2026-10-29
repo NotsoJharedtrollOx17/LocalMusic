@@ -53,6 +53,9 @@ export async function putImportedTrack<T extends Track>(
       if (old?.importSequence === undefined)
         settings.put(sequence, "catalog-import-sequence");
       tracks.put({ ...track, importSequence: sequence }, track.id);
+      const revision = settings.get("catalog-revision");
+      revision.onsuccess = () =>
+        settings.put(Number(revision.result ?? 0) + 1, "catalog-revision");
     };
     existing.onsuccess = save;
     counter.onsuccess = save;

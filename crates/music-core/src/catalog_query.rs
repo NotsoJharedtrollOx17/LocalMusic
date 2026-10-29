@@ -21,12 +21,16 @@ impl Store {
             ),
             _ => return Err("Invalid sort order".into()),
         };
-        let q = query
-            .split_whitespace()
-            .map(|s| format!("\"{}\"*", s.replace('"', "\"\"")))
-            .collect::<Vec<_>>()
-            .join(" AND ");
-        let predicate="id NOT IN (SELECT track_id FROM hidden_tracks) AND (?4=0 OR json_extract(data,'$.favorite')=1) AND (?1='' OR id IN (SELECT id FROM tracks_fts WHERE tracks_fts MATCH ?1))";
+        let ids = if query.trim().is_empty() {
+            None
+        } else {
+            Some(
+                serde_json::to_string(&self.matching_track_ids(query)?)
+                    .map_err(|e| e.to_string())?,
+            )
+        };
+        let q = ids.unwrap_or_default();
+        let predicate="id NOT IN (SELECT track_id FROM hidden_tracks) AND (?4=0 OR json_extract(data,'$.favorite')=1) AND (?1='' OR id IN (SELECT value FROM json_each(?1)))";
         let total = self
             .connection
             .query_row(

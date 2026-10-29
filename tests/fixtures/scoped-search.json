@@ -1,0 +1,78 @@
+{
+  "cases": [
+    {
+      "value": "Blue after rain",
+      "query": "AFTER blue",
+      "expected": true
+    },
+    {
+      "value": "A quieter orbit",
+      "query": "uiet",
+      "expected": true
+    },
+    {
+      "value": "Ｆｕｌｌ Width",
+      "query": "full",
+      "expected": true
+    },
+    {
+      "value": "Café mix",
+      "query": "Café",
+      "expected": true
+    },
+    {
+      "value": "Rock & roll (live)",
+      "query": "& (live)",
+      "expected": true
+    },
+    {
+      "value": "100%_real",
+      "query": "%_",
+      "expected": true
+    },
+    {
+      "value": "Simple song",
+      "query": "' OR 1=1",
+      "expected": false
+    },
+    {
+      "value": "rain",
+      "query": "",
+      "expected": true
+    },
+    {
+      "value": "RAIN",
+      "query": "  rain \t ",
+      "expected": true
+    },
+    {
+      "value": "Blue hour",
+      "query": "blue missing",
+      "expected": false
+    }
+  ],
+  "tracks": [
+    {
+      "id": "first",
+      "title": "Orbit (live)",
+      "artist": "Quiet Assembly",
+      "album": "Blue hour",
+      "genre": "",
+      "durationMs": 60000,
+      "sourceUri": "/private/first",
+      "available": true,
+      "favorite": false
+    },
+    {
+      "id": "second",
+      "title": "Rain",
+      "artist": "Parallel Lines",
+      "album": "Blue hour",
+      "genre": "",
+      "durationMs": 60000,
+      "sourceUri": "/private/second",
+      "available": true,
+      "favorite": true
+    }
+  ]
+}

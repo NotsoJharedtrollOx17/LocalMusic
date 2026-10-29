@@ -275,12 +275,12 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     page.getByRole("button", { name: "Play Fixture 120", exact: true }),
   ).toBeVisible();
   await page
-    .locator(".search-surface .track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
   await page
-    .locator(".search-surface")
-    .getByRole("button", { name: "Close", exact: true })
+    .getByRole("search")
+    .getByRole("button", { name: "Close search", exact: true })
     .last()
     .click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();

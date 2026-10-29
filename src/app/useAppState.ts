@@ -143,6 +143,7 @@ export function useAppState(initialSettings?: Settings) {
     [artistAlbumsLoading, setArtistAlbumsLoading] = useState(false);
   const coverOrigin = useRef<{ rect: DOMRect; src: string } | null>(null),
     detailHero = useRef<HTMLImageElement>(null);
+  const playlistOrigin = useRef<{ scroll: number; id: string } | null>(null);
   const groupScroll = useRef(0),
     lastSelected = useRef<string | undefined>(undefined),
     miniDrag = useRef<number | null>(null);
@@ -150,6 +151,7 @@ export function useAppState(initialSettings?: Settings) {
     Array<{
       group: NonNullable<typeof group>;
       scroll: number;
+      selector?: string;
       artistView: "tracks" | "albums";
     }>
   >([]);
@@ -270,6 +272,7 @@ export function useAppState(initialSettings?: Settings) {
     setArtistAlbumsLoading,
     coverOrigin,
     detailHero,
+    playlistOrigin,
     groupScroll,
     lastSelected,
     miniDrag,

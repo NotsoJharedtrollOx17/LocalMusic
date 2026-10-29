@@ -10,6 +10,8 @@ import { useMusicAppContext } from "./MusicAppContext";
 export default function PlaylistCollection() {
   const {
     lists,
+    filteredLists,
+    inlineSearch,
     t,
     openPlaylist,
     formatMusicCount,
@@ -22,6 +24,7 @@ export default function PlaylistCollection() {
     anchor: HTMLElement;
   } | null>(null);
   const [renaming, setRenaming] = useState<Playlist | null>(null);
+  if (inlineSearch.active && !filteredLists.length) return null;
   return (
     <section
       className="saved-playlists"
@@ -30,10 +33,14 @@ export default function PlaylistCollection() {
       <h2 id="saved-playlists-heading" className="playlist-section-heading">
         {t.yourPlaylists}
       </h2>
-      {lists.length ? (
+      {filteredLists.length ? (
         <div className="playlist-collection">
-          {lists.map((p) => (
-            <div className="saved-playlist-card" key={p.id}>
+          {filteredLists.map((p) => (
+            <div
+              className="saved-playlist-card"
+              key={p.id}
+              data-playlist-id={p.id}
+            >
               <button
                 className="playlist-tile"
                 onClick={() => void openPlaylist(p)}

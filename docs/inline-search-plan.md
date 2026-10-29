@@ -1,4 +1,4 @@
-# v0.12.0 ? Search within the current view
+# v0.12.0 — Search within the current view
 
 ## 1. Delivery and approach
 

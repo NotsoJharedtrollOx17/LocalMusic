@@ -63,7 +63,7 @@ export default function AppFeedback() {
               if (focused)
                 document
                   .querySelector<HTMLElement>(
-                    ".modal-scrim:not([inert]) .modal button,.player-scrim:not([inert]) button,.search-surface:not([inert]) input",
+                    ".modal-scrim:not([inert]) .modal button,.player-scrim:not([inert]) button:not([inert]) input",
                   )
                   ?.focus({ preventScroll: true });
             }}

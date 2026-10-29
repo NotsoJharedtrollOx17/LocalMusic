@@ -1,3 +1,4 @@
+import { CatalogMatcher } from "../search/CatalogMatcher";
 import { normalizeRecap } from "../recap/periods";
 import { automaticPlaylists } from "../automaticPlaylists";
 import { ensureImportOrder, putImportedTrack } from "./browserImportOrder";
@@ -51,6 +52,51 @@ const initialPlayback = (): PlaybackSnapshot => ({
   excluded: false,
 });
 export class BrowserMusic implements MusicApi {
+  private catalogGeneration = 0;
+  private storedCatalogRevision: number | undefined;
+  private catalogCache?: Promise<{
+    revision: number;
+    tracks: Omit<StoredTrack, "file">[];
+  }>;
+  private catalogGroupsCache = new Map<
+    string,
+    import("../types").CatalogGroup[]
+  >();
+  private catalogMatcher = new CatalogMatcher();
+  private invalidateCatalog() {
+    this.catalogGeneration++;
+    this.catalogCache = undefined;
+    this.catalogGroupsCache.clear();
+  }
+  private async catalogSnapshot() {
+    await this.ensureAlbumOrder();
+    const revision = Number(
+      (await this.get<number>("settings", "catalog-revision")) ?? 0,
+    );
+    if (revision !== this.storedCatalogRevision) {
+      this.storedCatalogRevision = revision;
+      this.invalidateCatalog();
+    }
+    return (this.catalogCache ??= (async () => {
+      const revision = this.catalogGeneration;
+      const tracks = (await this.all<StoredTrack>("tracks"))
+        .filter((t) => !t.hidden)
+        .map(({ file: _, ...track }) => track);
+      return { revision, tracks };
+    })().catch((error) => {
+      this.catalogCache = undefined;
+      throw error;
+    }));
+  }
+  async filterTrackIds(ids: string[], query: string) {
+    const snapshot = await this.catalogSnapshot();
+    const matching = await this.catalogMatcher.match(
+      snapshot.tracks,
+      snapshot.revision,
+      query,
+    );
+    return ids.filter((id) => matching.has(id));
+  }
   private analysis = new BrowserAnalysis(
     () => !this.audio.paused || this.changing,
   );
@@ -312,11 +358,24 @@ export class BrowserMusic implements MusicApi {
     });
   }
   private async put(store: string, k: string, v: unknown) {
+    if (store === "tracks") this.invalidateCatalog();
     const db = await this.db;
     await new Promise<void>((resolve, reject) => {
-      const t = db.transaction(store, "readwrite");
+      const t = db.transaction(
+        store === "tracks" ? ["tracks", "settings"] : store,
+        "readwrite",
+      );
       t.objectStore(store).put(v, k);
-      t.oncomplete = () => resolve();
+      if (store === "tracks") {
+        const settings = t.objectStore("settings"),
+          revision = settings.get("catalog-revision");
+        revision.onsuccess = () =>
+          settings.put(Number(revision.result ?? 0) + 1, "catalog-revision");
+      }
+      t.oncomplete = () => {
+        if (store === "tracks") this.invalidateCatalog();
+        resolve();
+      };
       t.onerror = () => reject(t.error);
     });
   }
@@ -380,7 +439,7 @@ export class BrowserMusic implements MusicApi {
     }
     this.session = null;
   }
-  private present(t: StoredTrack): Track {
+  private present(t: Track & { file?: Blob; cover?: Blob }): Track {
     if (t.cover && !this.artwork.has(t.id))
       this.artwork.set(t.id, URL.createObjectURL(t.cover));
     const { file: _, cover: __, ...track } = t;
@@ -437,31 +496,60 @@ export class BrowserMusic implements MusicApi {
       )
       .map((track) => track.id);
   }
-  async groups(kind: "albums" | "artists", offset = 0) {
-    await this.ensureAlbumOrder();
-    const all = (await this.all<StoredTrack>("tracks"))
-      .filter((t) => !t.hidden)
-      .sort(
+  async groups(kind: "albums" | "artists", offset = 0, query = "") {
+    const snapshot = await this.catalogSnapshot();
+    const key = `${kind}:${snapshot.revision}`;
+    let groups = this.catalogGroupsCache.get(key);
+    if (!groups) {
+      const all = [...snapshot.tracks].sort(
         (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
       );
-    const map = new Map<string, import("../types").CatalogGroup>();
-    for (const t of all) {
-      const title = kind === "albums" ? t.album : t.artist;
-      if (!title) continue;
-      const k = kind === "albums" ? t.artist + "|" + t.album : t.artist;
-      const g = map.get(k) ?? {
-        title,
-        subtitle: kind === "albums" ? t.artist : "",
-        ids: [],
-        track: this.present(t),
-      };
-      g.ids.push(t.id);
-      map.set(k, g);
+      const map = new Map<string, import("../types").CatalogGroup>();
+      for (const t of all) {
+        const title = kind === "albums" ? t.album : t.artist;
+        if (!title.trim()) continue;
+        const id = JSON.stringify([kind === "albums" ? t.artist : "", title]);
+        const g = map.get(id) ?? {
+          title,
+          subtitle: kind === "albums" ? t.artist : "",
+          ids: [],
+          track: t,
+        };
+        g.ids.push(t.id);
+        map.set(id, g);
+      }
+      groups = [...map.values()].sort(
+        (a, b) =>
+          a.title.localeCompare(b.title) ||
+          a.subtitle.localeCompare(b.subtitle),
+      );
+      this.catalogGroupsCache.set(key, groups);
+      if (this.catalogGroupsCache.size > 2)
+        this.catalogGroupsCache.delete(
+          this.catalogGroupsCache.keys().next().value!,
+        );
     }
-    const groups = [...map.values()].sort((a, b) =>
-      a.title.localeCompare(b.title),
-    );
-    return { groups: groups.slice(offset, offset + 60), total: groups.length };
+    if (query.trim()) {
+      const matching = await this.catalogMatcher.match(
+        groups.map((g) => ({
+          id: JSON.stringify([g.title, g.subtitle]),
+          title: g.title,
+          artist: g.subtitle,
+          album: "",
+        })),
+        key,
+        query,
+      );
+      groups = groups.filter((g) =>
+        matching.has(JSON.stringify([g.title, g.subtitle])),
+      );
+    }
+    return {
+      groups: groups
+        .slice(offset, offset + 60)
+        .map((g) => ({ ...g, track: this.present(g.track) })),
+      total: groups.length,
+    };
   }
   async cover(id: string, _size = 512) {
     const t = await this.get<StoredTrack>("tracks", id);
@@ -481,60 +569,37 @@ export class BrowserMusic implements MusicApi {
     options: import("../types").LibraryOptions = {},
   ) {
     await this.ensureAlbumOrder();
-    const q = query.toLowerCase();
-    const tracks = (await this.all<StoredTrack>("tracks"))
-      .filter((t) => !t.hidden)
-      .filter((t) =>
-        (t.title + " " + t.artist + " " + t.album).toLowerCase().includes(q),
+    const snapshot = await this.catalogSnapshot();
+    const matching = query.trim()
+      ? await this.catalogMatcher.match(
+          snapshot.tracks,
+          snapshot.revision,
+          query,
+        )
+      : null;
+    const tracks = snapshot.tracks
+      .filter(
+        (t) =>
+          (!matching || matching.has(t.id)) &&
+          (!options.favoriteOnly || t.favorite),
       )
-      .filter((t) => !options.favoriteOnly || t.favorite)
       .sort((a, b) => compareCatalogTracks(a, b, options.sort ?? "title"));
     return {
       tracks: tracks.slice(offset, offset + limit).map((t) => this.present(t)),
       total: tracks.length,
     };
   }
-  async searchCatalog(query: string, limit = 30) {
-    await this.ensureAlbumOrder();
-    const terms = query.trim().normalize("NFKC").toLowerCase().split(/\s+/);
-    const matches = (s: string) =>
-      terms.every((q) => s.normalize("NFKC").toLowerCase().includes(q));
-    const tracks = (await this.all<StoredTrack>("tracks"))
-      .filter((t) => !t.hidden && matches(`${t.title} ${t.artist} ${t.album}`))
-      .sort((a, b) => a.title.localeCompare(b.title))
-      .map((t) => this.present(t));
-    const findGroups = async (kind: "albums" | "artists") => {
-      const found: import("../types").CatalogGroup[] = [];
-      let offset = 0;
-      for (;;) {
-        const page = await this.groups(kind, offset);
-        found.push(
-          ...page.groups.filter((g) => matches(`${g.title} ${g.subtitle}`)),
-        );
-        offset += page.groups.length;
-        if (found.length > limit || offset >= page.total) break;
-      }
-      return found;
-    };
-    const albums = await findGroups("albums"),
-      artists = await findGroups("artists"),
-      playlists = (await this.playlists()).filter((p) => matches(p.title));
-    return {
-      tracks: tracks.slice(0, limit),
-      albums: albums.slice(0, limit),
-      artists: artists.slice(0, limit),
-      playlists: playlists.slice(0, limit),
-      hasMore: [tracks, albums, artists, playlists].some(
-        (items) => items.length > limit,
-      ),
-    };
-  }
   async setLibraryVisibility(ids: string[], visible: boolean) {
+    this.invalidateCatalog();
     this.recommendationRevision++;
     const db = await this.db;
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction("tracks", "readwrite");
+      const tx = db.transaction(["tracks", "settings"], "readwrite");
       const store = tx.objectStore("tracks");
+      const settings = tx.objectStore("settings"),
+        revision = settings.get("catalog-revision");
+      revision.onsuccess = () =>
+        settings.put(Number(revision.result ?? 0) + 1, "catalog-revision");
       for (const id of new Set(ids)) {
         const req = store.get(id);
         req.onsuccess = () => {
@@ -552,6 +617,7 @@ export class BrowserMusic implements MusicApi {
       this.state.queueIndex = Math.max(0, queue.indexOf(this.state.trackId!));
       this.emit();
     }
+    this.invalidateCatalog();
   }
   async shareAudio(ids: string[]): Promise<import("../types").ShareOutcome> {
     const files = await Promise.all(
@@ -701,6 +767,7 @@ export class BrowserMusic implements MusicApi {
         file,
         cover,
       });
+      this.invalidateCatalog();
       count++;
       if (count % 10 === 0) onProgress?.({ imported: count, failed: 0 });
     }
@@ -783,6 +850,7 @@ export class BrowserMusic implements MusicApi {
         file: new Blob([buffer], { type: "audio/wav" }),
       });
     }
+    this.invalidateCatalog();
     return names.length;
   }
   async setFavorite(id: string, favorite: boolean) {

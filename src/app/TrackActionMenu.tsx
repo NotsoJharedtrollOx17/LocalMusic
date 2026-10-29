@@ -7,7 +7,6 @@ import { usePlaybackPrivacy } from "./usePlaybackPrivacy";
 
 export default function TrackActionMenu() {
   const {
-    setSearchOpen,
     setModal,
     dismissModals,
     setDetail,
@@ -16,7 +15,6 @@ export default function TrackActionMenu() {
     setMenu,
     cache,
     group,
-    searchOpen,
     modal,
     t,
     share,
@@ -32,11 +30,10 @@ export default function TrackActionMenu() {
   const privacy = usePlaybackPrivacy();
   if (!menu) return null;
   const track = cache[menu.track.id] ?? menu.track;
-  // Search/player objects are independent of the Library collection underneath.
-  const context = searchOpen || modal ? null : group;
+  // Inline results retain the active Library collection context.
+  const context = modal ? null : group;
   const navigate = (kind: "albums" | "artists") => {
     dismissModals();
-    setSearchOpen(false);
     openGroup(
       kind,
       {

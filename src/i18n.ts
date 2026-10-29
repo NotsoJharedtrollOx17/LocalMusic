@@ -1,4 +1,15 @@
 export const en = {
+  searchSongs: "Search songs",
+  searchAlbums: "Search albums",
+  searchArtists: "Search artists",
+  searchPlaylists: "Search playlists",
+  searchCollection: "Search this collection",
+  clearSearch: "Clear search",
+  closeSearch: "Close search",
+  searching: "Searching\u2026",
+  searchFailed: "Search could not load. Try again.",
+  searchCount: "{count} of {total} results",
+
   addArtist: "Add artist",
   removeArtist: "Remove artist",
   artistConflict: "Excluded artists take priority: {artists}.",
@@ -173,7 +184,8 @@ export const en = {
   minutes: "Minutes",
   genre: "Genre",
   anyGenre: "Any genre",
-  genreArtistPreference: "With selected artists, genre is a preference, not a restriction.",
+  genreArtistPreference:
+    "With selected artists, genre is a preference, not a restriction.",
   includeArtist: "Include artist",
   excludeArtist: "Exclude artist",
   anyArtist: "Any artist",
@@ -282,6 +294,17 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  searchSongs: "Buscar canciones",
+  searchAlbums: "Buscar \u00e1lbumes",
+  searchArtists: "Buscar artistas",
+  searchPlaylists: "Buscar listas",
+  searchCollection: "Buscar en esta colecci\u00f3n",
+  clearSearch: "Borrar b\u00fasqueda",
+  closeSearch: "Cerrar b\u00fasqueda",
+  searching: "Buscando\u2026",
+  searchFailed: "No se pudo cargar la b\u00fasqueda. Int\u00e9ntalo de nuevo.",
+  searchCount: "{count} de {total} resultados",
+
   addArtist: "Agregar artista",
   removeArtist: "Quitar artista",
   artistConflict: "Los artistas excluidos tienen prioridad: {artists}.",
@@ -458,7 +481,8 @@ export const es: typeof en = {
   minutes: "Minutos",
   genre: "Género",
   anyGenre: "Cualquier género",
-  genreArtistPreference: "Con artistas seleccionados, el género es una preferencia, no una restricción.",
+  genreArtistPreference:
+    "Con artistas seleccionados, el género es una preferencia, no una restricción.",
   includeArtist: "Incluir artista",
   excludeArtist: "Excluir artista",
   anyArtist: "Cualquier artista",

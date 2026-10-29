@@ -1,3 +1,5 @@
+import InlineSearch from "./InlineSearch";
+import SearchEmpty from "./SearchEmpty";
 import { Search, ArrowLeft } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryActions from "./LibraryActions";
@@ -24,6 +26,8 @@ export default function LibraryPage() {
     libraryError,
     query,
     searchOpen,
+    inlineSearch,
+    searchInput,
     setSearchOpen,
     group,
     groupTracks,
@@ -73,19 +77,34 @@ export default function LibraryPage() {
           <LibraryTabs />
         )}
         <div className="heading-actions">
-          <IconButton
-            label={t.search}
-            onClick={() => setSearchOpen(!searchOpen)}
-          >
-            <Search size={25} />
-          </IconButton>
+          {section !== "year" && (
+            <span data-search-trigger>
+              <IconButton
+                label={t.search}
+                onClick={() =>
+                  searchOpen
+                    ? inlineSearch.close()
+                    : (setSearchOpen(true),
+                      requestAnimationFrame(() => searchInput.current?.focus()))
+                }
+              >
+                <Search size={25} />
+              </IconButton>
+            </span>
+          )}
           <LibraryActions />
         </div>
       </div>
+      <InlineSearch />
       <div
         id="library-content"
         role={!group ? "tabpanel" : undefined}
         aria-labelledby={!group ? "tab-" + section : undefined}
+        aria-busy={inlineSearch.active ? inlineSearch.pending : undefined}
+        inert={
+          inlineSearch.active &&
+          (inlineSearch.stale || Boolean(inlineSearch.error))
+        }
       >
         {group && (
           <div className="collection-hero">
@@ -127,7 +146,15 @@ export default function LibraryPage() {
           <>
             <LibraryToolbar />
 
-            {!group && section === "songs" && libraryError ? (
+            {inlineSearch.active &&
+            !inlineSearch.pending &&
+            !inlineSearch.error &&
+            inlineSearch.page?.total === 0 ? (
+              <SearchEmpty />
+            ) : !inlineSearch.active &&
+              !group &&
+              section === "songs" &&
+              libraryError ? (
               <div className="empty-small">
                 <button
                   className="button secondary"
@@ -136,7 +163,8 @@ export default function LibraryPage() {
                   {t.retry}
                 </button>
               </div>
-            ) : !group &&
+            ) : !inlineSearch.active &&
+              !group &&
               section === "songs" &&
               (libraryViewPending || (libraryLoading && !tracks.length)) ? (
               <div className="catalog-loading">
@@ -265,49 +293,60 @@ export default function LibraryPage() {
                 )}
               </div>
             )}
-            {(group
-              ? groupLoading && visible.length > 0
-              : section === "songs"
-                ? libraryLoading && !libraryViewPending && tracks.length > 0
-                : selectedGroupPage.status === "loading" &&
-                  catalogGroups.length > 0) && (
-              <LoadingIndicator label={t.loading} />
-            )}
-            {(group
-              ? groupTracks.length < group.ids.length
-              : section === "songs"
-                ? !libraryLoading && !libraryError && tracks.length < total
-                : catalogGroups.length < groupsTotal) && (
-              <button
-                className="button secondary load-more"
-                onClick={() =>
-                  void act(async () => {
-                    if (group) {
-                      const version = groupRequest.current;
-                      const offset = groupTracks.length;
-                      const ts = await api.tracksById(
-                        group.ids.slice(offset, offset + 60),
-                      );
-                      if (version !== groupRequest.current) return;
-                      setGroupTracks((old) =>
-                        old.length === offset ? [...old, ...ts] : old,
-                      );
-                      remember(ts);
-                    } else if (section === "songs") {
-                      await refresh(query, tracks.length);
-                    } else {
-                      await refreshGroups(
-                        section as "albums" | "artists",
-                        catalogGroups.length,
-                      );
-                    }
-                  })
-                }
-              >
-                {t.loadMore}
-              </button>
-            )}
+            {!inlineSearch.active &&
+              (group
+                ? groupLoading && visible.length > 0
+                : section === "songs"
+                  ? libraryLoading && !libraryViewPending && tracks.length > 0
+                  : selectedGroupPage.status === "loading" &&
+                    catalogGroups.length > 0) && (
+                <LoadingIndicator label={t.loading} />
+              )}
+            {!inlineSearch.active &&
+              (group
+                ? groupTracks.length < group.ids.length
+                : section === "songs"
+                  ? !libraryLoading && !libraryError && tracks.length < total
+                  : catalogGroups.length < groupsTotal) && (
+                <button
+                  className="button secondary load-more"
+                  onClick={() =>
+                    void act(async () => {
+                      if (group) {
+                        const version = groupRequest.current;
+                        const offset = groupTracks.length;
+                        const ts = await api.tracksById(
+                          group.ids.slice(offset, offset + 60),
+                        );
+                        if (version !== groupRequest.current) return;
+                        setGroupTracks((old) =>
+                          old.length === offset ? [...old, ...ts] : old,
+                        );
+                        remember(ts);
+                      } else if (section === "songs") {
+                        await refresh(query, tracks.length);
+                      } else {
+                        await refreshGroups(
+                          section as "albums" | "artists",
+                          catalogGroups.length,
+                        );
+                      }
+                    })
+                  }
+                >
+                  {t.loadMore}
+                </button>
+              )}
           </>
+        )}
+        {inlineSearch.hasMore && (
+          <button
+            className="button secondary load-more"
+            disabled={inlineSearch.pending}
+            onClick={() => void inlineSearch.loadMore()}
+          >
+            {t.loadMore}
+          </button>
         )}
       </div>
     </section>

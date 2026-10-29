@@ -10,7 +10,7 @@ export default function PlaylistDetailHeading() {
     t,
     formatMusicCount,
     saveList,
-    playlistTracks,
+    allPlaylistTracks: playlistTracks,
     setSelectionMode,
     setSelectedIds,
   } = useMusicAppContext();

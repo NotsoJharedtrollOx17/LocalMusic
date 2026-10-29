@@ -215,7 +215,7 @@ test("custom editor menus preserve React values and clipboard failures", async (
   await open();
   await page.getByRole("menuitem", { name: "Paste", exact: true }).click();
   await expect(input).toHaveValue("Blue after");
-  await expect(page.locator(".search-results .track-copy strong")).toHaveText(
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText(
     "Blue after rain",
   );
   await open();

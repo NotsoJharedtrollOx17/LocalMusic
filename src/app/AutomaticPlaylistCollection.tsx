@@ -3,7 +3,14 @@ import { useMusicAppContext } from "./MusicAppContext";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import LoadingIndicator from "../components/LoadingIndicator";
 export default function AutomaticPlaylistCollection() {
-  const { automatic, t, openPlaylist, formatMusicCount } = useMusicAppContext();
+  const {
+    automatic,
+    filteredAutomatic,
+    inlineSearch,
+    t,
+    openPlaylist,
+    formatMusicCount,
+  } = useMusicAppContext();
   const definitions = [
     {
       key: "recently-added",
@@ -30,6 +37,7 @@ export default function AutomaticPlaylistCollection() {
       Icon: Heart,
     },
   ];
+  if (inlineSearch.active && !filteredAutomatic.length) return null;
   return (
     <section
       className="automatic-playlists"
@@ -39,38 +47,45 @@ export default function AutomaticPlaylistCollection() {
         {t.defaultPlaylists}
       </h2>
       <div className="playlist-collection" aria-busy={automatic.loading}>
-        {definitions.map(({ key, title, description, Icon }) => {
-          const p = automatic.playlists.find(
-            (p) => p.id === `automatic:${key}`,
-          );
-          return (
-            <button
-              key={key}
-              className="playlist-tile automatic-playlist-tile"
-              disabled={!p}
-              onClick={() => p && void openPlaylist(p)}
-            >
-              <div className="playlist-tile-art">
-                <Icon size={32} />
-                <span>
-                  {p ? String(p.trackIds.length).padStart(2, "0") : "—"}
-                </span>
-              </div>
-              <div>
-                <h3>{p ? automaticPlaylistLabel(p, t) : title}</h3>
-                {p ? (
-                  <span>{formatMusicCount(p.trackIds.length)}</span>
-                ) : automatic.error ? (
-                  <span>{t.unavailable}</span>
-                ) : (
-                  <LoadingIndicator label={t.loading} compact />
-                )}
-                <p>{description}</p>
-              </div>
-              <ArrowUpRight size={20} />
-            </button>
-          );
-        })}
+        {definitions
+          .filter(
+            (d) =>
+              !inlineSearch.active ||
+              filteredAutomatic.some((p) => p.id === `automatic:${d.key}`),
+          )
+          .map(({ key, title, description, Icon }) => {
+            const p = automatic.playlists.find(
+              (p) => p.id === `automatic:${key}`,
+            );
+            return (
+              <button
+                key={key}
+                className="playlist-tile automatic-playlist-tile"
+                data-playlist-id={`automatic:${key}`}
+                disabled={!p}
+                onClick={() => p && void openPlaylist(p)}
+              >
+                <div className="playlist-tile-art">
+                  <Icon size={32} />
+                  <span>
+                    {p ? String(p.trackIds.length).padStart(2, "0") : "—"}
+                  </span>
+                </div>
+                <div>
+                  <h3>{p ? automaticPlaylistLabel(p, t) : title}</h3>
+                  {p ? (
+                    <span>{formatMusicCount(p.trackIds.length)}</span>
+                  ) : automatic.error ? (
+                    <span>{t.unavailable}</span>
+                  ) : (
+                    <LoadingIndicator label={t.loading} compact />
+                  )}
+                  <p>{description}</p>
+                </div>
+                <ArrowUpRight size={20} />
+              </button>
+            );
+          })}
       </div>
       {automatic.error && (
         <div className="automatic-playlist-error" role="alert">

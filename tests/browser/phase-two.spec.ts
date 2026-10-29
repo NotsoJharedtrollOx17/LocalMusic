@@ -1,3 +1,4 @@
+import { installSearchGate, releaseSearch } from "./search-gate";
 import { openEqualizer, closeEqualizer } from "./navigationHelpers";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
@@ -66,18 +67,13 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   const search = page.getByRole("search");
   await expect(search.getByRole("searchbox")).toBeFocused();
   await search.getByRole("searchbox").fill("Fixture");
-  await expect(search.locator(".track-row")).toHaveCount(30);
-  await search.getByRole("button", { name: "Load more", exact: true }).click();
-  await expect(search.locator(".track-row")).toHaveCount(35);
-  await expect(
-    search.getByRole("heading", { name: "Albums", exact: true }),
-  ).toBeVisible();
-  await expect(
-    search.getByRole("heading", { name: "Artists", exact: true }),
-  ).toBeVisible();
-  await page.keyboard.press("Escape");
+  await expect(page.locator(".album-card")).toHaveCount(1);
+  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  await expect(page.locator("#library-content .track-row")).toHaveCount(35);
+  await page.getByRole("button", { name: "Close search", exact: true }).click();
   await expect(search).toHaveCount(0);
   await expect(opener).toBeFocused();
+  await albums.click();
   await expect(albums).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   await page.locator(".album-card").click();
@@ -107,6 +103,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
 test("search ignores late reads and keeps playback available", async ({
   page,
 }) => {
+  await installSearchGate(page, "Signal");
   await samples(page);
   await page
     .getByRole("button", { name: "Play A quieter orbit", exact: true })
@@ -116,18 +113,19 @@ test("search ignores late reads and keeps playback available", async ({
     .click();
   const search = page.getByRole("search"),
     box = search.getByRole("searchbox");
-  await holdNextTrackRead(page);
   await box.fill("Signal");
   await expect(search.getByRole("status")).toBeVisible();
   // Let the debounced read enter the held IndexedDB request before replacing it.
-  await page.waitForTimeout(220);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).searchHeld))
+    .toBe(true);
   await box.fill("rain");
-  await expect(search.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Blue after rain",
   ]);
-  await release(page);
+  await releaseSearch(page);
   await page.waitForTimeout(250);
-  await expect(search.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Blue after rain",
   ]);
   await expect(page.locator(".mini-player")).toBeVisible();
@@ -141,7 +139,7 @@ test("search ignores late reads and keeps playback available", async ({
       .getByRole("button", { name: "Play", exact: true }),
   ).toBeVisible();
   expect(
-    (await new AxeBuilder({ page }).include(".search-surface").analyze())
+    (await new AxeBuilder({ page }).include(".inline-search").analyze())
       .violations,
   ).toEqual([]);
   await page.screenshot({ path: "artifacts/phase-two-search-desktop.png" });
@@ -447,12 +445,15 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const search = page.getByRole("search");
+  await page.getByRole("button", { name: "Close search", exact: true }).click();
+  await page.getByRole("button", { name: "Playlists", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Search your library", exact: true })
+    .click();
   await search.getByRole("searchbox").fill("Fixture mix");
-  await expect(
-    search.getByRole("heading", { name: "Playlists", exact: true }),
-  ).toBeVisible();
-  await search
-    .getByRole("button", { name: "Fixture mix", exact: true })
+  await page
+    .locator(".saved-playlist-card .playlist-tile")
+    .filter({ hasText: "Fixture mix" })
     .click();
   await expect(search).toHaveCount(0);
   await expect(page.locator(".track-copy strong")).toHaveText([

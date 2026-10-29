@@ -1,3 +1,4 @@
+import { useInlineSearch } from "./useInlineSearch";
 import { useRecapPeriods } from "./useRecapPeriods";
 import { useAutomaticPlaylists } from "./useAutomaticPlaylists";
 import { dismissMenu, hasOpenMenu } from "../ux/menuLayer";
@@ -210,6 +211,35 @@ export function useMusicApp(initialSettings?: Settings) {
     );
   }, [section, selectedList, setSelectedIds]);
   const catalog = useCatalogReads(state, act, remember);
+  const inlineSearch = useInlineSearch(state, t, automatic.playlists, remember);
+  const lastPlaylist = useRef<string | undefined>(undefined);
+  const restorePlaylist = useRef<{ scroll: number; id: string } | null>(null);
+  useLayoutEffect(() => {
+    const previous = lastPlaylist.current;
+    lastPlaylist.current = selectedList?.id;
+    if (previous && !selectedList && section === "playlists")
+      restorePlaylist.current = state.playlistOrigin.current;
+    const origin = restorePlaylist.current;
+    if (
+      !origin ||
+      selectedList ||
+      section !== "playlists" ||
+      inlineSearch.pending ||
+      inlineSearch.stale
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      const button = document.querySelector<HTMLElement>(
+        `[data-playlist-id="${CSS.escape(origin.id)}"] button,[data-playlist-id="${CSS.escape(origin.id)}"].automatic-playlist-tile`,
+      );
+      if (button && !button.closest("[inert]")) {
+        window.scrollTo({ top: origin.scroll, behavior: "instant" });
+        button.focus({ preventScroll: true });
+        restorePlaylist.current = null;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedList?.id, section, inlineSearch.pending, inlineSearch.stale]);
   const lastPlaybackError = useRef<string | null>(null);
   const { groupRequest, refresh, refreshGroup, refreshGroups, refreshLists } =
     catalog;
@@ -238,9 +268,9 @@ export function useMusicApp(initialSettings?: Settings) {
     };
   }, [act, refresh, refreshLists]);
   useEffect(() => {
-    const id = setTimeout(() => void act(() => refresh(query)), 180);
+    const id = setTimeout(() => void act(() => refresh()), 0);
     return () => clearTimeout(id);
-  }, [query, onlyFavorites, sort, refresh, act]);
+  }, [onlyFavorites, sort, refresh, act]);
   useEffect(() => {
     if (section === "albums" || section === "artists")
       void act(() => refreshGroups(section));
@@ -263,33 +293,41 @@ export function useMusicApp(initialSettings?: Settings) {
   useEffect(() => {
     setSelectionMode(false);
     setSelectedIds([]);
-  }, [section, groupIdentity, artistView, selectedList?.id]);
+  }, [section, groupIdentity, artistView, selectedList?.id, query]);
   const restoreGroupScroll = useRef<number | null>(null);
   const groupOrigin = useRef<{ section: LibrarySection; selector?: string }>({
     section,
   });
   const restoreGroupFocus = useRef(false);
+  const restoreNestedGroupFocus = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (restoreGroupScroll.current !== null) {
       window.scrollTo({ top: restoreGroupScroll.current, behavior: "instant" });
       restoreGroupScroll.current = null;
     }
-    if (!group && restoreGroupFocus.current) {
-      restoreGroupFocus.current = false;
+    if (
+      !group &&
+      restoreGroupFocus.current &&
+      !inlineSearch.pending &&
+      !inlineSearch.stale
+    ) {
       const selector = groupOrigin.current.selector;
       const frame = requestAnimationFrame(() => {
-        (
+        const button =
           document.querySelector<HTMLElement>(
             selector ?? '.section-tabs [aria-selected="true"]',
           ) ??
           document.querySelector<HTMLElement>(
             '.section-tabs [aria-selected="true"]',
-          )
-        )?.focus({ preventScroll: true });
+          );
+        if (button && !button.closest("[inert]")) {
+          button.focus({ preventScroll: true });
+          restoreGroupFocus.current = false;
+        }
       });
       return () => cancelAnimationFrame(frame);
     }
-  }, [groupIdentity]);
+  }, [groupIdentity, inlineSearch.pending, inlineSearch.stale]);
   useEffect(() => {
     if (group)
       void act(() => refreshGroup(group, Math.max(60, groupTracks.length)));
@@ -302,9 +340,6 @@ export function useMusicApp(initialSettings?: Settings) {
     setGroupTracks([]);
     setGroupLoading(false);
   }
-  useEffect(() => {
-    if (searchOpen) searchInput.current?.focus();
-  }, [searchOpen]);
   useEffect(() => {
     if (settings) {
       document.documentElement.lang = settings.language;
@@ -393,29 +428,42 @@ export function useMusicApp(initialSettings?: Settings) {
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       if (
-        /INPUT|SELECT|TEXTAREA|BUTTON|A/.test(
-          (e.target as HTMLElement).tagName,
+        (e.target as HTMLElement).closest(
+          "input,select,textarea,[contenteditable=true]",
         ) ||
         modal ||
         menu ||
         hasOpenMenu() ||
-        searchOpen ||
         selectionMode ||
         shareRecap
       )
         return;
-      if (e.code === "Space" && player.trackId) {
+      if (
+        e.code === "Space" &&
+        player.trackId &&
+        !(e.target as HTMLElement).closest("button,a[href]")
+      ) {
         e.preventDefault();
         void act(() => api.toggle());
       }
-      if (e.key === "/") {
+      if (e.key === "/" && section !== "year") {
         e.preventDefault();
         setSearchOpen(true);
+        requestAnimationFrame(() => searchInput.current?.focus());
       }
     };
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
-  }, [modal, shareRecap, player.trackId, act, menu, searchOpen, selectionMode]);
+  }, [
+    modal,
+    shareRecap,
+    player.trackId,
+    act,
+    menu,
+    searchOpen,
+    selectionMode,
+    section,
+  ]);
   useEffect(() => {
     if (!notice) return;
     let timeout: ReturnType<typeof setTimeout>;
@@ -434,6 +482,7 @@ export function useMusicApp(initialSettings?: Settings) {
     const previous = groupStack.current.pop();
     if (previous) {
       restoreGroupScroll.current = previous.scroll;
+      restoreNestedGroupFocus.current = previous.selector ?? null;
       setSection(previous.group.kind);
       setArtistView(previous.artistView);
       void act(async () => {
@@ -445,10 +494,17 @@ export function useMusicApp(initialSettings?: Settings) {
       closeGroup(groupScroll.current);
     }
   }
-  useBackLayer(section === "year" && !modal && !searchOpen && !menu, () =>
-    setSection("songs"),
+  useBackLayer(
+    section === "year" &&
+      !modal &&
+      (!searchOpen || section === "year") &&
+      !menu,
+    () => setSection("songs"),
   );
-  useBackLayer(!!group && !modal && !searchOpen && !menu, backGroup);
+  useBackLayer(
+    !!group && !modal && (!searchOpen || section === "year") && !menu,
+    backGroup,
+  );
   useBackLayer(
     section === "playlists" &&
       !!selectedList &&
@@ -557,7 +613,14 @@ export function useMusicApp(initialSettings?: Settings) {
             : undefined,
       };
     } else
-      groupStack.current.push({ group, scroll: window.scrollY, artistView });
+      groupStack.current.push({
+        group,
+        scroll: window.scrollY,
+        artistView,
+        selector: source?.dataset.groupKey
+          ? `[data-group-key="${CSS.escape(source.dataset.groupKey)}"]`
+          : undefined,
+      });
     const image = source?.querySelector<HTMLImageElement>("img");
     coverOrigin.current = image
       ? { rect: image.getBoundingClientRect(), src: image.src }
@@ -587,11 +650,36 @@ export function useMusicApp(initialSettings?: Settings) {
     return animateCover(origin.rect, node.getBoundingClientRect(), origin.src);
   }, [group?.title, group?.kind]);
   useEffect(() => {
-    if (group)
+    if (group && !restoreNestedGroupFocus.current)
       document
         .querySelector<HTMLElement>(".library-page h1")
         ?.focus({ preventScroll: true });
   }, [group?.title, group?.kind]);
+  useLayoutEffect(() => {
+    const selector = restoreNestedGroupFocus.current;
+    if (
+      !selector ||
+      !group ||
+      inlineSearch.pending ||
+      inlineSearch.stale ||
+      state.groupLoading
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      const button = document.querySelector<HTMLElement>(selector);
+      if (button && !button.closest("[inert]")) {
+        button.focus({ preventScroll: true });
+        restoreNestedGroupFocus.current = null;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    groupIdentity,
+    artistView,
+    state.groupLoading,
+    inlineSearch.pending,
+    inlineSearch.stale,
+  ]);
   async function openEqualizer() {
     setModal("equalizer");
   }
@@ -652,7 +740,6 @@ export function useMusicApp(initialSettings?: Settings) {
     ...catalog,
     ...actions,
     selectedGroupPage,
-    catalogGroups,
     groupsTotal,
     motion,
     t,
@@ -672,7 +759,37 @@ export function useMusicApp(initialSettings?: Settings) {
     formatMinutes,
     formatMusicCount,
     formatDate,
-    visible,
-    playlistTracks,
+    playlistTracks:
+      inlineSearch.active && selectedList
+        ? (inlineSearch.page?.tracks ?? playlistTracks)
+        : playlistTracks,
+    allPlaylistTracks: playlistTracks,
+    visible:
+      inlineSearch.active &&
+      (group || section === "songs") &&
+      !(group?.kind === "artists" && artistView === "albums")
+        ? (inlineSearch.page?.tracks ?? visible)
+        : visible,
+    catalogGroups:
+      inlineSearch.active &&
+      !group &&
+      (section === "albums" || section === "artists")
+        ? (inlineSearch.page?.groups ?? catalogGroups)
+        : catalogGroups,
+    artistAlbums:
+      inlineSearch.active &&
+      group?.kind === "artists" &&
+      artistView === "albums"
+        ? (inlineSearch.page?.groups ?? state.artistAlbums)
+        : state.artistAlbums,
+    filteredLists:
+      inlineSearch.active && !selectedList && section === "playlists"
+        ? (inlineSearch.page?.lists ?? state.lists)
+        : state.lists,
+    filteredAutomatic:
+      inlineSearch.active && !selectedList && section === "playlists"
+        ? (inlineSearch.page?.automatic ?? automatic.playlists)
+        : automatic.playlists,
+    inlineSearch,
   };
 }

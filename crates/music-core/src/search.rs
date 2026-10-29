@@ -1,80 +1,50 @@
-use crate::groups::CatalogGroup;
 use crate::*;
-use serde::Serialize;
 
-#[derive(Serialize)]
-pub struct SearchResults {
-    pub tracks: Vec<Track>,
-    pub albums: Vec<CatalogGroup>,
-    pub artists: Vec<CatalogGroup>,
-    pub playlists: Vec<Playlist>,
-    #[serde(rename = "hasMore")]
-    pub has_more: bool,
+/// Literal AND-of-substrings matching shared by all scoped search surfaces.
+pub fn matches(value: &str, query: &str) -> bool {
+    let value = normalize(value);
+    normalize(query)
+        .split_whitespace()
+        .all(|term| value.contains(term))
 }
 impl Store {
-    pub fn search_catalog(&self, query: &str) -> Result<SearchResults, String> {
-        self.search_catalog_limit(query, 30)
+    pub fn matching_track_ids(&self, query: &str) -> Result<Vec<String>, String> {
+        let revision = self.catalog_revision.get();
+        let mut cache = self.search_cache.borrow_mut();
+        if cache.as_ref().map(|x| x.0) != Some(revision) {
+            *cache = Some((
+                revision,
+                self.all_tracks()?
+                    .into_iter()
+                    .filter(|t| !t.hidden)
+                    .map(|t| {
+                        (
+                            t.id,
+                            normalize(&format!("{} {} {}", t.title, t.artist, t.album)),
+                        )
+                    })
+                    .collect(),
+            ));
+        }
+        let terms = normalize(query);
+        Ok(cache
+            .as_ref()
+            .unwrap()
+            .1
+            .iter()
+            .filter(|(_, text)| terms.split_whitespace().all(|term| text.contains(term)))
+            .map(|(id, _)| id.clone())
+            .collect())
     }
-    pub fn search_catalog_limit(&self, query: &str, limit: usize) -> Result<SearchResults, String> {
-        let limit = limit.max(1);
-        let query = normalize(query);
-        let matches = |value: &str| {
-            query
-                .split_whitespace()
-                .all(|term| normalize(value).contains(term))
-        };
-        let mut tracks: Vec<_> = self
-            .all_tracks()?
+    pub fn filter_track_ids(&self, ids: &[String], query: &str) -> Result<Vec<String>, String> {
+        let matching = self
+            .matching_track_ids(query)?
             .into_iter()
-            .filter(|t| !t.hidden && matches(&format!("{} {} {}", t.title, t.artist, t.album)))
-            .collect();
-        tracks.sort_by(|a, b| {
-            normalize(&a.title)
-                .cmp(&normalize(&b.title))
-                .then(a.id.cmp(&b.id))
-        });
-        let find_groups = |kind: &str| -> Result<Vec<CatalogGroup>, String> {
-            let mut result = Vec::new();
-            let mut offset = 0;
-            loop {
-                let page = self.groups(kind, offset, 60)?;
-                offset += page.groups.len();
-                result.extend(
-                    page.groups
-                        .into_iter()
-                        .filter(|g| matches(&format!("{} {}", g.title, g.subtitle))),
-                );
-                if result.len() > limit || offset >= page.total {
-                    break;
-                }
-            }
-            Ok(result)
-        };
-        let mut playlists: Vec<_> = self
-            .playlists()?
-            .into_iter()
-            .filter(|p| matches(&p.title))
-            .collect();
-        let mut albums = find_groups("albums")?;
-        let mut artists = find_groups("artists")?;
-        let has_more = [
-            &tracks.len(),
-            &albums.len(),
-            &artists.len(),
-            &playlists.len(),
-        ]
-        .into_iter()
-        .any(|n| *n > limit);
-        tracks.truncate(limit);
-        albums.truncate(limit);
-        artists.truncate(limit);
-        playlists.truncate(limit);
-        Ok(SearchResults {
-            tracks,
-            albums,
-            artists,
-            playlists,
-            has_more,
-        })
+            .collect::<std::collections::HashSet<_>>();
+        Ok(ids
+            .iter()
+            .filter(|id| matching.contains(*id))
+            .cloned()
+            .collect())
     }
 }

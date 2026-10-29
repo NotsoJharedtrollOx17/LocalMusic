@@ -45,11 +45,8 @@ class NativeMusic implements MusicApi {
     return cmd<void>("stop_visualizer", { id });
   }
   private playbackUpdates = new PlaybackUpdates();
-  searchCatalog(query: string, limit = 30) {
-    return cmd<import("../types").SearchResults>("search_catalog", {
-      query,
-      limit,
-    });
+  filterTrackIds(ids: string[], query: string) {
+    return cmd<string[]>("filter_track_ids", { ids, query });
   }
   setLibraryVisibility(ids: string[], visible: boolean) {
     return cmd<void>("set_library_visibility", { ids, visible });
@@ -69,10 +66,10 @@ class NativeMusic implements MusicApi {
   groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
     return cmd<string[]>("group_ids", { kind, title, subtitle });
   }
-  groups(kind: "albums" | "artists", offset = 0) {
+  groups(kind: "albums" | "artists", offset = 0, query = "") {
     return cmd<{ groups: import("../types").CatalogGroup[]; total: number }>(
       "list_groups",
-      { kind, offset },
+      { kind, offset, query },
     );
   }
   cover(id: string, size = 512) {

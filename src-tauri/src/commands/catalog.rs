@@ -90,15 +90,18 @@ pub(crate) async fn list_groups(
     state: State<'_, MusicState>,
     kind: String,
     offset: usize,
+    query: Option<String>,
 ) -> Result<music_core::groups::GroupPage> {
     let core = state.core.clone();
     let order_ready = state.order_ready.clone();
     tauri::async_runtime::spawn_blocking(move || {
         album_order::backfill(&core, &order_ready, &app)?;
-        let mut page = core
-            .lock()
-            .map_err(|e| e.to_string())?
-            .groups(&kind, offset, 60)?;
+        let mut page = core.lock().map_err(|e| e.to_string())?.groups_filtered(
+            &kind,
+            offset,
+            60,
+            query.as_deref().unwrap_or(""),
+        )?;
         let cache = artwork::cache_dir(&app)?;
         for g in &mut page.groups {
             g.track = artwork::decorate(g.track.clone(), &cache, &app);
@@ -130,28 +133,16 @@ pub(crate) async fn resolve_cover(
 }
 
 #[tauri::command]
-pub(crate) async fn search_catalog(
-    app: tauri::AppHandle,
+pub(crate) async fn filter_track_ids(
     state: State<'_, MusicState>,
+    ids: Vec<String>,
     query: String,
-    limit: usize,
-) -> Result<music_core::search::SearchResults> {
+) -> Result<Vec<String>> {
     let core = state.core.clone();
-    let ready = state.order_ready.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        album_order::backfill(&core, &ready, &app)?;
-        let mut result = core
-            .lock()
+        core.lock()
             .map_err(|e| e.to_string())?
-            .search_catalog_limit(&query, limit)?;
-        let cache = artwork::cache_dir(&app)?;
-        for track in &mut result.tracks {
-            *track = artwork::decorate(track.clone(), &cache, &app);
-        }
-        for group in result.albums.iter_mut().chain(result.artists.iter_mut()) {
-            group.track = artwork::decorate(group.track.clone(), &cache, &app);
-        }
-        Ok(result)
+            .filter_track_ids(&ids, &query)
     })
     .await
     .map_err(|e| e.to_string())?

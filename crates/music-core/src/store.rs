@@ -4,6 +4,12 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::path::Path;
 pub struct Store {
     pub connection: Connection,
+    pub(crate) group_search_cache:
+        std::cell::RefCell<std::collections::HashMap<String, (u64, Vec<(String, String, String)>)>>,
+    pub(crate) membership_cache:
+        std::cell::RefCell<std::collections::BTreeMap<String, (u64, Vec<String>)>>,
+    pub(crate) catalog_revision: std::cell::Cell<u64>,
+    pub(crate) search_cache: std::cell::RefCell<Option<(u64, Vec<(String, String)>)>>,
 }
 const SCHEMA: &str = r#"
 PRAGMA foreign_keys=ON;
@@ -34,7 +40,13 @@ impl Store {
         connection
             .execute_batch(SCHEMA)
             .map_err(|e| e.to_string())?;
-        let s = Self { connection };
+        let s = Self {
+            connection,
+            search_cache: Default::default(),
+            catalog_revision: Default::default(),
+            group_search_cache: Default::default(),
+            membership_cache: Default::default(),
+        };
         if s.get_setting::<Settings>("preferences")?.is_none() {
             s.set_setting("preferences", &Settings::default())?;
         }
@@ -106,7 +118,10 @@ impl Store {
                 .map_err(|e| e.to_string())?;
             }
         }
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        self.catalog_revision
+            .set(self.catalog_revision.get().wrapping_add(1));
+        Ok(())
     }
     pub fn track(&self, id: &str) -> Result<Option<Track>> {
         let mut st = self
@@ -146,7 +161,10 @@ impl Store {
         if t.available {
             tx.execute("INSERT INTO track_sources(uri,track_id) VALUES(?1,?2) ON CONFLICT(uri) DO UPDATE SET track_id=excluded.track_id",params![t.source_uri,t.id]).map_err(|e|e.to_string())?;
         }
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        self.catalog_revision
+            .set(self.catalog_revision.get().wrapping_add(1));
+        Ok(())
     }
     pub fn save_playlist(&self, p: &Playlist) -> Result<()> {
         if p.id.starts_with("automatic:")

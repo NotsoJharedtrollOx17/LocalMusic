@@ -76,8 +76,23 @@ export default function TrackRows({
             edit={
               editable
                 ? {
-                    up: i ? () => moveList(i, -1) : undefined,
-                    down: i < ts.length - 1 ? () => moveList(i, 1) : undefined,
+                    up: i
+                      ? () =>
+                          moveList(
+                            i,
+                            -1,
+                            ts.map((t) => t.id),
+                          )
+                      : undefined,
+                    down:
+                      i < ts.length - 1
+                        ? () =>
+                            moveList(
+                              i,
+                              1,
+                              ts.map((t) => t.id),
+                            )
+                        : undefined,
                     remove: () => {
                       if (selectedList)
                         setSelectedList({

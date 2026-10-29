@@ -132,13 +132,6 @@ export interface ImportProgress {
   imported: number;
   failed: number;
 }
-export interface SearchResults {
-  hasMore: boolean;
-  tracks: Track[];
-  albums: CatalogGroup[];
-  artists: CatalogGroup[];
-  playlists: Playlist[];
-}
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
@@ -151,7 +144,7 @@ export interface MusicApi {
     id: string,
   ): Promise<import("./visualizer/types").VisualizerFrame | null>;
   stopVisualizer(id: string): Promise<void>;
-  searchCatalog(query: string, limit?: number): Promise<SearchResults>;
+  filterTrackIds(ids: string[], query: string): Promise<string[]>;
   setLibraryVisibility(ids: string[], visible: boolean): Promise<void>;
   shareAudio(ids: string[]): Promise<ShareOutcome>;
   soundCapabilities(): Promise<SoundCapabilities>;
@@ -169,6 +162,7 @@ export interface MusicApi {
   groups(
     kind: "albums" | "artists",
     offset?: number,
+    query?: string,
   ): Promise<{ groups: CatalogGroup[]; total: number }>;
   cover(id: string, size?: number): Promise<string>;
   tracksById(ids: string[]): Promise<Track[]>;

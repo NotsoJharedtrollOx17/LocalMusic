@@ -5,7 +5,6 @@ import AppContent from "./app/AppContent";
 import MiniPlayer from "./app/MiniPlayer";
 import ImportInputs from "./app/ImportInputs";
 import AppFeedback from "./app/AppFeedback";
-import SearchOverlay from "./app/SearchOverlay";
 import TrackActionMenu from "./app/TrackActionMenu";
 import AppContextMenu from "./app/AppContextMenu";
 import RemoveLibraryDialog from "./app/RemoveLibraryDialog";
@@ -33,7 +32,6 @@ export default function App({
         <MiniPlayer />
         <ImportInputs />
         <AppFeedback />
-        <SearchOverlay />
         <TrackActionMenu />
         <AppContextMenu />
         <RemoveLibraryDialog />

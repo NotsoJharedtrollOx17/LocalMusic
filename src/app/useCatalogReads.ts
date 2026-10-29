@@ -39,14 +39,15 @@ export function useCatalogReads(
     key: string;
     failed: boolean;
   } | null>(null);
-  const key = JSON.stringify([state.query, onlyFavorites, sort]);
+  const key = JSON.stringify(["", onlyFavorites, sort]);
   const desiredKey = useRef(key);
   desiredKey.current = key;
   const libraryRequest = useRef(0);
   const groupRequest = useRef(0);
   const groupsRequest = useRef({ albums: 0, artists: 0 });
   const refresh = useCallback(
-    async (q = "", offset = 0) => {
+    async (_q = "", offset = 0) => {
+      const q = "";
       const options = { ...libraryOptions.current };
       const requestKey = JSON.stringify([
         q,

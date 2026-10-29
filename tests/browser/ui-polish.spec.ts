@@ -88,11 +88,13 @@ test("search starts with guidance and playlist Save stays reachable while its li
     .click();
   const search = page.getByRole("search");
   await expect(
-    search.getByRole("button", { name: "Close", exact: true }),
+    search.getByRole("button", { name: "Close search", exact: true }),
   ).toHaveCount(1);
-  await expect(search.locator(".search-prompt")).toBeVisible();
+  await expect(search.getByRole("status")).toBeVisible();
   await search.getByRole("searchbox").fill("no-music-with-this-name");
-  await expect(search).toContainText("No matching music");
+  await expect(page.locator(".search-empty")).toContainText(
+    "No matching music",
+  );
   await page.keyboard.press("Escape");
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page.getByRole("button", { name: "New playlist", exact: true }).click();

@@ -34,7 +34,7 @@ pub fn run() {
             commands::recommendations::set_suggestion_feedback,
             commands::recommendations::analysis_activity,
             commands::recommendations::analyze_next,
-            commands::catalog::search_catalog,
+            commands::catalog::filter_track_ids,
             commands::catalog::set_library_visibility,
             commands::sharing::share_audio,
             commands::sound::sound_capabilities,

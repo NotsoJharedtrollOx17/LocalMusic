@@ -86,7 +86,7 @@ export function PlayerSurface({
   useBackLayer(active, () =>
     view === "queue" ? onView("player") : collapse(),
   );
-  useFocusScope(ref, false, active);
+  useFocusScope(ref, active);
   const entered = useRef(false);
   useLayoutEffect(() => {
     if (!active || view !== "player" || entered.current) return;

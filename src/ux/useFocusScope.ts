@@ -3,7 +3,6 @@ import { useEffect, useRef, type RefObject } from "react";
 /** Own focus and scroll for an overlay, restoring the previous layer on exit. */
 export function useFocusScope(
   ref: RefObject<HTMLElement | null>,
-  keepPlayer = false,
   active = true,
 ) {
   const lastFocus = useRef<HTMLElement | null>(null);
@@ -13,9 +12,7 @@ export function useFocusScope(
     if (!node) return;
     // A suspended parent's old scope may have restored this host's prior inert
     // flag during the same commit. The active layer owns its availability.
-    const host = node.closest<HTMLElement>(
-      ".player-scrim,.modal-scrim,.search-surface",
-    );
+    const host = node.closest<HTMLElement>(".player-scrim,.modal-scrim");
     if (host) host.inert = false;
     const previous = document.activeElement as HTMLElement | null;
     const remember = (event: FocusEvent) => {
@@ -26,11 +23,9 @@ export function useFocusScope(
     document.body.style.overflow = "hidden";
     const background = Array.from(
       document.querySelectorAll<HTMLElement>(
-        ".content-shell,.sidebar,.bottom-nav,.mini-player,.search-surface,.player-scrim,.modal-scrim",
+        ".content-shell,.sidebar,.bottom-nav,.mini-player,.player-scrim,.modal-scrim",
       ),
-    ).filter(
-      (el) => !el.contains(node) && !(keepPlayer && el.matches(".mini-player")),
-    );
+    ).filter((el) => !el.contains(node));
     const prior = background.map((el) => el.inert);
     background.forEach((el) => (el.inert = true));
     const scope = () => [
@@ -40,11 +35,6 @@ export function useFocusScope(
           ".error-banner,.toast:has(button)",
         ),
       ),
-      ...(keepPlayer
-        ? Array.from(
-            document.querySelectorAll<HTMLElement>(".mini-player,.undo-banner"),
-          )
-        : []),
     ];
     const controls = () =>
       scope()
@@ -89,5 +79,5 @@ export function useFocusScope(
       if (previous?.isConnected && !previous.closest("[inert]"))
         previous.focus({ preventScroll: true });
     };
-  }, [ref, keepPlayer, active]);
+  }, [ref, active]);
 }

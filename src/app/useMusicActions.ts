@@ -132,6 +132,7 @@ export function useMusicActions(
     setBusy(false);
   }
   async function openPlaylist(p: Playlist) {
+    state.playlistOrigin.current = { scroll: window.scrollY, id: p.id };
     await act(async () => {
       remember(await api.tracksById(p.trackIds));
       setSelectedList(p);
@@ -139,10 +140,11 @@ export function useMusicActions(
       setEditingList(false);
     });
   }
-  function moveList(i: number, d: number) {
+  function moveList(i: number, d: number, shownIds?: string[]) {
     if (!selectedList) return;
     const ids = [...selectedList.trackIds];
-    const visible = ids.filter((id) => cache[id] && !cache[id].hidden);
+    const visible =
+      shownIds ?? ids.filter((id) => cache[id] && !cache[id].hidden);
     const from = ids.indexOf(visible[i]),
       to = ids.indexOf(visible[i + d]);
     if (from < 0 || to < 0) return;
