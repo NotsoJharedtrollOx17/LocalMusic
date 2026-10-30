@@ -74,5 +74,52 @@
       "available": true,
       "favorite": true
     }
+  ],
+  "ranking": [
+    {
+      "name": "Rain",
+      "query": "rain",
+      "rank": 0
+    },
+    {
+      "name": "Rain falls",
+      "query": "rain",
+      "rank": 1
+    },
+    {
+      "name": "After rain",
+      "query": "rain",
+      "rank": 2
+    },
+    {
+      "name": "Orbit",
+      "query": "rain",
+      "rank": 3
+    },
+    {
+      "name": "rain blue",
+      "query": "blue rain",
+      "rank": 2
+    },
+    {
+      "name": "FULL  Width",
+      "query": "full\twidth",
+      "rank": 0
+    },
+    {
+      "name": "Café",
+      "query": "CAFÉ",
+      "rank": 0
+    },
+    {
+      "name": "100%_real",
+      "query": "%_",
+      "rank": 2
+    },
+    {
+      "name": "Rain",
+      "query": "",
+      "rank": 0
+    }
   ]
 }

@@ -6,7 +6,7 @@ import { test, expect, type Page, type Locator } from "@playwright/test";
 
 async function revealSearch(page: Page) {
   if (!(await page.getByRole("searchbox").isVisible()))
-    await page.locator("[data-search-trigger] button").click();
+    await page.locator("[data-search-trigger] button").first().click();
 }
 async function fillSearch(page: Page, input: Locator, text: string) {
   await revealSearch(page);
@@ -577,10 +577,9 @@ for (const width of [1280, 390]) {
     await expect(page.locator(".track-copy strong")).toHaveText([
       "Blue after rain",
     ]);
-    await expect(page.locator("[data-search-trigger] button")).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await expect(
+      page.locator("[data-search-trigger] button").first(),
+    ).toHaveAttribute("aria-pressed", "true");
     await revealSearch(page);
     await expect(input).toHaveValue("rain");
     await input.press("Tab");
@@ -597,7 +596,7 @@ for (const width of [1280, 390]) {
     await page.keyboard.press("Escape");
     await expect(page.locator(".collection-count")).toHaveText("8 songs");
     await expect(
-      page.locator("[data-search-trigger] button"),
+      page.locator("[data-search-trigger] button").first(),
     ).not.toHaveAttribute("aria-pressed", "true");
     await revealSearch(page);
     await expect(input).toHaveValue("");
@@ -613,3 +612,104 @@ for (const width of [1280, 390]) {
     await expect(page.locator(".collection-count")).toHaveText("8 songs");
   });
 }
+
+test("collapsed query has a reachable clear button without reopening the field", async ({
+  page,
+}) => {
+  await seedInlineCatalog(page);
+  const input = page.getByRole("searchbox");
+  await revealSearch(page);
+  await input.fill("Needle");
+  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
+  await expect(
+    page.getByRole("button", { name: "Clear search", exact: true }),
+  ).toHaveCount(1);
+  await page.locator(".collection-count").click();
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    const clear = page
+      .locator("[data-search-trigger]")
+      .getByRole("button", { name: "Clear search", exact: true });
+    await expect(clear).toBeInViewport();
+    const box = await clear.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+  }
+  await page
+    .locator("[data-search-trigger]")
+    .getByRole("button", { name: "Clear search", exact: true })
+    .click();
+  await expect(input).toHaveCount(0);
+  await expect(page.locator(".collection-count")).toHaveText("130 songs");
+  await expect(
+    page.locator("[data-search-trigger] button").first(),
+  ).toBeFocused();
+});
+
+test("search prioritizes primary names before pagination but preserves playlist order", async ({
+  page,
+}) => {
+  await seedInlineCatalog(page);
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const r = indexedDB.open("local-music-v1");
+      r.onsuccess = () => resolve(r.result);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("tracks", "readwrite");
+      const store = tx.objectStore("tracks");
+      for (let i = 0; i < 130; i++) {
+        const r = store.get(`entry-${i}`);
+        r.onsuccess = () => {
+          const t = r.result;
+          t.title =
+            i === 129
+              ? "Rain"
+              : i === 128
+                ? "Rain falls"
+                : i === 127
+                  ? "After rain"
+                  : `A metadata ${i}`;
+          t.artist = `Rain person ${i}`;
+          t.album = t.title;
+          store.put(t, t.id);
+        };
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  });
+  await page.reload();
+  await revealSearch(page);
+  await page.getByRole("searchbox").fill("rain");
+  await expect(page.locator(".track-copy strong").first()).toHaveText("Rain");
+  await expect(page.locator(".track-copy strong").nth(1)).toHaveText(
+    "Rain falls",
+  );
+  await expect(page.locator(".track-copy strong").nth(2)).toHaveText(
+    "After rain",
+  );
+  await page.getByRole("tab", { name: "Albums", exact: true }).click();
+  await expect(page.locator(".album-card strong").first()).toHaveText("Rain");
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await revealSearch(page);
+  await page.getByRole("searchbox").fill("Needle");
+  await page
+    .getByRole("button", { name: /Needle playlist/ })
+    .first()
+    .click();
+  await revealSearch(page);
+  await page.getByRole("searchbox").fill("rain");
+  await expect(page.locator(".track-copy strong")).toHaveText([
+    "A metadata 0",
+    "A metadata 1",
+    "A metadata 2",
+    "Rain",
+  ]);
+});

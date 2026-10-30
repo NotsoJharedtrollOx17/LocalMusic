@@ -4,12 +4,13 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::path::Path;
 pub struct Store {
     pub connection: Connection,
-    pub(crate) group_search_cache:
-        std::cell::RefCell<std::collections::HashMap<String, (u64, Vec<(String, String, String)>)>>,
+    pub(crate) group_search_cache: std::cell::RefCell<
+        std::collections::HashMap<String, (u64, Vec<(String, String, String, String)>)>,
+    >,
     pub(crate) membership_cache:
         std::cell::RefCell<std::collections::BTreeMap<String, (u64, Vec<String>)>>,
     pub(crate) catalog_revision: std::cell::Cell<u64>,
-    pub(crate) search_cache: std::cell::RefCell<Option<(u64, Vec<(String, String)>)>>,
+    pub(crate) search_cache: std::cell::RefCell<Option<(u64, Vec<(String, String, String)>)>>,
 }
 const SCHEMA: &str = r#"
 PRAGMA foreign_keys=ON;

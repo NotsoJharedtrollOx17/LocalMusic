@@ -9,12 +9,12 @@ export class CatalogMatcher {
   private pending = new Map<
     number,
     {
-      resolve: (ids: Set<string>) => void;
+      resolve: (ids: Map<string, number>) => void;
       reject: (error: Error) => void;
       timer: ReturnType<typeof setTimeout>;
     }
   >();
-  private cache = new Map<string, Promise<Set<string>>>();
+  private cache = new Map<string, Promise<Map<string, number>>>();
   private fail = (message: string) => {
     this.worker?.terminate();
     this.worker = undefined;
@@ -30,7 +30,7 @@ export class CatalogMatcher {
     tracks: Pick<Track, "id" | "title" | "artist" | "album">[],
     generation: string | number,
     query: string,
-  ): Promise<Set<string>> {
+  ): Promise<Map<string, number>> {
     const key = JSON.stringify([generation, normalizeSearch(query)]);
     const cached = this.cache.get(key);
     if (cached) return cached;
@@ -42,18 +42,22 @@ export class CatalogMatcher {
       this.worker.onerror = () =>
         this.fail("Search is unavailable. Please retry.");
       this.worker.onmessage = (
-        event: MessageEvent<{ id: number; ids?: string[]; error?: string }>,
+        event: MessageEvent<{
+          id: number;
+          scores?: Array<[string, number]>;
+          error?: string;
+        }>,
       ) => {
         const request = this.pending.get(event.data.id);
         if (!request) return;
         clearTimeout(request.timer);
         this.pending.delete(event.data.id);
         if (event.data.error) request.reject(new Error(event.data.error));
-        else request.resolve(new Set(event.data.ids));
+        else request.resolve(new Map(event.data.scores));
       };
     }
     const id = ++this.sequence;
-    const result = new Promise<Set<string>>((resolve, reject) => {
+    const result = new Promise<Map<string, number>>((resolve, reject) => {
       const timer = setTimeout(
         () => this.fail("Search timed out. Please retry."),
         5000,

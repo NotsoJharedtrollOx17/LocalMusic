@@ -278,10 +278,10 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     .locator("#library-content .track-row")
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
+  await expect(page.getByRole("search")).toHaveCount(0);
   await page
-    .getByRole("search")
-    .getByRole("button", { name: "Close search", exact: true })
-    .last()
+    .locator("[data-search-trigger]")
+    .getByRole("button", { name: "Clear search", exact: true })
     .click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page

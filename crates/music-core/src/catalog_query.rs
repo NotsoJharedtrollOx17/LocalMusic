@@ -25,16 +25,31 @@ impl Store {
             None
         } else {
             Some(
-                serde_json::to_string(&self.matching_track_ids(query)?)
+                serde_json::to_string(&self.matching_track_scores(query)?)
                     .map_err(|e| e.to_string())?,
             )
         };
         let q = ids.unwrap_or_default();
-        let predicate="id NOT IN (SELECT track_id FROM hidden_tracks) AND (?4=0 OR json_extract(data,'$.favorite')=1) AND (?1='' OR id IN (SELECT value FROM json_each(?1)))";
+        let prefix = if q.is_empty() {
+            ""
+        } else {
+            "WITH matches AS (SELECT key AS track_id, CAST(value AS INTEGER) AS relevance FROM json_each(?1)) "
+        };
+        let from = if q.is_empty() {
+            "tracks"
+        } else {
+            "matches JOIN tracks ON tracks.id=matches.track_id"
+        };
+        let order = if q.is_empty() {
+            order
+        } else {
+            format!("matches.relevance,{order}")
+        };
+        let predicate="tracks.id NOT IN (SELECT track_id FROM hidden_tracks) AND (?4=0 OR json_extract(data,'$.favorite')=1)";
         let total = self
             .connection
             .query_row(
-                &format!("SELECT COUNT(*) FROM tracks WHERE {predicate}"),
+                &format!("{prefix}SELECT COUNT(*) FROM {from} WHERE {predicate}"),
                 params![q, limit.min(100), offset, favorite_only],
                 |r| r.get(0),
             )
@@ -42,7 +57,7 @@ impl Store {
         let mut st = self
             .connection
             .prepare(&format!(
-                "SELECT data FROM tracks WHERE {predicate} ORDER BY {order} LIMIT ?2 OFFSET ?3"
+                "{prefix}SELECT data FROM {from} WHERE {predicate} ORDER BY {order} LIMIT ?2 OFFSET ?3"
             ))
             .map_err(|e| e.to_string())?;
         let rows = st

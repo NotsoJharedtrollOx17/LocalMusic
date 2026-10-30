@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import { api } from "../api";
-import { matchesSearch, normalizeSearch } from "../search/match";
+import { matchesSearch, normalizeSearch, searchRank } from "../search/match";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import type { MusicAppState } from "./useAppState";
 import type { CatalogGroup, Playlist, Track } from "../types";
@@ -166,7 +166,9 @@ export function useInlineSearch(
                 start += page.groups.length;
                 if (!page.groups.length || start >= page.total) break;
               }
-              return found;
+              return found.sort(
+                (a, b) => searchRank(a.title, text) - searchRank(b.title, text),
+              );
             })();
             artistSearches.current.set(cacheKey, task);
             if (artistSearches.current.size > 24)
@@ -214,10 +216,16 @@ export function useInlineSearch(
             allTotal: all.total,
           };
         } else if (section === "playlists") {
-          const lists = state.lists.filter((p) => matchesSearch(p.title, q));
-          const defaults = automatic.filter((p) =>
-            matchesSearch(automaticPlaylistLabel(p, t), q),
-          );
+          const lists = state.lists
+            .filter((p) => matchesSearch(p.title, q))
+            .sort((a, b) => searchRank(a.title, q) - searchRank(b.title, q));
+          const defaults = automatic
+            .filter((p) => matchesSearch(automaticPlaylistLabel(p, t), q))
+            .sort(
+              (a, b) =>
+                searchRank(automaticPlaylistLabel(a, t), q) -
+                searchRank(automaticPlaylistLabel(b, t), q),
+            );
           result = {
             ...result,
             lists,

@@ -540,9 +540,13 @@ export class BrowserMusic implements MusicApi {
         key,
         query,
       );
-      groups = groups.filter((g) =>
-        matching.has(JSON.stringify([g.title, g.subtitle])),
-      );
+      groups = groups
+        .filter((g) => matching.has(JSON.stringify([g.title, g.subtitle])))
+        .sort(
+          (a, b) =>
+            matching.get(JSON.stringify([a.title, a.subtitle]))! -
+            matching.get(JSON.stringify([b.title, b.subtitle]))!,
+        );
     }
     return {
       groups: groups
@@ -583,7 +587,11 @@ export class BrowserMusic implements MusicApi {
           (!matching || matching.has(t.id)) &&
           (!options.favoriteOnly || t.favorite),
       )
-      .sort((a, b) => compareCatalogTracks(a, b, options.sort ?? "title"));
+      .sort(
+        (a, b) =>
+          (matching?.get(a.id) ?? 0) - (matching?.get(b.id) ?? 0) ||
+          compareCatalogTracks(a, b, options.sort ?? "title"),
+      );
     return {
       tracks: tracks.slice(offset, offset + limit).map((t) => this.present(t)),
       total: tracks.length,

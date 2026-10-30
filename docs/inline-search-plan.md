@@ -68,3 +68,8 @@ Research: [Scottish Government filters](https://designsystem.gov.scot/patterns/s
 
 - Clicking outside the search controls collapses the field while keeping the query, results and matching count. Mark the search icon while a query remains active. Reopening restores its text. Explicit Clear/Close keep their reset behavior.
 - Dismiss on click, after its target is fixed and before a menu measures its anchor; do not clear results or steal focus. Tab remains usable without dismissing the field. Keep text-edit menus and Clear/Retry interactions usable. Escape/Android Back clears an active retained query before collection navigation.
+
+## Review amendment - 30 October 2026
+
+- Add a clear X beside the active search icon when the field is collapsed, resetting only the text query and keeping the current sort/Favorites scope. Keep a single visible Clear control when the field is open.
+- Rank catalog matches by their view's primary name: exact normalized name, name beginning with the full query, all terms within that name, then matches requiring secondary metadata. Within a tier, preserve the current sort and stable tie-breaks. Empty queries retain existing order. Rank before pagination in Rust and the browser worker/adapter, with shared fixtures. Playlist overview ranks displayed localized names within its existing subdivisions. Preserve album/playlist track order when filtering a collection.

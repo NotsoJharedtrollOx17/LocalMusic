@@ -2,7 +2,7 @@ import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
 import SearchTriggerIcon from "./SearchTriggerIcon";
 import SearchEmpty from "./SearchEmpty";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, X } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryActions from "./LibraryActions";
 import { api } from "../api";
@@ -86,7 +86,7 @@ export default function LibraryPage() {
         <InlineSearch />
         <div className="heading-actions">
           {section !== "year" && (
-            <span data-search-trigger>
+            <span data-search-trigger className="search-trigger-controls">
               <IconButton
                 label={t.search}
                 active={inlineSearch.active}
@@ -99,6 +99,23 @@ export default function LibraryPage() {
               >
                 <SearchTriggerIcon />
               </IconButton>
+              {inlineSearch.active && !searchOpen && (
+                <IconButton
+                  label={t.clearSearch}
+                  onClick={() => {
+                    inlineSearch.clear();
+                    requestAnimationFrame(() =>
+                      document
+                        .querySelector<HTMLButtonElement>(
+                          "[data-search-trigger] button",
+                        )
+                        ?.focus({ preventScroll: true }),
+                    );
+                  }}
+                >
+                  <X size={20} />
+                </IconButton>
+              )}
             </span>
           )}
           <LibraryActions />

@@ -91,21 +91,26 @@ impl Store {
                 .into_iter()
                 .map(|(title, subtitle)| {
                     let text = normalize(&format!("{title} {subtitle}"));
-                    (title, subtitle, text)
+                    {
+                        let name = search::primary_name(&title);
+                        (title, subtitle, text, name)
+                    }
                 })
                 .collect::<Vec<_>>();
             cache.insert(kind.into(), (revision, labels));
         }
         let query = normalize(query);
         let terms = query.split_whitespace().collect::<Vec<_>>();
-        let labels = cache[kind]
+        let mut labels = cache[kind]
             .1
             .iter()
-            .filter(|(_, _, text)| terms.iter().all(|term| text.contains(term)))
+            .filter(|(_, _, text, _)| terms.iter().all(|term| text.contains(term)))
             .collect::<Vec<_>>();
+        let primary_query = search::primary_name(&query);
+        labels.sort_by_key(|(_, _, _, name)| search::normalized_relevance(name, &primary_query));
         let total = labels.len();
         let mut groups = Vec::new();
-        for (title, subtitle, _) in labels.into_iter().skip(offset).take(limit.min(60)) {
+        for (title, subtitle, _, _) in labels.into_iter().skip(offset).take(limit.min(60)) {
             let ids = self.group_ids(kind, &title, &subtitle)?;
             groups.push(CatalogGroup {
                 track: self
