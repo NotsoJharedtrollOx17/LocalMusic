@@ -281,15 +281,12 @@ export function useMusicApp(initialSettings?: Settings) {
   useLayoutEffect(() => {
     dismissMenu();
     state.setMenu(null);
-  }, [
-    section,
-    groupIdentity,
-    artistView,
-    selectedList?.id,
-    modal,
-    searchOpen,
-    shareRecap,
-  ]);
+  }, [section, groupIdentity, artistView, selectedList?.id, modal, shareRecap]);
+  useLayoutEffect(() => {
+    if (!searchOpen) return;
+    dismissMenu();
+    state.setMenu(null);
+  }, [searchOpen]);
   useEffect(() => {
     setSelectionMode(false);
     setSelectedIds([]);
@@ -502,7 +499,7 @@ export function useMusicApp(initialSettings?: Settings) {
     () => setSection("songs"),
   );
   useBackLayer(
-    !!group && !modal && (!searchOpen || section === "year") && !menu,
+    !!group && !modal && !searchOpen && !inlineSearch.active && !menu,
     backGroup,
   );
   useBackLayer(
@@ -510,6 +507,7 @@ export function useMusicApp(initialSettings?: Settings) {
       !!selectedList &&
       !modal &&
       !searchOpen &&
+      !inlineSearch.active &&
       !menu &&
       !selectionMode,
     () => {

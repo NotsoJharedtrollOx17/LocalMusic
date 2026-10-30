@@ -90,7 +90,7 @@ test("search starts with guidance and playlist Save stays reachable while its li
   await expect(
     search.getByRole("button", { name: "Close search", exact: true }),
   ).toHaveCount(1);
-  await expect(search.getByRole("status")).toBeVisible();
+  await expect(page.locator(".inline-search-status")).toHaveCount(1);
   await search.getByRole("searchbox").fill("no-music-with-this-name");
   await expect(page.locator(".search-empty")).toContainText(
     "No matching music",

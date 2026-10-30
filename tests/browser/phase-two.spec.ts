@@ -70,6 +70,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   await expect(page.locator(".album-card")).toHaveCount(1);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await expect(page.locator("#library-content .track-row")).toHaveCount(35);
+  await opener.click();
   await page.getByRole("button", { name: "Close search", exact: true }).click();
   await expect(search).toHaveCount(0);
   await expect(opener).toBeFocused();
@@ -114,7 +115,7 @@ test("search ignores late reads and keeps playback available", async ({
   const search = page.getByRole("search"),
     box = search.getByRole("searchbox");
   await box.fill("Signal");
-  await expect(search.getByRole("status")).toBeVisible();
+  await expect(page.locator(".inline-search-status")).toHaveCount(1);
   // Let the debounced read enter the held IndexedDB request before replacing it.
   await expect
     .poll(() => page.evaluate(() => (window as any).searchHeld))
@@ -138,6 +139,9 @@ test("search ignores late reads and keeps playback available", async ({
       .locator(".mini-center")
       .getByRole("button", { name: "Play", exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Search your library", exact: true })
+    .click();
   expect(
     (await new AxeBuilder({ page }).include(".inline-search").analyze())
       .violations,

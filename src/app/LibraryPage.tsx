@@ -89,6 +89,7 @@ export default function LibraryPage() {
             <span data-search-trigger>
               <IconButton
                 label={t.search}
+                active={inlineSearch.active}
                 onClick={() =>
                   searchOpen
                     ? inlineSearch.close()

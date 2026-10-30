@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { X, ArrowLeft } from "lucide-react";
 import { useBackLayer } from "../navigation";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -5,6 +6,7 @@ import { useMusicAppContext } from "./MusicAppContext";
 export default function InlineSearch() {
   const {
     searchOpen,
+    setSearchOpen,
     section,
     group,
     selectedList,
@@ -17,7 +19,28 @@ export default function InlineSearch() {
     t,
   } = useMusicAppContext();
   const visible = searchOpen && section !== "year";
-  useBackLayer(visible && !modal && !menu, () =>
+  useEffect(() => {
+    if (!visible) return;
+    const collapse = (event: MouseEvent) => {
+      if (
+        event
+          .composedPath()
+          .some(
+            (node) =>
+              node instanceof Element &&
+              node.matches(
+                ".inline-search,[data-search-trigger],.inline-search-status,.search-empty button,.action-menu",
+              ),
+          )
+      )
+        return;
+      // The click target is fixed; collapse before a menu measures its new anchor.
+      setSearchOpen(false);
+    };
+    document.addEventListener("click", collapse, true);
+    return () => document.removeEventListener("click", collapse, true);
+  }, [visible, setSearchOpen]);
+  useBackLayer((visible || inlineSearch.active) && !modal && !menu, () =>
     query ? inlineSearch.clear() : inlineSearch.close(),
   );
   if (!visible) return null;

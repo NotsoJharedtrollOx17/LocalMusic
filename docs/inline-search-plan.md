@@ -62,3 +62,9 @@ Research: [Scottish Government filters](https://designsystem.gov.scot/patterns/s
 
 - Use the existing collection heading for the live matching/total counter, replacing the visible search caption. Keep completed result announcements available to screen readers. Playlist detail metadata carries its scoped count.
 - Above 1024 CSS px, open the field immediately left of the search icon on the navigation row. At 1024 px and below, reflow the same input below the tabs at full width; preserve input focus/query across resizing and high zoom. Retain Clear/Close, no width animation, and delayed loading/inline Retry.
+
+
+## Review amendment - outside dismissal
+
+- Clicking outside the search controls collapses the field while keeping the query, results and matching count. Mark the search icon while a query remains active. Reopening restores its text. Explicit Clear/Close keep their reset behavior.
+- Dismiss on click, after its target is fixed and before a menu measures its anchor; do not clear results or steal focus. Tab remains usable without dismissing the field. Keep text-edit menus and Clear/Retry interactions usable. Escape/Android Back clears an active retained query before collection navigation.

@@ -3,7 +3,7 @@ import { useMusicAppContext } from "./MusicAppContext";
 export default function InlineSearchStatus() {
   const { searchOpen, section, inlineSearch, settings, t } =
     useMusicAppContext();
-  if (!searchOpen || section === "year") return null;
+  if ((!searchOpen && !inlineSearch.active) || section === "year") return null;
   const page = inlineSearch.page;
   return (
     <div
