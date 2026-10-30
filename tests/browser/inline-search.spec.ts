@@ -120,7 +120,9 @@ test("search reaches unloaded tracks/groups and preserves pagination and filtere
   await expect(page.locator(".album-card strong")).toHaveText(["Person 129"]);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await input.fill("Song");
-  await expect(page.getByRole("search")).toContainText("128 of 130 results");
+  await expect(page.locator(".collection-count")).toHaveText(
+    "128 of 130 songs",
+  );
   const firstHeight = await page
     .locator(".track-list")
     .evaluate((node) => node.getBoundingClientRect().height);
@@ -205,6 +207,10 @@ test("late worker replies cannot replace newer results; controls stay reachable"
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const input = page.getByRole("searchbox");
+  const resultTop = await page
+    .locator(".track-row")
+    .first()
+    .evaluate((node) => node.getBoundingClientRect().top);
   await input.fill("Signal");
   await expect
     .poll(() => page.evaluate(() => (window as any).searchHeld))
@@ -213,6 +219,17 @@ test("late worker replies cannot replace newer results; controls stay reachable"
     "aria-busy",
     "true",
   );
+  await expect(
+    page.locator("[data-search-trigger] .loading-indicator"),
+  ).toBeVisible();
+  expect(
+    Math.abs(
+      (await page
+        .locator(".track-row")
+        .first()
+        .evaluate((node) => node.getBoundingClientRect().top)) - resultTop,
+    ),
+  ).toBeLessThanOrEqual(1);
   await input.fill("rain");
   await expect(page.locator(".track-copy strong")).toHaveText([
     "Blue after rain",
@@ -257,10 +274,12 @@ test("worker failure offers inline Retry without losing the query", async ({
     .click();
   const input = page.getByRole("searchbox");
   await input.fill("rain");
-  await expect(page.getByRole("search")).toContainText("Search could not load");
+  await expect(page.locator(".inline-search-status")).toContainText(
+    "Search could not load",
+  );
   await expect(input).toHaveValue("rain");
   await page
-    .getByRole("search")
+    .locator(".inline-search-status")
     .getByRole("button", { name: "Try again", exact: true })
     .click();
   await expect(page.locator(".track-copy strong")).toHaveText([
@@ -390,4 +409,107 @@ test("Favorites and sort combine with a live query without onboarding flashes", 
   ]);
   await expect(page.locator(".empty-library,.empty-favorites")).toHaveCount(0);
   await expect(page.getByRole("searchbox")).toHaveValue("needle");
+});
+
+test("search shares the heading count and reflows from desktop left expansion to a narrow row", async ({
+  page,
+}) => {
+  await seedInlineCatalog(page);
+  await page
+    .getByRole("button", { name: "Search your library", exact: true })
+    .click();
+  const input = page.getByRole("searchbox");
+  const count = page.locator(".collection-count");
+  await expect(count).toHaveText("130 songs");
+  await expect(page.locator(".inline-search-status")).toBeEmpty();
+  await input.fill("129");
+  await expect(count).toHaveText("1 of 130 songs");
+  await expect(count).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator(".search-announcement")).toHaveText(
+    "1 of 130 results",
+  );
+  for (const [tab, text] of [
+    ["Albums", "1 of 130 albums"],
+    ["Artists", "1 of 130 artists"],
+  ]) {
+    await page.getByRole("tab", { name: tab, exact: true }).click();
+    await expect(count).toHaveText(text);
+  }
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await input.fill("Needle");
+  await expect(count).toHaveText("1 of 5 playlists");
+  for (const width of [1600, 1280, 1154, 1025]) {
+    await page.setViewportSize({ width, height: 800 });
+    await input.focus();
+    const geometry = await page.evaluate(() => {
+      const field = document
+        .querySelector(".inline-search")!
+        .getBoundingClientRect();
+      const icon = document
+        .querySelector("[data-search-trigger]")!
+        .getBoundingClientRect();
+      return {
+        right: field.right,
+        iconLeft: icon.left,
+        centers: Math.abs(
+          field.y + field.height / 2 - icon.y - icon.height / 2,
+        ),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    expect(geometry.right).toBeLessThanOrEqual(geometry.iconLeft + 1);
+    expect(geometry.centers).toBeLessThanOrEqual(1);
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    await expect(input).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Clear search", exact: true }),
+    ).toBeInViewport();
+  }
+  await page.screenshot({
+    path: "artifacts/inline-search-desktop-header.png",
+    fullPage: true,
+  });
+  for (const width of [1024, 390, 320]) {
+    await page.setViewportSize({ width, height: 600 });
+    const geometry = await page.evaluate(() => {
+      const field = document
+        .querySelector(".inline-search")!
+        .getBoundingClientRect();
+      const tabs = document
+        .querySelector(".section-tabs")!
+        .getBoundingClientRect();
+      const nav = document
+        .querySelector(".library-navigation")!
+        .getBoundingClientRect();
+      return {
+        top: field.top,
+        tabsBottom: tabs.bottom,
+        left: Math.abs(field.left - nav.left),
+        right: Math.abs(field.right - nav.right),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    expect(geometry.top).toBeGreaterThanOrEqual(geometry.tabsBottom - 1);
+    expect(geometry.left).toBeLessThanOrEqual(1);
+    expect(geometry.right).toBeLessThanOrEqual(1);
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    await expect(input).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Close search", exact: true }),
+    ).toBeInViewport();
+  }
+  const settings = await openSettings(page);
+  await settings.getByRole("button", { name: /Espa/, exact: false }).click();
+  await settings.getByRole("button", { name: "Oscuro", exact: true }).click();
+  await settings.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await input.fill("Favoritas");
+  await expect(count).toHaveText("1 de 5 listas");
+  await page.screenshot({
+    path: "artifacts/inline-search-narrow-header.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Borrar b\u00fasqueda", exact: true })
+    .click();
+  await expect(count).toHaveText("5 listas");
 });

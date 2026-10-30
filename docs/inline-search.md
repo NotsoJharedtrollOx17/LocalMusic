@@ -4,7 +4,7 @@ The v0.12.0 feature branch replaces the grouped popup with scoped filtering in t
 
 ## Interaction
 
-The search icon or `/` reveals an inline field beneath navigation. A query follows the main Songs, Albums, Artists and Playlists tabs. Your Recap suspends search. Opening a collection starts clear; Back restores the parent query, scroll and originating control. Within artist details, Songs and Albums search their corresponding metadata. Playlist overview matching uses displayed saved/automatic names, including localized automatic names.
+The search icon or `/` reveals an inline field immediately left of the search icon above 1024 CSS px. At narrower widths (including high zoom), the same field reflows into a full-width row below the tabs, preserving its value and focus. No width animation moves the tabs while typing. A query follows the main Songs, Albums, Artists and Playlists tabs. Your Recap suspends search. Opening a collection starts clear; Back restores the parent query, scroll and originating control. Within artist details, Songs and Albums search their corresponding metadata. Playlist overview matching uses displayed saved/automatic names, including localized automatic names.
 
 Clear empties the current query; Close also collapses the field. Escape and Android Back first clear a query, then close the empty field before leaving a collection. Enter applies pending input immediately and never starts playback. Results remain ordinary rows/cards with existing actions. Filtering does not save or reorder a queue or playlist; editing maps displayed IDs to original membership positions. Query changes clear song selection to prevent invisible bulk actions.
 
@@ -16,7 +16,7 @@ Rust owns native matching and keeps one normalized catalog index per Store, inva
 
 `groups(kind, offset, query)` filters group labels before paging/resolving memberships. `filterTrackIds(ids, query)` preserves the supplied ID order. Paged `listTracks` uses the same matching semantics. The retired grouped-search API, command, popup and exclusive overlay behavior were removed.
 
-React updates input immediately and debounces uncached query work by 160 ms. Scope changes, Clear, Enter and cached pages avoid another debounce. The view cache holds at most 24 result pages; the worker keeps at most 32 query results and one active index. Scope/query/options/catalog revision/membership keys and request sequences reject stale replies. Retained stale content is marked busy/inert until confirmed; delayed progress and inline errors/Retry stay beside the field. A polite status announces completed matching/total counts.
+React updates input immediately and debounces uncached query work by 160 ms. Scope changes, Clear, Enter and cached pages avoid another debounce. The view cache holds at most 24 result pages; the worker keeps at most 32 query results and one active index. Scope/query/options/catalog revision/membership keys and request sequences reject stale replies. Retained stale content is marked busy/inert until confirmed; delayed progress and inline errors/Retry stay beside the field. The main collection heading shows matching/total counts (for example, "3 of 69 albums"); Clear restores the ordinary total. Playlist details use their existing metadata line. A visually hidden polite status announces completed results without an extra visible caption under the field. Delayed loading uses the existing search-icon space so the result rows stay fixed. Failures retain an inline Retry outside the busy result region.
 
 ## Measurement and evidence
 

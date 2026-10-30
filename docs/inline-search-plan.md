@@ -56,3 +56,9 @@ Research: [Scottish Government filters](https://designsystem.gov.scot/patterns/s
 - Check EN/ES, themes, keyboard/focus, Reduce Motion, 320/390 px, short windows and native zoom.
 - Run frontend checks, complete browser suite, Rust core/native and Kotlin regressions. Build Windows/ARM64 Android and verify metadata, signature, native hashes and frozen assets.
 - Record results/platform gates in `docs/verification.md`; commit for review. Integration/release require a subsequent request.
+
+
+## Review amendment - 29 October 2026
+
+- Use the existing collection heading for the live matching/total counter, replacing the visible search caption. Keep completed result announcements available to screen readers. Playlist detail metadata carries its scoped count.
+- Above 1024 CSS px, open the field immediately left of the search icon on the navigation row. At 1024 px and below, reflow the same input below the tabs at full width; preserve input focus/query across resizing and high zoom. Retain Clear/Close, no width animation, and delayed loading/inline Retry.

@@ -14,6 +14,9 @@ export default function LibraryToolbar() {
     groupsTotal,
     selectedGroupPage,
     group,
+    artistView,
+    artistAlbums,
+    artistAlbumsLoading,
     busy,
     fileInput,
     t,
@@ -22,11 +25,17 @@ export default function LibraryToolbar() {
   const songFilters = section === "songs" && !group;
   const favorites = songFilters && onlyFavorites;
   const kind =
-    !group && (section === "albums" || section === "artists")
-      ? section
-      : "songs";
+    group?.kind === "artists" && artistView === "albums"
+      ? "albums"
+      : !group && (section === "albums" || section === "artists")
+        ? section
+        : "songs";
   const count = group
-    ? group.ids.length
+    ? artistView === "albums" && group.kind === "artists"
+      ? artistAlbumsLoading && !artistAlbums.length
+        ? null
+        : artistAlbums.length
+      : group.ids.length
     : songFilters
       ? libraryViewPending || libraryError
         ? null

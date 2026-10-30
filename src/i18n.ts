@@ -9,6 +9,7 @@ export const en = {
   searching: "Searching\u2026",
   searchFailed: "Search could not load. Try again.",
   searchCount: "{count} of {total} results",
+  searchHeadingCount: "{count} of {collection}",
 
   addArtist: "Add artist",
   removeArtist: "Remove artist",
@@ -304,6 +305,7 @@ export const es: typeof en = {
   searching: "Buscando\u2026",
   searchFailed: "No se pudo cargar la b\u00fasqueda. Int\u00e9ntalo de nuevo.",
   searchCount: "{count} de {total} resultados",
+  searchHeadingCount: "{count} de {collection}",
 
   addArtist: "Agregar artista",
   removeArtist: "Quitar artista",

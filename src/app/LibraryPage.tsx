@@ -1,4 +1,6 @@
 import InlineSearch from "./InlineSearch";
+import InlineSearchStatus from "./InlineSearchStatus";
+import SearchTriggerIcon from "./SearchTriggerIcon";
 import SearchEmpty from "./SearchEmpty";
 import { Search, ArrowLeft } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
@@ -67,7 +69,12 @@ export default function LibraryPage() {
       {...(!group && !selectionMode ? motion.swipe : {})}
       className={"library-page" + (motion.compact ? " is-compact" : "")}
     >
-      <div className="page-heading library-navigation">
+      <div
+        className={
+          "page-heading library-navigation" +
+          (searchOpen && section !== "year" ? " has-inline-search" : "")
+        }
+      >
         {group ? (
           <button className="text-button group-back" onClick={backGroup}>
             <ArrowLeft size={17} />
@@ -76,6 +83,7 @@ export default function LibraryPage() {
         ) : (
           <LibraryTabs />
         )}
+        <InlineSearch />
         <div className="heading-actions">
           {section !== "year" && (
             <span data-search-trigger>
@@ -88,14 +96,14 @@ export default function LibraryPage() {
                       requestAnimationFrame(() => searchInput.current?.focus()))
                 }
               >
-                <Search size={25} />
+                <SearchTriggerIcon />
               </IconButton>
             </span>
           )}
           <LibraryActions />
         </div>
       </div>
-      <InlineSearch />
+      <InlineSearchStatus />
       <div
         id="library-content"
         role={!group ? "tabpanel" : undefined}

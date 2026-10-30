@@ -11,26 +11,37 @@ export default function CollectionCountHeading({
   prefix?: string;
   id?: string;
 }) {
-  const { t, settings, formatMusicCount } = useMusicAppContext();
+  const { t, settings, formatMusicCount, inlineSearch } = useMusicAppContext();
   const singular = {
     albums: t.albumSingular,
     artists: t.artistSingular,
     playlists: t.playlistSingular,
   };
-  const text =
+  const formatCount = (count: number | null) =>
     count === null
       ? "\u00a0"
       : kind === "songs"
         ? formatMusicCount(count, true)
         : `${count.toLocaleString(settings?.language)} ${count === 1 ? singular[kind] : t[kind].toLocaleLowerCase(settings?.language)}`;
+  const matching = inlineSearch.active ? inlineSearch.page : undefined;
+  const shown = matching?.total ?? count;
+  const text = matching
+    ? t.searchHeadingCount
+        .replace("{count}", matching.total.toLocaleString(settings?.language))
+        .replace("{collection}", formatCount(matching.allTotal))
+    : formatCount(shown);
   return (
     <h2
       className="collection-count"
       id={id}
-      aria-busy={count === null}
-      aria-label={count === null ? t[kind] : undefined}
+      aria-busy={
+        shown === null ||
+        (inlineSearch.active &&
+          (inlineSearch.pending || Boolean(inlineSearch.error)))
+      }
+      aria-label={shown === null ? t[kind] : undefined}
     >
-      {count !== null && prefix ? `${prefix} · ${text}` : text}
+      {shown !== null && prefix ? `${prefix} · ${text}` : text}
     </h2>
   );
 }
