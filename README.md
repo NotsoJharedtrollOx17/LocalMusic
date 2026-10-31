@@ -92,7 +92,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.11.0` include the reviewed focus and Your Recap improvements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.11.0 release notes](docs/releases/v0.11.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.12.0` include the reviewed inline Library search and playlist-search improvements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.12.0 release notes](docs/releases/v0.12.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 

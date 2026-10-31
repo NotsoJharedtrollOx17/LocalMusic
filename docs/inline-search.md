@@ -1,6 +1,6 @@
 # Inline Library search
 
-The v0.12.0 feature branch replaces the grouped popup with scoped filtering in the current view. The application version remains 0.11.0 until release approval. See [the approved plan](inline-search-plan.md).
+Released in v0.12.0, inline Library search replaces the grouped popup with scoped filtering in the current view. See [the approved plan](inline-search-plan.md).
 
 ## Interaction
 
