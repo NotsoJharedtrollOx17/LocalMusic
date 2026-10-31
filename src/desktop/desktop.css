@@ -175,6 +175,12 @@
   height: var(--companion-play);
 }
 @media (max-width: 480px) {
+  .standalone-player .player-surface-head {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .standalone-player .player-header-actions {
+    flex-wrap: nowrap;
+  }
   .companion-shell .visualizer-header {
     grid-template-columns: 44px minmax(0, 1fr) auto;
   }

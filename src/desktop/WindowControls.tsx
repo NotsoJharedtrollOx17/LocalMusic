@@ -15,25 +15,21 @@ export default function WindowControls({ view }: { view: DetachedView }) {
     detached = companionView === view;
   return (
     <div className="window-controls" data-window-controls>
-      {!(detached && view === "player") && (
-        <IconButton
-          label={detached ? t.returnToMain : t.detachWindow}
-          disabled={
-            entry?.phase === "opening" || entry?.phase === "transferring"
-          }
-          onClick={() =>
-            void act(() =>
-              desktop.action(
-                detached
-                  ? { op: "return", view }
-                  : { op: "open", view, queue: modal === "queue" },
-              ),
-            )
-          }
-        >
-          {detached ? <PanelTopClose size={20} /> : <ExternalLink size={20} />}
-        </IconButton>
-      )}
+      <IconButton
+        label={detached ? t.returnToMain : t.detachWindow}
+        disabled={entry?.phase === "opening" || entry?.phase === "transferring"}
+        onClick={() =>
+          void act(() =>
+            desktop.action(
+              detached
+                ? { op: "return", view }
+                : { op: "open", view, queue: modal === "queue" },
+            ),
+          )
+        }
+      >
+        {detached ? <PanelTopClose size={20} /> : <ExternalLink size={20} />}
+      </IconButton>
       {detached && (
         <IconButton
           label={t.alwaysOnTop}

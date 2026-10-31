@@ -28,7 +28,7 @@ export default function PlayerDialog() {
         <PlayerSurface
           standalone={companionView === "player"}
           title={view === "queue" ? t.queue : t.nowPlaying}
-          closeLabel={companionView === "player" ? t.returnToMain : t.close}
+          closeLabel={t.close}
           view={view}
           active={modal === "player" || modal === "queue"}
           trackId={current.id}

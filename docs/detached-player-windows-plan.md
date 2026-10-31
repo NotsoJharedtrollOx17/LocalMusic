@@ -56,3 +56,8 @@ Both native windows remain resizable with the existing 360 x 480 logical minimum
 ## Amendment - close detached windows without reopening a popup
 
 Approved by user follow-up. The native Close button dismisses either detached view after its renderer and visualizer lease have been released, while playback continues. It does not bring Library to the foreground or enqueue the view for in-app presentation. The explicit Return to main control retains its existing behavior, as do recovery after unexpected destruction and main-window shutdown. Preserve per-session bounds and generation checks. Verify native Close for both views, explicit Return, playback and visualizer ownership.
+
+
+## Amendment - Back dismisses detached views
+
+The Back/Close arrow and Escape dismiss a detached Now Playing or Visualizer window instead of restoring a popup. Escape from Queue first returns to Now Playing; open menus and dialogs dismiss first. The explicit Return to main control continues to restore the view. The dismissal uses the existing native Close cleanup and generation ownership.

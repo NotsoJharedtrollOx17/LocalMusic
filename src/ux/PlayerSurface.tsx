@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ChevronDown, PanelTopClose } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { IconButton } from "../components";
 import { useBackLayer } from "../navigation";
 import { reducedMotion } from "./motion";
@@ -153,7 +153,7 @@ export function PlayerSurface({
           }}
         >
           <IconButton label={closeLabel} onClick={collapse}>
-            {standalone ? <PanelTopClose /> : <ChevronDown />}
+            {standalone ? <ArrowLeft /> : <ChevronDown />}
           </IconButton>
           <h2>{title}</h2>
           {headerAction}

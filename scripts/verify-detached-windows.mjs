@@ -94,6 +94,8 @@ try {
     expect(sizes.art).toBeLessThanOrEqual(513);
     expect(sizes.overflow).toBeLessThanOrEqual(1);
     evidence.playerSizing.push(sizes);
+    if (width === 360)
+      await player.screenshot({ path: `${output}/player-min.png` });
   }
   expect(evidence.playerSizing[2].title).toBeGreaterThan(
     evidence.playerSizing[0].title,
@@ -250,10 +252,14 @@ try {
     .click();
   const reopenedVisualizer = await find("visualizer");
   await expect(reopenedVisualizer.locator("canvas")).toBeVisible();
-  await os("close", "Visualizador");
+  await reopenedVisualizer
+    .getByRole("button", { name: "Volver", exact: true })
+    .click();
   await expect
     .poll(async () => (await invoke(main, "desktop_state")).windows.length)
     .toBe(1);
+  await expect(main.locator(".visualizer-view")).toHaveCount(0);
+  evidence.visualizerBackDismisses = true;
   evidence.visualizerReopenedAfterClose = true;
   await os("close", "Reproduciendo");
   await expect
@@ -272,9 +278,25 @@ try {
     .click();
   const reopenedPlayer = await find("player");
   await reopenedPlayer
-    .getByRole("button", { name: "Cola", exact: true })
+    .getByRole("button", { name: "Cerrar", exact: true })
     .click();
-  await reopenedPlayer
+  await expect
+    .poll(async () => (await invoke(main, "desktop_state")).windows.length)
+    .toBe(0);
+  await expect(
+    main.getByRole("dialog", { name: "Reproduciendo", exact: true }),
+  ).toHaveCount(0);
+  evidence.playerBackDismisses = true;
+  await main.locator(".mini-track").click();
+  await main
+    .getByRole("button", {
+      name: "Abrir en ventana independiente",
+      exact: true,
+    })
+    .click();
+  const finalPlayer = await find("player");
+  await finalPlayer.getByRole("button", { name: "Cola", exact: true }).click();
+  await finalPlayer
     .getByRole("button", { name: "Volver a la ventana principal", exact: true })
     .click();
   await expect(

@@ -19,7 +19,7 @@ export type WindowAction =
   | { op: "appearance"; dark: boolean }
   | { op: "open"; view: DetachedView; queue: boolean }
   | { op: "ready" | "released"; view: DetachedView; generation: number }
-  | { op: "return"; view: DetachedView }
+  | { op: "return" | "dismiss"; view: DetachedView }
   | { op: "pin"; view: DetachedView; value: boolean }
   | { op: "queue"; value: boolean }
   | {

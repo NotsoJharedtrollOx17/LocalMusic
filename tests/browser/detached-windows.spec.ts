@@ -248,6 +248,36 @@ test("detached content grows and shrinks with the window within readable bounds"
           requestAnimationFrame(() => requestAnimationFrame(r)),
         ),
     );
+    if (size.width === 360) {
+      const layout = await player.evaluate(() => {
+        const head = document.querySelector(".player-surface-head")!;
+        const title = head.querySelector("h2")!.getBoundingClientRect();
+        const buttons = [...head.querySelectorAll("button")].map((b) =>
+          b.getBoundingClientRect(),
+        );
+        return {
+          title: { left: title.left, right: title.right },
+          buttons: buttons.map((b) => ({
+            top: b.top,
+            left: b.left,
+            right: b.right,
+          })),
+        };
+      });
+      expect(
+        Math.max(...layout.buttons.map((b) => b.top)) -
+          Math.min(...layout.buttons.map((b) => b.top)),
+      ).toBeLessThanOrEqual(1);
+      expect(layout.buttons[0].right).toBeLessThanOrEqual(
+        layout.title.left + 1,
+      );
+      expect(layout.title.right).toBeLessThanOrEqual(
+        layout.buttons[1].left + 1,
+      );
+      await player.screenshot({
+        path: "artifacts/detached-window-back/player-compact-final.png",
+      });
+    }
     const metrics = await player.evaluate(() => {
       const art = document
           .querySelector(".player-cover")!
@@ -320,4 +350,44 @@ test("detached content grows and shrinks with the window within readable bounds"
       p.getByRole("button", { name: "Play", exact: true }),
     ).toBeInViewport();
   }
+});
+
+test("detached Back controls dismiss views without restoring popups", async ({
+  page,
+  context,
+}) => {
+  const f = new DetachedFixture(context);
+  await f.attach(page);
+  await page.goto("/");
+  await page.locator(".mini-track").click();
+  await page.getByRole("button", { name: "Open in separate window" }).click();
+  await expect.poll(() => f.windows[0]?.phase).toBe("detached");
+  const player = f.children.get("player")!;
+  await player.getByRole("button", { name: "Queue", exact: true }).click();
+  await player.keyboard.press("Escape");
+  await expect(
+    player.getByRole("dialog", { name: "Now playing" }),
+  ).toBeVisible();
+  await player.getByRole("button", { name: "Player options" }).click();
+  await player.keyboard.press("Escape");
+  await expect(
+    player.getByRole("dialog", { name: "Now playing" }),
+  ).toBeVisible();
+  await player.getByRole("button", { name: "Close", exact: true }).click();
+  await expect.poll(() => f.windows.length).toBe(0);
+  await expect(page.getByRole("dialog", { name: "Now playing" })).toHaveCount(
+    0,
+  );
+
+  await page.locator(".mini-track").click();
+  await page.getByRole("button", { name: "Player options" }).click();
+  await page.getByRole("menuitem", { name: "Visualizer", exact: true }).click();
+  await expect
+    .poll(() => f.windows.find((e) => e.view === "visualizer")?.phase)
+    .toBe("detached");
+  const visualizer = f.children.get("visualizer")!;
+  await visualizer.getByRole("button", { name: "Back", exact: true }).click();
+  await expect.poll(() => f.windows.length).toBe(0);
+  await expect(page.getByRole("dialog", { name: "Visualizer" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Now playing" })).toBeVisible();
 });

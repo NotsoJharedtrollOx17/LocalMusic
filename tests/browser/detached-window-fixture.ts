@@ -2,6 +2,7 @@ import type { BrowserContext, Page } from "@playwright/test";
 import type { WindowEntry } from "../../src/desktop/windows";
 /** Deterministic IPC/lifecycle simulation; native acceptance is exercised separately. */
 export class DetachedFixture {
+  dismissed = new Set<string>();
   windows: WindowEntry[] = [];
   children = new Map<string, Page>();
   listeners = new Map<Page, Array<{ event: string; handler: number }>>();
@@ -178,12 +179,15 @@ export class DetachedFixture {
             } else if (entry.phase === "returning") {
               this.windows = this.windows.filter((e) => e !== entry);
               await this.emit("desktop://windows", this.windows);
-              await this.emit("desktop://returned", entry);
+              if (!this.dismissed.has(entry.view))
+                await this.emit("desktop://returned", entry);
+              this.dismissed.delete(entry.view);
               setTimeout(() => void page.close(), 50);
             }
             return;
           }
-          if (a.op === "return" && entry) {
+          if ((a.op === "return" || a.op === "dismiss") && entry) {
+            if (a.op === "dismiss") this.dismissed.add(entry.view);
             entry.phase = "returning";
             await this.emit("desktop://windows", this.windows);
             return;

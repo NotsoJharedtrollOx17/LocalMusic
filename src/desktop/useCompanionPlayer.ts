@@ -87,7 +87,7 @@ export function useCompanionPlayer(
         state.setModal(previous);
         return;
       }
-      void act(() => desktop.action({ op: "return", view }));
+      void act(() => desktop.action({ op: "dismiss", view }));
       return;
     }
     if (next === "visualizer" && view === "player") {

@@ -72,6 +72,7 @@ pub enum Action {
     Ready { view: View, generation: u64 },
     Released { view: View, generation: u64 },
     Return { view: View },
+    Dismiss { view: View },
     Pin { view: View, value: bool },
     Queue { value: bool },
     Appearance { dark: bool },
@@ -374,6 +375,12 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                 return Err("Window mismatch".into());
             }
             begin_return(app, view, false);
+        }
+        Action::Dismiss { view } => {
+            if caller != view.label() {
+                return Err("Window mismatch".into());
+            }
+            begin_return(app, view, true);
         }
         Action::Pin { view, value } => {
             if caller != view.label() {
