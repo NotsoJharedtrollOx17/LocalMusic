@@ -1,3 +1,4 @@
+import ClearSearchButton from "./ClearSearchButton";
 import { Plus } from "lucide-react";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -52,6 +53,7 @@ export default function LibraryToolbar() {
         prefix={favorites ? t.favorites : undefined}
       />
       <div className="toolbar-actions">
+        <ClearSearchButton />
         <LibraryFilters />
         <button
           className="button primary library-import"

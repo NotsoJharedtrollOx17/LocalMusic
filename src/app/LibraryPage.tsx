@@ -2,7 +2,7 @@ import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
 import SearchTriggerIcon from "./SearchTriggerIcon";
 import SearchEmpty from "./SearchEmpty";
-import { Search, ArrowLeft, X } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryActions from "./LibraryActions";
 import { api } from "../api";
@@ -99,23 +99,6 @@ export default function LibraryPage() {
               >
                 <SearchTriggerIcon />
               </IconButton>
-              {inlineSearch.active && !searchOpen && (
-                <IconButton
-                  label={t.clearSearch}
-                  onClick={() => {
-                    inlineSearch.clear();
-                    requestAnimationFrame(() =>
-                      document
-                        .querySelector<HTMLButtonElement>(
-                          "[data-search-trigger] button",
-                        )
-                        ?.focus({ preventScroll: true }),
-                    );
-                  }}
-                >
-                  <X size={20} />
-                </IconButton>
-              )}
             </span>
           )}
           <LibraryActions />
@@ -124,12 +107,17 @@ export default function LibraryPage() {
       <InlineSearchStatus />
       <div
         id="library-content"
+        data-search-reset={inlineSearch.resetPhase || undefined}
         role={!group ? "tabpanel" : undefined}
         aria-labelledby={!group ? "tab-" + section : undefined}
-        aria-busy={inlineSearch.active ? inlineSearch.pending : undefined}
+        aria-busy={
+          inlineSearch.resetPhase === "out" ||
+          (inlineSearch.active ? inlineSearch.pending : false)
+        }
         inert={
-          inlineSearch.active &&
-          (inlineSearch.stale || Boolean(inlineSearch.error))
+          inlineSearch.resetPhase === "out" ||
+          (inlineSearch.active &&
+            (inlineSearch.stale || Boolean(inlineSearch.error)))
         }
       >
         {group && (

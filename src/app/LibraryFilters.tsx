@@ -14,6 +14,7 @@ export default function LibraryFilters() {
       <button
         type="button"
         className="icon-button"
+        data-library-filters
         aria-label={t.libraryFilters}
         aria-haspopup="menu"
         aria-expanded={!!anchor}

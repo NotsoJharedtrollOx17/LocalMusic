@@ -73,3 +73,8 @@ Research: [Scottish Government filters](https://designsystem.gov.scot/patterns/s
 
 - Add a clear X beside the active search icon when the field is collapsed, resetting only the text query and keeping the current sort/Favorites scope. Keep a single visible Clear control when the field is open.
 - Rank catalog matches by their view's primary name: exact normalized name, name beginning with the full query, all terms within that name, then matches requiring secondary metadata. Within a tier, preserve the current sort and stable tie-breaks. Empty queries retain existing order. Rank before pagination in Rust and the browser worker/adapter, with shared fixtures. Playlist overview ranks displayed localized names within its existing subdivisions. Preserve album/playlist track order when filtering a collection.
+
+## Review amendment - clear placement and reset motion
+
+- Put the search-clear X in the collection toolbar, directly before Songs Filter and sort, and in the equivalent toolbar position in other Library views. Remove both earlier search-field/navigation copies. Keep the field open when clearing from the toolbar and restore useful focus.
+- Use a short, cancellable opacity handoff only for explicit clear resets: retain filtered content during the exit, then restore the collection with a gentle entry. Never show an empty intermediate frame, change sorting/Favorites, or delay normal typing. Reduce Motion resets immediately. Cancel a pending clear when the query or view changes.

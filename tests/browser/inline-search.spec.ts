@@ -628,7 +628,7 @@ test("collapsed query has a reachable clear button without reopening the field",
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 800 });
     const clear = page
-      .locator("[data-search-trigger]")
+      .locator(".toolbar-actions")
       .getByRole("button", { name: "Clear search", exact: true });
     await expect(clear).toBeInViewport();
     const box = await clear.boundingBox();
@@ -641,14 +641,12 @@ test("collapsed query has a reachable clear button without reopening the field",
     ).toBeLessThanOrEqual(1);
   }
   await page
-    .locator("[data-search-trigger]")
+    .locator(".toolbar-actions")
     .getByRole("button", { name: "Clear search", exact: true })
     .click();
   await expect(input).toHaveCount(0);
   await expect(page.locator(".collection-count")).toHaveText("130 songs");
-  await expect(
-    page.locator("[data-search-trigger] button").first(),
-  ).toBeFocused();
+  await expect(page.locator("[data-library-filters]")).toBeFocused();
 });
 
 test("search prioritizes primary names before pagination but preserves playlist order", async ({
@@ -712,4 +710,74 @@ test("search prioritizes primary names before pagination but preserves playlist 
     "A metadata 2",
     "Rain",
   ]);
+});
+
+test("toolbar clear retains filtered rows through a cancellable reset and keeps search open", async ({
+  page,
+}) => {
+  await seedInlineCatalog(page);
+  await revealSearch(page);
+  const input = page.getByRole("searchbox");
+  await input.fill("Needle");
+  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
+  const clear = page.locator("[data-search-clear]");
+  const filter = page.locator("[data-library-filters]");
+  const a = await clear.boundingBox(),
+    b = await filter.boundingBox();
+  expect(a!.x + a!.width).toBeLessThanOrEqual(b!.x);
+  expect(
+    Math.abs(a!.y + a!.height / 2 - b!.y - b!.height / 2),
+  ).toBeLessThanOrEqual(1);
+  await expect(page.locator(".inline-search button")).toHaveCount(1);
+  await page.clock.install({ time: new Date("2026-10-30T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-10-30T12:00:01Z"));
+  await clear.click();
+  const content = page.locator("#library-content");
+  await expect(content).toHaveAttribute("data-search-reset", "out");
+  await expect(page.locator(".track-copy strong")).toHaveText([
+    "Needle first",
+    "Needle last",
+  ]);
+  await page.clock.runFor(100);
+  await expect(content).toHaveAttribute("data-search-reset", "in");
+  await expect(page.locator(".collection-count")).toHaveText("130 songs");
+  await expect(input).toBeVisible();
+  await expect(input).toHaveValue("");
+  await page.clock.runFor(170);
+  await expect(input).toBeFocused();
+  await expect(content).not.toHaveAttribute("data-search-reset");
+  // A new edit during the exit must cancel the old clear, not erase the edit.
+  await input.fill("Needle");
+  await page.clock.runFor(200);
+  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
+  await clear.click();
+  await input.fill("needle ");
+  await page.clock.runFor(300);
+  await expect(input).toHaveValue("needle ");
+  await expect(content).not.toHaveAttribute("data-search-reset");
+});
+
+test("Reduce Motion clears immediately without dimming or changing Favorites", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await seedInlineCatalog(page);
+  await page
+    .getByRole("button", { name: "Filter and sort", exact: true })
+    .click();
+  await page
+    .getByRole("menuitemradio", { name: "Favorites", exact: true })
+    .click();
+  await revealSearch(page);
+  await page.getByRole("searchbox").fill("Needle");
+  await expect(page.locator(".collection-count")).toContainText("1 of 1");
+  await page.locator(".collection-count").click();
+  await page.clock.install({ time: new Date("2026-10-30T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-10-30T12:00:01Z"));
+  await page.locator("[data-search-clear]").click();
+  await expect(page.locator("#library-content")).not.toHaveAttribute(
+    "data-search-reset",
+  );
+  await expect(page.locator(".collection-count")).toContainText("Favorites");
+  await expect(page.locator(".track-copy strong")).toHaveText(["Needle last"]);
 });

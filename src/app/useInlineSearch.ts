@@ -1,3 +1,4 @@
+import { useSearchReset } from "./useSearchReset";
 import {
   startTransition,
   useCallback,
@@ -34,6 +35,7 @@ export function useInlineSearch(
     query,
     setQuery,
     searchOpen,
+    searchInput,
     setSearchOpen,
     group,
     selectedList,
@@ -91,6 +93,10 @@ export function useInlineSearch(
     section === "playlists" ? automatic : null,
     state.settings?.language,
   ]);
+  const reset = useSearchReset(
+    JSON.stringify([key, query]),
+    `${scope}:${section}:${artistView}`,
+  );
   const sequence = useRef(0);
   const desired = useRef(key);
   desired.current = key;
@@ -304,7 +310,27 @@ export function useInlineSearch(
     loadMore: () =>
       !pending &&
       load(view === "tracks" ? current?.tracks.length : current?.groups.length),
-    clear: () => setQuery(""),
+    resetPhase: reset.phase,
+    clear: () => {
+      const restoreFocus = document.activeElement?.closest(
+        "[data-search-clear],.search-empty button",
+      );
+      reset.run(() => {
+        setQuery("");
+        if (restoreFocus)
+          requestAnimationFrame(() => {
+            const target = searchOpen
+              ? searchInput.current
+              : (document.querySelector<HTMLElement>(
+                  "[data-library-filters]",
+                ) ??
+                document.querySelector<HTMLElement>(
+                  "[data-search-trigger] button",
+                ));
+            target?.focus({ preventScroll: true });
+          });
+      }, active);
+    },
     close: () => {
       setQuery("");
       setSearchOpen(false);

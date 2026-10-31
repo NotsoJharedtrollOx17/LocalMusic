@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { X, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useBackLayer } from "../navigation";
 import { useMusicAppContext } from "./MusicAppContext";
 
@@ -29,7 +29,7 @@ export default function InlineSearch() {
             (node) =>
               node instanceof Element &&
               node.matches(
-                ".inline-search,[data-search-trigger],.inline-search-status,.search-empty button,.action-menu",
+                ".inline-search,[data-search-trigger],[data-search-clear],.inline-search-status,.search-empty button,.action-menu",
               ),
           )
       )
@@ -76,19 +76,7 @@ export default function InlineSearch() {
           autoComplete="off"
           aria-controls="library-content"
         />
-        {query && (
-          <button
-            className="icon-button"
-            type="button"
-            aria-label={t.clearSearch}
-            onClick={() => {
-              inlineSearch.clear();
-              searchInput.current?.focus();
-            }}
-          >
-            <X size={19} />
-          </button>
-        )}
+
         <button
           className="icon-button"
           type="button"

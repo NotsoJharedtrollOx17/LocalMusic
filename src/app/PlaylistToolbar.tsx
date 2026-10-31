@@ -1,3 +1,4 @@
+import ClearSearchButton from "./ClearSearchButton";
 import { Plus } from "lucide-react";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -31,6 +32,7 @@ export default function PlaylistToolbar() {
         />
       )}
       <div className="toolbar-actions">
+        <ClearSearchButton />
         <button
           className="button primary"
           onClick={() => {
