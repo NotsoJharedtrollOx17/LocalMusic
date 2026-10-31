@@ -1,8 +1,8 @@
 import { MoreHorizontal } from "lucide-react";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function PlayerMenuButton() {
-  const { current, menu, setMenu, t } = useMusicAppContext();
+  const { current, menu, setMenu, t } = usePlayerContext();
   if (!current) return null;
   return (
     <button

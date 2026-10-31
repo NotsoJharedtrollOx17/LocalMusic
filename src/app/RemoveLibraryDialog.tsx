@@ -1,5 +1,5 @@
 import { Modal } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function RemoveLibraryDialog() {
   const {
@@ -17,7 +17,7 @@ export default function RemoveLibraryDialog() {
     formatMusicCount,
     act,
     changeVisibility,
-  } = useMusicAppContext();
+  } = usePlayerContext();
 
   return (
     <>

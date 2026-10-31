@@ -4,6 +4,7 @@ mod artwork;
 #[cfg(not(target_os = "android"))]
 mod catalog;
 mod commands;
+mod desktop_windows;
 mod playback;
 mod sound;
 mod state;
@@ -28,6 +29,8 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_native_music::init());
     builder
+        .manage(desktop_windows::Windows::default())
+        .on_window_event(desktop_windows::window_event)
         .setup(state::setup)
         .invoke_handler(tauri::generate_handler![
             commands::recommendations::playlist_context,
@@ -44,6 +47,10 @@ pub fn run() {
             commands::visualizer::read_visualizer,
             commands::visualizer::stop_visualizer,
             commands::window::show_main_window,
+            desktop_windows::desktop_state,
+            desktop_windows::desktop_action,
+            desktop_windows::desktop_changed,
+            commands::settings::patch_settings,
             commands::catalog::list_tracks,
             commands::catalog::list_groups,
             commands::catalog::group_ids,

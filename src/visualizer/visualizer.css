@@ -101,7 +101,7 @@
   .visualizer-header {
     grid-template-columns: 44px minmax(0, 1fr);
   }
-  .visualizer-header > div:last-child {
+  .visualizer-header > .visualizer-window-actions:empty {
     display: none;
   }
   .visualizer-modes button {

@@ -1,4 +1,4 @@
-use super::playback::playback_snapshot;
+use super::playback::current_playback;
 use crate::{
     album_order, artwork,
     playback::dispatch,
@@ -156,7 +156,7 @@ pub(crate) async fn set_library_visibility(
     visible: bool,
 ) -> Result<()> {
     if !visible {
-        let snapshot = playback_snapshot(app.clone(), state.clone()).await?;
+        let snapshot = current_playback(app.clone(), state.clone()).await?;
         if let Some(current) = snapshot.track_id {
             let queue: Vec<_> = snapshot
                 .queue

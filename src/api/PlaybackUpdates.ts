@@ -4,6 +4,7 @@ import type { PlaybackSnapshot } from "../types";
 export class PlaybackUpdates {
   private listeners = new Set<(snapshot: PlaybackSnapshot) => void>();
   private revision = 0;
+  private nativeRevision = -1;
   private seekRevision = 0;
   private seeking = 0;
 
@@ -14,6 +15,10 @@ export class PlaybackUpdates {
     };
   }
   private publish(snapshot: PlaybackSnapshot) {
+    if (snapshot.revision !== undefined) {
+      if (snapshot.revision < this.nativeRevision) return;
+      this.nativeRevision = snapshot.revision;
+    }
     this.listeners.forEach((listener) => listener(snapshot));
   }
   push(snapshot: PlaybackSnapshot) {

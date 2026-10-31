@@ -1,8 +1,10 @@
+import { desktop, useDesktopWindows } from "../desktop/windows";
 import { FolderOpen, Check, X } from "lucide-react";
 import { IconButton } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function AppFeedback() {
+  const desktopWindows = useDesktopWindows();
   const {
     notice,
     setNotice,
@@ -18,7 +20,7 @@ export default function AppFeedback() {
     setFeedbackUndo,
     suggestionFeedback,
     feedbackPending,
-  } = useMusicAppContext();
+  } = usePlayerContext();
 
   return (
     <>
@@ -55,6 +57,16 @@ export default function AppFeedback() {
             <strong>{t.error}</strong>
             <span>{error}</span>
           </div>
+          {desktopWindows.retry && (
+            <button
+              className="button secondary"
+              onClick={() =>
+                void act(() => desktop.action(desktopWindows.retry!))
+              }
+            >
+              {t.retry}
+            </button>
+          )}
           <IconButton
             label={t.close}
             onClick={() => {

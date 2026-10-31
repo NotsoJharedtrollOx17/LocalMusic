@@ -3,7 +3,7 @@
   "identifier": "main-capability",
   "description": "Local music UI access",
   "windows": [
-    "main"
+    "main", "player", "visualizer"
   ],
   "permissions": [
     "core:default"

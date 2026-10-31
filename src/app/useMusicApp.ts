@@ -20,7 +20,9 @@ import { useBackLayer } from "../navigation";
 import { api } from "../api";
 import { en, es } from "../i18n";
 import { compareCatalogTracks } from "../domain";
-import { applyTheme } from "../theme";
+import { useSyncedSettings } from "../desktop/useSyncedSettings";
+import { useMainWindows } from "../desktop/useMainWindows";
+import { desktop } from "../desktop/windows";
 import { type Track, type Settings, type CatalogGroup } from "../types";
 
 export function useMusicApp(initialSettings?: Settings) {
@@ -83,7 +85,6 @@ export function useMusicApp(initialSettings?: Settings) {
     lastSelected,
     groupStack,
     latestQuery,
-    settingsWrite,
     searchInput,
   } = state;
   const soundController = useSoundController(modal === "equalizer");
@@ -103,6 +104,20 @@ export function useMusicApp(initialSettings?: Settings) {
   }
   function setModal(action: React.SetStateAction<Dialog>) {
     const next = typeof action === "function" ? action(modal) : action;
+    if (
+      (next === "player" || next === "queue" || next === "visualizer") &&
+      desktop.entry(next === "visualizer" ? "visualizer" : "player")?.phase ===
+        "detached"
+    ) {
+      void desktop
+        .action({
+          op: "open",
+          view: next === "visualizer" ? "visualizer" : "player",
+          queue: next === "queue",
+        })
+        .catch((e) => setError(String(e)));
+      return;
+    }
     if (next === modal) return;
     const body = document.querySelector<HTMLElement>(".modal-body");
     if (modal && body) dialogScroll.current.set(modal, body.scrollTop);
@@ -337,16 +352,7 @@ export function useMusicApp(initialSettings?: Settings) {
     setGroupTracks([]);
     setGroupLoading(false);
   }
-  useEffect(() => {
-    if (settings) {
-      document.documentElement.lang = settings.language;
-      applyTheme(settings.theme);
-      settingsWrite.current = settingsWrite.current
-        .catch(() => {})
-        .then(() => api.saveSettings(settings));
-      void act(() => settingsWrite.current);
-    }
-  }, [settings]);
+  const settingsWrite = useSyncedSettings(settings, setSettings, act);
   useEffect(() => {
     const ids = [
       ...new Set([
@@ -727,6 +733,15 @@ export function useMusicApp(initialSettings?: Settings) {
     (selectedList ?? generated)?.trackIds
       .map((id) => cache[id])
       .filter((x): x is Track => !!x && !x.hidden) ?? [];
+  useMainWindows(state, {
+    remember,
+    openGroup,
+    setModal,
+    dismissModals,
+    act,
+    refresh,
+    refreshLists,
+  });
   return {
     ...state,
     ...personalization,

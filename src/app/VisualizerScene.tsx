@@ -1,6 +1,8 @@
+import WindowControls from "../desktop/WindowControls";
+import { companionView } from "../desktop/windows";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 import { useVisualizer } from "../visualizer/useVisualizer";
 import { useVisualizerPresentation } from "../visualizer/useVisualizerPresentation";
 import { useFocusScope } from "../ux/useFocusScope";
@@ -12,7 +14,7 @@ import type { VisualizerMode } from "../visualizer/types";
 
 export default function VisualizerScene() {
   const { setModal, settings, setSettings, t, current, player, act } =
-    useMusicAppContext();
+    usePlayerContext();
   const [mode, setMode] = useState<VisualizerMode>(
     settings?.visualizerMode ?? "spectrum",
   );
@@ -20,6 +22,10 @@ export default function VisualizerScene() {
       () => matchMedia("(prefers-reduced-motion: reduce)").matches,
     ),
     [idle, setIdle] = useState(false);
+  useEffect(
+    () => setMode(settings?.visualizerMode ?? "spectrum"),
+    [settings?.visualizerMode],
+  );
   const presentation = useVisualizerPresentation(player.playing);
   const view = useVisualizer(
       mode,
@@ -30,7 +36,7 @@ export default function VisualizerScene() {
     ),
     root = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useFocusScope(root);
+  useFocusScope(root, !companionView);
   useBackLayer(true, () => setModal(null));
   const reveal = () => {
     setIdle(false);
@@ -61,7 +67,7 @@ export default function VisualizerScene() {
       data-scene-visible={presentation.visible}
       data-motion={reduced ? "gentle" : "full"}
       role="dialog"
-      aria-modal="true"
+      aria-modal={companionView ? undefined : true}
       aria-label={t.visualizer}
       onPointerMove={reveal}
       onPointerDown={reveal}
@@ -83,7 +89,9 @@ export default function VisualizerScene() {
             </button>
           ))}
         </div>
-        <div aria-hidden="true" />
+        <div className="visualizer-window-actions">
+          <WindowControls view="visualizer" />
+        </div>
       </header>
       {view.error && (
         <div className="visualizer-error" role="status">

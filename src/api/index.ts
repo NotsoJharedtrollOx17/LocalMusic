@@ -13,8 +13,36 @@ import type {
 import { BrowserMusic } from "./browser";
 import { PlaybackUpdates } from "./PlaybackUpdates";
 export const native = isTauri();
-const cmd = <T>(name: string, args?: Record<string, unknown>) =>
-  invoke<T>(name, args);
+const domains: Record<string, string> = {
+  set_favorite: "catalog",
+  set_library_visibility: "catalog",
+  import_music: "catalog",
+  save_playlist: "playlists",
+  delete_playlist: "playlists",
+  set_suggestion_feedback: "feedback",
+  set_excluded: "privacy",
+  delete_history: "privacy",
+  save_settings: "settings",
+  set_sound: "sound",
+  sound_action: "sound",
+};
+const cmd = async <T>(
+  name: string,
+  args?: Record<string, unknown>,
+): Promise<T> => {
+  const result = await invoke<T>(name, args);
+  if (domains[name] && /Windows/i.test(navigator.userAgent))
+    await invoke("desktop_changed", {
+      domain: domains[name],
+      ids:
+        typeof args?.id === "string"
+          ? [args.id]
+          : Array.isArray(args?.ids)
+            ? args.ids
+            : [],
+    }).catch(() => {});
+  return result;
+};
 class NativeMusic implements MusicApi {
   playlistContext() {
     return cmd<import("../playlists/types").PlaylistContext>(

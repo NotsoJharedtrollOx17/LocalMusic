@@ -1,10 +1,10 @@
 import { Heart } from "lucide-react";
 import { Cover, Modal, time } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function TrackDetailsDialog() {
   const { lists, modal, setModal, detail, t, act, favorite, saveList } =
-    useMusicAppContext();
+    usePlayerContext();
 
   return (
     <>

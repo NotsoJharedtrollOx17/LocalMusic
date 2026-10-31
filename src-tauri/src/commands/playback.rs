@@ -12,6 +12,25 @@ use tauri::State;
 pub(crate) async fn playback_snapshot(
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
+) -> Result<serde_json::Value> {
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        let snapshot = state.snapshot.lock().map_err(|e| e.to_string())?;
+        let mut value = serde_json::to_value(&*snapshot).map_err(|e| e.to_string())?;
+        value["revision"] = crate::playback::desktop::SNAPSHOT_REVISION
+            .load(std::sync::atomic::Ordering::SeqCst)
+            .into();
+        Ok(value)
+    }
+    #[cfg(target_os = "android")]
+    {
+        serde_json::to_value(current_playback(app, state).await?).map_err(|e| e.to_string())
+    }
+}
+pub(crate) async fn current_playback(
+    app: tauri::AppHandle,
+    state: State<'_, MusicState>,
 ) -> Result<PlaybackSnapshot> {
     #[cfg(not(target_os = "android"))]
     {

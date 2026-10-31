@@ -76,3 +76,14 @@ describe("native playback update ordering", () => {
     expect(values).toEqual([500]);
   });
 });
+
+it("rejects an older native revision after a command in another window", async () => {
+  const updates = new PlaybackUpdates();
+  const values: number[] = [];
+  updates.add((s) => values.push(s.positionMs));
+  updates.push({ ...snapshot(2000), revision: 5 });
+  updates.push({ ...snapshot(1900), revision: 4 });
+  await updates.poll(async () => ({ ...snapshot(1800), revision: 3 }));
+  updates.push({ ...snapshot(2100), revision: 6 });
+  expect(values).toEqual([2000, 2100]);
+});

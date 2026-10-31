@@ -24,6 +24,7 @@ export interface Playlist {
   trackIds: string[];
 }
 export interface PlaybackSnapshot {
+  revision?: number;
   trackId: string | null;
   playing: boolean;
   positionMs: number;

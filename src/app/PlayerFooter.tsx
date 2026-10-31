@@ -1,10 +1,10 @@
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 import PlaybackProgress from "./PlaybackProgress";
 import TransportControls from "./TransportControls";
 import PlayerTrackActions from "./PlayerTrackActions";
 
 export default function PlayerFooter({ view }: { view: "player" | "queue" }) {
-  const { current } = useMusicAppContext();
+  const { current } = usePlayerContext();
   if (!current) return null;
   return (
     <>

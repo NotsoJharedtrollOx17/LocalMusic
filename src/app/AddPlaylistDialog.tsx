@@ -1,6 +1,6 @@
 import { api } from "../api";
 import { Modal } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function AddPlaylistDialog() {
   const {
@@ -16,7 +16,7 @@ export default function AddPlaylistDialog() {
     t,
     act,
     refreshLists,
-  } = useMusicAppContext();
+  } = usePlayerContext();
 
   return (
     <>

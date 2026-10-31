@@ -137,3 +137,21 @@ Recap view and PNG export consume the shared ranking presentation helper. Export
 
 
 Recap rankings order songs, artists and albums by qualified play count descending, then the latest qualifying session start within the selected period. Group recency is the latest qualifying play across all of its contributing tracks. Excluded, sub-30-second, future and out-of-period sessions cannot affect either count or recency. Exact-time ties retain the existing song listening-duration/ID and artist/album alphabetical fallbacks. This internal comparison metadata is not added to exports or saved snapshots; existing snapshots retain their frozen order.
+
+
+## Detached desktop player views
+
+On Windows, Now Playing/Queue and Visualizer can each move into one independent decorated window. Their header controls detach, return and optionally pin the window. Ordinary opening stays in-app; an already detached view is focused instead of duplicated. Closing a child returns it to main, with ordered deferred presentation while another main dialog is active. Closing main exits all windows. Bounds are remembered only for the session and fitted to monitor work areas; pinning and open windows are not persisted. Android/browser remain in-app.
+
+Rust owns fixed local routes, caller validation and the `opening -> transferring -> detached -> returning` lifecycle. A source unmount acknowledgement precedes presentation in the new host; startup timeout restores a source already released. Window generations reject stale handoffs. Exactly one visualizer host may start analysis; old analysis-session cleanup cannot stop its replacement. Visibility/minimization and wake cleanup follow the actual visualizer window.
+
+`src/desktop/` contains the typed desktop adapter, focused companion controller and window composition. `PlayerContext` shares existing presentation/dialog components without mounting the Library controller in a child. Children load current/visible Queue metadata and explicitly requested dialogs; they never start playlist analysis or Recap refresh. Favorite/catalog, playlist, feedback, privacy and sound invalidations carry a revision and originating window, with bounded changed IDs. Consumers reconcile on startup/resume. Playback events and reads carry a transient native revision so a stale response from another window cannot move the seek position backward; persisted playback/listening schemas are unchanged.
+
+Preference edits use atomic native field patches against the latest stored record. Incoming settings update theme/language/mode without writing them back; history/privacy-owned fields cannot be supplied in patches. The existing full settings API remains available for compatibility. Native WebView shortcut/context-menu policies and theme-aware startup apply to every window. Capabilities list only the known local window labels; no arbitrary URL/window creation API is exposed.
+
+See [the archived plan](detached-player-windows-plan.md) and [verification](verification.md). Actual Windows checks use an isolated app identity and synthetic catalog; browser IPC simulations do not establish native audio/device behavior. `scripts/verify-detached-windows.mjs` documents the native inspection entry point.
+
+
+### Repeat the isolated Windows inspection
+
+`tests/native/seed-detached-player.py` creates a new fixed probe identity with twelve synthetic sample tracks, unique source aliases and a paused queue. It refuses an existing database or fixture. Build with `TAURI_CONFIG` set to the generated `artifacts/detached-windows/probe-config.json`; copy the executable and its runtime DLLs into that artifact directory before restoring a standard build. Launch only that copy with WebView2's local remote-debugging argument, record its PID, and run `node scripts/verify-detached-windows.mjs PORT PID OUTPUT_DIRECTORY`. The runner checks the isolated identifier before actions; `tests/native/window-os.py` limits OS operations to the supplied PID and exact title match. Keep all generated databases, recordings, inspection profiles and binaries out of Git. A paused fixture checks UI/state/lifecycle only and cannot establish audible playback, audio synchronization or device performance.

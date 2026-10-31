@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { api } from "../api";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export function usePlaybackPrivacy() {
-  const { player, setPlayer, current, act } = useMusicAppContext();
+  const { player, setPlayer, current, act } = usePlayerContext();
   const [pending, setPending] = useState<boolean | null>(null);
   const writing = useRef(false);
   const toggle = () => {

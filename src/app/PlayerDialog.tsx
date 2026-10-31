@@ -1,7 +1,9 @@
+import WindowControls from "../desktop/WindowControls";
+import { companionView } from "../desktop/windows";
 import { PlayerSurface } from "../ux";
 import { api } from "../api";
 import { Cover, TrackRow } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 import PlayerFooter from "./PlayerFooter";
 import PlayerMenuButton from "./PlayerMenuButton";
 
@@ -17,22 +19,28 @@ export default function PlayerDialog() {
     t,
     act,
     current,
-  } = useMusicAppContext();
+  } = usePlayerContext();
   const view = modal === "player" || modal === "queue" ? modal : playerParent;
 
   return (
     <>
       {view && current && (
         <PlayerSurface
+          standalone={companionView === "player"}
           title={view === "queue" ? t.queue : t.nowPlaying}
-          closeLabel={t.close}
+          closeLabel={companionView === "player" ? t.returnToMain : t.close}
           view={view}
           active={modal === "player" || modal === "queue"}
           trackId={current.id}
           onView={setModal}
           onClose={() => setModal(null)}
           footer={<PlayerFooter view={view} />}
-          headerAction={<PlayerMenuButton />}
+          headerAction={
+            <div className="player-header-actions">
+              <WindowControls view="player" />
+              <PlayerMenuButton />
+            </div>
+          }
         >
           {view === "player" ? (
             <div className="full-player">

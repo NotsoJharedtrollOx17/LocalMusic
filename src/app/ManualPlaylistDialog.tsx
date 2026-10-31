@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { Cover, Modal } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function ManualPlaylistDialog() {
   const {
@@ -19,7 +19,7 @@ export default function ManualPlaylistDialog() {
     act,
     refreshPicker,
     saveList,
-  } = useMusicAppContext();
+  } = usePlayerContext();
 
   return (
     <>

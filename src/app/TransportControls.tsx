@@ -9,10 +9,10 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { IconButton } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function TransportControls() {
-  const { player, t, act } = useMusicAppContext();
+  const { player, t, act } = usePlayerContext();
 
   return (
     <div className="transport">

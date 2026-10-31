@@ -1,0 +1,71 @@
+import { createContext, useContext } from "react";
+import { MusicAppContext, type MusicAppModel } from "./MusicAppContext";
+export type PlayerModel = Pick<
+  MusicAppModel,
+  | "cache"
+  | "queueLimit"
+  | "setQueueLimit"
+  | "player"
+  | "setPlayer"
+  | "modal"
+  | "playerParent"
+  | "setModal"
+  | "t"
+  | "act"
+  | "current"
+  | "favorite"
+  | "setActionIds"
+  | "menu"
+  | "setMenu"
+  | "settings"
+  | "setSettings"
+  | "soundController"
+  | "lists"
+  | "busy"
+  | "setBusy"
+  | "setNotice"
+  | "setManualTitle"
+  | "setManualIds"
+  | "actionIds"
+  | "refreshLists"
+  | "detail"
+  | "setDetail"
+  | "saveList"
+  | "pickerTracks"
+  | "pickerTotal"
+  | "pickerQuery"
+  | "setPickerQuery"
+  | "manualTitle"
+  | "manualIds"
+  | "refreshPicker"
+  | "setError"
+  | "dismissModals"
+  | "setSelectedIds"
+  | "setSelectionMode"
+  | "setUndoIds"
+  | "formatMusicCount"
+  | "changeVisibility"
+  | "notice"
+  | "error"
+  | "undoIds"
+  | "chooserOpen"
+  | "feedbackUndo"
+  | "setFeedbackUndo"
+  | "suggestionFeedback"
+  | "feedbackPending"
+  | "playlistContext"
+  | "playlistContextLoaded"
+  | "share"
+  | "sharing"
+  | "openGroup"
+  | "openEqualizer"
+  | "group"
+>;
+export const PlayerContext = createContext<PlayerModel | null>(null);
+export function usePlayerContext() {
+  const player = useContext(PlayerContext),
+    main = useContext(MusicAppContext);
+  const value = player ?? main;
+  if (!value) throw Error("Player context missing");
+  return value;
+}

@@ -1,0 +1,75 @@
+.player-header-actions,
+.window-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+.player-surface-head {
+  grid-template-columns: minmax(44px, 1fr) minmax(0, auto) minmax(44px, 1fr);
+}
+.player-surface-head h2 {
+  text-align: center;
+}
+.player-scrim.standalone-player {
+  position: relative;
+  inset: auto;
+  background: none;
+  padding: 0;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+}
+.standalone-player .player-surface {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  transform: none;
+}
+.companion-shell {
+  height: 100dvh;
+  overflow: hidden;
+}
+.companion-shell .visualizer-view {
+  position: relative;
+  height: 100dvh;
+}
+.companion-shell .error-banner,
+.companion-shell .undo-banner {
+  z-index: 130;
+}
+.companion-wait {
+  height: 100dvh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 24px;
+  padding: 24px;
+}
+.visualizer-header:has([data-window-controls]) {
+  grid-template-columns: minmax(44px, 1fr) minmax(0, auto) minmax(44px, 1fr);
+}
+@media (max-width: 600px) {
+  .player-header-actions {
+    gap: 0;
+  }
+  .player-header-actions .icon-button {
+    width: 44px;
+    min-width: 44px;
+  }
+  .player-surface-head {
+    padding-inline: 8px;
+  }
+  .player-surface-head h2 {
+    font-size: 1rem;
+  }
+  .visualizer-header .window-controls {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+}

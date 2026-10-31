@@ -1,7 +1,7 @@
 import { ActionMenu } from "../ux";
 import type { MenuAction } from "../ux/ActionMenu";
 import { audioShareLabel, hasAudioShareChooser } from "../ux/sharing";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 import { trackMenuActions } from "./trackMenuActions";
 import { usePlaybackPrivacy } from "./usePlaybackPrivacy";
 
@@ -26,7 +26,7 @@ export default function TrackActionMenu() {
     playlistContextLoaded,
     suggestionFeedback,
     feedbackPending,
-  } = useMusicAppContext();
+  } = usePlayerContext();
   const privacy = usePlaybackPrivacy();
   if (!menu) return null;
   const track = cache[menu.track.id] ?? menu.track;

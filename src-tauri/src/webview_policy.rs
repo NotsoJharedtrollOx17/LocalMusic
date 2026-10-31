@@ -1,12 +1,18 @@
 //! Suppress browser chrome without disabling editing, zoom or app shortcuts.
 pub(crate) fn configure(app: &tauri::App) -> tauri::Result<()> {
+    use tauri::Manager;
+    for window in app.webview_windows().values() {
+        configure_window(window)?;
+    }
+    Ok(())
+}
+pub(crate) fn configure_window(window: &tauri::WebviewWindow) -> tauri::Result<()> {
     #[cfg(windows)]
     {
-        use tauri::Manager;
         use webview2_com::AcceleratorKeyPressedEventHandler;
         use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL};
 
-        if let Some(window) = app.get_webview_window("main") {
+        {
             window.with_webview(|webview| {
                 // These COM interfaces are used on the WebView's UI thread.
                 let configure = || -> windows::core::Result<()> {
@@ -39,7 +45,7 @@ pub(crate) fn configure(app: &tauri::App) -> tauri::Result<()> {
         }
     }
     #[cfg(not(windows))]
-    let _ = app;
+    let _ = window;
     Ok(())
 }
 

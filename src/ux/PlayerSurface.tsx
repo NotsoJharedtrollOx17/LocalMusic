@@ -7,13 +7,14 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PanelTopClose } from "lucide-react";
 import { IconButton } from "../components";
 import { useBackLayer } from "../navigation";
 import { reducedMotion } from "./motion";
 import { animateCover } from "./motion";
 
 export function PlayerSurface({
+  standalone = false,
   title,
   closeLabel,
   view,
@@ -25,6 +26,7 @@ export function PlayerSurface({
   trackId,
   active = true,
 }: {
+  standalone?: boolean;
   title: string;
   closeLabel: string;
   view: "player" | "queue";
@@ -52,6 +54,10 @@ export function PlayerSurface({
   );
   latestClose.current = onClose;
   const collapse = () => {
+    if (standalone) {
+      latestClose.current();
+      return;
+    }
     if (closing.current) return;
     closing.current = true;
     const node = ref.current;
@@ -86,7 +92,7 @@ export function PlayerSurface({
   useBackLayer(active, () =>
     view === "queue" ? onView("player") : collapse(),
   );
-  useFocusScope(ref, active);
+  useFocusScope(ref, active && !standalone);
   const entered = useRef(false);
   useLayoutEffect(() => {
     if (!active || view !== "player" || entered.current) return;
@@ -101,6 +107,7 @@ export function PlayerSurface({
       );
   }, [trackId, active]);
   const down = (e: ReactPointerEvent) => {
+    if (standalone) return;
     if ((e.target as HTMLElement).closest("button,input,select,a")) return;
     drag.current = { y: e.clientY, t: performance.now() };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -121,7 +128,7 @@ export function PlayerSurface({
   };
   return (
     <div
-      className="player-scrim"
+      className={"player-scrim" + (standalone ? " standalone-player" : "")}
       hidden={!active}
       inert={!active}
       onClick={(e) => {
@@ -132,7 +139,7 @@ export function PlayerSurface({
         ref={ref}
         className="player-surface"
         role="dialog"
-        aria-modal="true"
+        aria-modal={standalone ? undefined : true}
         aria-label={title}
       >
         <header
@@ -146,7 +153,7 @@ export function PlayerSurface({
           }}
         >
           <IconButton label={closeLabel} onClick={collapse}>
-            <ChevronDown />
+            {standalone ? <PanelTopClose /> : <ChevronDown />}
           </IconButton>
           <h2>{title}</h2>
           {headerAction}

@@ -1,12 +1,12 @@
 import { Heart, ListMusic, Plus } from "lucide-react";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 
 export default function PlayerTrackActions({
   view,
 }: {
   view: "player" | "queue";
 }) {
-  const { current, favorite, setModal, setActionIds, t } = useMusicAppContext();
+  const { current, favorite, setModal, setActionIds, t } = usePlayerContext();
   if (!current) return null;
   const queueLabel = view === "queue" ? t.nowPlaying : t.queue;
   return (

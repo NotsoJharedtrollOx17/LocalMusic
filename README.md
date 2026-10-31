@@ -109,3 +109,8 @@ Your Recap shows the top three songs, artists and albums with descending rank em
 ## Music visualizers - v0.9.0
 
 v0.9.0 integrates `dev.music-visualizers`: post-EQ Spectrum, Origin of Symmetry Geometry and layered XMB waves, theme-aware controls and natural playback settling. See [release notes](docs/releases/v0.9.0.md) and [verification](docs/verification.md) for actual results and pending physical-device/performance acceptance.
+
+
+### Detached player windows (feature branch)
+
+On Windows, use the header's **Open in separate window** control to detach Now Playing/Queue or Visualizer. Each has its own optional **Always on top** toggle. Return or close the child window to restore its view in the main app; closing the main app exits all windows. Android and browser preview keep the existing in-app views. See the [archived plan](docs/detached-player-windows-plan.md) and [verification](docs/verification.md). This revision keeps version 0.12.0 pending review and a separate release request.

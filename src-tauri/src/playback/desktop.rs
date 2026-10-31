@@ -8,6 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Emitter};
+pub static SNAPSHOT_REVISION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 pub struct Request {
     pub op: String,
     pub payload: serde_json::Value,
@@ -78,9 +79,9 @@ pub fn launch(
                         if let Err(e) = &result {
                             p.snapshot.error = Some(e.clone());
                         }
-                        let _ = r.reply.send(result);
                         p.persist();
                         p.publish();
+                        let _ = r.reply.send(result);
                     }
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
@@ -172,8 +173,12 @@ impl DesktopPlayer {
         self.sound
             .playing
             .store(self.snapshot.playing, Ordering::Relaxed);
-        *self.state.lock().unwrap() = self.snapshot.clone();
-        let _ = self.app.emit("playback://snapshot", &self.snapshot);
+        let mut stored = self.state.lock().unwrap();
+        *stored = self.snapshot.clone();
+        let revision = SNAPSHOT_REVISION.fetch_add(1, Ordering::SeqCst) + 1;
+        let mut value = serde_json::to_value(&*stored).unwrap();
+        value["revision"] = revision.into();
+        let _ = self.app.emit("playback://snapshot", value);
     }
     fn persist(&self) {
         let _ = self

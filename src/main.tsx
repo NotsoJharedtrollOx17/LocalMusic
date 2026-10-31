@@ -12,24 +12,32 @@ import "@fontsource/inter/latin-600.css";
 import "@fontsource/space-grotesk/latin-500.css";
 import "@fontsource/space-grotesk/latin-700.css";
 import App from "./App";
+import CompanionApp from "./desktop/CompanionApp";
+import { desktop, companionView } from "./desktop/windows";
 import "./styles.css";
 import "./ux.css";
 import "./polish.css";
 import "./player.css";
 import "./playlists.css";
 import "./focus.css";
+import "./desktop/desktop.css";
 installNativeShortcuts(native);
 async function start() {
+  await desktop.initialize();
   const settings = await api.settings().catch(() => undefined);
   if (settings) applyTheme(settings.theme);
   flushSync(() =>
     createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
-        <App initialSettings={settings} />
+        {companionView ? (
+          <CompanionApp view={companionView} initialSettings={settings} />
+        ) : (
+          <App initialSettings={settings} />
+        )}
       </React.StrictMode>,
     ),
   );
-  if (native) {
+  if (native && !companionView) {
     const theme = document.documentElement.dataset.theme;
     const dark =
       theme === "dark" ||

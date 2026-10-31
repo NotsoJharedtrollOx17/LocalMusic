@@ -1,10 +1,10 @@
 import { api } from "../api";
 import { time } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 import { usePlaybackScrub } from "./usePlaybackScrub";
 
 export default function PlaybackProgress() {
-  const { player, t, act } = useMusicAppContext();
+  const { player, t, act } = usePlayerContext();
   const { position, handlers } = usePlaybackScrub(player, (ms) =>
     act(() => api.seek(ms)),
   );

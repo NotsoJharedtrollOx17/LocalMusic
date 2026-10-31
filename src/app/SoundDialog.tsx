@@ -1,9 +1,8 @@
 import SoundControls from "../sound/SoundControls";
 import { Modal } from "../components";
-import { useMusicAppContext } from "./MusicAppContext";
+import { usePlayerContext } from "./PlayerContext";
 export default function SoundDialog() {
-  const { modal, setModal, soundController, settings, t } =
-    useMusicAppContext();
+  const { modal, setModal, soundController, settings, t } = usePlayerContext();
   if (modal !== "equalizer") return null;
   return (
     <Modal

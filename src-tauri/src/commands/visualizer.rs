@@ -3,9 +3,15 @@ use serde_json::{json, Value};
 use tauri::State;
 #[tauri::command]
 pub(crate) async fn start_visualizer(
+    window: tauri::WebviewWindow,
     app: tauri::AppHandle,
     state: State<'_, MusicState>,
 ) -> Result<Value> {
+    #[cfg(windows)]
+    if !crate::desktop_windows::visualizer_allowed(&app, window.label()) {
+        return Err("Visualizer ownership changed".into());
+    }
+    let _ = window;
     #[cfg(target_os = "android")]
     {
         let _ = state;
