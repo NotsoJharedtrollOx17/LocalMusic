@@ -92,7 +92,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.12.0` include the reviewed inline Library search and playlist-search improvements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.12.0 release notes](docs/releases/v0.12.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.13.0` include detached Windows player, visualizer and equalizer windows. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.13.0 release notes](docs/releases/v0.13.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 
@@ -113,4 +113,4 @@ v0.9.0 integrates `dev.music-visualizers`: post-EQ Spectrum, Origin of Symmetry 
 
 ### Detached player windows (feature branch)
 
-On Windows, choosing **Visualizer** from Now Playing or **Equalizer** from Library or Now Playing opens or focuses its separate window directly. Use the header's **Open in separate window** control to detach Now Playing/Queue. The windows adapt their contents to their size, with readable minimums and scrolling when needed. Each has its own optional **Always on top** toggle. Close a child window to dismiss its view, or use Return to main window to restore it in the app; closing the main app exits all windows. Android and browser preview keep the existing in-app views. See the [archived plan](docs/detached-player-windows-plan.md) and [verification](docs/verification.md). This revision keeps version 0.12.0 pending review and a separate release request.
+On Windows, choosing **Visualizer** from Now Playing or **Equalizer** from Library or Now Playing opens or focuses its separate window directly. Use the header's **Open in separate window** control to detach Now Playing/Queue. The windows adapt their contents to their size, with readable minimums and scrolling when needed. Each has its own optional **Always on top** toggle. Close a child window to dismiss its view, or use Return to main window to restore it in the app; closing the main app exits all windows. Android and browser preview keep the existing in-app views. See the [archived plan](docs/detached-player-windows-plan.md) and [verification](docs/verification.md).
