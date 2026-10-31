@@ -256,3 +256,14 @@
     grid-column: 1 / -1;
   }
 }
+
+/* One card flow during name search, with custom matches before defaults. */
+.playlists-page .playlist-search-results {
+  margin-top: 20px;
+}
+.playlist-search-items {
+  display: contents;
+}
+.playlist-search-results .automatic-playlist-error {
+  grid-column: 1 / -1;
+}

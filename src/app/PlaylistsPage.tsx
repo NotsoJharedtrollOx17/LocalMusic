@@ -51,6 +51,14 @@ export default function PlaylistsPage() {
           !inlineSearch.error &&
           inlineSearch.page?.total === 0 ? (
             <SearchEmpty />
+          ) : inlineSearch.active ? (
+            <section
+              className="playlist-collection playlist-search-results"
+              aria-labelledby="automatic-playlists-heading"
+            >
+              <PlaylistCollection embedded />
+              <AutomaticPlaylistCollection embedded />
+            </section>
           ) : (
             <>
               <AutomaticPlaylistCollection />

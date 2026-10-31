@@ -7,7 +7,9 @@ import { api } from "../api";
 import type { Playlist } from "../types";
 import { useMusicAppContext } from "./MusicAppContext";
 
-export default function PlaylistCollection() {
+export default function PlaylistCollection({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const {
     lists,
     filteredLists,
@@ -25,16 +27,17 @@ export default function PlaylistCollection() {
   } | null>(null);
   const [renaming, setRenaming] = useState<Playlist | null>(null);
   if (inlineSearch.active && !filteredLists.length) return null;
-  return (
-    <section
-      className="saved-playlists"
-      aria-labelledby="saved-playlists-heading"
-    >
-      <h2 id="saved-playlists-heading" className="playlist-section-heading">
-        {t.yourPlaylists}
-      </h2>
+  const content = (
+    <>
+      {!embedded && (
+        <h2 id="saved-playlists-heading" className="playlist-section-heading">
+          {t.yourPlaylists}
+        </h2>
+      )}
       {filteredLists.length ? (
-        <div className="playlist-collection">
+        <div
+          className={embedded ? "playlist-search-items" : "playlist-collection"}
+        >
           {filteredLists.map((p) => (
             <div
               className="saved-playlist-card"
@@ -126,6 +129,16 @@ export default function PlaylistCollection() {
           />,
           document.body,
         )}
+    </>
+  );
+  return embedded ? (
+    content
+  ) : (
+    <section
+      className="saved-playlists"
+      aria-labelledby="saved-playlists-heading"
+    >
+      {content}
     </section>
   );
 }

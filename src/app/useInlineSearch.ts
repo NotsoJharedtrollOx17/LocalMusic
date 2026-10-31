@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -97,6 +98,43 @@ export function useInlineSearch(
     JSON.stringify([key, query]),
     `${scope}:${section}:${artistView}`,
   );
+  // Playlist labels are already loaded; keep input, cards and count in one render.
+  const localPage = useMemo<Page | undefined>(() => {
+    if (!active || section !== "playlists" || selectedList || group) return;
+    const q = query;
+    const lists = state.lists
+      .filter((p) => matchesSearch(p.title, q))
+      .sort((a, b) => searchRank(a.title, q) - searchRank(b.title, q));
+    const defaults = automatic
+      .filter((p) => matchesSearch(automaticPlaylistLabel(p, t), q))
+      .sort(
+        (a, b) =>
+          searchRank(automaticPlaylistLabel(a, t), q) -
+          searchRank(automaticPlaylistLabel(b, t), q),
+      );
+    return {
+      key,
+      view,
+      tracks: [],
+      groups: [],
+      ids: [],
+      lists,
+      automatic: defaults,
+      total: lists.length + defaults.length,
+      allTotal: state.lists.length + automatic.length,
+    };
+  }, [
+    active,
+    section,
+    selectedList,
+    group,
+    key,
+    query,
+    view,
+    state.lists,
+    automatic,
+    t,
+  ]);
   const sequence = useRef(0);
   const desired = useRef(key);
   desired.current = key;
@@ -221,24 +259,6 @@ export function useInlineSearch(
             total: found.total,
             allTotal: all.total,
           };
-        } else if (section === "playlists") {
-          const lists = state.lists
-            .filter((p) => matchesSearch(p.title, q))
-            .sort((a, b) => searchRank(a.title, q) - searchRank(b.title, q));
-          const defaults = automatic
-            .filter((p) => matchesSearch(automaticPlaylistLabel(p, t), q))
-            .sort(
-              (a, b) =>
-                searchRank(automaticPlaylistLabel(a, t), q) -
-                searchRank(automaticPlaylistLabel(b, t), q),
-            );
-          result = {
-            ...result,
-            lists,
-            automatic: defaults,
-            total: lists.length + defaults.length,
-            allTotal: state.lists.length + automatic.length,
-          };
         }
         if (desired.current !== requestKey || sequence.current !== requestId)
           return;
@@ -262,6 +282,11 @@ export function useInlineSearch(
       lastScope.current = `${scope}:${section}:${artistView}`;
       return;
     }
+    if (localPage) {
+      lastScope.current = `${scope}:${section}:${artistView}`;
+      immediate.current = false;
+      return;
+    }
     const cached = pages.current.get(key);
     if (cached && !immediate.current) {
       setPage(cached);
@@ -274,9 +299,9 @@ export function useInlineSearch(
     lastScope.current = scopeKey;
     const timer = setTimeout(() => void load(), delay);
     return () => clearTimeout(timer);
-  }, [key, active, retry, apply, load]);
+  }, [key, active, retry, apply, load, localPage]);
   const cached = pages.current.get(key);
-  const current = cached ?? page;
+  const current = localPage ?? cached ?? page;
   const pending =
     active &&
     (current?.key !== key || (request.key === key && request.loading));

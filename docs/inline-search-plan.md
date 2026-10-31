@@ -78,3 +78,8 @@ Research: [Scottish Government filters](https://designsystem.gov.scot/patterns/s
 
 - Put the search-clear X in the collection toolbar, directly before Songs Filter and sort, and in the equivalent toolbar position in other Library views. Remove both earlier search-field/navigation copies. Keep the field open when clearing from the toolbar and restore useful focus.
 - Use a short, cancellable opacity handoff only for explicit clear resets: retain filtered content during the exit, then restore the collection with a gentle entry. Never show an empty intermediate frame, change sorting/Favorites, or delay normal typing. Reduce Motion resets immediately. Cancel a pending clear when the query or view changes.
+
+## Review amendment - 31 October 2026: combined playlist matches
+
+- During overview search, replace the Default Ones / Your playlists subdivisions with one combined result grid linked to the matching/total playlist counter. Show custom matches first, followed by matching defaults; retain name relevance within each category, including the default cards. Restore ordinary subdivisions on clearing.
+- Apply loaded playlist-name matching immediately as text changes, without catalog requests or the catalog debounce. Match localized default names, preserve contextual actions and original memberships, and never auto-open/play a match. Keep collection-detail track search separate.
