@@ -1,4 +1,4 @@
-/** Actual WebView2 multi-window smoke test. Launch only an isolated probe profile.
+﻿/** Actual WebView2 multi-window smoke test. Launch only an isolated probe profile.
  * node scripts/verify-detached-windows.mjs PORT PID OUTPUT_DIRECTORY
  */
 import { chromium, expect as assertion } from "@playwright/test";
@@ -239,10 +239,42 @@ try {
   await expect
     .poll(async () => (await invoke(main, "desktop_state")).windows.length)
     .toBe(1);
-  await expect(main.locator(".visualizer-view")).toBeVisible();
-  await main.keyboard.press("Escape");
-  await player.getByRole("button", { name: "Cola", exact: true }).click();
+  await expect(main.locator(".visualizer-view")).toHaveCount(0);
+  await expect(player.locator(".standalone-player")).toBeVisible();
+  evidence.nativeVisualizerCloseDismisses = true;
   await player
+    .getByRole("button", { name: "Opciones del reproductor", exact: true })
+    .click();
+  await player
+    .getByRole("menuitem", { name: "Visualizador", exact: true })
+    .click();
+  const reopenedVisualizer = await find("visualizer");
+  await expect(reopenedVisualizer.locator("canvas")).toBeVisible();
+  await os("close", "Visualizador");
+  await expect
+    .poll(async () => (await invoke(main, "desktop_state")).windows.length)
+    .toBe(1);
+  evidence.visualizerReopenedAfterClose = true;
+  await os("close", "Reproduciendo");
+  await expect
+    .poll(async () => (await invoke(main, "desktop_state")).windows.length)
+    .toBe(0);
+  await expect(
+    main.getByRole("dialog", { name: "Reproduciendo", exact: true }),
+  ).toHaveCount(0);
+  evidence.nativePlayerCloseDismisses = true;
+  await main.locator(".mini-track").click();
+  await main
+    .getByRole("button", {
+      name: "Abrir en ventana independiente",
+      exact: true,
+    })
+    .click();
+  const reopenedPlayer = await find("player");
+  await reopenedPlayer
+    .getByRole("button", { name: "Cola", exact: true })
+    .click();
+  await reopenedPlayer
     .getByRole("button", { name: "Volver a la ventana principal", exact: true })
     .click();
   await expect(

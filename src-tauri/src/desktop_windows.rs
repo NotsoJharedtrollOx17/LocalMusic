@@ -29,8 +29,14 @@ pub struct Entry {
     pub generation: u64,
     pub queue: bool,
     pub pinned: bool,
+    #[serde(skip)]
+    dismiss_on_close: bool,
 }
 impl Entry {
+    fn begin_return(&mut self, dismiss: bool) {
+        self.phase = "returning".into();
+        self.dismiss_on_close |= dismiss;
+    }
     fn acknowledge_ready(&mut self, caller: &str, generation: u64) -> bool {
         if caller != self.view.label() || generation != self.generation || self.phase != "opening" {
             return false;
@@ -173,6 +179,7 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                     generation,
                     queue,
                     pinned: false,
+                    dismiss_on_close: false,
                 });
             }
             let (width, height) = if view == View::Player {
@@ -366,7 +373,7 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
             if caller != "main" && caller != view.label() {
                 return Err("Window mismatch".into());
             }
-            begin_return(app, view);
+            begin_return(app, view, false);
         }
         Action::Pin { view, value } => {
             if caller != view.label() {
@@ -465,7 +472,7 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
     Ok(())
 }
 #[cfg(windows)]
-fn begin_return(app: &tauri::AppHandle, view: View) {
+fn begin_return(app: &tauri::AppHandle, view: View, dismiss: bool) {
     let registry = app.state::<Windows>();
     if registry.shutting_down.load(Ordering::SeqCst) {
         return;
@@ -477,7 +484,7 @@ fn begin_return(app: &tauri::AppHandle, view: View) {
         .iter_mut()
         .find(|e| e.view == view)
     {
-        e.phase = "returning".into();
+        e.begin_return(dismiss);
     }
     if let Some(w) = app.get_webview_window(view.label()) {
         w.hide().ok();
@@ -511,7 +518,7 @@ fn finish_return(app: &tauri::AppHandle, view: View) {
     if registry.shutting_down.load(Ordering::SeqCst) {
         return;
     }
-    if let Some(e) = entry {
+    if let Some(e) = entry.filter(|e| !e.dismiss_on_close) {
         if let Some(w) = app.get_webview_window("main") {
             w.unminimize().ok();
             w.show().ok();
@@ -536,7 +543,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
                 app.exit(0);
             } else if let Some(view) = view_for_label(window.label()) {
                 api.prevent_close();
-                begin_return(app, view);
+                begin_return(app, view, true);
             }
         }
         if matches!(event, tauri::WindowEvent::Destroyed)
@@ -567,6 +574,7 @@ mod tests {
             generation: 3,
             queue: false,
             pinned: false,
+            dismiss_on_close: false,
         }
     }
     #[test]
@@ -589,6 +597,17 @@ mod tests {
         assert!(!e.release("main", 3));
         assert!(!e.release("visualizer", 2));
         assert!(e.release("visualizer", 3));
+    }
+    #[test]
+    fn native_close_dismisses_while_explicit_return_restores() {
+        let mut explicit = entry();
+        explicit.begin_return(false);
+        assert!(!explicit.dismiss_on_close);
+        let mut closed = entry();
+        closed.begin_return(true);
+        closed.begin_return(false);
+        assert!(closed.dismiss_on_close);
+        assert!(closed.release("visualizer", 3));
     }
     #[test]
     fn navigation_uses_the_frontend_camel_case_contract() {
