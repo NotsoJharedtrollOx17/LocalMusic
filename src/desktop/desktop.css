@@ -31,7 +31,11 @@
   animation: none;
   transform: none;
 }
+/* Scale the detached UI within readable limits; retain native zoom behavior. */
 .companion-shell {
+  --companion-hit: clamp(44px, 6.2vmin, 60px);
+  --companion-play: clamp(56px, 8.6vmin, 88px);
+  --companion-pad: clamp(12px, 3.5vmin, 36px);
   height: 100dvh;
   overflow: hidden;
 }
@@ -71,5 +75,124 @@
   .visualizer-header .window-controls {
     flex-wrap: wrap;
     gap: 0;
+  }
+}
+
+/* Player sizing follows both window dimensions. Artwork also fits remaining height. */
+.standalone-player .player-surface {
+  --player-play-size: var(--companion-play);
+}
+.standalone-player .player-surface-head {
+  padding: clamp(8px, 1.8vmin, 18px) var(--companion-pad);
+}
+.standalone-player .player-surface-head h2 {
+  font-size: clamp(16px, 2.5vmin, 22px);
+}
+.standalone-player .player-header-actions {
+  flex-wrap: wrap;
+}
+.standalone-player .player-surface-body {
+  padding: clamp(12px, 2.8vmin, 28px) var(--companion-pad) 0;
+}
+.standalone-player .full-player {
+  max-width: 760px;
+}
+.standalone-player .player-title {
+  margin: clamp(12px, 2.8vmin, 28px) 0;
+}
+.standalone-player .player-title h2 {
+  font-size: clamp(20px, 3.6vmin, 36px);
+}
+.standalone-player .player-title p {
+  font-size: clamp(14px, 2vmin, 20px);
+}
+.standalone-player .player-surface-footer {
+  padding: clamp(10px, 2vmin, 24px) var(--companion-pad);
+  border-radius: 0;
+}
+.standalone-player .player-surface-footer .transport {
+  grid-template-columns:
+    var(--companion-hit) var(--companion-hit) var(--companion-play)
+    var(--companion-hit) var(--companion-hit);
+  gap: clamp(0px, 2vmin, 24px);
+  margin: clamp(8px, 1.8vmin, 20px) 0;
+}
+.companion-shell .icon-button,
+.standalone-player .player-surface .icon-button {
+  width: var(--companion-hit);
+  min-width: var(--companion-hit);
+  height: var(--companion-hit);
+}
+.companion-shell .icon-button svg {
+  width: clamp(20px, 3.3vmin, 28px);
+  height: clamp(20px, 3.3vmin, 28px);
+}
+.companion-shell .play-circle svg {
+  width: clamp(24px, 3.9vmin, 36px);
+  height: clamp(24px, 3.9vmin, 36px);
+}
+.companion-shell .progress > div {
+  font-size: clamp(12px, 1.7vmin, 14px);
+}
+.standalone-player .queue-content .cover {
+  width: clamp(44px, 6vmin, 64px);
+  height: clamp(44px, 6vmin, 64px);
+}
+.standalone-player .queue-content .track-copy strong {
+  font-size: clamp(14px, 2.2vmin, 20px);
+}
+.standalone-player .queue-content .track-copy > span,
+.standalone-player .queue-content .track-duration {
+  font-size: clamp(12px, 1.9vmin, 16px);
+}
+/* The scene remains resolution-bounded; only its controls change with the window. */
+.companion-shell .visualizer-controls {
+  padding: var(--companion-pad);
+}
+.companion-shell .visualizer-modes button {
+  font-size: clamp(14px, 2vmin, 18px);
+}
+.companion-shell .visualizer-footer {
+  padding-top: clamp(16px, 6vmin, 72px);
+}
+.companion-shell .visualizer-footer h2 {
+  font-size: clamp(20px, 3.6vmin, 36px);
+}
+.companion-shell .visualizer-footer p {
+  font-size: clamp(14px, 2vmin, 20px);
+  margin-bottom: clamp(8px, 2.6vmin, 28px);
+}
+.companion-shell .visualizer-footer .progress {
+  max-width: 980px;
+  margin-block: clamp(8px, 2.2vmin, 24px);
+}
+.companion-shell .visualizer-footer .transport {
+  gap: clamp(12px, 4vmin, 40px);
+  margin-top: clamp(8px, 2.2vmin, 24px);
+}
+.companion-shell .visualizer-footer .play-circle {
+  width: var(--companion-play);
+  height: var(--companion-play);
+}
+@media (max-width: 480px) {
+  .companion-shell .visualizer-header {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .companion-shell .visualizer-modes {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .companion-shell .visualizer-window-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .companion-shell .visualizer-header .window-controls {
+    flex-wrap: nowrap;
+  }
+}
+@media (max-width: 280px) {
+  .standalone-player .player-surface-footer .transport {
+    display: flex;
+    flex-wrap: wrap;
   }
 }

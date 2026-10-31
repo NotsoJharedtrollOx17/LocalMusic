@@ -63,6 +63,46 @@ try {
   const player = await find("player");
   await expect(player.locator(".standalone-player")).toBeVisible();
   await expect(main.locator(".player-scrim:visible")).toHaveCount(0);
+  evidence.playerSizing = [];
+  for (const [width, height] of [
+    [360, 480],
+    [720, 860],
+    [1440, 1080],
+  ]) {
+    await os("resize", "Now playing", width, height);
+    await player.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    const sizes = await player.evaluate(() => ({
+      viewport: [innerWidth, innerHeight],
+      title: parseFloat(
+        getComputedStyle(document.querySelector(".player-title h2")).fontSize,
+      ),
+      artist: parseFloat(
+        getComputedStyle(document.querySelector(".player-title p")).fontSize,
+      ),
+      art: document.querySelector(".player-cover").getBoundingClientRect()
+        .width,
+      overflow: document.documentElement.scrollWidth - innerWidth,
+    }));
+    expect(sizes.title).toBeGreaterThanOrEqual(20);
+    expect(sizes.artist).toBeGreaterThanOrEqual(14);
+    expect(sizes.art).toBeGreaterThanOrEqual(95);
+    expect(sizes.art).toBeLessThanOrEqual(513);
+    expect(sizes.overflow).toBeLessThanOrEqual(1);
+    evidence.playerSizing.push(sizes);
+  }
+  expect(evidence.playerSizing[2].title).toBeGreaterThan(
+    evidence.playerSizing[0].title,
+  );
+  expect(evidence.playerSizing[2].art).toBeGreaterThan(
+    evidence.playerSizing[0].art,
+  );
+  await os("resize", "Now playing", 720, 860);
+
   await expect(player.locator(".library-page,.mini-player")).toHaveCount(0);
   await player
     .getByRole("button", { name: "Always on top", exact: true })
@@ -115,15 +155,48 @@ try {
   await player
     .getByRole("menuitem", { name: "Visualizer", exact: true })
     .click();
-  await expect(
-    main.getByRole("dialog", { name: "Visualizer", exact: true }),
-  ).toBeVisible();
-  await main
-    .getByRole("button", { name: "Open in separate window", exact: true })
-    .click();
   const visualizer = await find("visualizer");
   await expect(visualizer.locator("canvas")).toBeVisible();
   await expect(main.locator(".visualizer-view")).toHaveCount(0);
+  evidence.visualizerSizing = [];
+  for (const [width, height] of [
+    [360, 480],
+    [1100, 720],
+    [1440, 1080],
+  ]) {
+    await os("resize", "Visualizer", width, height);
+    await visualizer.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    const sizes = await visualizer.evaluate(() => ({
+      viewport: [innerWidth, innerHeight],
+      title: parseFloat(
+        getComputedStyle(document.querySelector(".visualizer-footer h2"))
+          .fontSize,
+      ),
+      artist: parseFloat(
+        getComputedStyle(document.querySelector(".visualizer-footer p"))
+          .fontSize,
+      ),
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      pixels:
+        document.querySelector("canvas").width *
+        document.querySelector("canvas").height,
+    }));
+    expect(sizes.title).toBeGreaterThanOrEqual(20);
+    expect(sizes.artist).toBeGreaterThanOrEqual(14);
+    expect(sizes.overflow).toBeLessThanOrEqual(1);
+    expect(sizes.pixels).toBeLessThanOrEqual(2000000);
+    evidence.visualizerSizing.push(sizes);
+  }
+  expect(evidence.visualizerSizing[2].title).toBeGreaterThan(
+    evidence.visualizerSizing[0].title,
+  );
+  await os("resize", "Visualizer", 1100, 720);
+
   expect((await invoke(main, "desktop_state")).windows.length).toBe(2);
   await expect(invoke(main, "start_visualizer")).rejects.toBeTruthy();
   await os("minimize", "Your Recap");

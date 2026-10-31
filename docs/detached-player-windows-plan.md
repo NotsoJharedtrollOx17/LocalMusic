@@ -44,3 +44,10 @@ Approved 31 October 2026. Implementation starts on `dev.detached-player-windows`
 - Inspect actual Windows windows in EN/ES, themes, keyboard/focus, Reduce Motion, high zoom, short windows and monitor boundaries. Browser mocks are not native acceptance.
 - Run frontend checks, complete browser suite, Rust core/native and Kotlin regressions. Build Windows/ARM64 Android and verify metadata, signatures, library hashes and frozen frontend assets.
 - Record actual results in `docs/verification.md`, separating Android runtime, physical performance and manual accessibility gates. Commit for review on the feature branch.
+
+
+## Amendment - direct Visualizer opening and responsive window content
+
+Approved 31 October 2026. This supersedes the original in-app-first opening rule for Visualizer on Windows. On Windows, choosing Visualizer from Now Playing/Queue opens or focuses its separate window directly, from either embedded or detached player. Keep the originating player usable during startup and on failure; retain Retry. Android/browser keep in-app navigation. Existing explicit Return behavior is unchanged.
+
+Both native windows remain resizable with the existing 360 x 480 logical minimum. Adapt content to width and height using bounded CSS sizing, without CSS transforms or overriding accessibility zoom. Scale player artwork between 96 and 512 px while fitting remaining height; keep ordinary popup artwork behavior. Scale detached title/artist text with floors of 20/14 px, button targets at least 44 px and bounded enlarged controls. Scale Queue metadata and visualizer controls similarly. Below readable floors, wrap/scroll rather than truncate controls or shrink text further. Keep the visualizer drawing-surface/performance caps unchanged. Add direct-open/failure/single-instance and multi-size geometry regressions, rebuild native packages, and record actual results before committing this amendment on the same feature branch.

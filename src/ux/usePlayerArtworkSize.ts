@@ -15,6 +15,7 @@ export function usePlayerArtworkSize(
     const content = body?.querySelector<HTMLElement>(".full-player");
     const artwork = content?.querySelector<HTMLElement>(".player-cover");
     if (!body || !content || !artwork) return;
+    const standalone = !!surface.current?.closest(".standalone-player");
     const fit = () => {
       const padding = getComputedStyle(body);
       const otherContent = content.offsetHeight - artwork.offsetHeight;
@@ -25,9 +26,9 @@ export function usePlayerArtworkSize(
         otherContent;
       const size = Math.floor(
         Math.max(
-          32,
+          standalone ? 96 : 32,
           Math.min(
-            320,
+            standalone ? 512 : 320,
             content.clientWidth,
             matchMedia("(max-height: 400px)").matches
               ? Math.min(160, innerHeight * 0.4)

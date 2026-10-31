@@ -123,12 +123,7 @@ test("two detached views synchronize language/mode and return in order behind Se
   await player
     .getByRole("menuitem", { name: "Visualizer", exact: true })
     .click();
-  await expect(
-    page.getByRole("dialog", { name: "Visualizer", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Open in separate window", exact: true })
-    .click();
+  await expect(page.locator(".visualizer-view")).toHaveCount(0);
   await expect
     .poll(() => f.windows.filter((e) => e.phase === "detached").length)
     .toBe(2);
@@ -174,4 +169,155 @@ test("two detached views synchronize language/mode and return in order behind Se
   await expect(
     page.getByRole("dialog", { name: "Reproduciendo", exact: true }),
   ).toBeVisible();
+});
+
+test("Now Playing opens Visualizer directly in a separate window, keeping the popup usable on failure", async ({
+  page,
+  context,
+}) => {
+  const f = new DetachedFixture(context);
+  await f.attach(page);
+  await page.goto("/");
+  await page.locator(".mini-track").click();
+  f.failOpen = true;
+  await page
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Visualizer", exact: true }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Now playing", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".visualizer-view")).toHaveCount(0);
+  f.failOpen = false;
+  await page
+    .locator(".error-banner")
+    .getByRole("button", { name: "Try again", exact: true })
+    .click();
+  await expect
+    .poll(() => f.windows.find((e) => e.view === "visualizer")?.phase)
+    .toBe("detached");
+  await expect(
+    f.children
+      .get("visualizer")!
+      .getByRole("dialog", { name: "Visualizer", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Now playing", exact: true }),
+  ).toBeVisible();
+  expect(f.calls.some((c) => c === "main:start_visualizer")).toBe(false);
+  await page
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Visualizer", exact: true }).click();
+  expect(f.children.size).toBe(1);
+});
+test("detached content grows and shrinks with the window within readable bounds", async ({
+  page,
+  context,
+}) => {
+  const f = new DetachedFixture(context);
+  await f.attach(page);
+  await page.goto("/");
+  await page.locator(".mini-track").click();
+  await page
+    .getByRole("button", { name: "Open in separate window", exact: true })
+    .click();
+  await expect.poll(() => f.windows[0]?.phase).toBe("detached");
+  const player = f.children.get("player")!;
+  await player
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await player
+    .getByRole("menuitem", { name: "Visualizer", exact: true })
+    .click();
+  await expect
+    .poll(() => f.windows.filter((e) => e.phase === "detached").length)
+    .toBe(2);
+  const visualizer = f.children.get("visualizer")!;
+  const samples = [];
+  for (const size of [
+    { width: 360, height: 480 },
+    { width: 720, height: 860 },
+    { width: 1440, height: 1080 },
+  ]) {
+    await player.setViewportSize(size);
+    await visualizer.setViewportSize(size);
+    await player.evaluate(
+      () =>
+        new Promise((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(r)),
+        ),
+    );
+    const metrics = await player.evaluate(() => {
+      const art = document
+          .querySelector(".player-cover")!
+          .getBoundingClientRect(),
+        title = document.querySelector(".player-title h2")!,
+        artist = document.querySelector(".player-title p")!;
+      return {
+        art: art.width,
+        artHeight: art.height,
+        title: parseFloat(getComputedStyle(title).fontSize),
+        artist: parseFloat(getComputedStyle(artist).fontSize),
+        buttons: [
+          ...document.querySelectorAll(
+            ".player-surface-head button,.player-track-actions button,.transport button",
+          ),
+        ].map((b) => ({
+          width: b.getBoundingClientRect().width,
+          height: b.getBoundingClientRect().height,
+        })),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    expect(metrics.art).toBeGreaterThanOrEqual(96);
+    expect(metrics.art).toBeLessThanOrEqual(512);
+    expect(Math.abs(metrics.art - metrics.artHeight)).toBeLessThanOrEqual(1);
+    expect(metrics.title).toBeGreaterThanOrEqual(20);
+    expect(metrics.artist).toBeGreaterThanOrEqual(14);
+    expect(metrics.overflow).toBeLessThanOrEqual(1);
+    for (const button of metrics.buttons) {
+      expect(button.width).toBeGreaterThanOrEqual(44);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+    }
+    const viz = await visualizer.evaluate(() => ({
+      title: parseFloat(
+        getComputedStyle(document.querySelector(".visualizer-footer h2")!)
+          .fontSize,
+      ),
+      artist: parseFloat(
+        getComputedStyle(document.querySelector(".visualizer-footer p")!)
+          .fontSize,
+      ),
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      pixels:
+        document.querySelector("canvas")!.width *
+        document.querySelector("canvas")!.height,
+    }));
+    expect(viz.title).toBeGreaterThanOrEqual(20);
+    expect(viz.artist).toBeGreaterThanOrEqual(14);
+    expect(viz.overflow).toBeLessThanOrEqual(1);
+    expect(viz.pixels).toBeLessThanOrEqual(2000000);
+    samples.push({ ...metrics, vizTitle: viz.title });
+  }
+  expect(samples[2].art).toBeGreaterThan(samples[0].art);
+  expect(samples[2].title).toBeGreaterThan(samples[0].title);
+  expect(samples[2].vizTitle).toBeGreaterThan(samples[0].vizTitle);
+  expect(samples[2].buttons[0].width).toBeGreaterThan(
+    samples[0].buttons[0].width,
+  );
+  // A zoom-sized view scrolls once the readable floor is reached rather than hiding controls.
+  await player.setViewportSize({ width: 240, height: 320 });
+  await visualizer.setViewportSize({ width: 240, height: 320 });
+  for (const p of [player, visualizer]) {
+    expect(
+      await p.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+    ).toBeLessThanOrEqual(1);
+    await p
+      .getByRole("button", { name: "Play", exact: true })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      p.getByRole("button", { name: "Play", exact: true }),
+    ).toBeInViewport();
+  }
 });

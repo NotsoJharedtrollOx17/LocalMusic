@@ -1,3 +1,4 @@
+import { desktop, useDesktopWindows } from "../desktop/windows";
 import { ActionMenu } from "../ux";
 import type { MenuAction } from "../ux/ActionMenu";
 import { audioShareLabel, hasAudioShareChooser } from "../ux/sharing";
@@ -7,6 +8,7 @@ import { usePlaybackPrivacy } from "./usePlaybackPrivacy";
 
 export default function TrackActionMenu() {
   const {
+    act,
     setModal,
     dismissModals,
     setDetail,
@@ -28,6 +30,7 @@ export default function TrackActionMenu() {
     feedbackPending,
   } = usePlayerContext();
   const privacy = usePlaybackPrivacy();
+  const desktopWindows = useDesktopWindows();
   if (!menu) return null;
   const track = cache[menu.track.id] ?? menu.track;
   // Inline results retain the active Library collection context.
@@ -135,7 +138,16 @@ export default function TrackActionMenu() {
               {
                 id: "visualizer",
                 label: t.visualizer,
-                action: () => setModal("visualizer"),
+                action: () =>
+                  desktopWindows.supported
+                    ? void act(() =>
+                        desktop.action({
+                          op: "open",
+                          view: "visualizer",
+                          queue: false,
+                        }),
+                      )
+                    : setModal("visualizer"),
               },
               {
                 id: "privacy",
