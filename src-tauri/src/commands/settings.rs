@@ -134,7 +134,7 @@ pub(crate) fn patch_settings(
     state: State<MusicState>,
     patch: serde_json::Value,
 ) -> Result<Settings> {
-    if !["main", "player", "visualizer"].contains(&window.label()) {
+    if !["main", "player", "visualizer", "equalizer"].contains(&window.label()) {
         return Err("Unknown window".into());
     }
     let next = {

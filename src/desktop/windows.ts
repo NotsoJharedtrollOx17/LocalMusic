@@ -1,7 +1,7 @@
 import { isTauri, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useSyncExternalStore } from "react";
-export type DetachedView = "player" | "visualizer";
+export type DetachedView = "player" | "visualizer" | "equalizer";
 export interface WindowEntry {
   view: DetachedView;
   phase: "opening" | "transferring" | "detached" | "returning";
@@ -38,7 +38,11 @@ export const companion = isTauri()
   ? new URLSearchParams(location.search).get("companion")
   : null;
 export const companionView: DetachedView | null =
-  companion === "player" || companion === "visualizer" ? companion : null;
+  companion === "player" ||
+  companion === "visualizer" ||
+  companion === "equalizer"
+    ? companion
+    : null;
 let snapshot: WindowState = { supported: false, windows: [] };
 const subscribers = new Set<() => void>();
 const notify = () => subscribers.forEach((fn) => fn());

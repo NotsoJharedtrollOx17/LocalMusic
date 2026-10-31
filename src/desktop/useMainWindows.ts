@@ -144,6 +144,11 @@ export function useMainWindows(
       s.modal === "visualizer"
     )
       a.dismissModals();
+    if (
+      transfers.some((e) => e.view === "equalizer") &&
+      s.modal === "equalizer"
+    )
+      a.dismissModals();
     setReleasing(transfers);
   }, [windows]);
   useEffect(() => {
@@ -162,8 +167,8 @@ export function useMainWindows(
     const [entry, ...rest] = pending;
     setPending(rest);
     actions.setModal(
-      entry.view === "visualizer"
-        ? "visualizer"
+      entry.view === "visualizer" || entry.view === "equalizer"
+        ? entry.view
         : entry.queue
           ? "queue"
           : "player",

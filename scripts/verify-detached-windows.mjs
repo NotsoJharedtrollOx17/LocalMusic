@@ -155,6 +155,45 @@ try {
     .getByRole("button", { name: "Player options", exact: true })
     .click();
   await player
+    .getByRole("menuitem", { name: "Equalizer", exact: true })
+    .click();
+  const equalizer = await find("equalizer");
+  await expect(
+    equalizer.getByRole("heading", { name: "Equalizer", exact: true }),
+  ).toBeVisible();
+  await expect(
+    equalizer.getByRole("button", { name: "Rock", exact: true }),
+  ).toBeVisible();
+  await equalizer.getByRole("button", { name: "Rock", exact: true }).click();
+  await expect
+    .poll(
+      async () => (await invoke(main, "sound_capabilities")).config.presetId,
+    )
+    .toBe("rock");
+  await os("resize", "Equalizer", 360, 480);
+  await equalizer.screenshot({ path: `${output}/equalizer-min.png` });
+  expect(
+    await equalizer.evaluate(
+      () => document.documentElement.scrollWidth - innerWidth,
+    ),
+  ).toBeLessThanOrEqual(1);
+  await equalizer.getByRole("button", { name: "Back", exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await invoke(main, "desktop_state")).windows.some(
+        (e) => e.view === "equalizer",
+      ),
+    )
+    .toBe(false);
+  await expect(
+    main.getByRole("dialog", { name: "Equalizer", exact: true }),
+  ).toHaveCount(0);
+  await expect(player.locator(".standalone-player")).toBeVisible();
+  evidence.equalizerSharedConfigAndBack = true;
+  await player
+    .getByRole("button", { name: "Player options", exact: true })
+    .click();
+  await player
     .getByRole("menuitem", { name: "Visualizer", exact: true })
     .click();
   const visualizer = await find("visualizer");

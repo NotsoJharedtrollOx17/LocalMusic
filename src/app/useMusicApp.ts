@@ -22,11 +22,12 @@ import { en, es } from "../i18n";
 import { compareCatalogTracks } from "../domain";
 import { useSyncedSettings } from "../desktop/useSyncedSettings";
 import { useMainWindows } from "../desktop/useMainWindows";
-import { desktop } from "../desktop/windows";
+import { desktop, useDesktopWindows } from "../desktop/windows";
 import { type Track, type Settings, type CatalogGroup } from "../types";
 
 export function useMusicApp(initialSettings?: Settings) {
   const state = useAppState(initialSettings);
+  const desktopWindows = useDesktopWindows();
   const {
     section,
     setSection,
@@ -685,7 +686,11 @@ export function useMusicApp(initialSettings?: Settings) {
     inlineSearch.stale,
   ]);
   async function openEqualizer() {
-    setModal("equalizer");
+    if (desktopWindows.supported)
+      await act(() =>
+        desktop.action({ op: "open", view: "equalizer", queue: false }),
+      );
+    else setModal("equalizer");
   }
   const formatMinutes = (ms: number) =>
     ms > 0 && ms < 60000

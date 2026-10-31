@@ -202,3 +202,38 @@
     flex-wrap: wrap;
   }
 }
+
+.detached-equalizer {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.detached-equalizer-header {
+  display: grid;
+  grid-template-columns: minmax(44px, 1fr) auto minmax(44px, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 12px var(--companion-pad);
+  border-bottom: 1px solid var(--rule);
+}
+.detached-equalizer-header h1 {
+  font-size: clamp(16px, 2.5vmin, 22px);
+  text-align: center;
+  margin: 0;
+}
+.detached-equalizer-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--companion-pad);
+}
+.detached-equalizer-body .sound-controls {
+  max-width: 900px;
+  margin-inline: auto;
+}
+@media (max-width: 480px) {
+  .detached-equalizer-header {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+}

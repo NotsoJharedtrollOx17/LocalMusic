@@ -13,6 +13,7 @@ import ManualPlaylistDialog from "../app/ManualPlaylistDialog";
 import RemoveLibraryDialog from "../app/RemoveLibraryDialog";
 import SoundDialog from "../app/SoundDialog";
 import WindowControls from "./WindowControls";
+import DetachedEqualizer from "./DetachedEqualizer";
 export default function CompanionApp({
   view,
   initialSettings,
@@ -26,7 +27,7 @@ export default function CompanionApp({
       requestAnimationFrame(() =>
         document
           .querySelector<HTMLButtonElement>(
-            ".player-surface-head button,.visualizer-header button,.companion-wait button",
+            ".player-surface-head button,.visualizer-header button,.detached-equalizer-header button,.companion-wait button",
           )
           ?.focus(),
       );
@@ -36,7 +37,9 @@ export default function CompanionApp({
       <div className="companion-shell">
         {active && loaded ? (
           <>
-            {model.current ? (
+            {view === "equalizer" ? (
+              <DetachedEqualizer />
+            ) : model.current ? (
               <>{view === "player" ? <PlayerDialog /> : <VisualizerView />}</>
             ) : (
               <main className="companion-wait">
@@ -49,7 +52,7 @@ export default function CompanionApp({
             <AddPlaylistDialog />
             <ManualPlaylistDialog />
             <RemoveLibraryDialog />
-            <SoundDialog />
+            {view !== "equalizer" && <SoundDialog />}
           </>
         ) : (
           <main className="companion-wait" role="status">

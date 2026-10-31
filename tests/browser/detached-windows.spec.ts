@@ -391,3 +391,78 @@ test("detached Back controls dismiss views without restoring popups", async ({
   await expect(page.getByRole("dialog", { name: "Visualizer" })).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: "Now playing" })).toBeVisible();
 });
+
+test("Equalizer opens independently, shares edits, and closes or returns", async ({
+  page,
+  context,
+}) => {
+  const f = new DetachedFixture(context);
+  f.player.trackId = null as unknown as string;
+  f.player.queue = [];
+  await f.attach(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Library actions" }).click();
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  await expect
+    .poll(() => f.windows.find((e) => e.view === "equalizer")?.phase)
+    .toBe("detached");
+  const equalizer = f.children.get("equalizer")!;
+  await expect(
+    equalizer.getByRole("heading", { name: "Equalizer", exact: true }),
+  ).toBeVisible();
+  await equalizer.getByRole("button", { name: "Rock", exact: true }).click();
+  await expect.poll(() => f.sound.config.presetId).toBe("rock");
+  await page.getByRole("button", { name: "Library actions" }).click();
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  expect(f.windows.filter((e) => e.view === "equalizer")).toHaveLength(1);
+  await equalizer.getByRole("button", { name: "Back", exact: true }).click();
+  await expect.poll(() => f.windows.length).toBe(0);
+  await expect(page.getByRole("dialog", { name: "Equalizer" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Library actions" }).click();
+  await page.getByRole("menuitem", { name: "Equalizer", exact: true }).click();
+  await expect.poll(() => f.windows[0]?.phase).toBe("detached");
+  const reopened = f.children.get("equalizer")!;
+  await expect(
+    reopened.getByRole("button", { name: "Rock", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await reopened.getByRole("button", { name: "Return to main window" }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Equalizer", exact: true }),
+  ).toBeVisible();
+});
+
+test("Equalizer from detached player flushes edits before closing", async ({
+  page,
+  context,
+}) => {
+  const f = new DetachedFixture(context);
+  f.soundWriteDelay = 350;
+  await f.attach(page);
+  await page.goto("/");
+  await page.locator(".mini-track").click();
+  await page.getByRole("button", { name: "Open in separate window" }).click();
+  await expect
+    .poll(() => f.windows.find((e) => e.view === "player")?.phase)
+    .toBe("detached");
+  const player = f.children.get("player")!;
+  await player.getByRole("button", { name: "Player options" }).click();
+  await player
+    .getByRole("menuitem", { name: "Equalizer", exact: true })
+    .click();
+  await expect
+    .poll(() => f.windows.find((e) => e.view === "equalizer")?.phase)
+    .toBe("detached");
+  const equalizer = f.children.get("equalizer")!;
+  await expect(
+    equalizer.getByRole("button", { name: "Jazz", exact: true }),
+  ).toBeVisible();
+  await equalizer.getByRole("button", { name: "Jazz", exact: true }).click();
+  await equalizer.getByRole("button", { name: "Back", exact: true }).click();
+  await expect
+    .poll(() => f.windows.some((e) => e.view === "equalizer"))
+    .toBe(false);
+  expect(f.sound.config.presetId).toBe("jazz");
+  await expect(
+    player.getByRole("dialog", { name: "Now playing", exact: true }),
+  ).toBeVisible();
+});

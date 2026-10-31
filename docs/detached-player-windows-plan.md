@@ -61,3 +61,8 @@ Approved by user follow-up. The native Close button dismisses either detached vi
 ## Amendment - Back dismisses detached views
 
 The Back/Close arrow and Escape dismiss a detached Now Playing or Visualizer window instead of restoring a popup. Escape from Queue first returns to Now Playing; open menus and dialogs dismiss first. The explicit Return to main control continues to restore the view. The dismissal uses the existing native Close cleanup and generation ownership.
+
+
+## Amendment - independent Equalizer window
+
+On Windows, Equalizer opens or focuses a third independent, resizable window from Library or Now Playing, alongside the existing detached player and visualizer. It works without a current track, shares the native EQ engine, synchronizes sound changes, supports language/theme and optional pinning, and flushes pending EQ edits before window shutdown. Back/Escape and native Close dismiss; explicit Return restores the in-app Equalizer. Preserve retry and existing mobile/browser in-app behavior. Reuse bounded window lifecycle, validate the fixed window label, preserve main shutdown and session-only bounds. Verify live settings, single-instance opening, no-track startup, close/Return, existing windows and platform boundaries.

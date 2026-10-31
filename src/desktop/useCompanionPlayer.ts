@@ -76,7 +76,7 @@ export function useCompanionPlayer(
   const dismissModals = () => {
     history.current = [];
     state.setPlayerParent(null);
-    state.setModal(view === "player" ? "player" : "visualizer");
+    state.setModal(view === "player" ? "player" : view);
   };
   const setModal: PlayerModel["setModal"] = (action) => {
     const modal = latest.current.modal,
@@ -213,7 +213,7 @@ export function useCompanionPlayer(
     if (!loaded || initialized.current || !entry) return;
     initialized.current = true;
     state.setModal(
-      view === "visualizer" ? "visualizer" : entry.queue ? "queue" : "player",
+      view === "player" ? (entry.queue ? "queue" : "player") : view,
     );
     void act(() =>
       desktop.action({ op: "ready", view, generation: entry.generation }),
@@ -222,9 +222,14 @@ export function useCompanionPlayer(
   // The host unmounts scenes first, then this effect acknowledges the released lease.
   useEffect(() => {
     if (entry?.phase === "returning")
-      void desktop
-        .action({ op: "released", view, generation: entry.generation })
-        .catch(() => {});
+      void (async () => {
+        if (view === "equalizer") await soundController.flush();
+        await desktop.action({
+          op: "released",
+          view,
+          generation: entry.generation,
+        });
+      })().catch(() => {});
   }, [entry?.phase]);
   useEffect(() => {
     let dead = false;
@@ -372,7 +377,13 @@ export function useCompanionPlayer(
     refreshPicker,
     share,
     openGroup,
-    openEqualizer: async () => setModal("equalizer"),
+    openEqualizer: async () => {
+      if (windows.supported && view !== "equalizer")
+        await act(() =>
+          desktop.action({ op: "open", view: "equalizer", queue: false }),
+        );
+      else setModal("equalizer");
+    },
     playlistContext,
     playlistContextLoaded,
     suggestionFeedback,

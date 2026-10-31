@@ -1,14 +1,27 @@
 import type { BrowserContext, Page } from "@playwright/test";
+import { defaultSound } from "../../src/sound/model";
 import type { WindowEntry } from "../../src/desktop/windows";
 /** Deterministic IPC/lifecycle simulation; native acceptance is exercised separately. */
 export class DetachedFixture {
   dismissed = new Set<string>();
+  sound = {
+    config: defaultSound(),
+    supported: true,
+    status: "ready",
+    sampleRate: 48000,
+    channels: 2,
+    attenuation: 0,
+    bypass: false,
+    inactiveBands: [],
+    routeMonitoring: true,
+  };
   windows: WindowEntry[] = [];
   children = new Map<string, Page>();
   listeners = new Map<Page, Array<{ event: string; handler: number }>>();
   calls: string[] = [];
   serial = 0;
   failOpen = false;
+  soundWriteDelay = 0;
   settings = {
     language: "en",
     theme: "light",
@@ -99,6 +112,23 @@ export class DetachedFixture {
             revision: ++this.serial,
           });
           return;
+        }
+        if (command === "sound_capabilities") return this.sound;
+        if (command === "set_sound") {
+          if (this.soundWriteDelay)
+            await new Promise((r) => setTimeout(r, this.soundWriteDelay));
+          this.sound.config = args.config;
+          await this.emit("desktop://changed", {
+            domain: "sound",
+            revision: ++this.serial,
+            source: label,
+          });
+          return this.sound;
+        }
+        if (command === "sound_action") {
+          if (args.action.op === "bypass")
+            this.sound.bypass = args.action.value;
+          return this.sound;
         }
         if (command === "playback_snapshot") return this.player;
         if (command === "list_tracks")

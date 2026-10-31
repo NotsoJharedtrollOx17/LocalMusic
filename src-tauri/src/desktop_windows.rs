@@ -12,12 +12,14 @@ use tauri::{Emitter, Manager};
 pub enum View {
     Player,
     Visualizer,
+    Equalizer,
 }
 impl View {
     pub fn label(self) -> &'static str {
         match self {
             Self::Player => "player",
             Self::Visualizer => "visualizer",
+            Self::Equalizer => "equalizer",
         }
     }
 }
@@ -79,7 +81,7 @@ pub enum Action {
     Navigate { kind: String, track_id: String },
 }
 fn valid_caller(label: &str) -> Result<()> {
-    if ["main", "player", "visualizer"].contains(&label) {
+    if ["main", "player", "visualizer", "equalizer"].contains(&label) {
         Ok(())
     } else {
         Err("Unknown window".into())
@@ -183,10 +185,10 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                     dismiss_on_close: false,
                 });
             }
-            let (width, height) = if view == View::Player {
-                (720., 860.)
-            } else {
-                (1100., 720.)
+            let (width, height) = match view {
+                View::Player => (720., 860.),
+                View::Visualizer => (1100., 720.),
+                View::Equalizer => (940., 760.),
             };
             let result = (|| -> tauri::Result<()> {
                 let mut builder = WebviewWindowBuilder::new(
@@ -200,10 +202,10 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                         .into(),
                     ),
                 )
-                .title(if view == View::Player {
-                    "Local Music - Now playing"
-                } else {
-                    "Local Music - Visualizer"
+                .title(match view {
+                    View::Player => "Local Music - Now playing",
+                    View::Visualizer => "Local Music - Visualizer",
+                    View::Equalizer => "Local Music - Equalizer",
                 })
                 .visible(false)
                 .inner_size(width, height)
@@ -413,8 +415,10 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                 let title = match (caller, language.as_str()) {
                     ("player", "es") => "Local Music - Reproduciendo",
                     ("visualizer", "es") => "Local Music - Visualizador",
+                    ("equalizer", "es") => "Local Music - Ecualizador",
                     ("player", _) => "Local Music - Now playing",
                     ("visualizer", _) => "Local Music - Visualizer",
+                    ("equalizer", _) => "Local Music - Equalizer",
                     (_, "es") => "Local Music - Tu resumen",
                     _ => "Local Music - Your Recap",
                 };
@@ -542,7 +546,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
             if window.label() == "main" {
                 registry.shutting_down.store(true, Ordering::SeqCst);
-                for label in ["player", "visualizer"] {
+                for label in ["player", "visualizer", "equalizer"] {
                     if let Some(w) = app.get_webview_window(label) {
                         w.destroy().ok();
                     }
@@ -568,6 +572,7 @@ fn view_for_label(label: &str) -> Option<View> {
     match label {
         "player" => Some(View::Player),
         "visualizer" => Some(View::Visualizer),
+        "equalizer" => Some(View::Equalizer),
         _ => None,
     }
 }
@@ -628,8 +633,18 @@ mod tests {
     fn only_known_local_windows_and_views_are_accepted() {
         assert!(valid_caller("main").is_ok());
         assert!(valid_caller("player").is_ok());
+        assert!(valid_caller("equalizer").is_ok());
         assert!(valid_caller("external").is_err());
         assert_eq!(view_for_label("visualizer"), Some(View::Visualizer));
+        assert_eq!(view_for_label("equalizer"), Some(View::Equalizer));
+        assert!(matches!(
+            serde_json::from_str::<Action>(r#"{"op":"open","view":"equalizer","queue":false}"#)
+                .unwrap(),
+            Action::Open {
+                view: View::Equalizer,
+                ..
+            }
+        ));
         assert!(serde_json::from_str::<Action>(
             r#"{"op":"open","view":"https://example.org","queue":false}"#
         )
