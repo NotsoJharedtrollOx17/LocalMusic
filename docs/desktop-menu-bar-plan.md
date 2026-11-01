@@ -45,3 +45,9 @@ The organization follows [Microsoft menu guidance](https://learn.microsoft.com/e
 - Confirm companion windows lack the bar and Android/browser retain existing controls.
 - Run frontend checks, full browser suite, Rust core/native and Kotlin tests. Build Windows and ARM64 Android; verify metadata, signatures and embedded assets.
 - Record actual evidence in docs/verification.md, separating native interaction, Android runtime and manual accessibility from automated/build results.
+
+## Approved refinements - 1 November 2026
+
+- About Local Music opens one independent, non-modal Windows information window. Repeated activation focuses it; Close/Escape dismisses it, and main shutdown closes it. It follows language/theme without mounting the Library or playback controller. Other main-window actions remain available.
+- The Library Settings icon retains all its original contextual Edit, Equalizer and Settings entries on Windows too. The native bar is an additional route to those actions.
+- Native-menu Library navigation keeps the existing sliding transition without programmatically focusing a tab or leaving a keyboard outline. Ordinary keyboard Tab/arrow focus remains visible.

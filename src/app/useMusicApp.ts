@@ -1,4 +1,5 @@
 import { useInlineSearch } from "./useInlineSearch";
+import { invoke } from "@tauri-apps/api/core";
 import { useRecapPeriods } from "./useRecapPeriods";
 import { useAutomaticPlaylists } from "./useAutomaticPlaylists";
 import { dismissMenu, hasOpenMenu } from "../ux/menuLayer";
@@ -760,10 +761,9 @@ export function useMusicApp(initialSettings?: Settings) {
       if (
         ["songs", "albums", "artists", "playlists", "year"].includes(command)
       ) {
+        if (document.activeElement?.getAttribute("role") === "tab")
+          (document.activeElement as HTMLElement).blur();
         motion.choose(command as LibrarySection);
-        requestAnimationFrame(() =>
-          document.getElementById(`tab-${command}`)?.focus(),
-        );
         return;
       }
       switch (command) {
@@ -814,8 +814,10 @@ export function useMusicApp(initialSettings?: Settings) {
         case "equalizer":
           await openEqualizer();
           break;
-        case "help":
         case "about":
+          await invoke("desktop_about", { op: "open", dark: false });
+          break;
+        case "help":
           setModal(command);
           break;
       }

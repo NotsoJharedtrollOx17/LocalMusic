@@ -2,6 +2,6 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
   "description": "Local music UI access",
-  "windows": ["main", "player", "visualizer", "equalizer"],
+  "windows": ["main", "player", "visualizer", "equalizer", "about"],
   "permissions": ["core:default"]
 }

@@ -22,7 +22,15 @@ test("native menu dispatch, check state, scoped search, manual creator and local
   ).toHaveAttribute("aria-selected", "true");
   await expect(
     page.getByRole("button", { name: "Library actions" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
+  await expect(
+    page.getByRole("tab", { name: "Albums", exact: true }),
+  ).not.toBeFocused();
+  expect(
+    await page
+      .getByRole("tab", { name: "Albums", exact: true })
+      .evaluate((node) => getComputedStyle(node, "::before").content),
+  ).toBe("none");
   await command("search");
   await expect(page.getByRole("searchbox")).toBeFocused();
   await command("new-playlist");
@@ -55,13 +63,38 @@ test("native menu dispatch, check state, scoped search, manual creator and local
   ).toContainText("Ctrl+O");
   await page.keyboard.press("Escape");
   await command("about");
+  await expect.poll(() => !!f.about).toBe(true);
+  const about = f.about!;
   await expect(
-    page.getByRole("dialog", { name: "About Local Music", exact: true }),
+    about.getByRole("main", { name: "About Local Music", exact: true }),
   ).toContainText("0.13.0");
-  await page.keyboard.press("Escape");
-  await command("settings");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await command("about");
+  expect(f.about).toBe(about);
+  await page
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await expect(
+    page.getByRole("menuitem", { name: "Equalizer", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("menuitem", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Español", exact: true }).click();
   await expect.poll(() => state()?.language).toBe("es");
+  await expect(
+    about.getByRole("main", { name: "Acerca de Local Music", exact: true }),
+  ).toBeVisible();
+  await about.keyboard.press("Escape");
+  await expect.poll(() => about.isClosed()).toBe(true);
+  await expect(
+    page.getByRole("dialog", { name: "Ajustes", exact: true }),
+  ).toBeVisible();
+  expect(
+    f.calls.some((c) =>
+      /^about:(list_groups|list_tracks|get_recap|playback_snapshot|desktop_menu_sync|analysis_activity)$/.test(
+        c,
+      ),
+    ),
+  ).toBe(false);
   await page.keyboard.press("Escape");
   await command("help");
   await expect(
@@ -111,10 +144,10 @@ test("failed native initialization keeps legacy actions and Retry installs the m
     .click();
   await expect(
     page.getByRole("menuitem", { name: "Settings", exact: true }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     page.getByRole("menuitem", { name: "Equalizer", exact: true }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     page.getByRole("menuitem", { name: "Edit", exact: true }),
   ).toBeVisible();

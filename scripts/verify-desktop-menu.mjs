@@ -113,6 +113,25 @@ try {
   await expect
     .poll(async () => (await item("Library/Albums"))?.checked)
     .toBe(true);
+  expect(
+    await main
+      .getByRole("tab", { name: "Albums", exact: true })
+      .evaluate(
+        (node) =>
+          node === document.activeElement ||
+          getComputedStyle(node, "::before").content !== "none",
+      ),
+  ).toBe(false);
+  await main
+    .getByRole("button", { name: "Library actions", exact: true })
+    .click();
+  await expect(
+    main.getByRole("menuitem", { name: "Equalizer", exact: true }),
+  ).toBeVisible();
+  await expect(
+    main.getByRole("menuitem", { name: "Settings", exact: true }),
+  ).toBeVisible();
+  await main.keyboard.press("Escape");
   await command("Library/Search current view");
   await expect(main.getByRole("searchbox")).toBeFocused();
   await command("File/New playlist…");
@@ -154,10 +173,28 @@ try {
   ).toContainText("Ctrl+O");
   await main.keyboard.press("Escape");
   await command("Help/About Local Music…");
+  await expect
+    .poll(() => pages().some((p) => p.url().includes("about=1")))
+    .toBe(true);
+  const about = pages().find((p) => p.url().includes("about=1"));
   await expect(
-    main.getByRole("dialog", { name: "About Local Music", exact: true }),
+    about.getByRole("main", { name: "About Local Music", exact: true }),
   ).toContainText("0.13.0");
-  await main.keyboard.press("Escape");
+  await expect
+    .poll(async () =>
+      (await os("list")).some(
+        (w) => w.title.includes("About Local Music") && w.visible,
+      ),
+    )
+    .toBe(true);
+  await expect(main.getByRole("dialog")).toHaveCount(0);
+  expect(await os("menus", "About Local Music")).toEqual([]);
+  await command("Help/About Local Music…");
+  expect(pages().filter((p) => p.url().includes("about=1"))).toHaveLength(1);
+  await about.keyboard.press("Escape");
+  await expect.poll(() => about.isClosed()).toBe(true);
+  evidence.aboutWindow =
+    "independent, singleton, versioned, no menu; Escape closes without a main popup";
   // Exercise the real folder picker and cancellation without importing user files.
   await command("File/Import music…");
   await cancelPicker();
@@ -199,7 +236,9 @@ try {
   for (const chord of ["ALT", "F10"]) {
     try {
       await os("keys", title, chord);
-      await expect.poll(async () => (await os("menu-focus", title)).menuMode).toBe(true);
+      await expect
+        .poll(async () => (await os("menu-focus", title)).menuMode)
+        .toBe(true);
       await os("keys", title, "ESC");
       evidence.keyboard[chord] =
         "passed; foreground-checked OS keys activated the Win32 menu loop";
@@ -246,6 +285,12 @@ try {
   );
   await expect(visualizer.locator(".visualizer-view")).toBeVisible();
   expect(await os("menus", "Visualizer")).toEqual([]);
+  // About remains open while Settings and the Library continue to work.
+  await command("Help/About Local Music…");
+  await expect
+    .poll(() => pages().some((p) => p.url().includes("about=1")))
+    .toBe(true);
+  const translatedAbout = pages().find((p) => p.url().includes("about=1"));
   await command("File/Settings…");
   await main.getByRole("button", { name: "Español", exact: true }).click();
   await main
@@ -260,9 +305,17 @@ try {
   evidence.spanishMenus = await menus();
   await command("Ayuda/Acerca de Local Music…");
   await expect(
-    main.getByRole("dialog", { name: "Acerca de Local Music", exact: true }),
+    translatedAbout.getByRole("main", {
+      name: "Acerca de Local Music",
+      exact: true,
+    }),
   ).toContainText("0.13.0");
-  await main.keyboard.press("Escape");
+  await expect
+    .poll(() =>
+      translatedAbout.evaluate(() => document.documentElement.dataset.theme),
+    )
+    .toBe("dark");
+  await translatedAbout.screenshot({ path: `${output}/about-es-dark.png` });
   await os("resize", title, 360, 600);
   await expect
     .poll(() =>

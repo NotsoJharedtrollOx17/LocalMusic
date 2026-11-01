@@ -1,1 +1,1 @@
-{"main-capability":{"identifier":"main-capability","description":"Local music UI access","local":true,"windows":["main","player","visualizer","equalizer"],"permissions":["core:default"]}}
+{"main-capability":{"identifier":"main-capability","description":"Local music UI access","local":true,"windows":["main","player","visualizer","equalizer","about"],"permissions":["core:default"]}}

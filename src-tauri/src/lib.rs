@@ -1,5 +1,6 @@
 //! Application entry point: platform plugins, startup and command registration.
 mod album_order;
+mod about_window;
 mod artwork;
 #[cfg(not(target_os = "android"))]
 mod catalog;
@@ -53,6 +54,7 @@ pub fn run() {
             desktop_windows::desktop_action,
             desktop_windows::desktop_changed,
             desktop_menu::desktop_menu_sync,
+            about_window::desktop_about,
             commands::settings::patch_settings,
             commands::catalog::list_tracks,
             commands::catalog::list_groups,

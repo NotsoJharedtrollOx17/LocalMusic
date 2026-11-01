@@ -25,6 +25,7 @@ export class DetachedFixture {
   menuFailure = false;
   playbackFailure = false;
   menuStates: any[] = [];
+  about?: Page;
   soundWriteDelay = 0;
   settings = {
     language: "en",
@@ -101,6 +102,20 @@ export class DetachedFixture {
         }
         if (command === "desktop_state")
           return { supported: true, windows: this.windows };
+        if (command === "plugin:app|version") return "0.13.0";
+        if (command === "desktop_about") {
+          if (args.op === "open") {
+            if (label !== "main") throw Error("Only main opens About");
+            if (this.about && !this.about.isClosed()) return;
+            this.about = await this.context.newPage();
+            await this.attach(this.about, "about");
+            await this.about.goto("/?about=1");
+          } else if (args.op === "close") {
+            if (label !== "about") throw Error("Only About closes itself");
+            setTimeout(() => void page.close(), 50);
+          }
+          return;
+        }
         if (command === "desktop_menu_sync") {
           if (!this.nativeMenu) return null;
           if (label !== "main") throw Error("Only main owns the menu");

@@ -13,6 +13,7 @@ import "@fontsource/space-grotesk/latin-500.css";
 import "@fontsource/space-grotesk/latin-700.css";
 import App from "./App";
 import CompanionApp from "./desktop/CompanionApp";
+import AboutWindow from "./desktop/AboutWindow";
 import { desktop, companionView } from "./desktop/windows";
 import "./styles.css";
 import "./ux.css";
@@ -22,14 +23,18 @@ import "./playlists.css";
 import "./focus.css";
 import "./desktop/desktop.css";
 installNativeShortcuts(native);
+const aboutWindow =
+  native && new URLSearchParams(location.search).get("about") === "1";
 async function start() {
-  await desktop.initialize();
+  if (!aboutWindow) await desktop.initialize();
   const settings = await api.settings().catch(() => undefined);
   if (settings) applyTheme(settings.theme);
   flushSync(() =>
     createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
-        {companionView ? (
+        {aboutWindow ? (
+          <AboutWindow initialSettings={settings} />
+        ) : companionView ? (
           <CompanionApp view={companionView} initialSettings={settings} />
         ) : (
           <App initialSettings={settings} />
@@ -37,7 +42,7 @@ async function start() {
       </React.StrictMode>,
     ),
   );
-  if (native && !companionView) {
+  if (native && !companionView && !aboutWindow) {
     const theme = document.documentElement.dataset.theme;
     const dark =
       theme === "dark" ||

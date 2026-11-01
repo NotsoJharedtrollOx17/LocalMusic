@@ -145,7 +145,13 @@ pub async fn desktop_action(
     window: tauri::WebviewWindow,
     action: Action,
 ) -> Result<()> {
-    valid_caller(window.label())?;
+    if window.label() == "about" {
+        if !matches!(action, Action::Appearance { .. }) {
+            return Err("About only synchronizes appearance".into());
+        }
+    } else {
+        valid_caller(window.label())?;
+    }
     #[cfg(windows)]
     {
         perform(&app, window.label(), action)
@@ -167,7 +173,13 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
         Action::Open { view, queue } => {
             if let Some(w) = app.get_webview_window(view.label()) {
                 if view == View::Player {
-                    if let Some(entry) = registry.entries.lock().unwrap().iter_mut().find(|e| e.view == view) {
+                    if let Some(entry) = registry
+                        .entries
+                        .lock()
+                        .unwrap()
+                        .iter_mut()
+                        .find(|e| e.view == view)
+                    {
                         entry.queue = queue;
                     }
                     publish(app);
@@ -422,9 +434,11 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
                     ("player", "es") => "Local Music - Reproduciendo",
                     ("visualizer", "es") => "Local Music - Visualizador",
                     ("equalizer", "es") => "Local Music - Ecualizador",
+                    ("about", "es") => "Local Music - Acerca de Local Music",
                     ("player", _) => "Local Music - Now playing",
                     ("visualizer", _) => "Local Music - Visualizer",
                     ("equalizer", _) => "Local Music - Equalizer",
+                    ("about", _) => "Local Music - About Local Music",
                     (_, "es") => "Local Music - Tu resumen",
                     _ => "Local Music - Your Recap",
                 };
@@ -552,7 +566,7 @@ pub fn window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
             if window.label() == "main" {
                 registry.shutting_down.store(true, Ordering::SeqCst);
-                for label in ["player", "visualizer", "equalizer"] {
+                for label in ["player", "visualizer", "equalizer", "about"] {
                     if let Some(w) = app.get_webview_window(label) {
                         w.destroy().ok();
                     }

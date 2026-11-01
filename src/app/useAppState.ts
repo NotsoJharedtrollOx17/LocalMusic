@@ -102,7 +102,6 @@ export function useAppState(initialSettings?: Settings) {
       | "visualizer"
       | "equalizer"
       | "help"
-      | "about"
       | null
     >(null),
     [detail, setDetail] = useState<Track | null>(null),
