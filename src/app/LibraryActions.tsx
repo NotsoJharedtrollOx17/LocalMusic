@@ -22,6 +22,7 @@ export default function LibraryActions() {
     setSelectionMode,
     setSelectedIds,
     t,
+    desktopMenu,
   } = useMusicAppContext();
   const trackView = group
     ? group.kind === "albums" || artistView === "tracks"
@@ -32,6 +33,7 @@ export default function LibraryActions() {
     !!trackView && !(section === "playlists" && editingList) && count > 0;
   const loading =
     section === "songs" ? libraryLoading : !!group && groupLoading;
+  if (desktopMenu.ready && !canSelect && !selectionMode) return null;
   return (
     <>
       <button
@@ -68,16 +70,20 @@ export default function LibraryActions() {
                   },
                 ]
               : []),
-            {
-              id: "equalizer",
-              label: t.equalizer,
-              action: () => void openEqualizer(),
-            },
-            {
-              id: "settings",
-              label: t.settings,
-              action: () => setModal("settings"),
-            },
+            ...(!desktopMenu.ready
+              ? [
+                  {
+                    id: "equalizer",
+                    label: t.equalizer,
+                    action: () => void openEqualizer(),
+                  },
+                  {
+                    id: "settings",
+                    label: t.settings,
+                    action: () => setModal("settings"),
+                  },
+                ]
+              : []),
           ]}
         />
       )}

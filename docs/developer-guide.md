@@ -111,7 +111,7 @@ JVM settings-migration fixtures use the test-only [JSON-java reference implement
 
 ### Compact navigation revision
 
-`LibraryActions.tsx` owns Edit, Equalizer and Settings. Songs filtering stays separate from selection. Playlists shares the creation toolbar, counts all collections and omits a repeated overview title. The player has Queue/Favorite/Add above progress and transport; its header menu opens EQ directly and ends with recap exclusion then library removal. The EQ dialog uses the app-scoped controller and returns directly to the originating view/focus. Settings owns Language, Theme and Listening history; device calendar synchronization remains automatic.
+`LibraryActions.tsx` owns contextual Edit and, on Android/browser or before Windows menu readiness, Equalizer and Settings. Windows uses the native menu bar for those general actions after readiness. Songs filtering stays separate from selection. Playlists shares the creation toolbar, counts all collections and omits a repeated overview title. The player has Queue/Favorite/Add above progress and transport; its header menu opens EQ directly and ends with recap exclusion then library removal. The EQ dialog uses the app-scoped controller and returns directly to the originating view/focus. Settings owns Language, Theme and Listening history; device calendar synchronization remains automatic.
 
 Above 760px, the compact player uses symmetric side columns around its centered transport/progress column. `.mini-center` uses `display: contents` so its transport and progress occupy separate grid rows; right-side actions share the transport row. Keep DOM controls and keyboard behavior intact. Mobile keeps its existing layout.
 
@@ -138,6 +138,14 @@ Recap view and PNG export consume the shared ranking presentation helper. Export
 
 Recap rankings order songs, artists and albums by qualified play count descending, then the latest qualifying session start within the selected period. Group recency is the latest qualifying play across all of its contributing tracks. Excluded, sub-30-second, future and out-of-period sessions cannot affect either count or recency. Exact-time ties retain the existing song listening-duration/ID and artist/album alphabetical fallbacks. This internal comparison metadata is not added to exports or saved snapshots; existing snapshots retain their frozen order.
 
+
+## Windows application menu
+
+The main Windows window has a native File / Library / Playback / Window / Help bar (Archivo / Biblioteca / Reproducción / Ventana / Ayuda). It reuses existing React controllers for import, manual playlists, scoped search, Settings, playback and media windows. Ctrl+O imports, Ctrl+N creates a manual playlist, Ctrl+F opens scoped search and Ctrl+, opens Settings. Alt/F10 and native menu mnemonics retain Windows behavior. Space and / retain their existing scoped WebView behavior. Help and About are bundled local dialogs; About reads the running native version.
+
+Rust owns fixed command IDs, native resources, main-window validation, enabled/check state and normal Exit. React subscribes before publishing revisioned state, revalidates command availability, serializes pending dispatch and does not send playback position updates into the menu. Playback remains available under dialogs; navigation and dialog creation are disabled. Native checkboxes immediately restore confirmed state while a command completes. Main-only window attachment prevents companion menu inheritance. Queue requests switch an existing detached player, deferring its base view while a nested child dialog is active.
+
+After native readiness the Library actions icon retains contextual Edit only; initialization/update failure retains Settings/Equalizer fallback and offers Retry. Android/browser retain their full existing controls. There is no new MusicApi or storage schema. See [the approved plan](desktop-menu-bar-plan.md) and [verification](verification.md). `scripts/verify-desktop-menu.mjs` inspects real Win32 menus and WebView2 with the isolated `app.localmusic.menuprobe20261101` identity; generated profiles/evidence stay outside Git.
 
 ## Detached desktop player views
 

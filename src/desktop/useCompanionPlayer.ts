@@ -219,6 +219,19 @@ export function useCompanionPlayer(
       desktop.action({ op: "ready", view, generation: entry.generation }),
     );
   }, [loaded, entry]);
+  useEffect(() => {
+    if (!initialized.current || view !== "player" || !active || !entry) return;
+    const requested = entry.queue ? "queue" : "player";
+    const current = latest.current.modal;
+    // Keep an active child dialog intact; apply the requested base view on dismissal.
+    if (current === "player" || current === "queue") state.setModal(requested);
+    else {
+      history.current = history.current.map((item) =>
+        item === "player" || item === "queue" ? requested : item,
+      );
+      state.setPlayerParent(requested);
+    }
+  }, [active, entry?.queue]);
   // The host unmounts scenes first, then this effect acknowledges the released lease.
   useEffect(() => {
     if (entry?.phase === "returning")

@@ -5,6 +5,7 @@ mod artwork;
 mod catalog;
 mod commands;
 mod desktop_windows;
+mod desktop_menu;
 mod playback;
 mod sound;
 mod state;
@@ -30,6 +31,7 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_native_music::init());
     builder
         .manage(desktop_windows::Windows::default())
+        .manage(desktop_menu::DesktopMenu::default())
         .on_window_event(desktop_windows::window_event)
         .setup(state::setup)
         .invoke_handler(tauri::generate_handler![
@@ -50,6 +52,7 @@ pub fn run() {
             desktop_windows::desktop_state,
             desktop_windows::desktop_action,
             desktop_windows::desktop_changed,
+            desktop_menu::desktop_menu_sync,
             commands::settings::patch_settings,
             commands::catalog::list_tracks,
             commands::catalog::list_groups,

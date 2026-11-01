@@ -23,6 +23,7 @@ import { compareCatalogTracks } from "../domain";
 import { useSyncedSettings } from "../desktop/useSyncedSettings";
 import { useMainWindows } from "../desktop/useMainWindows";
 import { desktop, useDesktopWindows } from "../desktop/windows";
+import { useDesktopMenu } from "../desktop/useDesktopMenu";
 import { type Track, type Settings, type CatalogGroup } from "../types";
 
 export function useMusicApp(initialSettings?: Settings) {
@@ -734,6 +735,93 @@ export function useMusicApp(initialSettings?: Settings) {
     prepareAnalysis: personalization.prepareAnalysis,
   });
 
+  function newPlaylist() {
+    state.setManualTitle("");
+    state.setManualIds([]);
+    setModal("manual");
+  }
+  const desktopMenu = useDesktopMenu({
+    supported: desktopWindows.supported && !!settings,
+    language: settings?.language ?? "en",
+    section,
+    player,
+    blocked:
+      !!modal ||
+      !!shareRecap ||
+      state.busy ||
+      state.chooserOpen ||
+      selectionMode ||
+      state.editingList,
+    pending: false,
+    onError: setError,
+    dispatch: async (command) => {
+      dismissMenu();
+      state.setMenu(null);
+      if (
+        ["songs", "albums", "artists", "playlists", "year"].includes(command)
+      ) {
+        motion.choose(command as LibrarySection);
+        requestAnimationFrame(() =>
+          document.getElementById(`tab-${command}`)?.focus(),
+        );
+        return;
+      }
+      switch (command) {
+        case "import":
+          await actions.doImport();
+          break;
+        case "new-playlist":
+          newPlaylist();
+          break;
+        case "settings":
+          setModal("settings");
+          break;
+        case "search":
+          setSearchOpen(true);
+          requestAnimationFrame(() => searchInput.current?.focus());
+          break;
+        case "toggle":
+          await api.toggle();
+          break;
+        case "previous":
+          await api.previous();
+          break;
+        case "next":
+          await api.next();
+          break;
+        case "shuffle":
+          await api.setShuffle(!player.shuffle);
+          break;
+        case "repeat-off":
+        case "repeat-all":
+        case "repeat-one":
+          await api.setRepeat(command.slice(7) as "off" | "all" | "one");
+          break;
+        case "player":
+        case "queue":
+          setModal(command);
+          break;
+        case "detach-player":
+          await desktop.action({ op: "open", view: "player", queue: false });
+          break;
+        case "visualizer":
+          await desktop.action({
+            op: "open",
+            view: "visualizer",
+            queue: false,
+          });
+          break;
+        case "equalizer":
+          await openEqualizer();
+          break;
+        case "help":
+        case "about":
+          setModal(command);
+          break;
+      }
+    },
+  });
+
   const playlistTracks =
     (selectedList ?? generated)?.trackIds
       .map((id) => cache[id])
@@ -774,6 +862,8 @@ export function useMusicApp(initialSettings?: Settings) {
     share,
     openGroup,
     openEqualizer,
+    newPlaylist,
+    desktopMenu,
     formatMinutes,
     formatMusicCount,
     formatDate,

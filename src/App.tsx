@@ -2,6 +2,8 @@ import type { Settings } from "./types";
 import { useMusicApp } from "./app/useMusicApp";
 import { MusicAppContext } from "./app/MusicAppContext";
 import AppContent from "./app/AppContent";
+import DesktopMenuDialogs from "./app/DesktopMenuDialogs";
+import DesktopMenuFeedback from "./app/DesktopMenuFeedback";
 import MiniPlayer from "./app/MiniPlayer";
 import ImportInputs from "./app/ImportInputs";
 import AppFeedback from "./app/AppFeedback";
@@ -32,6 +34,8 @@ export default function App({
         <MiniPlayer />
         <ImportInputs />
         <AppFeedback />
+        <DesktopMenuFeedback />
+        <DesktopMenuDialogs />
         <TrackActionMenu />
         <AppContextMenu />
         <RemoveLibraryDialog />

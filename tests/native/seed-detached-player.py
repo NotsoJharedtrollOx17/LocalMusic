@@ -2,10 +2,16 @@
 Run from the repository root before building/launching the native probe.
 """
 from pathlib import Path
-import json, os, re, sqlite3, wave
+import argparse, json, os, re, sqlite3, wave
 
-IDENTITY = 'app.localmusic.detachedprobe20261031'
-output = Path('artifacts/detached-windows')
+parser = argparse.ArgumentParser()
+parser.add_argument('--identity', default='app.localmusic.detachedprobe20261031')
+parser.add_argument('--output', default='artifacts/detached-windows')
+args = parser.parse_args()
+IDENTITY = args.identity
+assert re.fullmatch(r'app\.localmusic\.[a-z]+probe[0-9]+', IDENTITY), 'Only isolated probe identities are allowed'
+output = Path(args.output).resolve()
+assert output.is_relative_to((Path.cwd() / 'artifacts').resolve()), 'Probe output must stay inside workspace artifacts'
 profile = Path(os.environ['APPDATA']).resolve() / IDENTITY
 assert profile.name == IDENTITY and profile.parent == Path(os.environ['APPDATA']).resolve()
 assert not (profile / 'music.sqlite').exists(), 'Refusing to overwrite a probe database'

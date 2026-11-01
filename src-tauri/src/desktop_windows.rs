@@ -166,6 +166,12 @@ fn perform(app: &tauri::AppHandle, caller: &str, action: Action) -> Result<()> {
     match action {
         Action::Open { view, queue } => {
             if let Some(w) = app.get_webview_window(view.label()) {
+                if view == View::Player {
+                    if let Some(entry) = registry.entries.lock().unwrap().iter_mut().find(|e| e.view == view) {
+                        entry.queue = queue;
+                    }
+                    publish(app);
+                }
                 w.unminimize().ok();
                 w.set_focus().ok();
                 return Ok(());

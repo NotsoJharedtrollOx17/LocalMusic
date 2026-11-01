@@ -21,6 +21,10 @@ export class DetachedFixture {
   calls: string[] = [];
   serial = 0;
   failOpen = false;
+  nativeMenu = false;
+  menuFailure = false;
+  playbackFailure = false;
+  menuStates: any[] = [];
   soundWriteDelay = 0;
   settings = {
     language: "en",
@@ -97,6 +101,13 @@ export class DetachedFixture {
         }
         if (command === "desktop_state")
           return { supported: true, windows: this.windows };
+        if (command === "desktop_menu_sync") {
+          if (!this.nativeMenu) return null;
+          if (label !== "main") throw Error("Only main owns the menu");
+          if (this.menuFailure) throw Error("Simulated native menu failure");
+          this.menuStates.push(args.state);
+          return { supported: true, ready: true, version: "0.13.0" };
+        }
         if (command === "get_settings") return this.settings;
         if (command === "patch_settings") {
           this.settings = { ...this.settings, ...args.patch };
@@ -161,6 +172,19 @@ export class DetachedFixture {
           await this.emit("playback://snapshot", this.player);
           return;
         }
+        if (command === "set_shuffle" || command === "set_repeat") {
+          if (this.playbackFailure)
+            throw Error("Simulated playback command failure");
+          this.player = {
+            ...this.player,
+            revision: this.player.revision + 1,
+            ...(command === "set_shuffle"
+              ? { shuffle: args.value }
+              : { repeat: args.value }),
+          };
+          await this.emit("playback://snapshot", this.player);
+          return;
+        }
         if (command === "seek") {
           this.player = {
             ...this.player,
@@ -182,7 +206,13 @@ export class DetachedFixture {
           }
           if (a.op === "open") {
             if (this.failOpen) throw Error("Simulated window creation failure");
-            if (entry) return;
+            if (entry) {
+              if (a.view === "player") {
+                entry.queue = a.queue;
+                await this.emit("desktop://windows", this.windows);
+              }
+              return;
+            }
             this.windows.push({
               view: a.view,
               phase: "opening",

@@ -10,10 +10,17 @@ pub(crate) fn configure_window(window: &tauri::WebviewWindow) -> tauri::Result<(
     #[cfg(windows)]
     {
         use webview2_com::AcceleratorKeyPressedEventHandler;
-        use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL};
+        use webview2_com::Microsoft::Web::WebView2::Win32::{
+            COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN, COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN,
+            COREWEBVIEW2_PHYSICAL_KEY_STATUS,
+        };
+        use windows::Win32::UI::Input::KeyboardAndMouse::{
+            GetKeyState, VK_CONTROL, VK_MENU, VK_SHIFT,
+        };
 
         {
-            window.with_webview(|webview| {
+            let owner = window.clone();
+            window.with_webview(move |webview| {
                 // These COM interfaces are used on the WebView's UI thread.
                 let configure = || -> windows::core::Result<()> {
                     unsafe {
@@ -22,13 +29,31 @@ pub(crate) fn configure_window(window: &tauri::WebviewWindow) -> tauri::Result<(
                         settings.SetAreDefaultContextMenusEnabled(false)?;
                         settings.SetAreDevToolsEnabled(false)?;
                         let handler =
-                            AcceleratorKeyPressedEventHandler::create(Box::new(|_, args| {
+                            AcceleratorKeyPressedEventHandler::create(Box::new(move |_, args| {
                                 if let Some(args) = args {
                                     let mut key = 0;
                                     args.VirtualKey(&mut key)?;
                                     let control = GetKeyState(VK_CONTROL.0 as i32) < 0;
                                     if blocked_key(key, control) {
                                         args.SetHandled(true)?;
+                                    } else if let Some(id) = crate::desktop_menu::shortcut(
+                                        key,
+                                        control,
+                                        GetKeyState(VK_MENU.0 as i32) < 0,
+                                        GetKeyState(VK_SHIFT.0 as i32) < 0,
+                                    ) {
+                                        let mut kind = COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN;
+                                        args.KeyEventKind(&mut kind)?;
+                                        let mut status =
+                                            COREWEBVIEW2_PHYSICAL_KEY_STATUS::default();
+                                        args.PhysicalKeyStatus(&mut status)?;
+                                        let pressed = (kind
+                                            == COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN
+                                            || kind == COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN)
+                                            && !status.WasKeyDown.as_bool();
+                                        if crate::desktop_menu::accelerator(&owner, id, pressed) {
+                                            args.SetHandled(true)?;
+                                        }
                                     }
                                 }
                                 Ok(())

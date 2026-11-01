@@ -5,16 +5,8 @@ import { useMusicAppContext } from "./MusicAppContext";
 import CollectionCountHeading from "./CollectionCountHeading";
 
 export default function PlaylistToolbar() {
-  const {
-    selectedList,
-    lists,
-    automatic,
-    playlistsReady,
-    setManualTitle,
-    setManualIds,
-    setModal,
-    t,
-  } = useMusicAppContext();
+  const { selectedList, lists, automatic, playlistsReady, newPlaylist, t } =
+    useMusicAppContext();
   return (
     <div className="library-toolbar playlist-toolbar">
       {selectedList ? (
@@ -33,14 +25,7 @@ export default function PlaylistToolbar() {
       )}
       <div className="toolbar-actions">
         <ClearSearchButton />
-        <button
-          className="button primary"
-          onClick={() => {
-            setManualTitle("");
-            setManualIds([]);
-            setModal("manual");
-          }}
-        >
+        <button className="button primary" onClick={newPlaylist}>
           <Plus size={18} />
           {t.newPlaylist}
         </button>
