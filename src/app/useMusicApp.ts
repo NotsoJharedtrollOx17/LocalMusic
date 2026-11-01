@@ -91,6 +91,12 @@ export function useMusicApp(initialSettings?: Settings) {
     searchInput,
   } = state;
   const soundController = useSoundController(modal === "equalizer");
+  const nativeSearchFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (!nativeSearchFocus.current || !searchOpen || section === "year") return;
+    nativeSearchFocus.current = false;
+    searchInput.current?.focus();
+  }, [searchOpen, section, searchInput]);
   type Dialog = typeof modal;
   const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
   const dialogScroll = useRef(new Map<NonNullable<Dialog>, number>());
@@ -777,8 +783,11 @@ export function useMusicApp(initialSettings?: Settings) {
           setModal("settings");
           break;
         case "search":
-          setSearchOpen(true);
-          requestAnimationFrame(() => searchInput.current?.focus());
+          if (searchOpen) searchInput.current?.focus();
+          else {
+            nativeSearchFocus.current = true;
+            setSearchOpen(true);
+          }
           break;
         case "toggle":
           await api.toggle();

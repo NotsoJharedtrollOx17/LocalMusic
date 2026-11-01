@@ -179,7 +179,7 @@ try {
   const about = pages().find((p) => p.url().includes("about=1"));
   await expect(
     about.getByRole("main", { name: "About Local Music", exact: true }),
-  ).toContainText("0.13.0");
+  ).toContainText("0.14.0");
   await expect
     .poll(async () =>
       (await os("list")).some(
@@ -309,7 +309,7 @@ try {
       name: "Acerca de Local Music",
       exact: true,
     }),
-  ).toContainText("0.13.0");
+  ).toContainText("0.14.0");
   await expect
     .poll(() =>
       translatedAbout.evaluate(() => document.documentElement.dataset.theme),
