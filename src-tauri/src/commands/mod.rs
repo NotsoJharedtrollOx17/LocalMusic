@@ -11,3 +11,5 @@ pub(crate) mod window;
 
 pub(crate) mod recommendations;
 pub(crate) mod visualizer;
+
+pub mod organization;

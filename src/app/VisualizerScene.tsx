@@ -1,3 +1,4 @@
+import OutputStatus from "./OutputStatus";
 import WindowControls from "../desktop/WindowControls";
 import { companionView } from "../desktop/windows";
 import { useEffect, useRef, useState } from "react";
@@ -113,6 +114,7 @@ export default function VisualizerScene() {
       <footer className="visualizer-controls visualizer-footer">
         <h2>{current?.title ?? t.nowPlaying}</h2>
         <p>{current?.artist ?? t.unknownArtist}</p>
+        <OutputStatus />
         <PlaybackProgress />
         <div className="transport">
           <IconButton

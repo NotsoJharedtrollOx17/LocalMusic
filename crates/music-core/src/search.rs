@@ -42,8 +42,16 @@ impl Store {
                     .filter(|t| !t.hidden)
                     .map(|t| {
                         (
-                            t.id,
-                            normalize(&format!("{} {} {}", t.title, t.artist, t.album)),
+                            t.id.clone(),
+                            normalize(&format!(
+                                "{} {} {} {} {} {}",
+                                t.title,
+                                t.artist,
+                                t.album,
+                                crate::identity::lead(&t),
+                                t.identity.artist_names.join(" "),
+                                crate::identity::album(&t).title
+                            )),
                             primary_name(&t.title),
                         )
                     })

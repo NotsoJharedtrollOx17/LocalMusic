@@ -1,0 +1,130 @@
+{
+  "tracks": [
+    {
+      "title": "Orbit",
+      "artist": "Lead feat. Guest",
+      "album": "First",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "a",
+      "trackNumber": 1
+    },
+    {
+      "title": "Orbit",
+      "artist": "Lead",
+      "album": "First album",
+      "genre": "Rock",
+      "durationMs": 181000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "b",
+      "trackNumber": 1
+    },
+    {
+      "title": "Signal",
+      "artist": "Lead",
+      "album": "First",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "c",
+      "trackNumber": 2
+    },
+    {
+      "title": "Signal",
+      "artist": "Lead",
+      "album": "First album",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "d",
+      "trackNumber": 2
+    },
+    {
+      "title": "Orbit (Remastered)",
+      "artist": "Lead",
+      "album": "First (Remastered)",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "e"
+    },
+    {
+      "title": "Orbit",
+      "artist": "AC/DC",
+      "album": "Other",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "f"
+    },
+    {
+      "title": "Orbit",
+      "artist": "Earth, Wind & Fire",
+      "album": "Other",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "g"
+    },
+    {
+      "title": "Orbit",
+      "artist": "Lead & Guest",
+      "album": "Collaboration",
+      "genre": "Rock",
+      "durationMs": 180000,
+      "sourceUri": "fixture",
+      "favorite": false,
+      "available": true,
+      "id": "h",
+      "artistNames": [
+        "Lead",
+        "Guest"
+      ],
+      "albumArtist": "Lead"
+    }
+  ],
+  "leads": {
+    "a": "Lead",
+    "f": "AC/DC",
+    "g": "Earth, Wind & Fire",
+    "h": "Lead"
+  },
+  "sessions": [
+    {
+      "id": "s1",
+      "trackId": "a",
+      "startedAtUtc": "2026-01-02T12:00:00Z",
+      "playedMs": 30000,
+      "excluded": false
+    },
+    {
+      "id": "s2",
+      "trackId": "b",
+      "startedAtUtc": "2026-01-03T12:00:00Z",
+      "playedMs": 30000,
+      "excluded": false
+    },
+    {
+      "id": "s3",
+      "trackId": "b",
+      "startedAtUtc": "2026-01-04T12:00:00Z",
+      "playedMs": 30000,
+      "excluded": true
+    }
+  ]
+}

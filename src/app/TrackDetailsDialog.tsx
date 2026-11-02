@@ -1,10 +1,21 @@
+import { libraryStrings } from "../library/strings";
 import { Heart } from "lucide-react";
 import { Cover, Modal, time } from "../components";
 import { usePlayerContext } from "./PlayerContext";
 
 export default function TrackDetailsDialog() {
-  const { lists, modal, setModal, detail, t, act, favorite, saveList } =
-    usePlayerContext();
+  const {
+    lists,
+    modal,
+    setModal,
+    detail,
+    t,
+    act,
+    favorite,
+    saveList,
+    settings,
+    setOrganizationTab,
+  } = usePlayerContext();
 
   return (
     <>
@@ -18,6 +29,16 @@ export default function TrackDetailsDialog() {
             <Cover track={detail} large />
             <h2>{detail.title}</h2>
             <p>{detail.artist || t.unknownArtist}</p>
+            <button
+              data-organization-origin
+              className="button secondary"
+              onClick={() => {
+                setOrganizationTab("artists");
+                setModal("organize");
+              }}
+            >
+              {libraryStrings(settings?.language === "es").organize}
+            </button>
             <dl>
               <div>
                 <dt>{t.albums}</dt>

@@ -95,7 +95,7 @@ export function useInlineSearch(
     state.settings?.language,
   ]);
   const reset = useSearchReset(
-    JSON.stringify([key, query]),
+    JSON.stringify([scope, section, artistView, query, onlyFavorites, sort]),
     `${scope}:${section}:${artistView}`,
   );
   // Playlist labels are already loaded; keep input, cards and count in one render.

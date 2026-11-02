@@ -1,4 +1,5 @@
-//! Offline ranking. No listening records are created or changed here.
+use crate::identity::{lead, song_key, unique};
+// Offline ranking. No listening records are created or changed here.
 use crate::{normalize, Playlist, PlaylistRequest, Session, Track};
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
@@ -74,11 +75,12 @@ pub fn analysis_order(tracks: &[Track], sessions: &[Session]) -> Vec<Track> {
         .iter()
         .filter(|t| t.available && !t.hidden && !t.demo)
         .collect();
-    let mut anchors: Vec<_> = pool
+    let anchors: Vec<_> = pool
         .iter()
         .copied()
         .filter(|t| t.favorite || counts.contains_key(&t.id))
         .collect();
+    let mut anchors = unique(anchors);
     anchors.sort_by(|a, b| {
         counts
             .get(&b.id)
@@ -91,7 +93,7 @@ pub fn analysis_order(tracks: &[Track], sessions: &[Session]) -> Vec<Track> {
     let mut groups = BTreeMap::<String, Vec<&Track>>::new();
     for t in pool {
         if !anchored.contains(t.id.as_str()) {
-            let artist = normalize(&t.artist);
+            let artist = normalize(&lead(t));
             groups
                 .entry(if artist.is_empty() {
                     t.id.clone()
@@ -166,16 +168,26 @@ pub fn generate(
     } else {
         recent
     };
+    let identities: BTreeMap<_, _> = tracks
+        .iter()
+        .map(|t| (t.id.as_str(), song_key(t)))
+        .collect();
+    let identity = |id: &str| {
+        identities
+            .get(id)
+            .map(|k| (*k).to_owned())
+            .unwrap_or_else(|| id.to_owned())
+    };
     let mut affinity = BTreeMap::<String, f64>::new();
     let mut plays = BTreeMap::<String, u64>::new();
     let mut last = BTreeMap::<String, f64>::new();
     for (s, d) in &eligible {
-        *plays.entry(s.track_id.clone()).or_default() += 1;
-        let v = last.entry(s.track_id.clone()).or_default();
+        *plays.entry(identity(&s.track_id)).or_default() += 1;
+        let v = last.entry(identity(&s.track_id)).or_default();
         *v = v.max(d.timestamp_millis() as f64);
     }
     for (s, d) in taste {
-        *affinity.entry(s.track_id.clone()).or_default() +=
+        *affinity.entry(identity(&s.track_id)).or_default() +=
             2f64.powf(-(now_ms - d.timestamp_millis() as f64) / (30.0 * day));
     }
     let positive: Vec<_> = tracks
@@ -184,12 +196,12 @@ pub fn generate(
         .collect();
     let history = positive
         .iter()
-        .any(|t| affinity.get(&t.id).is_some_and(|v| *v > 0.0));
+        .any(|t| affinity.get(song_key(t)).is_some_and(|v| *v > 0.0));
     if !history {
         affinity.clear();
         for t in &positive {
             if t.favorite {
-                affinity.insert(t.id.clone(), 1.0);
+                affinity.insert(song_key(t).to_owned(), 1.0);
             }
         }
     }
@@ -201,21 +213,22 @@ pub fn generate(
         "discovery"
     }
     .to_string();
-    let mut anchors: Vec<_> = positive
+    let anchors: Vec<_> = positive
         .into_iter()
-        .filter(|t| affinity.contains_key(&t.id))
+        .filter(|t| affinity.contains_key(song_key(t)))
         .collect();
+    let mut anchors = unique(anchors);
     anchors.sort_by(|a, b| {
-        affinity[&b.id]
-            .total_cmp(&affinity[&a.id])
+        affinity[song_key(b)]
+            .total_cmp(&affinity[song_key(a)])
             .then(a.id.cmp(&b.id))
     });
     let mut artists = BTreeMap::<String, f64>::new();
     let mut genres = BTreeMap::<String, f64>::new();
     let mut years = Vec::<(u32, f64)>::new();
     for t in &anchors {
-        let w = affinity[&t.id];
-        let a = normalize(&t.artist);
+        let w = affinity[song_key(t)];
+        let a = normalize(&lead(t));
         if !a.is_empty() {
             *artists.entry(a).or_default() += w;
         }
@@ -233,7 +246,7 @@ pub fn generate(
     let mut acoustic = Vec::new();
     let mut seen = HashSet::new();
     for t in &anchors {
-        let a = normalize(&t.artist);
+        let a = normalize(&lead(t));
         if valid(&t.id) && seen.insert(if a.is_empty() { t.id.clone() } else { a }) {
             acoustic.push(*t);
             if acoustic.len() == 32 {
@@ -250,7 +263,7 @@ pub fn generate(
     let heard: HashSet<_> = eligible
         .iter()
         .filter(|(_, d)| d.with_timezone(&tz).date_naive() == today)
-        .map(|(s, _)| s.track_id.as_str())
+        .map(|(s, _)| identity(&s.track_id))
         .collect();
     let exclude: HashSet<String> = std::iter::once(&request.exclude_artist)
         .chain(request.exclude_artists.iter())
@@ -268,14 +281,15 @@ pub fn generate(
         .filter(|t| {
             t.available
                 && !t.hidden
-                && !exclude.contains(&normalize(&t.artist))
-                && (include.is_empty() || include.contains(&normalize(&t.artist)))
+                && !exclude.contains(&normalize(&lead(t)))
+                && (include.is_empty() || include.contains(&normalize(&lead(t))))
                 && (genre.is_empty() || !include.is_empty() || tags(&t.genre).contains(&genre))
-                && (!request.avoid_heard_today || !heard.contains(t.id.as_str()))
+                && (!request.avoid_heard_today || !heard.contains(song_key(t)))
         })
         .collect();
     pool.sort_by(|a, b| a.id.cmp(&b.id));
     pool.dedup_by(|a, b| a.id == b.id);
+    pool = unique(pool);
     let analyzed = pool.iter().filter(|t| valid(&t.id)).count();
     let total = pool.len();
     let mut seed = request.seed.unwrap_or(1);
@@ -286,10 +300,10 @@ pub fn generate(
         let mut why = Vec::<String>::new();
         if max_l > 0.0 {
             parts.push((
-                affinity.get(&t.id).unwrap_or(&0.0).ln_1p() / max_l.ln_1p(),
+                affinity.get(song_key(t)).unwrap_or(&0.0).ln_1p() / max_l.ln_1p(),
                 weights[0],
             ));
-            if affinity.contains_key(&t.id) {
+            if affinity.contains_key(song_key(t)) {
                 why.push(
                     if source == "favorites" {
                         "favorite"
@@ -310,7 +324,7 @@ pub fn generate(
                 0.6,
             ));
         }
-        let a = normalize(&t.artist);
+        let a = normalize(&lead(t));
         if max_a > 0.0 && !a.is_empty() {
             meta.push((artists.get(&a).unwrap_or(&0.0) / max_a, 0.3));
         }
@@ -358,11 +372,11 @@ pub fn generate(
                 why.push("sound".into());
             }
         }
-        let count = *plays.get(&t.id).unwrap_or(&0) as f64;
+        let count = *plays.get(song_key(t)).unwrap_or(&0) as f64;
         let fresh = 0.5 / (1.0 + count)
             + 0.5
                 * last
-                    .get(&t.id)
+                    .get(song_key(t))
                     .map_or(1.0, |v| ((now_ms - v) / (30.0 * day)).min(1.0));
         parts.push((fresh, weights[3]));
         if fresh > 0.5 {
@@ -396,7 +410,7 @@ pub fn generate(
         let mut ranked: Vec<_> = scored
             .into_iter()
             .map(|(t, score)| {
-                let count = ranks.entry(normalize(&t.artist)).or_default();
+                let count = ranks.entry(normalize(&lead(t))).or_default();
                 let round = *count;
                 *count += 1;
                 (t, score, round)
@@ -414,7 +428,7 @@ pub fn generate(
         if selected.len() >= request.target_count.unwrap_or(100) {
             break;
         }
-        let a = normalize(&t.artist);
+        let a = normalize(&lead(t));
         if include.is_empty() && !a.is_empty() && *counts.get(&a).unwrap_or(&0) >= 2 {
             continue;
         }
@@ -434,10 +448,10 @@ pub fn generate(
     while !selected.is_empty() {
         let last = ordered
             .last()
-            .map_or(String::new(), |t| normalize(&t.artist));
+            .map_or(String::new(), |t| normalize(&lead(t)));
         let i = selected
             .iter()
-            .position(|t| normalize(&t.artist).is_empty() || normalize(&t.artist) != last)
+            .position(|t| normalize(&lead(t)).is_empty() || normalize(&lead(t)) != last)
             .unwrap_or(0);
         ordered.push(selected.remove(i));
     }

@@ -100,7 +100,7 @@ impl Store {
         let data = self.recommendation_data()?;
         let mut artists: Vec<_> = tracks
             .iter()
-            .map(|t| t.artist.trim().to_string())
+            .map(|t| crate::identity::lead(t).trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
         artists.sort();

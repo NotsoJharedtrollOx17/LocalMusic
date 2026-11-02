@@ -1,3 +1,24 @@
+import {
+  organize,
+  emptyOrganization,
+  applyOrganization,
+  uniqueSongs,
+  leadArtist,
+  importedArtistNames,
+  songIdentity,
+  baseAlbumId,
+  defaultAlbumId,
+  albumArtist,
+  artistId,
+  normalized,
+} from "../library/identity";
+import organizationWorker from "../library/organization.worker.ts?worker&url";
+import type {
+  Organization,
+  OrganizationAction,
+  OrganizationSnapshot,
+  CleanupPreview,
+} from "../library/identity";
 import { CatalogMatcher } from "../search/CatalogMatcher";
 import { normalizeRecap } from "../recap/periods";
 import { automaticPlaylists } from "../automaticPlaylists";
@@ -118,7 +139,9 @@ export class BrowserMusic implements MusicApi {
         "settings",
         "suggestionLess",
         "acousticFeatures",
+        "organization",
       ]);
+      const organization = tx.objectStore("organization").get("state");
       const tracks = tx.objectStore("tracks").getAll(),
         sessions = tx.objectStore("sessions").getAll(),
         settings = tx.objectStore("settings").get("preferences"),
@@ -130,7 +153,9 @@ export class BrowserMusic implements MusicApi {
           tracks.result.map((t: StoredTrack) => [t.id, t]),
         );
         resolve({
-          tracks: tracks.result,
+          tracks: (tracks.result as StoredTrack[]).map((t) =>
+            organize(t, organization.result ?? emptyOrganization()),
+          ),
           sessions: sessions.result,
           settings: settings.result,
           data: {
@@ -162,7 +187,7 @@ export class BrowserMusic implements MusicApi {
     const pool = tracks.filter((t) => t.available && !t.hidden);
     return {
       artists: [
-        ...new Set(pool.map((t) => t.artist.trim()).filter(Boolean)),
+        ...new Set(pool.map((t) => leadArtist(t)).filter(Boolean)),
       ].sort(),
       genres: [
         ...new Set(
@@ -232,9 +257,71 @@ export class BrowserMusic implements MusicApi {
   private privateMode = false;
   private cancelled = false;
   private orderReady?: Promise<void>;
+  private identityAttempted = new Set<string>();
+  private identityBusy = false;
+  private identityQueue: string[] = [];
+  private async backfillIdentity() {
+    if (
+      this.identityBusy ||
+      !this.identityQueue.length ||
+      document.hidden ||
+      !this.audio.paused ||
+      this.changing
+    )
+      return;
+    this.identityBusy = true;
+    try {
+      const { parseBlob } = await import("music-metadata");
+      let changed = false;
+      for (let n = 0; n < 8 && this.identityQueue.length; n++) {
+        if (document.hidden || !this.audio.paused || this.changing) break;
+        const id = this.identityQueue.shift()!;
+        if (this.identityAttempted.has(id)) continue;
+        this.identityAttempted.add(id);
+        try {
+          const old = await this.rawGet<StoredTrack>("tracks", id);
+          if (!old?.file || old.identityMetadataRead || old.demo) continue;
+          const m = await parseBlob(old.file, {
+            duration: false,
+            skipCovers: true,
+          });
+          const current = await this.get<StoredTrack>("tracks", id);
+          if (current && current.sourceUri === old.sourceUri) {
+            const artistNames = importedArtistNames(
+                m.common.artist ?? current.artist,
+                m.common.artists,
+              ),
+              albumArtist = m.common.albumartist;
+            const affectsIndex =
+              JSON.stringify(current.artistNames ?? []) !==
+                JSON.stringify(artistNames) ||
+              normalized(current.albumArtist ?? "") !==
+                normalized(albumArtist ?? "");
+            await this.put("tracks", id, {
+              ...current,
+              artistNames,
+              albumArtist,
+              identityMetadataRead: true,
+            });
+            changed ||= affectsIndex;
+          }
+        } catch {
+          /* Retry inaccessible sources on next launch. */
+        }
+      }
+      if (changed)
+        window.dispatchEvent(new Event("library-organization-changed"));
+    } finally {
+      this.identityBusy = false;
+    }
+  }
   constructor() {
+    window.setInterval(
+      () => void this.backfillIdentity().catch(() => {}),
+      1500,
+    );
     this.db = new Promise((resolve, reject) => {
-      const r = indexedDB.open("local-music-v1", 2);
+      const r = indexedDB.open("local-music-v1", 3);
       r.onupgradeneeded = () => {
         for (const name of [
           "tracks",
@@ -245,6 +332,7 @@ export class BrowserMusic implements MusicApi {
           "snapshots",
           "suggestionLess",
           "acousticFeatures",
+          "organization",
         ])
           if (!r.result.objectStoreNames.contains(name))
             r.result.createObjectStore(name);
@@ -341,7 +429,180 @@ export class BrowserMusic implements MusicApi {
       }
     });
   }
+  private async organizationState() {
+    return (
+      (await this.rawGet<Organization>("organization", "state")) ??
+      emptyOrganization()
+    );
+  }
   private async get<T>(store: string, k: string): Promise<T | undefined> {
+    const value = await this.rawGet<T>(store, k);
+    return store === "tracks" && value
+      ? (organize(
+          value as unknown as Track,
+          await this.organizationState(),
+        ) as unknown as T)
+      : value;
+  }
+  private async all<T>(store: string): Promise<T[]> {
+    const values = await this.rawAll<T>(store);
+    if (store !== "tracks") return values;
+    this.identityQueue = (values as unknown as StoredTrack[])
+      .filter(
+        (t) =>
+          !t.demo &&
+          !t.identityMetadataRead &&
+          !!t.file &&
+          !this.identityAttempted.has(t.id),
+      )
+      .map((t) => t.id);
+    const state = await this.organizationState();
+    return values.map(
+      (t) => organize(t as unknown as Track, state) as unknown as T,
+    );
+  }
+  async organization(): Promise<OrganizationSnapshot> {
+    await this.ensureAlbumOrder();
+    const state = await this.organizationState(),
+      tracks = (await this.rawAll<StoredTrack>("tracks"))
+        .filter((t) => !t.hidden)
+        .map((t) => this.present(t));
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(organizationWorker, { type: "module" });
+      const timer = setTimeout(() => {
+        worker.terminate();
+        reject(Error("Library organization timed out. Retry."));
+      }, 15000);
+      worker.onmessage = async (e) => {
+        clearTimeout(timer);
+        worker.terminate();
+        try {
+          if (e.data.error) throw Error(e.data.error);
+          if (state.revision !== (await this.organizationState()).revision)
+            throw Error("Library organization changed. Retry.");
+          resolve({ state, ...e.data });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      worker.onerror = () => {
+        clearTimeout(timer);
+        worker.terminate();
+        reject(Error("Library organization worker failed"));
+      };
+      worker.postMessage({ state, tracks });
+    });
+  }
+  async organize(
+    revision: number,
+    action: OrganizationAction,
+  ): Promise<Organization> {
+    const db = await this.db;
+    const result = await new Promise<Organization>((resolve, reject) => {
+      const tx = db.transaction(
+        ["organization", "tracks", "settings"],
+        "readwrite",
+      );
+      let next: Organization;
+      const state = tx.objectStore("organization").get("state"),
+        tracks = tx.objectStore("tracks").getAll();
+      tracks.onsuccess = () => {
+        try {
+          const current =
+            (state.result as Organization | undefined) ?? emptyOrganization();
+          if (current.revision !== revision)
+            throw Error("Library organization changed. Refresh and retry.");
+          next = applyOrganization(
+            current,
+            action,
+            (tracks.result as Track[]).map((t) => organize(t, current)),
+          );
+          tx.objectStore("organization").put(next, "state");
+          const settings = tx.objectStore("settings"),
+            rev = settings.get("catalog-revision");
+          rev.onsuccess = () =>
+            settings.put(Number(rev.result ?? 0) + 1, "catalog-revision");
+        } catch (error) {
+          reject(error);
+          tx.abort();
+        }
+      };
+      tx.oncomplete = () => resolve(next);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () =>
+        reject(tx.error ?? Error("Organization update cancelled"));
+    });
+    this.invalidateCatalog();
+    this.recommendationRevision++;
+    return result;
+  }
+  async playlistCleanup(id: string): Promise<CleanupPreview> {
+    const playlist = (await this.playlists()).find((p) => p.id === id);
+    if (!playlist) throw Error("Unknown saved playlist");
+    const tracks = await this.all<Track>("tracks"),
+      byId = new Map(tracks.map((t) => [t.id, t])),
+      seen = new Set<string>();
+    return {
+      playlist,
+      cleaned: {
+        ...playlist,
+        trackIds: playlist.trackIds.filter((id) => {
+          const key = byId.has(id) ? songIdentity(byId.get(id)!) : id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }),
+      },
+      revision: (await this.organizationState()).revision,
+    };
+  }
+  async applyPlaylistCleanup(preview: CleanupPreview, undo: boolean) {
+    const db = await this.db;
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(
+          ["organization", "playlists", "tracks"],
+          "readwrite",
+        ),
+        state = tx.objectStore("organization").get("state"),
+        tracks = tx.objectStore("tracks").getAll(),
+        saved = tx.objectStore("playlists").get(preview.playlist.id);
+      saved.onsuccess = () => {
+        try {
+          const org =
+            (state.result as Organization | undefined) ?? emptyOrganization();
+          if (
+            org.revision !== preview.revision ||
+            JSON.stringify(saved.result) !==
+              JSON.stringify(undo ? preview.cleaned : preview.playlist)
+          )
+            throw Error("Playlist or organization changed. Refresh and retry.");
+          const target = undo ? preview.playlist : preview.cleaned;
+          if (!undo) {
+            const byId = new Map(
+                (tracks.result as Track[]).map((t) => [t.id, organize(t, org)]),
+              ),
+              seen = new Set<string>();
+            const ids = preview.playlist.trackIds.filter((id) => {
+              const key = byId.has(id) ? songIdentity(byId.get(id)!) : id;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+            if (JSON.stringify(ids) !== JSON.stringify(target.trackIds))
+              throw Error("Invalid cleanup");
+          }
+          tx.objectStore("playlists").put(target, target.id);
+        } catch (e) {
+          reject(e);
+          tx.abort();
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? Error("Cleanup cancelled"));
+    });
+  }
+  private async rawGet<T>(store: string, k: string): Promise<T | undefined> {
     const db = await this.db;
     return new Promise((resolve, reject) => {
       const r = db.transaction(store).objectStore(store).get(k);
@@ -349,7 +610,7 @@ export class BrowserMusic implements MusicApi {
       r.onerror = () => reject(r.error);
     });
   }
-  private async all<T>(store: string): Promise<T[]> {
+  private async rawAll<T>(store: string): Promise<T[]> {
     const db = await this.db;
     return new Promise((resolve, reject) => {
       const r = db.transaction(store).objectStore(store).getAll();
@@ -480,50 +741,84 @@ export class BrowserMusic implements MusicApi {
     })();
     await this.orderReady;
   }
-  async groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
-    await this.ensureAlbumOrder();
-    return (await this.all<StoredTrack>("tracks"))
-      .filter((track) => !track.hidden)
-      .filter((track) =>
-        kind === "artists"
-          ? track.artist === title
-          : track.album === title && track.artist === subtitle,
-      )
-      .sort((a, b) =>
-        kind === "albums"
-          ? compareAlbumTracks(a, b)
-          : a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
-      )
-      .map((track) => track.id);
+  async groupIds(
+    kind: "albums" | "artists",
+    title: string,
+    subtitle: string,
+    id?: string,
+  ) {
+    let offset = 0;
+    for (;;) {
+      const page = await this.groups(kind, offset);
+      const group = page.groups.find((g) =>
+        id
+          ? g.id === id
+          : g.title === title &&
+            (kind === "artists" || g.subtitle === subtitle),
+      );
+      if (group) return group.ids;
+      offset += page.groups.length;
+      if (offset >= page.total || !page.groups.length) return [];
+    }
   }
   async groups(kind: "albums" | "artists", offset = 0, query = "") {
-    const snapshot = await this.catalogSnapshot();
-    const key = `${kind}:${snapshot.revision}`;
-    let groups = this.catalogGroupsCache.get(key);
+    const snapshot = await this.catalogSnapshot(),
+      cacheKey = `${kind}:${snapshot.revision}`;
+    let groups = this.catalogGroupsCache.get(cacheKey);
     if (!groups) {
-      const all = [...snapshot.tracks].sort(
-        (a, b) => a.album.localeCompare(b.album) || compareAlbumTracks(a, b),
-      );
-      const map = new Map<string, import("../types").CatalogGroup>();
-      for (const t of all) {
-        const title = kind === "albums" ? t.album : t.artist;
+      const entries = new Map<string, Track[]>();
+      for (const t of snapshot.tracks) {
+        const title =
+          kind === "albums"
+            ? (t.albumIdentity?.title ?? t.album)
+            : leadArtist(t);
         if (!title.trim()) continue;
-        const id = JSON.stringify([kind === "albums" ? t.artist : "", title]);
-        const g = map.get(id) ?? {
-          title,
-          subtitle: kind === "albums" ? t.artist : "",
-          ids: [],
-          track: t,
-        };
-        g.ids.push(t.id);
-        map.set(id, g);
+        const id =
+          kind === "albums"
+            ? (t.albumIdentity?.id ?? defaultAlbumId(t))
+            : artistId(title);
+        const ts = entries.get(id) ?? [];
+        ts.push(t);
+        entries.set(id, ts);
       }
-      groups = [...map.values()].sort(
-        (a, b) =>
-          a.title.localeCompare(b.title) ||
-          a.subtitle.localeCompare(b.subtitle),
-      );
-      this.catalogGroupsCache.set(key, groups);
+      groups = [...entries.entries()]
+        .map(([id, ts]) => {
+          ts.sort((a, b) =>
+            kind === "artists"
+              ? a.album.localeCompare(b.album) || compareAlbumTracks(a, b)
+              : compareAlbumTracks(a, b),
+          );
+          const first = ts[0],
+            album = first.albumIdentity,
+            selected =
+              kind === "albums" ? uniqueSongs(ts).sort(compareAlbumTracks) : ts;
+          return {
+            id,
+            title:
+              kind === "albums"
+                ? (album?.title ?? first.album)
+                : leadArtist(first),
+            subtitle:
+              kind === "albums" ? (album?.artist ?? albumArtist(first)) : "",
+            ids: selected.map((t) => t.id),
+            track: ts.find((t) => t.id === album?.coverId) ?? first,
+            aliases: [
+              ...new Set(
+                ts.map((t) =>
+                  kind === "albums"
+                    ? `${t.album} ${albumArtist(t)}`
+                    : `${t.artist} ${t.artistNames?.join(" ") ?? ""}`,
+                ),
+              ),
+            ],
+          };
+        })
+        .sort(
+          (a, b) =>
+            a.title.localeCompare(b.title) ||
+            a.subtitle.localeCompare(b.subtitle),
+        );
+      this.catalogGroupsCache.set(cacheKey, groups);
       if (this.catalogGroupsCache.size > 2)
         this.catalogGroupsCache.delete(
           this.catalogGroupsCache.keys().next().value!,
@@ -532,21 +827,17 @@ export class BrowserMusic implements MusicApi {
     if (query.trim()) {
       const matching = await this.catalogMatcher.match(
         groups.map((g) => ({
-          id: JSON.stringify([g.title, g.subtitle]),
+          id: g.id!,
           title: g.title,
           artist: g.subtitle,
-          album: "",
+          album: g.aliases?.join(" ") ?? "",
         })),
-        key,
+        cacheKey,
         query,
       );
       groups = groups
-        .filter((g) => matching.has(JSON.stringify([g.title, g.subtitle])))
-        .sort(
-          (a, b) =>
-            matching.get(JSON.stringify([a.title, a.subtitle]))! -
-            matching.get(JSON.stringify([b.title, b.subtitle]))!,
-        );
+        .filter((g) => matching.has(g.id!))
+        .sort((a, b) => matching.get(a.id!)! - matching.get(b.id!)!);
     }
     return {
       groups: groups
@@ -716,6 +1007,8 @@ export class BrowserMusic implements MusicApi {
         )
           .map((b) => b.toString(16).padStart(2, "0"))
           .join("");
+      let artistNames: string[] = [],
+        albumArtist: string | undefined;
       let title = file.name.replace(/\.[^.]+$/, ""),
         artist = "",
         album = "",
@@ -730,6 +1023,8 @@ export class BrowserMusic implements MusicApi {
         const m = await parseBlob(file, { duration: true });
         title = m.common.title || title;
         artist = m.common.artist || "";
+        artistNames = importedArtistNames(artist, m.common.artists);
+        albumArtist = m.common.albumartist;
         album = m.common.album || "";
         genre = m.common.genre?.join(", ") || "";
         durationMs = Math.round((m.format.duration || 0) * 1000);
@@ -769,6 +1064,9 @@ export class BrowserMusic implements MusicApi {
         orderMetadataRead: true,
         releaseYear,
         releaseMetadataRead: true,
+        artistNames,
+        albumArtist,
+        identityMetadataRead: true,
         sourceUri: "browser-file:" + id,
         favorite: existing?.favorite ?? false,
         available: true,
@@ -895,12 +1193,69 @@ export class BrowserMusic implements MusicApi {
   }
   async savePlaylist(p: Playlist) {
     if (p.kind === "automatic" || p.id.startsWith("automatic:"))
-      throw new Error("Automatic collections cannot be edited");
-    await this.put("playlists", p.id, {
-      id: p.id,
-      title: p.title,
-      kind: p.kind,
-      trackIds: [...p.trackIds],
+      throw Error("Automatic collections cannot be edited");
+    const db = await this.db;
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(
+          ["tracks", "organization", "playlists"],
+          "readwrite",
+        ),
+        saved = tx.objectStore("playlists").get(p.id),
+        tracks = tx.objectStore("tracks").getAll(),
+        organization = tx.objectStore("organization").get("state");
+      let reads = 0;
+      const validate = () => {
+        if (++reads !== 3) return;
+        try {
+          const state =
+              (organization.result as Organization | undefined) ??
+              emptyOrganization(),
+            byId = new Map(
+              (tracks.result as Track[]).map((t) => [t.id, organize(t, state)]),
+            ),
+            previous = new Map<string, number>(),
+            counts = new Map<string, number>();
+          for (const id of (saved.result as Playlist | undefined)?.trackIds ??
+            []) {
+            const t = byId.get(id);
+            if (t)
+              previous.set(
+                songIdentity(t),
+                (previous.get(songIdentity(t)) ?? 0) + 1,
+              );
+          }
+          for (const id of p.trackIds) {
+            const t = byId.get(id);
+            if (!t) throw Error("Unknown track");
+            const key = songIdentity(t);
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+          }
+          if (
+            [...counts].some(
+              ([key, n]) => n > Math.max(1, previous.get(key) ?? 0),
+            )
+          )
+            throw Error("This song is already represented in the playlist.");
+          tx.objectStore("playlists").put(
+            {
+              id: p.id,
+              title: p.title,
+              kind: p.kind,
+              trackIds: [...p.trackIds],
+            },
+            p.id,
+          );
+        } catch (error) {
+          reject(error);
+          tx.abort();
+        }
+      };
+      saved.onsuccess = validate;
+      tracks.onsuccess = validate;
+      organization.onsuccess = validate;
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? Error("Playlist save cancelled"));
     });
   }
   async deletePlaylist(id: string) {
@@ -998,13 +1353,17 @@ export class BrowserMusic implements MusicApi {
       this.startedUtc = new Date().toISOString();
     }
     await this.writes;
-    return aggregate(
+    const revision = (await this.organizationState()).revision;
+    const result = aggregate(
       request,
       await this.settings(),
       (await this.all<StoredTrack>("tracks")).map((t) => this.present(t)),
       await this.all<Session>("sessions"),
       await this.all<Interval>("intervals"),
     );
+    if (revision !== (await this.organizationState()).revision)
+      throw Error("Library organization changed. Retry.");
+    return { ...result, organizationRevision: revision };
   }
   async saveSnapshot(r: Recap) {
     const copy = structuredClone(r);

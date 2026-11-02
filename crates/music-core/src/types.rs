@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
+    #[serde(flatten, default)]
+    pub identity: crate::identity::TrackIdentity,
     pub id: String,
     pub title: String,
     pub artist: String,
@@ -113,6 +115,8 @@ pub struct PlaylistRequest {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackSnapshot {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_mode: Option<String>,
     pub track_id: Option<String>,
     pub playing: bool,
     pub position_ms: u64,
@@ -148,6 +152,8 @@ pub struct AlbumRank {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Recap {
+    #[serde(default)]
+    pub organization_revision: Option<u64>,
     pub schema_version: u32,
     #[serde(default)]
     pub privacy_revision: u64,

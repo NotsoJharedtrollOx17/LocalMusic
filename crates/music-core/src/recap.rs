@@ -222,32 +222,67 @@ pub fn aggregate(
             .then_with(|| b.played_ms.cmp(&a.played_ms))
             .then_with(|| a.track.id.cmp(&b.track.id))
     });
+    let raw_top = top;
+    let mut song_counts = BTreeMap::<String, (u64, u64, DateTime<Utc>)>::new();
+    for x in &raw_top {
+        let c = song_counts
+            .entry(crate::identity::song_key(&x.track).to_owned())
+            .or_insert((0, 0, counts[x.track.id.as_str()].2));
+        c.0 += x.plays;
+        c.1 += x.played_ms;
+        c.2 = c.2.max(counts[x.track.id.as_str()].2);
+    }
+    let mut top: Vec<RankedTrack> = crate::identity::unique(tracks.iter())
+        .into_iter()
+        .filter_map(|t| {
+            song_counts
+                .get(crate::identity::song_key(t))
+                .map(|c| RankedTrack {
+                    track: t.clone(),
+                    plays: c.0,
+                    played_ms: c.1,
+                })
+        })
+        .collect();
+    top.sort_by(|a, b| {
+        b.plays
+            .cmp(&a.plays)
+            .then(
+                song_counts[crate::identity::song_key(&b.track)]
+                    .2
+                    .cmp(&song_counts[crate::identity::song_key(&a.track)].2),
+            )
+            .then(b.played_ms.cmp(&a.played_ms))
+            .then(a.track.id.cmp(&b.track.id))
+    });
     let mut artists: BTreeMap<String, (ArtistRank, DateTime<Utc>)> = BTreeMap::new();
     let mut albums: BTreeMap<String, (AlbumRank, DateTime<Utc>)> = BTreeMap::new();
-    for x in &top {
+    for x in &raw_top {
         let latest = counts[x.track.id.as_str()].2;
-        let a = artists.entry(normalize(&x.track.artist)).or_insert((
-            ArtistRank {
-                name: if x.track.artist.is_empty() {
-                    "Unknown artist".into()
-                } else {
-                    x.track.artist.clone()
+        let a = artists
+            .entry(normalize(&crate::identity::lead(&x.track)))
+            .or_insert((
+                ArtistRank {
+                    name: if crate::identity::lead(&x.track).is_empty() {
+                        "Unknown artist".into()
+                    } else {
+                        crate::identity::lead(&x.track)
+                    },
+                    plays: 0,
                 },
-                plays: 0,
-            },
-            latest,
-        ));
+                latest,
+            ));
         a.0.plays += x.plays;
         a.1 = a.1.max(latest);
         if !x.track.album.is_empty() {
             let b = albums
-                .entry(normalize(&format!("{}|{}", x.track.artist, x.track.album)))
+                .entry(crate::identity::album(&x.track).id)
                 .or_insert((
                     AlbumRank {
-                        name: x.track.album.clone(),
-                        artist: x.track.artist.clone(),
+                        name: crate::identity::album(&x.track).title,
+                        artist: crate::identity::album(&x.track).artist,
                         plays: 0,
-                        track_id: Some(x.track.id.clone()),
+                        track_id: Some(crate::identity::album(&x.track).cover_id),
                     },
                     latest,
                 ));
@@ -280,7 +315,9 @@ pub fn aggregate(
     let mut artist_counts: HashMap<String, usize> = HashMap::new();
     let mut ids = Vec::new();
     for x in available {
-        let c = artist_counts.entry(normalize(&x.track.artist)).or_default();
+        let c = artist_counts
+            .entry(normalize(&crate::identity::lead(&x.track)))
+            .or_default();
         if *c < cap && ids.len() < 25 {
             *c += 1;
             ids.push(x.track.id.clone());
@@ -303,6 +340,7 @@ pub fn aggregate(
     let qualified_plays = top.iter().map(|t| t.plays).sum();
     top.truncate(25);
     Ok(Recap {
+        organization_revision: None,
         schema_version: 2,
         privacy_revision: settings.privacy_revision,
         period,

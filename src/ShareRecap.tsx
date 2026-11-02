@@ -46,7 +46,7 @@ export default function ShareRecap({
     setError("");
     setSaved(false);
     void (async () => {
-      const current = await checkPrivacy(recap, language);
+      const current = await checkPrivacy(recap, language, frozen);
       const rendered = frozen ? recap : current;
       const blob = await renderRecapCard(
         rendered,
@@ -55,7 +55,7 @@ export default function ShareRecap({
         controller.signal,
       );
       if (!active) return;
-      await checkPrivacy(rendered, language);
+      await checkPrivacy(rendered, language, frozen);
       if (!active) return;
       url = URL.createObjectURL(blob);
       setPrepared({
@@ -92,7 +92,7 @@ export default function ShareRecap({
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(ready.recap, language);
+      await checkPrivacy(ready.recap, language, frozen);
       const result = await saveBlob(
         ready.blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,

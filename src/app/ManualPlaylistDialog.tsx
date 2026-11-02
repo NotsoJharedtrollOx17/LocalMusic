@@ -1,3 +1,4 @@
+import { songIdentity } from "../library/identity";
 import { Check } from "lucide-react";
 import { Cover, Modal } from "../components";
 import { usePlayerContext } from "./PlayerContext";
@@ -5,6 +6,9 @@ import { usePlayerContext } from "./PlayerContext";
 export default function ManualPlaylistDialog() {
   const {
     setError,
+    cache,
+    settings,
+    setNotice,
     modal,
     setModal,
     pickerTracks,
@@ -75,13 +79,28 @@ export default function ManualPlaylistDialog() {
                   <input
                     type="checkbox"
                     checked={manualIds.includes(track.id)}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      if (
+                        e.target.checked &&
+                        manualIds.some(
+                          (id) =>
+                            cache[id] &&
+                            songIdentity(cache[id]) === songIdentity(track),
+                        )
+                      ) {
+                        setNotice(
+                          settings?.language === "es"
+                            ? "Esta canción ya está en la lista."
+                            : "This song is already represented in the playlist.",
+                        );
+                        return;
+                      }
                       setManualIds((ids) =>
                         e.target.checked
                           ? [...ids, track.id]
                           : ids.filter((id) => id !== track.id),
-                      )
-                    }
+                      );
+                    }}
                   />
                   <Cover track={track} />
                   <span>

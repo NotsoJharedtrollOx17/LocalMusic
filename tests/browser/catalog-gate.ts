@@ -1,7 +1,10 @@
 import type { Page } from "@playwright/test";
 /** Hold one real catalog read: the metadata validation read when warm, or rows when cold. */
-export async function holdNextTrackRead(page: Page) {
-  await page.evaluate(() => {
+export async function holdNextTrackRead(
+  page: Page,
+  target: "catalog" | "track" = "catalog",
+) {
+  await page.evaluate((target) => {
     const state = window as unknown as {
       catalogReadHeld: boolean;
       releaseCatalog: () => void;
@@ -36,20 +39,22 @@ export async function holdNextTrackRead(page: Page) {
     };
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = originalAll.apply(this, args);
-      return this.name === "tracks" &&
+      return target === "catalog" &&
+        this.name === "tracks" &&
         this.transaction.objectStoreNames.length === 1
         ? hold(request)
         : request;
     };
     IDBObjectStore.prototype.get = function (...args) {
       const request = originalGet.apply(this, args);
-      return this.name === "settings" &&
-        args[0] === "catalog-revision" &&
+      return (target === "track"
+        ? this.name === "tracks"
+        : this.name === "settings" && args[0] === "catalog-revision") &&
         this.transaction.mode === "readonly"
         ? hold(request)
         : request;
     };
-  });
+  }, target);
 }
 export async function release(page: Page) {
   await page.evaluate(() =>

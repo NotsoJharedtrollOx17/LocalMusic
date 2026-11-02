@@ -14,6 +14,8 @@ import { BrowserMusic } from "./browser";
 import { PlaybackUpdates } from "./PlaybackUpdates";
 export const native = isTauri();
 const domains: Record<string, string> = {
+  organize_library: "catalog",
+  apply_playlist_cleanup: "playlists",
   set_favorite: "catalog",
   set_library_visibility: "catalog",
   import_music: "catalog",
@@ -44,6 +46,32 @@ const cmd = async <T>(
   return result;
 };
 class NativeMusic implements MusicApi {
+  organization() {
+    return cmd<import("../library/identity").OrganizationSnapshot>(
+      "library_organization",
+    );
+  }
+  organize(
+    revision: number,
+    action: import("../library/identity").OrganizationAction,
+  ) {
+    return cmd<import("../library/identity").Organization>("organize_library", {
+      revision,
+      action,
+    });
+  }
+  playlistCleanup(id: string) {
+    return cmd<import("../library/identity").CleanupPreview>(
+      "playlist_cleanup",
+      { id },
+    );
+  }
+  applyPlaylistCleanup(
+    preview: import("../library/identity").CleanupPreview,
+    undo: boolean,
+  ) {
+    return cmd<void>("apply_playlist_cleanup", { preview, undo });
+  }
   playlistContext() {
     return cmd<import("../playlists/types").PlaylistContext>(
       "playlist_context",
@@ -91,8 +119,13 @@ class NativeMusic implements MusicApi {
   soundAction(action: import("../sound/types").SoundAction) {
     return cmd<import("../sound/types").SoundState>("sound_action", { action });
   }
-  groupIds(kind: "albums" | "artists", title: string, subtitle: string) {
-    return cmd<string[]>("group_ids", { kind, title, subtitle });
+  groupIds(
+    kind: "albums" | "artists",
+    title: string,
+    subtitle: string,
+    id?: string,
+  ) {
+    return cmd<string[]>("group_ids", { kind, title, subtitle, id });
   }
   groups(kind: "albums" | "artists", offset = 0, query = "") {
     return cmd<{ groups: import("../types").CatalogGroup[]; total: number }>(

@@ -1,4 +1,12 @@
 export interface Track {
+  sourceAlbumId?: string;
+  artistNames?: string[];
+  albumArtist?: string | null;
+  identityMetadataRead?: boolean;
+  primaryArtist?: string;
+  songIdentity?: string;
+  preferredCopy?: boolean;
+  albumIdentity?: import("./library/identity").AlbumIdentity;
   id: string;
   title: string;
   artist: string;
@@ -24,6 +32,7 @@ export interface Playlist {
   trackIds: string[];
 }
 export interface PlaybackSnapshot {
+  outputMode?: "device" | "silent";
   revision?: number;
   trackId: string | null;
   playing: boolean;
@@ -91,6 +100,7 @@ export interface PlaylistRequest {
   avoidHeardToday: boolean;
 }
 export interface Recap {
+  organizationRevision?: number | null;
   schemaVersion: number;
   privacyRevision?: number;
   period: RecapPeriod;
@@ -120,6 +130,8 @@ export interface LibraryPage {
   total: number;
 }
 export interface CatalogGroup {
+  id?: string;
+  aliases?: string[];
   title: string;
   subtitle: string;
   ids: string[];
@@ -136,6 +148,18 @@ export interface ImportProgress {
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  organization(): Promise<import("./library/identity").OrganizationSnapshot>;
+  organize(
+    revision: number,
+    action: import("./library/identity").OrganizationAction,
+  ): Promise<import("./library/identity").Organization>;
+  playlistCleanup(
+    id: string,
+  ): Promise<import("./library/identity").CleanupPreview>;
+  applyPlaylistCleanup(
+    preview: import("./library/identity").CleanupPreview,
+    undo: boolean,
+  ): Promise<void>;
   playlistContext(): Promise<import("./playlists/types").PlaylistContext>;
   setSuggestionFeedback(id: string, less: boolean): Promise<void>;
   analysisActivity(active: boolean): Promise<void>;
@@ -159,6 +183,7 @@ export interface MusicApi {
     kind: "albums" | "artists",
     title: string,
     subtitle: string,
+    id?: string,
   ): Promise<string[]>;
   groups(
     kind: "albums" | "artists",

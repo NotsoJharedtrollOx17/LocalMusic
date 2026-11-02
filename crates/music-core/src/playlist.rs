@@ -1,3 +1,4 @@
+use crate::identity::{lead, song_key, unique};
 use crate::*;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
@@ -23,13 +24,23 @@ pub fn generate(
     }
     let tz: Tz = zone.parse().map_err(|_| "Invalid time zone")?;
     let today = now.with_timezone(&tz).date_naive();
+    let identities: HashMap<_, _> = tracks
+        .iter()
+        .map(|t| (t.id.as_str(), song_key(t)))
+        .collect();
     let heard: HashSet<_> = sessions
         .iter()
         .filter(|s| {
-            DateTime::parse_from_rfc3339(&s.started_at_utc)
-                .is_ok_and(|d| d.with_timezone(&tz).date_naive() == today)
+            !s.excluded
+                && s.played_ms >= 30000
+                && DateTime::parse_from_rfc3339(&s.started_at_utc)
+                    .is_ok_and(|d| d.with_timezone(&tz).date_naive() == today)
         })
-        .map(|s| s.track_id.as_str())
+        .map(|s| {
+            *identities
+                .get(s.track_id.as_str())
+                .unwrap_or(&s.track_id.as_str())
+        })
         .collect();
     let excluded: HashSet<String> = std::iter::once(&request.exclude_artist)
         .chain(request.exclude_artists.iter())
@@ -47,13 +58,13 @@ pub fn generate(
         .filter(|t| {
             t.available
                 && !t.hidden
-                && !excluded.contains(&normalize(&t.artist))
-                && (included.is_empty() || included.contains(&normalize(&t.artist)))
+                && !excluded.contains(&normalize(&lead(t)))
+                && (included.is_empty() || included.contains(&normalize(&lead(t))))
                 && (genre.is_empty()
                     || t.genre
                         .split([',', ';', '/'])
                         .any(|g| normalize(g) == genre))
-                && (!request.avoid_heard_today || !heard.contains(t.id.as_str()))
+                && (!request.avoid_heard_today || !heard.contains(song_key(t)))
         })
         .collect();
     pool.sort_by(|a, b| {
@@ -70,7 +81,7 @@ pub fn generate(
             .into_iter()
             .enumerate()
             .map(|(order, t)| {
-                let count = ranks.entry(normalize(&t.artist)).or_default();
+                let count = ranks.entry(normalize(&lead(t))).or_default();
                 let round = *count;
                 *count += 1;
                 (round, order, t)
@@ -79,6 +90,7 @@ pub fn generate(
         ranked.sort_by_key(|(round, order, _)| (*round, *order));
         pool = ranked.into_iter().map(|(_, _, t)| t).collect();
     }
+    let pool = unique(pool);
     let mut ids = Vec::new();
     let mut counts: HashMap<String, usize> = HashMap::new();
     let mut seen = HashSet::new();
@@ -91,9 +103,9 @@ pub fn generate(
         if ids.len() >= request.target_count.unwrap_or(100) {
             break;
         }
-        let artist = normalize(&t.artist);
+        let artist = normalize(&lead(t));
         let count = counts.entry(artist).or_default();
-        if (included.is_empty() && !normalize(&t.artist).is_empty() && *count >= 2)
+        if (included.is_empty() && !normalize(&lead(t)).is_empty() && *count >= 2)
             || seen.contains(&t.id)
             || elapsed.saturating_add(t.duration_ms) > budget
             || (budget != u64::MAX && t.duration_ms == 0)

@@ -1,3 +1,4 @@
+import { libraryStrings } from "../library/strings";
 import { api, native } from "../api";
 
 import { localDate } from "../recap/periods";
@@ -59,6 +60,13 @@ export default function SettingsDialog() {
                 ))}
               </div>
             </fieldset>
+            <button
+              data-organization-origin
+              className="button secondary"
+              onClick={() => setModal("organize")}
+            >
+              {libraryStrings(settings.language === "es").organize}
+            </button>
             <div className="settings-history">
               <h3>{t.history}</h3>
               <p>{t.historyHint}</p>

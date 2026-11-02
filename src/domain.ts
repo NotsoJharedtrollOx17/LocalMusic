@@ -1,4 +1,12 @@
 import {
+  leadArtist,
+  songIdentity,
+  uniqueSongs,
+  baseAlbumId,
+  defaultAlbumId,
+  albumArtist,
+} from "./library/identity";
+import {
   localDate,
   localMidnight,
   dateBoundary,
@@ -37,9 +45,13 @@ export function compareCatalogTracks(
   if (sort === "title")
     return a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
   return (
-    a[sort].localeCompare(b[sort]) ||
+    (sort === "artist"
+      ? leadArtist(a).localeCompare(leadArtist(b))
+      : (a.albumIdentity?.title ?? a.album).localeCompare(
+          b.albumIdentity?.title ?? b.album,
+        )) ||
     (sort === "album"
-      ? a.artist.localeCompare(b.artist)
+      ? albumArtist(a).localeCompare(albumArtist(b))
       : a.album.localeCompare(b.album)) ||
     compareAlbumTracks(a, b)
   );
@@ -120,19 +132,25 @@ export function generate(
     ),
     genre = key(request.genre);
   const today = localDate(now, timeZone);
+  const identityById = new Map(tracks.map((t) => [t.id, songIdentity(t)]));
   const heard = new Set(
     sessions
-      .filter((s) => localDate(new Date(s.startedAtUtc), timeZone) === today)
-      .map((s) => s.trackId),
+      .filter(
+        (s) =>
+          !s.excluded &&
+          s.playedMs >= 30000 &&
+          localDate(new Date(s.startedAtUtc), timeZone) === today,
+      )
+      .map((s) => identityById.get(s.trackId) ?? s.trackId),
   );
   let pool = tracks.filter(
     (t) =>
       t.available &&
       !t.hidden &&
-      !excluded.has(key(t.artist)) &&
-      (!included.size || included.has(key(t.artist))) &&
+      !excluded.has(key(leadArtist(t))) &&
+      (!included.size || included.has(key(leadArtist(t)))) &&
       (!genre || key(t.genre).split(/[;,/]/).map(key).includes(genre)) &&
-      (!request.avoidHeardToday || !heard.has(t.id)),
+      (!request.avoidHeardToday || !heard.has(songIdentity(t))),
   );
   pool.sort(
     (a, b) =>
@@ -143,7 +161,7 @@ export function generate(
     const ranks = new Map<string, number>();
     const ranked = pool
       .map((track, order) => {
-        const artist = key(track.artist),
+        const artist = key(leadArtist(track)),
           round = ranks.get(artist) ?? 0;
         ranks.set(artist, round + 1);
         return { track, order, round };
@@ -158,12 +176,12 @@ export function generate(
     ? request.targetMinutes * 60000
     : Infinity;
   const max = request.targetCount ?? 100;
-  for (const t of pool) {
+  for (const t of uniqueSongs(pool)) {
     if (out.length >= max) break;
     if (
       !included.size &&
-      key(t.artist) &&
-      (counts.get(key(t.artist)) ?? 0) >= 2
+      key(leadArtist(t)) &&
+      (counts.get(key(leadArtist(t))) ?? 0) >= 2
     )
       continue;
     if (
@@ -173,7 +191,7 @@ export function generate(
       continue;
     out.push(t.id);
     ms += t.durationMs;
-    counts.set(key(t.artist), (counts.get(key(t.artist)) ?? 0) + 1);
+    counts.set(key(leadArtist(t)), (counts.get(key(leadArtist(t))) ?? 0) + 1);
   }
   return out;
 }
@@ -255,7 +273,7 @@ export function aggregate(
       counts.set(s.trackId, c);
     }
   }
-  const topTracks = tracks
+  const rawTop = tracks
     .filter((t) => counts.has(t.id))
     .map((track) => {
       const { plays, playedMs } = counts.get(track.id)!;
@@ -268,30 +286,57 @@ export function aggregate(
         b.playedMs - a.playedMs ||
         a.track.id.localeCompare(b.track.id),
     );
+  const groupedCounts = new Map<
+    string,
+    { plays: number; playedMs: number; latest: number }
+  >();
+  for (const x of rawTop) {
+    const key = songIdentity(x.track),
+      entry = groupedCounts.get(key) ?? { plays: 0, playedMs: 0, latest: 0 };
+    entry.plays += x.plays;
+    entry.playedMs += x.playedMs;
+    entry.latest = Math.max(entry.latest, counts.get(x.track.id)!.latest);
+    groupedCounts.set(key, entry);
+  }
+  const topTracks = uniqueSongs(tracks)
+    .filter((t) => groupedCounts.has(songIdentity(t)))
+    .map((track) => ({
+      track,
+      plays: groupedCounts.get(songIdentity(track))!.plays,
+      playedMs: groupedCounts.get(songIdentity(track))!.playedMs,
+    }))
+    .sort(
+      (a, b) =>
+        b.plays - a.plays ||
+        groupedCounts.get(songIdentity(b.track))!.latest -
+          groupedCounts.get(songIdentity(a.track))!.latest ||
+        b.playedMs - a.playedMs ||
+        a.track.id.localeCompare(b.track.id),
+    );
   type Recent<T> = { value: T; latest: number };
   const artists = new Map<string, Recent<{ name: string; plays: number }>>(),
     albums = new Map<
       string,
       Recent<{ name: string; artist: string; plays: number; trackId?: string }>
     >();
-  for (const x of topTracks) {
+  for (const x of rawTop) {
     const latest = counts.get(x.track.id)!.latest;
-    const ak = key(x.track.artist) || "unknown";
+    const ak = key(leadArtist(x.track)) || "unknown";
     const a = artists.get(ak) ?? {
-      value: { name: x.track.artist || "Unknown artist", plays: 0 },
+      value: { name: leadArtist(x.track) || "Unknown artist", plays: 0 },
       latest,
     };
     a.value.plays += x.plays;
     a.latest = Math.max(a.latest, latest);
     artists.set(ak, a);
     if (x.track.album) {
-      const bk = key(x.track.artist + "|" + x.track.album);
+      const bk = x.track.albumIdentity?.id ?? defaultAlbumId(x.track);
       const b = albums.get(bk) ?? {
         value: {
-          name: x.track.album,
-          artist: x.track.artist,
+          name: x.track.albumIdentity?.title ?? x.track.album,
+          artist: x.track.albumIdentity?.artist ?? albumArtist(x.track),
           plays: 0,
-          trackId: x.track.id,
+          trackId: x.track.albumIdentity?.coverId ?? x.track.id,
         },
         latest,
       };
@@ -320,7 +365,7 @@ export function aggregate(
   const artistCounts = new Map<string, number>();
   const ids = available
     .filter((x) => {
-      const k = key(x.track.artist),
+      const k = key(leadArtist(x.track)),
         c = artistCounts.get(k) ?? 0;
       if (c >= cap) return false;
       artistCounts.set(k, c + 1);

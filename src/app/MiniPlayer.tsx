@@ -1,3 +1,4 @@
+import OutputStatus from "./OutputStatus";
 import { ListMusic, ArrowUpRight, Heart, Play, Pause } from "lucide-react";
 import { api } from "../api";
 import { Cover, IconButton } from "../components";
@@ -42,6 +43,7 @@ export default function MiniPlayer() {
             {current.demo && <span className="mini-sample">SAMPLE</span>}
           </button>
           <div className="mini-center">
+            <OutputStatus />
             <TransportControls />
             <PlaybackProgress />
           </div>

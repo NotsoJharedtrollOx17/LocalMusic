@@ -1,3 +1,4 @@
+import { leadArtist, songIdentity, uniqueSongs } from "../library/identity";
 import { key, localDate } from "../domain";
 import type { PlaylistRequest, Session, Track } from "../types";
 import type {
@@ -49,7 +50,7 @@ export function analysisOrder<T extends Track>(
   // Round-robin artists keeps analysis coverage from being dominated by one album.
   const groups = new Map<string, T[]>();
   for (const t of rest) {
-    const k = key(t.artist) || t.id;
+    const k = key(leadArtist(t)) || t.id;
     const group = groups.get(k) ?? [];
     group.push(t);
     groups.set(k, group);
@@ -109,47 +110,55 @@ export function personalized(
   const recent = eligible.filter(
     (s) => +now - Date.parse(s.startedAtUtc) <= 90 * day,
   );
+  const identityById = new Map(tracks.map((t) => [t.id, songIdentity(t)]));
+  const identity = (id: string) => identityById.get(id) ?? id;
   const taste = recent.length ? recent : eligible;
   const affinity = new Map<string, number>(),
     plays = new Map<string, number>(),
     last = new Map<string, number>();
   for (const s of eligible) {
-    plays.set(s.trackId, (plays.get(s.trackId) ?? 0) + 1);
+    plays.set(identity(s.trackId), (plays.get(identity(s.trackId)) ?? 0) + 1);
     last.set(
-      s.trackId,
-      Math.max(last.get(s.trackId) ?? 0, Date.parse(s.startedAtUtc)),
+      identity(s.trackId),
+      Math.max(last.get(identity(s.trackId)) ?? 0, Date.parse(s.startedAtUtc)),
     );
   }
   for (const s of taste)
     affinity.set(
-      s.trackId,
-      (affinity.get(s.trackId) ?? 0) +
+      identity(s.trackId),
+      (affinity.get(identity(s.trackId)) ?? 0) +
         Math.pow(2, -(+now - Date.parse(s.startedAtUtc)) / (30 * day)),
     );
   const positive = tracks.filter((t) => t.available && !t.hidden && !t.demo);
-  const hasHistory = positive.some((t) => (affinity.get(t.id) ?? 0) > 0);
+  const hasHistory = positive.some(
+    (t) => (affinity.get(songIdentity(t)) ?? 0) > 0,
+  );
   if (!hasHistory) {
     affinity.clear();
-    for (const t of positive) if (t.favorite) affinity.set(t.id, 1);
+    for (const t of positive) if (t.favorite) affinity.set(songIdentity(t), 1);
   }
   const source = hasHistory
     ? "history"
     : affinity.size
       ? "favorites"
       : "discovery";
-  const anchors = positive
-    .filter((t) => affinity.has(t.id))
+  const anchors = uniqueSongs(positive)
+    .filter((t) => affinity.has(songIdentity(t)))
     .sort(
       (a, b) =>
-        affinity.get(b.id)! - affinity.get(a.id)! || compare(a.id, b.id),
+        affinity.get(songIdentity(b))! - affinity.get(songIdentity(a))! ||
+        compare(a.id, b.id),
     );
   const artists = new Map<string, number>(),
     genres = new Map<string, number>();
   const years: { year: number; weight: number }[] = [];
   for (const t of anchors) {
-    const w = affinity.get(t.id)!;
-    if (key(t.artist))
-      artists.set(key(t.artist), (artists.get(key(t.artist)) ?? 0) + w);
+    const w = affinity.get(songIdentity(t))!;
+    if (key(leadArtist(t)))
+      artists.set(
+        key(leadArtist(t)),
+        (artists.get(key(leadArtist(t))) ?? 0) + w,
+      );
     for (const g of tags(t.genre)) genres.set(g, (genres.get(g) ?? 0) + w);
     if (t.releaseYear) years.push({ year: t.releaseYear, weight: w });
   }
@@ -161,10 +170,10 @@ export function personalized(
   for (const t of anchors)
     if (
       validFeature(data.features[t.id]) &&
-      !seenArtists.has(key(t.artist) || t.id)
+      !seenArtists.has(key(leadArtist(t)) || t.id)
     ) {
       acousticAnchors.push(t);
-      seenArtists.add(key(t.artist) || t.id);
+      seenArtists.add(key(leadArtist(t)) || t.id);
       if (acousticAnchors.length === 32) break;
     }
   for (const t of anchors)
@@ -178,7 +187,7 @@ export function personalized(
   const heard = new Set(
     eligible
       .filter((s) => localDate(new Date(s.startedAtUtc), zone) === today)
-      .map((s) => s.trackId),
+      .map((s) => identity(s.trackId)),
   );
   const excluded = new Set(
     [request.excludeArtist, ...(request.excludeArtists ?? [])]
@@ -190,18 +199,22 @@ export function personalized(
       .map(key)
       .filter(Boolean),
   );
-  const pool = tracks
-    .filter(
-      (t) =>
-        t.available &&
-        !t.hidden &&
-        !excluded.has(key(t.artist)) &&
-        (!included.size || included.has(key(t.artist))) &&
-        (!key(request.genre) || included.size > 0 || tags(t.genre).includes(key(request.genre))) &&
-        (!request.avoidHeardToday || !heard.has(t.id)),
-    )
-    .sort((a, b) => compare(a.id, b.id))
-    .filter((t, i, all) => i === 0 || t.id !== all[i - 1].id);
+  const pool = uniqueSongs(
+    tracks
+      .filter(
+        (t) =>
+          t.available &&
+          !t.hidden &&
+          !excluded.has(key(leadArtist(t))) &&
+          (!included.size || included.has(key(leadArtist(t)))) &&
+          (!key(request.genre) ||
+            included.size > 0 ||
+            tags(t.genre).includes(key(request.genre))) &&
+          (!request.avoidHeardToday || !heard.has(songIdentity(t))),
+      )
+      .sort((a, b) => compare(a.id, b.id))
+      .filter((t, i, all) => i === 0 || t.id !== all[i - 1].id),
+  );
   const weights =
     request.blend === "familiar"
       ? [0.4, 0.3, 0.2, 0.1]
@@ -220,10 +233,10 @@ export function personalized(
         why: string[] = [];
       if (maxL > 0) {
         parts.push([
-          Math.log1p(affinity.get(t.id) ?? 0) / Math.log1p(maxL),
+          Math.log1p(affinity.get(songIdentity(t)) ?? 0) / Math.log1p(maxL),
           weights[0],
         ]);
-        if (affinity.has(t.id))
+        if (affinity.has(songIdentity(t)))
           why.push(source === "favorites" ? "favorite" : "listening");
       }
       const metadata: [number, number][] = [];
@@ -233,8 +246,8 @@ export function personalized(
           Math.max(...gs.map((g) => (genres.get(g) ?? 0) / maxG)),
           0.6,
         ]);
-      if (maxA && key(t.artist))
-        metadata.push([(artists.get(key(t.artist)) ?? 0) / maxA, 0.3]);
+      if (maxA && key(leadArtist(t)))
+        metadata.push([(artists.get(key(leadArtist(t))) ?? 0) / maxA, 0.3]);
       if (years.length && t.releaseYear)
         metadata.push([
           years.reduce(
@@ -272,12 +285,12 @@ export function personalized(
           why.push("sound");
         }
       }
-      const count = plays.get(t.id) ?? 0;
+      const count = plays.get(songIdentity(t)) ?? 0;
       const fresh =
         0.5 / (1 + count) +
         0.5 *
           (last.has(t.id)
-            ? Math.min(1, (+now - last.get(t.id)!) / (30 * day))
+            ? Math.min(1, (+now - last.get(songIdentity(t))!) / (30 * day))
             : 1);
       parts.push([fresh, weights[3]]);
       if (fresh > 0.5) why.push("fresh");
@@ -286,7 +299,9 @@ export function personalized(
           parts.reduce((s, [v, w]) => s + v * w, 0) /
             parts.reduce((s, [, w]) => s + w, 0)) *
         (request.preferFavorites && t.favorite ? 1.25 : 1) *
-        (included.size && key(request.genre) && gs.includes(key(request.genre)) ? 1.25 : 1) *
+        (included.size && key(request.genre) && gs.includes(key(request.genre))
+          ? 1.25
+          : 1) *
         (data.less.includes(t.id) ? 0.1 : 1);
       if (data.less.includes(t.id)) why.push("less");
       reasons[t.id] = why;
@@ -297,7 +312,7 @@ export function personalized(
     const ranks = new Map<string, number>();
     const ranked = scored
       .map((entry, order) => {
-        const artist = key(entry.t.artist),
+        const artist = key(leadArtist(entry.t)),
           round = ranks.get(artist) ?? 0;
         ranks.set(artist, round + 1);
         return { entry, order, round };
@@ -309,7 +324,7 @@ export function personalized(
   const selected: Track[] = [],
     counts = new Map<string, number>();
   for (const { t } of scored) {
-    const artist = key(t.artist);
+    const artist = key(leadArtist(t));
     if (selected.length >= (request.targetCount ?? 100)) break;
     if (!included.size && artist && (counts.get(artist) ?? 0) >= 2) continue;
     if (
@@ -326,7 +341,9 @@ export function personalized(
   while (selected.length) {
     let i = selected.findIndex(
       (t) =>
-        !key(t.artist) || key(t.artist) !== key(ordered.at(-1)?.artist ?? ""),
+        !key(leadArtist(t)) ||
+        key(leadArtist(t)) !==
+          (ordered.length ? key(leadArtist(ordered.at(-1)!)) : ""),
     );
     if (i < 0) i = 0;
     ordered.push(selected.splice(i, 1)[0]);

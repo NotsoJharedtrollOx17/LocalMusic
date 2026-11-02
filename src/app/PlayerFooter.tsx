@@ -1,3 +1,4 @@
+import OutputStatus from "./OutputStatus";
 import { usePlayerContext } from "./PlayerContext";
 import PlaybackProgress from "./PlaybackProgress";
 import TransportControls from "./TransportControls";
@@ -8,6 +9,7 @@ export default function PlayerFooter({ view }: { view: "player" | "queue" }) {
   if (!current) return null;
   return (
     <>
+      <OutputStatus />
       <PlayerTrackActions view={view} />
       <PlaybackProgress />
       <TransportControls />

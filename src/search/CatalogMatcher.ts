@@ -27,7 +27,10 @@ export class CatalogMatcher {
     this.pending.clear();
   };
   match(
-    tracks: Pick<Track, "id" | "title" | "artist" | "album">[],
+    tracks: (Pick<Track, "id" | "title" | "artist" | "album"> &
+      Partial<
+        Pick<Track, "primaryArtist" | "artistNames" | "albumIdentity">
+      >)[],
     generation: string | number,
     query: string,
   ): Promise<Map<string, number>> {
@@ -65,12 +68,30 @@ export class CatalogMatcher {
       this.pending.set(id, { resolve, reject, timer });
       const rows =
         generation !== this.generation
-          ? tracks.map(({ id, title, artist, album }) => ({
-              id,
-              title,
-              artist,
-              album,
-            }))
+          ? tracks.map(
+              ({
+                id,
+                title,
+                artist,
+                album,
+                primaryArtist,
+                artistNames,
+                albumIdentity,
+              }) => ({
+                id,
+                title,
+                artist: [
+                  artist,
+                  primaryArtist ?? "",
+                  ...(artistNames ?? []),
+                ].join(" "),
+                album: [
+                  album,
+                  albumIdentity?.title ?? "",
+                  albumIdentity?.artist ?? "",
+                ].join(" "),
+              }),
+            )
           : undefined;
       this.generation = generation;
       this.worker!.postMessage({ id, rows, query });

@@ -2,6 +2,8 @@ import { createContext, useContext } from "react";
 import { MusicAppContext, type MusicAppModel } from "./MusicAppContext";
 export type PlayerModel = Pick<
   MusicAppModel,
+  | "organizationTab"
+  | "setOrganizationTab"
   | "cache"
   | "queueLimit"
   | "setQueueLimit"

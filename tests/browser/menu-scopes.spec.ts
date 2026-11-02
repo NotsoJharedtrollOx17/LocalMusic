@@ -141,7 +141,7 @@ test("a delayed album navigation cannot overwrite a newer Songs choice", async (
     .first()
     .getByRole("button", { name: /^Track actions:/ })
     .click();
-  await holdNextTrackRead(page);
+  await holdNextTrackRead(page, "track");
   await page
     .getByRole("menuitem", { name: "Go to album", exact: true })
     .click();

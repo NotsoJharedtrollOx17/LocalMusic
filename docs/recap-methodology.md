@@ -27,3 +27,9 @@ Weekly presentation uses the ISO week number and ISO week-year (Monday-based), l
 Artist and album top-three arrays are computed from all qualified tracks before display truncation, ordered by descending qualified plays and normalized name (then artist for tied album names). Winner fields remain for backward compatibility. Snapshots without the arrays display only their recorded winner; runners-up are not reconstructed from a truncated song list. Cards and story scenes show up to three recorded ranks without inventing missing entries.
 
 Song and album rankings show square cover artwork with decreasing rank sizes. Album ranks retain an optional private representative track ID chosen before song-list truncation; React can load its artwork separately. That ID is excluded from display exports. Older snapshots use a matching recorded song or deterministic fallback cover. Artists and albums have separate story steps (seven steps total).
+
+## Local identity and Windows output fallback
+
+Confirmed song links consolidate live Top songs; lead artists consolidate Top artists. Confirmed album links consolidate Top albums using each qualifying session's original track membership. Selecting a preferred song copy cannot move its plays to that copy's album. Original sessions and intervals are retained, and saved snapshots stay frozen. Live export preparation checks the organization revision as well as privacy; frozen snapshots retain their original organization.
+
+On Windows, playback continues through a paced silent PCM output when no physical output can open. By explicit product choice, that playback counts toward listening time and qualified plays. Position comes from consumed decoder samples; pause, buffering, seek and exclusion rules still apply. Switching outputs preserves the session and cannot count the transition twice. Physical output recovery does not resume a paused track.

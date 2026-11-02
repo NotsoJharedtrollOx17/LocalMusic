@@ -43,6 +43,7 @@ export function useAppState(initialSettings?: Settings) {
     [onlyFavorites, setOnlyFavorites] = useState(false),
     [sort, setSort] = useState<"title" | "artist" | "album">("title"),
     [group, setGroup] = useState<{
+      id?: string;
       kind: "albums" | "artists";
       title: string;
       subtitle: string;
@@ -89,8 +90,12 @@ export function useAppState(initialSettings?: Settings) {
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
+  const [organizationTab, setOrganizationTab] = useState<
+    "artists" | "songs" | "albums"
+  >("artists");
   const [modal, setModal] = useState<
       | "settings"
+      | "organize"
       | "player"
       | "queue"
       | "manual"
@@ -167,6 +172,8 @@ export function useAppState(initialSettings?: Settings) {
     folderInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null);
   return {
+    organizationTab,
+    setOrganizationTab,
     playerParent,
     setPlayerParent,
     sharing,

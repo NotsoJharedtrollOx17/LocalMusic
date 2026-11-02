@@ -1,3 +1,4 @@
+import OrganizationDialog from "./app/OrganizationDialog";
 import type { Settings } from "./types";
 import { useMusicApp } from "./app/useMusicApp";
 import { MusicAppContext } from "./app/MusicAppContext";
@@ -46,6 +47,7 @@ export default function App({
         <PlayerDialog />
         <ManualPlaylistDialog />
         <TrackDetailsDialog />
+        <OrganizationDialog />
         <SnapshotsDialog />
         <RecapExportDialog />
         <RecapStoryDialog />

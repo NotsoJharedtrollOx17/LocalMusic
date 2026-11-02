@@ -1,3 +1,4 @@
+import { defaultAlbumId } from "../library/identity";
 import { useEffect, useRef, useCallback, useState } from "react";
 
 import { api } from "../api";
@@ -94,14 +95,44 @@ export function useCatalogReads(
       const version = ++groupRequest.current;
       setGroupLoading(true);
       try {
+        let current = selected;
+        if (selected.id) {
+          let resolvedId = selected.id;
+          if (selected.kind === "albums") {
+            const [representative] = await api.tracksById([
+              selected.coverTrack.id,
+            ]);
+            if (representative)
+              resolvedId =
+                representative.albumIdentity?.id ??
+                defaultAlbumId(representative);
+          }
+          for (let offset = 0; ;) {
+            const page = await api.groups(selected.kind, offset);
+            const found = page.groups.find((g) => g.id === resolvedId);
+            if (found) {
+              current = {
+                ...selected,
+                id: found.id,
+                title: found.title,
+                subtitle: found.subtitle,
+                coverTrack: found.track,
+              };
+              break;
+            }
+            offset += page.groups.length;
+            if (offset >= page.total || !page.groups.length) break;
+          }
+        }
         const ids = await api.groupIds(
-          selected.kind,
-          selected.title,
-          selected.subtitle,
+          current.kind,
+          current.title,
+          current.subtitle,
+          current.id,
         );
         const nextTracks = await api.tracksById(ids.slice(0, limit));
         if (version !== groupRequest.current) return;
-        setGroup({ ...selected, ids });
+        setGroup({ ...current, ids });
         setGroupTracks(nextTracks);
         remember(nextTracks);
       } finally {

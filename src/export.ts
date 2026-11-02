@@ -4,8 +4,22 @@ import { drawRankings } from "./recap/drawRankings";
 import type { Recap } from "./types";
 import { safeRecap } from "./domain";
 import { native, api } from "./api";
-export async function checkPrivacy(recap: Recap, language: "en" | "es" = "en") {
+export async function checkPrivacy(
+  recap: Recap,
+  language: "en" | "es" = "en",
+  frozen = false,
+) {
   const current = await api.recap(periodRequest(recap.period)); // Flush native journal before checking privacy changes.
+  if (
+    !frozen &&
+    recap.organizationRevision != null &&
+    recap.organizationRevision !== current.organizationRevision
+  )
+    throw Error(
+      language === "es"
+        ? "La organización cambió. Abre Tu resumen de nuevo."
+        : "Library organization changed. Open Your Recap again.",
+    );
   if (
     (recap.privacyRevision ?? 0) !==
     ((await api.settings()).privacyRevision ?? 0)

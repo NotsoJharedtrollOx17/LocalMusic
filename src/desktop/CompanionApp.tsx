@@ -1,3 +1,4 @@
+import OrganizationDialog from "../app/OrganizationDialog";
 import { useEffect } from "react";
 import type { Settings } from "../types";
 import { PlayerContext } from "../app/PlayerContext";
@@ -49,6 +50,7 @@ export default function CompanionApp({
             )}
             <TrackActionMenu />
             <TrackDetailsDialog />
+            <OrganizationDialog />
             <AddPlaylistDialog />
             <ManualPlaylistDialog />
             <RemoveLibraryDialog />

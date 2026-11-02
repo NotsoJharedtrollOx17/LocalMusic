@@ -1,6 +1,6 @@
 use lofty::{
     file::{AudioFile, TaggedFileExt},
-    tag::Accessor,
+    tag::{Accessor, ItemKey},
 };
 use music_core::{Store, Track};
 use std::{
@@ -23,6 +23,7 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
     }
     let id = hasher.finalize().to_hex().to_string();
     let mut t = Track {
+        identity: Default::default(),
         id,
         title: path
             .file_stem()
@@ -56,6 +57,15 @@ pub fn read_file(path: &Path, cache: &Path) -> Result<Track, String> {
             if let Some(v) = tag.title() {
                 t.title = v.into_owned()
             }
+            t.identity.artist_names = tag
+                .get_strings(&ItemKey::TrackArtists)
+                .flat_map(|s| s.split(';'))
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_owned)
+                .collect();
+            t.identity.album_artist = tag.get_string(&ItemKey::AlbumArtist).map(str::to_owned);
+            t.identity.identity_metadata_read = true;
             t.artist = tag.artist().map(|v| v.into_owned()).unwrap_or_default();
             t.album = tag.album().map(|v| v.into_owned()).unwrap_or_default();
             t.genre = tag.genre().map(|v| v.into_owned()).unwrap_or_default();

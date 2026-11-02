@@ -1,6 +1,8 @@
+mod output;
 mod sound_control;
 use crate::sound::{engine::Engine, source::SoundSource};
 use music_core::*;
+use output::Output;
 use std::sync::atomic::Ordering;
 use std::{
     fs::File,
@@ -32,7 +34,10 @@ pub fn launch(
         sound.available.store(device.is_ok(), Ordering::Relaxed);
         let mut p = DesktopPlayer {
             sound,
-            device: device.ok(),
+            output: device
+                .map(Output::Device)
+                .unwrap_or_else(|_| Output::silent()),
+            last_output_retry: Instant::now(),
             sink: None,
             core,
             app,
@@ -120,7 +125,8 @@ pub fn launch(
 }
 struct DesktopPlayer {
     sound: Arc<Engine>,
-    device: Option<rodio::MixerDeviceSink>,
+    output: Output,
+    last_output_retry: Instant,
     sink: Option<rodio::Player>,
     core: Arc<Mutex<Store>>,
     app: AppHandle,
@@ -175,8 +181,22 @@ impl DesktopPlayer {
             .store(self.snapshot.playing, Ordering::Relaxed);
         let mut stored = self.state.lock().unwrap();
         *stored = self.snapshot.clone();
+        stored.output_mode = Some(
+            if self.output.physical() {
+                "device"
+            } else {
+                "silent"
+            }
+            .into(),
+        );
         let revision = SNAPSHOT_REVISION.fetch_add(1, Ordering::SeqCst) + 1;
         let mut value = serde_json::to_value(&*stored).unwrap();
+        value["outputMode"] = if self.output.physical() {
+            "device"
+        } else {
+            "silent"
+        }
+        .into();
         value["revision"] = revision.into();
         let _ = self.app.emit("playback://snapshot", value);
     }
@@ -246,11 +266,7 @@ impl DesktopPlayer {
         }
         let file = File::open(&track.source_uri).map_err(|e| e.to_string())?;
         let source = rodio::Decoder::try_from(file).map_err(|e| e.to_string())?;
-        let device = self
-            .device
-            .as_ref()
-            .ok_or("No audio output device is available")?;
-        let sink = rodio::Player::connect_new(device.mixer());
+        let sink = rodio::Player::connect_new(self.output.mixer());
         sink.append(SoundSource::new(source, self.sound.clone()));
         if position > 0 {
             sink.try_seek(Duration::from_millis(position))

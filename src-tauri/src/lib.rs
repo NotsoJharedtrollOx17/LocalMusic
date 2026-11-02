@@ -1,12 +1,13 @@
 //! Application entry point: platform plugins, startup and command registration.
-mod album_order;
 mod about_window;
+mod album_order;
 mod artwork;
 #[cfg(not(target_os = "android"))]
 mod catalog;
 mod commands;
-mod desktop_windows;
 mod desktop_menu;
+mod desktop_windows;
+mod identity_metadata;
 mod playback;
 mod sound;
 mod state;
@@ -36,6 +37,10 @@ pub fn run() {
         .on_window_event(desktop_windows::window_event)
         .setup(state::setup)
         .invoke_handler(tauri::generate_handler![
+            commands::organization::library_organization,
+            commands::organization::organize_library,
+            commands::organization::playlist_cleanup,
+            commands::organization::apply_playlist_cleanup,
             commands::recommendations::playlist_context,
             commands::recommendations::set_suggestion_feedback,
             commands::recommendations::analysis_activity,

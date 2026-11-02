@@ -3,6 +3,7 @@ use chrono_tz::America::Los_Angeles;
 use music_core::*;
 fn track(id: &str, artist: &str) -> Track {
     Track {
+        identity: Default::default(),
         id: id.into(),
         title: id.into(),
         artist: artist.into(),
@@ -64,7 +65,11 @@ fn library_removal_preserves_history_and_restores_search() {
     db.set_library_visibility(&[t.id.clone()], false).unwrap();
     assert_eq!(db.tracks("", 0, 60).unwrap().total, 0);
     assert_eq!(db.groups("artists", 0, 60).unwrap().total, 0);
-    assert!(db.tracks_with_options("Artist", 0, 60, false, "title").unwrap().tracks.is_empty());
+    assert!(db
+        .tracks_with_options("Artist", 0, 60, false, "title")
+        .unwrap()
+        .tracks
+        .is_empty());
     assert!(db.track(&t.id).unwrap().unwrap().hidden);
     let recap = recap::aggregate(
         &RecapRequest {
@@ -85,10 +90,20 @@ fn library_removal_preserves_history_and_restores_search() {
     db.upsert_track(&t).unwrap(); // migration/favorite updates cannot unhide a song
     assert_eq!(db.tracks("", 0, 60).unwrap().total, 0);
     db.set_library_visibility(&[t.id.clone()], true).unwrap();
-    let result = db.tracks_with_options("Artist", 0, 60, false, "title").unwrap();
+    let result = db
+        .tracks_with_options("Artist", 0, 60, false, "title")
+        .unwrap();
     assert_eq!(result.tracks.len(), 1);
-    assert_eq!(db.groups_filtered("albums", 0, 60, "Artist").unwrap().total, 1);
-    assert_eq!(db.groups_filtered("artists", 0, 60, "Artist").unwrap().total, 1);
+    assert_eq!(
+        db.groups_filtered("albums", 0, 60, "Artist").unwrap().total,
+        1
+    );
+    assert_eq!(
+        db.groups_filtered("artists", 0, 60, "Artist")
+            .unwrap()
+            .total,
+        1
+    );
     assert_eq!(db.sessions().unwrap()[0].played_ms, 40000);
 }
 #[test]

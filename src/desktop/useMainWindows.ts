@@ -1,3 +1,9 @@
+import {
+  leadArtist,
+  albumArtist,
+  baseAlbumId, defaultAlbumId,
+  artistId,
+} from "../library/identity";
 import { useEffect, useRef, useState } from "react";
 import type { MusicAppState } from "../app/useAppState";
 import type { useMusicApp } from "../app/useMusicApp";
@@ -54,6 +60,7 @@ export function useMainWindows(
         ["catalog", "playlists", "feedback", "privacy"].includes(change.domain)
       ) {
         s.setCatalogRevision((v) => v + 1);
+        s.setShareRecap(null);
         s.setRecapRevision((v) => v + 1);
         const ids = [
           ...new Set([
@@ -97,8 +104,18 @@ export function useMainWindows(
         a.remember([track]);
         a.dismissModals();
         a.openGroup(request.kind as "albums" | "artists", {
-          title: request.kind === "albums" ? track.album : track.artist,
-          subtitle: request.kind === "albums" ? track.artist : "",
+          id:
+            request.kind === "albums"
+              ? (track.albumIdentity?.id ?? defaultAlbumId(track))
+              : artistId(leadArtist(track)),
+          title:
+            request.kind === "albums"
+              ? (track.albumIdentity?.title ?? track.album)
+              : leadArtist(track),
+          subtitle:
+            request.kind === "albums"
+              ? (track.albumIdentity?.artist ?? albumArtist(track))
+              : "",
           ids: [track.id],
           track,
         });

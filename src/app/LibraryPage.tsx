@@ -1,3 +1,4 @@
+import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
 import SearchTriggerIcon from "./SearchTriggerIcon";
@@ -19,6 +20,9 @@ import YourRecapPage from "./YourRecapPage";
 
 export default function LibraryPage() {
   const {
+    settings,
+    setModal,
+    setOrganizationTab,
     section,
     tracks,
     total,
@@ -134,6 +138,18 @@ export default function LibraryPage() {
                   .filter(Boolean)
                   .join(" · ")}
               </span>
+              {group.kind === "albums" && (
+                <button
+                  data-organization-origin
+                  className="button secondary"
+                  onClick={() => {
+                    setOrganizationTab("albums");
+                    setModal("organize");
+                  }}
+                >
+                  {libraryStrings(settings?.language === "es").organize}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -198,12 +214,18 @@ export default function LibraryPage() {
                       {artistAlbums.map((album) => (
                         <button
                           className="album-card"
-                          data-group-key={JSON.stringify([
-                            "albums",
-                            album.title,
-                            album.subtitle,
-                          ])}
-                          key={JSON.stringify([album.title, album.subtitle])}
+                          data-group-key={
+                            album.id ??
+                            JSON.stringify([
+                              "albums",
+                              album.title,
+                              album.subtitle,
+                            ])
+                          }
+                          key={
+                            album.id ??
+                            JSON.stringify([album.title, album.subtitle])
+                          }
                           onClick={(e) =>
                             openGroup("albums", album, e.currentTarget)
                           }
@@ -240,13 +262,11 @@ export default function LibraryPage() {
                 {catalogGroups.length ? (
                   catalogGroups.map((g) => (
                     <button
-                      key={JSON.stringify([g.title, g.subtitle])}
+                      key={g.id ?? JSON.stringify([g.title, g.subtitle])}
                       className="album-card"
-                      data-group-key={JSON.stringify([
-                        section,
-                        g.title,
-                        g.subtitle,
-                      ])}
+                      data-group-key={
+                        g.id ?? JSON.stringify([section, g.title, g.subtitle])
+                      }
                       onClick={(e) =>
                         openGroup(
                           section as "albums" | "artists",

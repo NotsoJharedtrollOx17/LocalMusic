@@ -1,3 +1,4 @@
+import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useAppState } from "../app/useAppState";
@@ -192,19 +193,29 @@ export function useCompanionPlayer(
           ...new Set([
             ...s.player.queue.slice(0, s.queueLimit),
             ...(s.player.trackId ? [s.player.trackId] : []),
+            ...(s.detail ? [s.detail.id] : []),
           ]),
         ]);
         if (!disposed) {
           remember(tracks);
+          state.setDetail((old) =>
+            old ? (tracks.find((t) => t.id === old.id) ?? old) : null,
+          );
           await refreshLists();
         }
       });
     };
+    window.addEventListener("library-organization-changed", reconcile);
+    void listen("library://metadata", reconcile).then((fn) => {
+      if (disposed) fn();
+      else off.push(fn);
+    });
     window.addEventListener("focus", reconcile);
     document.addEventListener("visibilitychange", reconcile);
     return () => {
       disposed = true;
       off.splice(0).forEach((fn) => fn());
+      window.removeEventListener("library-organization-changed", reconcile);
       window.removeEventListener("focus", reconcile);
       document.removeEventListener("visibilitychange", reconcile);
     };

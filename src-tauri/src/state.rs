@@ -49,6 +49,7 @@ pub(crate) fn setup(app: &mut tauri::App) -> std::result::Result<(), Box<dyn std
         snapshot.clone(),
         sound.clone(),
     );
+    crate::identity_metadata::launch(app.handle().clone(), core.clone(), snapshot.clone());
     app.manage(MusicState {
         analysis: Arc::new(Default::default()),
         core,

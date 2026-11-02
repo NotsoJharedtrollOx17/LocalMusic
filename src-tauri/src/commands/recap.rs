@@ -25,6 +25,7 @@ pub(crate) async fn get_recap(
         &store.intervals()?,
         chrono::Utc::now(),
     )?;
+    recap.organization_revision = Some(store.organization()?.revision);
     drop(store);
     let cache = artwork::cache_dir(&app)?;
     for ranked in &mut recap.top_tracks {

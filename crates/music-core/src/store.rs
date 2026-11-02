@@ -3,12 +3,11 @@ use rusqlite::{params, Connection};
 use serde::{de::DeserializeOwned, Serialize};
 use std::path::Path;
 pub struct Store {
-    pub connection: Connection,
-    pub(crate) group_search_cache: std::cell::RefCell<
-        std::collections::HashMap<String, (u64, Vec<(String, String, String, String)>)>,
+    pub(crate) identity_tracks_cache: std::cell::RefCell<Option<(u64, Vec<Track>)>>,
+    pub(crate) identity_group_cache: std::cell::RefCell<
+        std::collections::BTreeMap<String, (u64, Vec<crate::groups::CatalogGroup>)>,
     >,
-    pub(crate) membership_cache:
-        std::cell::RefCell<std::collections::BTreeMap<String, (u64, Vec<String>)>>,
+    pub connection: Connection,
     pub(crate) catalog_revision: std::cell::Cell<u64>,
     pub(crate) search_cache: std::cell::RefCell<Option<(u64, Vec<(String, String, String)>)>>,
 }
@@ -29,10 +28,16 @@ CREATE INDEX IF NOT EXISTS idx_sources_track ON track_sources(track_id);
 CREATE TABLE IF NOT EXISTS hidden_tracks(track_id TEXT PRIMARY KEY REFERENCES tracks(id));
 CREATE TABLE IF NOT EXISTS suggestion_less(track_id TEXT PRIMARY KEY REFERENCES tracks(id));
 CREATE TABLE IF NOT EXISTS acoustic_features(track_id TEXT PRIMARY KEY REFERENCES tracks(id),data TEXT NOT NULL);
-PRAGMA user_version=3;
+CREATE TABLE IF NOT EXISTS library_identity(id INTEGER PRIMARY KEY CHECK(id=1),data TEXT NOT NULL);
+INSERT OR IGNORE INTO library_identity VALUES(1,'{"revision":0,"artists":{},"songs":[],"albums":[],"dismissed":[]}');
+PRAGMA user_version=4;
 "#;
 pub type Result<T> = std::result::Result<T, String>;
 impl Store {
+    pub fn catalog_version(&self) -> u64 {
+        self.catalog_revision.get()
+    }
+
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let connection = Connection::open(path).map_err(|e| e.to_string())?;
         connection
@@ -42,11 +47,11 @@ impl Store {
             .execute_batch(SCHEMA)
             .map_err(|e| e.to_string())?;
         let s = Self {
+            identity_tracks_cache: Default::default(),
+            identity_group_cache: Default::default(),
             connection,
             search_cache: Default::default(),
             catalog_revision: Default::default(),
-            group_search_cache: Default::default(),
-            membership_cache: Default::default(),
         };
         if s.get_setting::<Settings>("preferences")?.is_none() {
             s.set_setting("preferences", &Settings::default())?;
@@ -87,11 +92,20 @@ impl Store {
             .map_err(|e| e.to_string())
     }
     pub fn all_tracks(&self) -> Result<Vec<Track>> {
+        if let Some((revision, tracks)) = &*self.identity_tracks_cache.borrow() {
+            if *revision == self.catalog_revision.get() {
+                return Ok(tracks.clone());
+            }
+        }
         let mut tracks: Vec<Track> = self.json_rows("SELECT data FROM tracks")?;
         let hidden = self.hidden_ids()?;
+        let organization = self.organization()?;
         for track in &mut tracks {
+            *track = organization.apply(track.clone());
             track.hidden = hidden.contains(&track.id);
         }
+        *self.identity_tracks_cache.borrow_mut() =
+            Some((self.catalog_revision.get(), tracks.clone()));
         Ok(tracks)
     }
     pub fn hidden_ids(&self) -> Result<std::collections::HashSet<String>> {
@@ -141,7 +155,7 @@ impl Store {
                     |r| r.get(0),
                 )
                 .map_err(|e| e.to_string())?;
-            Ok(Some(track))
+            Ok(Some(self.organization()?.apply(track)))
         } else {
             Ok(None)
         }
@@ -149,6 +163,19 @@ impl Store {
     pub fn upsert_track(&mut self, t: &Track) -> Result<()> {
         let tx = self.connection.transaction().map_err(|e| e.to_string())?;
         let mut stored = t.clone();
+        stored.identity.primary_artist = None;
+        stored.identity.song_identity = None;
+        stored.identity.album_identity = None;
+        stored.identity.preferred_copy = false;
+        if stored.identity.source_album_id.is_none() {
+            let old: Option<String> = tx
+                .query_row("SELECT data FROM tracks WHERE id=?1", [&t.id], |r| r.get(0))
+                .ok();
+            stored.identity.source_album_id = old
+                .and_then(|s| serde_json::from_str::<Track>(&s).ok())
+                .map(|old| crate::identity::base_album(&old))
+                .or_else(|| Some(crate::identity::base_album(&stored)));
+        }
         stored.hidden = false; // visibility is authoritative in hidden_tracks
         let json = serde_json::to_string(&stored).map_err(|e| e.to_string())?;
         tx.execute("INSERT INTO tracks VALUES(?1,?2,?3,?4,?5) ON CONFLICT(id) DO UPDATE SET title=excluded.title,artist=excluded.artist,album=excluded.album,data=excluded.data",params![t.id,t.title,t.artist,t.album,json]).map_err(|e|e.to_string())?;
@@ -168,6 +195,32 @@ impl Store {
         Ok(())
     }
     pub fn save_playlist(&self, p: &Playlist) -> Result<()> {
+        let old = self.playlists()?.into_iter().find(|x| x.id == p.id);
+        let mut old_counts = std::collections::BTreeMap::<String, usize>::new();
+        for id in old.map(|x| x.track_ids).unwrap_or_default() {
+            if let Some(t) = self.track(&id)? {
+                *old_counts
+                    .entry(crate::identity::song_key(&t).to_owned())
+                    .or_default() += 1;
+            }
+        }
+        let mut counts = std::collections::BTreeMap::<String, usize>::new();
+        for id in &p.track_ids {
+            if let Some(t) = self.track(id)? {
+                *counts
+                    .entry(crate::identity::song_key(&t).to_owned())
+                    .or_default() += 1;
+            }
+        }
+        if counts
+            .iter()
+            .any(|(key, n)| *n > old_counts.get(key).copied().unwrap_or(0).max(1))
+        {
+            return Err("This song is already represented in the playlist.".into());
+        }
+        self.save_playlist_unchecked(p)
+    }
+    pub fn save_playlist_unchecked(&self, p: &Playlist) -> Result<()> {
         if p.id.starts_with("automatic:")
             || !["manual", "generated", "recap"].contains(&p.kind.as_str())
             || p.title.trim().is_empty()

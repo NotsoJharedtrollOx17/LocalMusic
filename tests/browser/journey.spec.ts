@@ -422,20 +422,22 @@ test("artist and album details stay populated as import batches arrive", async (
     page.locator(".album-card").filter({ hasText: "Fixture Album" }),
   ).toBeVisible();
   await page.evaluate(() => {
-    const original = IDBObjectStore.prototype.getAll;
+    // Group membership is cached; opening still validates its catalog revision.
+    const original = IDBObjectStore.prototype.get;
     let release!: () => void;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
     (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead =
       release;
-    IDBObjectStore.prototype.getAll = function (...args) {
+    IDBObjectStore.prototype.get = function (...args) {
       const request = original.apply(this, args);
       if (
-        this.name === "tracks" &&
+        this.name === "settings" &&
+        args[0] === "catalog-revision" &&
         this.transaction.objectStoreNames.length === 1
       ) {
-        IDBObjectStore.prototype.getAll = original;
+        IDBObjectStore.prototype.get = original;
         request.addEventListener(
           "success",
           (event) => {

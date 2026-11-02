@@ -1,3 +1,4 @@
+import { baseAlbumId } from "../library/identity";
 import type { Track } from "../types";
 export type OrderedTrack = Track & { importSequence?: number };
 
@@ -24,9 +25,18 @@ export async function ensureImportOrder(db: IDBDatabase): Promise<void> {
         (t) => t.importSequence === undefined,
       );
       syncCounter();
+      (read.result as OrderedTrack[])
+        .filter((t) => !t.sourceAlbumId)
+        .forEach((t) =>
+          store.put({ ...t, sourceAlbumId: baseAlbumId(t) }, t.id),
+        );
       unknown.forEach((track, index) =>
         store.put(
-          { ...track, importSequence: index - unknown.length },
+          {
+            ...track,
+            sourceAlbumId: track.sourceAlbumId ?? baseAlbumId(track),
+            importSequence: index - unknown.length,
+          },
           track.id,
         ),
       );
@@ -52,7 +62,15 @@ export async function putImportedTrack<T extends Track>(
       const sequence = old?.importSequence ?? Number(counter.result ?? 0) + 1;
       if (old?.importSequence === undefined)
         settings.put(sequence, "catalog-import-sequence");
-      tracks.put({ ...track, importSequence: sequence }, track.id);
+      tracks.put(
+        {
+          ...track,
+          sourceAlbumId:
+            old?.sourceAlbumId ?? (old ? baseAlbumId(old) : baseAlbumId(track)),
+          importSequence: sequence,
+        },
+        track.id,
+      );
       const revision = settings.get("catalog-revision");
       revision.onsuccess = () =>
         settings.put(Number(revision.result ?? 0) + 1, "catalog-revision");

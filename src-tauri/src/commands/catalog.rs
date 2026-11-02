@@ -69,15 +69,18 @@ pub(crate) async fn group_ids(
     kind: String,
     title: String,
     subtitle: String,
+    id: Option<String>,
 ) -> Result<Vec<String>> {
     let core = state.core.clone();
     let order_ready = state.order_ready.clone();
     tauri::async_runtime::spawn_blocking(move || {
         album_order::backfill(&core, &order_ready, &app)?;
-        let result = core
-            .lock()
-            .map_err(|e| e.to_string())?
-            .group_ids(&kind, &title, &subtitle);
+        let result = core.lock().map_err(|e| e.to_string())?.group_ids_by_id(
+            &kind,
+            &title,
+            &subtitle,
+            id.as_deref(),
+        );
         result
     })
     .await

@@ -1,0 +1,163 @@
+﻿.organization {
+  min-width: 0;
+}
+.organization-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.organization-tabs button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--rule, #d7d2ca);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+}
+.organization-tabs button[aria-pressed="true"] {
+  border-color: var(--accent, #ff6508);
+  color: var(--accent, #ff6508);
+}
+.organization label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.organization input:not([type="checkbox"]),
+.organization select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--rule, #d7d2ca);
+  border-radius: 8px;
+  background: var(--surface, #faf8f4);
+  color: var(--ink, #171717);
+}
+.organization-body {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.organization-body h3 {
+  margin: 26px 0 14px;
+}
+.organization-artist,
+.organization-track {
+  display: flex;
+  align-items: start;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule, #d7d2ca);
+}
+.organization-artist > div,
+.organization-track > div {
+  min-width: 0;
+  flex: 1;
+}
+.organization-artist strong,
+.organization-track strong {
+  overflow-wrap: anywhere;
+}
+.organization p {
+  overflow-wrap: anywhere;
+}
+.organization-actions,
+.organization-candidate,
+.organization-linked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.organization-candidate > button:first-child {
+  flex: 1;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.organization-review {
+  padding: 16px;
+  margin: 20px 0;
+  border: 1px solid var(--rule, #d7d2ca);
+  border-radius: 12px;
+}
+.organization-review > label {
+  margin: 12px 0;
+}
+.organization-choice {
+  display: flex !important;
+  align-items: center;
+  gap: 12px !important;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule, #d7d2ca);
+  min-height: 64px;
+}
+.organization-choice input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.organization-choice span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.organization small {
+  display: block;
+  color: var(--muted, #706f6d);
+  margin-top: 4px;
+}
+.organization-albums {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 20px;
+}
+.organization-albums article {
+  min-width: 0;
+}
+.organization-albums .cover {
+  width: min(100%, 160px);
+  height: auto;
+  aspect-ratio: 1;
+}
+.organization-albums ol {
+  padding-left: 22px;
+}
+.organization-albums li {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.output-status {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted, #706f6d);
+  margin: 8px 0;
+}
+@media (max-width: 480px) {
+  .organization-track {
+    flex-wrap: wrap;
+  }
+  .organization-review {
+    padding: 12px;
+  }
+  .organization-actions .button {
+    flex: 1;
+  }
+  .organization-artist {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .organization-candidate > button {
+    width: 100%;
+  }
+  .organization-candidate > button:first-child {
+    flex-basis: 100%;
+  }
+}

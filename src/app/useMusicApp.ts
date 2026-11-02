@@ -1,3 +1,5 @@
+import { listen } from "@tauri-apps/api/event";
+import { native } from "../api";
 import { useInlineSearch } from "./useInlineSearch";
 import { invoke } from "@tauri-apps/api/core";
 import { useRecapPeriods } from "./useRecapPeriods";
@@ -299,8 +301,47 @@ export function useMusicApp(initialSettings?: Settings) {
     if (section === "albums" || section === "artists")
       void act(() => refreshGroups(section));
   }, [section, catalog.catalogTotal, catalogRevision, act, refreshGroups]);
+  const organizationDetail = useRef(state.detail);
+  organizationDetail.current = state.detail;
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined,
+      dead = false,
+      off: (() => void) | undefined;
+    const changed = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (dead) return;
+        setCatalogRevision((v) => v + 1);
+        setRecapRevision((v) => v + 1);
+        setCache({});
+        state.setShareRecap(null);
+        void act(async () => {
+          await refresh();
+          await refreshLists();
+          if (organizationDetail.current) {
+            const [detail] = await api.tracksById([
+              organizationDetail.current.id,
+            ]);
+            state.setDetail(detail ?? null);
+          }
+        });
+      }, 150);
+    };
+    window.addEventListener("library-organization-changed", changed);
+    if (native)
+      void listen("library://metadata", changed).then((fn) => {
+        if (dead) fn();
+        else off = fn;
+      });
+    return () => {
+      dead = true;
+      clearTimeout(timer);
+      off?.();
+      window.removeEventListener("library-organization-changed", changed);
+    };
+  }, [refresh, refreshLists, act]);
   const groupIdentity = group
-    ? JSON.stringify([group.kind, group.title, group.subtitle])
+    ? JSON.stringify([group.kind, group.id ?? [group.title, group.subtitle]])
     : "";
   useLayoutEffect(() => {
     dismissMenu();
@@ -606,8 +647,9 @@ export function useMusicApp(initialSettings?: Settings) {
     restoreGroupScroll.current = null;
     if (
       group?.kind === kind &&
-      group.title === g.title &&
-      group.subtitle === g.subtitle
+      (group.id && g.id
+        ? group.id === g.id
+        : group.title === g.title && group.subtitle === g.subtitle)
     ) {
       setArtistView("tracks");
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -641,6 +683,7 @@ export function useMusicApp(initialSettings?: Settings) {
     setSection(kind);
     const opening = refreshGroup({
       kind,
+      id: g.id,
       title: g.title,
       subtitle: g.subtitle,
       ids: g.ids,

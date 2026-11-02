@@ -166,3 +166,11 @@ See [the archived plan](detached-player-windows-plan.md) and [verification](veri
 
 
 Detached content uses bounded viewport-based CSS sizing rather than transforms or forced browser zoom. Player artwork fits remaining height with a 96-512 px range; detached titles/artists keep 20/14 px floors and buttons keep at least 44 px interaction targets. Controls and Queue metadata grow within caps on larger windows. Narrow visualizers wrap mode choices below navigation; very constrained player transport wraps, and short views scroll once readable floors are reached. The 360 x 480 logical native minimum and the visualizer's existing drawing-resolution cap remain unchanged.
+
+## Playback and library identity revision
+
+The `dev.playback-library-identity` branch adds Settings > Organize library. Original credits and source-file tags remain intact; resolved lead artists drive grouping and playlist artist constraints. Confirmed song links prevent repeats in new playlists and consolidate live song rankings. Confirmed album aliases provide one named album card with selected artwork; explicit unlink restores their source entries. Existing playlist cleanup requires preview/confirmation and supports Undo. See [the archived specification](playback-library-identity-plan.md).
+
+Rust owns `identity.rs`, reversible SQLite organization records and native catalog/playlist/Recap policies. Browser equivalents live in `src/library/`, with an IndexedDB upgrade and a review worker. Structured artist and album-artist tags enter through the platform importers; bounded legacy metadata reads run while visible and paused. Stable source-album memberships retain local album links across metadata refresh, while catalog groups use opaque IDs. Invalidation refreshes matching views and rejects stale organization writes, generation and live exports.
+
+Windows now has device and paced silent outputs under `playback/desktop/output.rs`. Silent output consumes real decoded post-EQ PCM with bounded scheduling; it is not a UI timer. It preserves sessions through route transfers and counts under the ordinary listening rules. Output absence is an informational playback status. Android keeps its Media3 interruption rules; browser playback keeps its existing audio-element clock. Physical disconnection/reconnection acceptance requires its own native evidence.

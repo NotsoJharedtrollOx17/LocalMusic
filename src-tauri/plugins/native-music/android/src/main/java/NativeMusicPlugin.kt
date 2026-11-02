@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class AnalysisArgs {var active:Boolean=false;var uri:String?=null;var durationMs:Long=0}
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
-@InvokeArg class ArtworkArgs { var uri:String?=null }
+@InvokeArg class ArtworkArgs { var uri:String?=null; var idle:Boolean=false }
 @InvokeArg class ImportArgs { var mode:String?=null }
 @InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
 @InvokeArg class ShareArgs { var uris:Array<String>?=null }
@@ -101,7 +101,7 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
   }catch(e:Exception){invoke.reject(e.message?:"Audio could not be shared")}}
  }
  @Command fun artwork(invoke:Invoke){val args=invoke.parseArgs(ArtworkArgs::class.java);worker.execute{try{val marker=MusicReader(activity.applicationContext,AtomicBoolean(false)).artwork(android.net.Uri.parse(args.uri?:""));invoke.resolve(JSObject().put("value",marker?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Artwork unavailable")}}}
- @Command fun albumOrder(invoke:Invoke){val args=invoke.parseArgs(ArtworkArgs::class.java);worker.execute{try{val order=MusicReader(activity.applicationContext,AtomicBoolean(false)).albumOrder(android.net.Uri.parse(args.uri?:""));invoke.resolve(JSObject().put("trackNumber",order.opt("trackNumber")?:JSONObject.NULL).put("discNumber",order.opt("discNumber")?:JSONObject.NULL).put("releaseYear",order.opt("releaseYear")?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Track order unavailable")}}}
+ @Command fun albumOrder(invoke:Invoke){val args=invoke.parseArgs(ArtworkArgs::class.java);worker.execute{try{if(args.idle&&(!PlaylistScanGate.foreground.get()||PlaylistScanGate.playbackRequested.get()))throw IllegalStateException("Metadata read deferred");val order=MusicReader(activity.applicationContext,AtomicBoolean(false)).albumOrder(android.net.Uri.parse(args.uri?:""));invoke.resolve(JSObject().put("trackNumber",order.opt("trackNumber")?:JSONObject.NULL).put("discNumber",order.opt("discNumber")?:JSONObject.NULL).put("releaseYear",order.opt("releaseYear")?:JSONObject.NULL).put("albumArtist",order.opt("albumArtist")?:JSONObject.NULL).put("artistNames",order.optJSONArray("artistNames")?:org.json.JSONArray()).put("identityMetadataRead",true))}catch(e:Exception){invoke.reject(e.message?:"Track order unavailable")}}}
  @Command fun cancelImport(invoke:Invoke){cancelled.set(true);invoke.resolve(JSObject())}
  @Command fun importMusic(invoke:Invoke){
   cancelled.set(false)

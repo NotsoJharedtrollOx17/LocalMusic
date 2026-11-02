@@ -1,3 +1,9 @@
+import {
+  leadArtist,
+  albumArtist,
+  baseAlbumId, defaultAlbumId,
+  artistId,
+} from "../library/identity";
 import { desktop, useDesktopWindows } from "../desktop/windows";
 import { ActionMenu } from "../ux";
 import type { MenuAction } from "../ux/ActionMenu";
@@ -40,8 +46,18 @@ export default function TrackActionMenu() {
     openGroup(
       kind,
       {
-        title: kind === "albums" ? track.album : track.artist,
-        subtitle: kind === "albums" ? track.artist : "",
+        id:
+          kind === "albums"
+            ? (track.albumIdentity?.id ?? defaultAlbumId(track))
+            : artistId(leadArtist(track)),
+        title:
+          kind === "albums"
+            ? (track.albumIdentity?.title ?? track.album)
+            : leadArtist(track),
+        subtitle:
+          kind === "albums"
+            ? (track.albumIdentity?.artist ?? albumArtist(track))
+            : "",
         ids: [track.id],
         track,
       },
