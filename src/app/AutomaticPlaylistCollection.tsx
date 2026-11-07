@@ -11,6 +11,7 @@ export default function AutomaticPlaylistCollection({
     inlineSearch,
     t,
     openPlaylist,
+    openingPlaylist,
     formatMusicCount,
   } = useMusicAppContext();
   const definitions = [
@@ -66,6 +67,7 @@ export default function AutomaticPlaylistCollection({
               className="playlist-tile automatic-playlist-tile"
               data-playlist-id={`automatic:${key}`}
               disabled={!p}
+              aria-busy={openingPlaylist === p?.id}
               onClick={() => p && void openPlaylist(p)}
             >
               <div className="playlist-tile-art">
@@ -77,7 +79,11 @@ export default function AutomaticPlaylistCollection({
               <div>
                 <h3>{p ? automaticPlaylistLabel(p, t) : title}</h3>
                 {p ? (
-                  <span>{formatMusicCount(p.trackIds.length)}</span>
+                  <span>
+                    {openingPlaylist === p.id
+                      ? t.loading
+                      : formatMusicCount(p.trackIds.length)}
+                  </span>
                 ) : automatic.error ? (
                   <span>{t.unavailable}</span>
                 ) : (

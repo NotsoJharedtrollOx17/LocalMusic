@@ -1,6 +1,8 @@
 import { api } from "../api";
 import { Modal } from "../components";
 import { usePlayerContext } from "./PlayerContext";
+import { useRef } from "react";
+import { useInteractionScope } from "../ux/useInteractionScope";
 
 export default function AddPlaylistDialog() {
   const {
@@ -17,6 +19,8 @@ export default function AddPlaylistDialog() {
     act,
     refreshLists,
   } = usePlayerContext();
+  const writing = useRef(false);
+  const capture = useInteractionScope(modal);
 
   return (
     <>
@@ -33,6 +37,9 @@ export default function AddPlaylistDialog() {
                 disabled={busy}
                 key={p.id}
                 onClick={() => {
+                  if (writing.current) return;
+                  writing.current = true;
+                  const current = capture();
                   setBusy(true);
                   void act(async () => {
                     await api.savePlaylist({
@@ -40,9 +47,12 @@ export default function AddPlaylistDialog() {
                       trackIds: [...new Set([...p.trackIds, ...actionIds])],
                     });
                     await refreshLists();
-                    setModal(null);
+                    if (current()) setModal(null);
                     setNotice(t.addedPlaylist);
-                  }).finally(() => setBusy(false));
+                  }).finally(() => {
+                    writing.current = false;
+                    setBusy(false);
+                  });
                 }}
               >
                 {p.title}
@@ -50,6 +60,7 @@ export default function AddPlaylistDialog() {
             ))}
             <button
               className="text-button"
+              disabled={busy}
               onClick={() => {
                 setManualTitle("");
                 setManualIds(actionIds);

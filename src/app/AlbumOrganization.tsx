@@ -129,6 +129,7 @@ export default function AlbumOrganization({
           <label>
             {text.cover}
             <select
+              aria-label={text.cover}
               value={coverId}
               onChange={(e) => setCoverId(e.target.value)}
             >

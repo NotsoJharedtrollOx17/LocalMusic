@@ -783,9 +783,11 @@ export function useMusicApp(initialSettings?: Settings) {
     t,
     generationRevision: personalization.generationRevision,
     prepareAnalysis: personalization.prepareAnalysis,
+    collectionRequest: groupRequest,
   });
 
   function newPlaylist() {
+    ++groupRequest.current;
     state.setManualTitle("");
     state.setManualIds([]);
     setModal("manual");

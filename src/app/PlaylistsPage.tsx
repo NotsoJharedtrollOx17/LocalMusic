@@ -24,7 +24,7 @@ export default function PlaylistsPage() {
       <PlaylistToolbar />
       {selectedList ? (
         <>
-          <PlaylistDetailHeading />
+          <PlaylistDetailHeading key={selectedList.id} />
           {inlineSearch.active &&
           !inlineSearch.pending &&
           !inlineSearch.error &&

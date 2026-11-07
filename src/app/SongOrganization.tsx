@@ -98,6 +98,7 @@ export default function SongOrganization({
           <label>
             {text.preferred}
             <select
+              aria-label={text.preferred}
               value={preferred}
               onChange={(e) => setPreferred(e.target.value)}
             >

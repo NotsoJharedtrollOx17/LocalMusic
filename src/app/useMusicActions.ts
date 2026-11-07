@@ -1,6 +1,6 @@
 import { api, native } from "../api";
 import { en } from "../i18n";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { type Track, type Playlist } from "../types";
 import type { MusicAppState } from "./useAppState";
@@ -16,6 +16,7 @@ export function useMusicActions(
     t,
     generationRevision,
     prepareAnalysis,
+    collectionRequest,
   }: {
     act: (fn: () => Promise<unknown>) => Promise<unknown>;
     remember: (tracks: Track[]) => void;
@@ -24,10 +25,16 @@ export function useMusicActions(
     t: typeof en;
     generationRevision: React.RefObject<number>;
     prepareAnalysis: () => Promise<void>;
+    collectionRequest: React.RefObject<number>;
   },
 ) {
   const generating = useRef(false);
   const [buildingMix, setBuildingMix] = useState(false);
+  const [openingPlaylist, setOpeningPlaylist] = useState<string | null>(null);
+  const openingRequest = useRef(0);
+  useEffect(() => {
+    setOpeningPlaylist(null);
+  }, [state.section]);
   const [generationPhase, setGenerationPhase] = useState<"sound" | "matching">(
     "sound",
   );
@@ -132,13 +139,28 @@ export function useMusicActions(
     setBusy(false);
   }
   async function openPlaylist(p: Playlist) {
+    const version = ++collectionRequest.current;
+    openingRequest.current = version;
+    setOpeningPlaylist(p.id);
     state.playlistOrigin.current = { scroll: window.scrollY, id: p.id };
-    await act(async () => {
-      remember(await api.tracksById(p.trackIds));
-      setSelectedList(p);
-      setGenerated(null);
-      setEditingList(false);
-    });
+    try {
+      await act(async () => {
+        let tracks: Track[];
+        try {
+          tracks = await api.tracksById(p.trackIds);
+        } catch (error) {
+          if (version === collectionRequest.current) throw error;
+          return;
+        }
+        if (version !== collectionRequest.current) return;
+        remember(tracks);
+        setSelectedList(p);
+        setGenerated(null);
+        setEditingList(false);
+      });
+    } finally {
+      if (version === openingRequest.current) setOpeningPlaylist(null);
+    }
   }
   function moveList(i: number, d: number, shownIds?: string[]) {
     if (!selectedList) return;
@@ -152,11 +174,14 @@ export function useMusicActions(
     setSelectedList({ ...selectedList, trackIds: ids });
   }
   async function saveList(p: Playlist) {
+    let saved = false;
     await act(async () => {
       await api.savePlaylist(p);
-      await refreshLists();
+      saved = true;
       setNotice(t.playlistSaved);
+      await refreshLists();
     });
+    return saved;
   }
   async function buildMix() {
     if (generating.current) return;
@@ -204,5 +229,6 @@ export function useMusicActions(
     buildMix,
     buildingMix,
     generationPhase,
+    openingPlaylist,
   };
 }

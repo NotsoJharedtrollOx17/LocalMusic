@@ -18,6 +18,7 @@ export default function TrackRows({
   const {
     player,
     selectedList,
+    savingPlaylistId,
     setSelectedList,
     selectedIds,
     selectionMode,
@@ -76,16 +77,17 @@ export default function TrackRows({
             edit={
               editable
                 ? {
-                    up: i
-                      ? () =>
-                          moveList(
-                            i,
-                            -1,
-                            ts.map((t) => t.id),
-                          )
-                      : undefined,
+                    up:
+                      i && savingPlaylistId !== selectedList?.id
+                        ? () =>
+                            moveList(
+                              i,
+                              -1,
+                              ts.map((t) => t.id),
+                            )
+                        : undefined,
                     down:
-                      i < ts.length - 1
+                      i < ts.length - 1 && savingPlaylistId !== selectedList?.id
                         ? () =>
                             moveList(
                               i,
@@ -93,15 +95,18 @@ export default function TrackRows({
                               ts.map((t) => t.id),
                             )
                         : undefined,
-                    remove: () => {
-                      if (selectedList)
-                        setSelectedList({
-                          ...selectedList,
-                          trackIds: selectedList.trackIds.filter(
-                            (id) => id !== track.id,
-                          ),
-                        });
-                    },
+                    remove:
+                      savingPlaylistId === selectedList?.id
+                        ? undefined
+                        : () => {
+                            if (selectedList)
+                              setSelectedList({
+                                ...selectedList,
+                                trackIds: selectedList.trackIds.filter(
+                                  (id) => id !== track.id,
+                                ),
+                              });
+                          },
                   }
                 : undefined
             }

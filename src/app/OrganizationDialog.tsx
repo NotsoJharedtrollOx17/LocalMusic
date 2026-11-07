@@ -13,6 +13,7 @@ import SongOrganization from "./SongOrganization";
 import AlbumOrganization from "./AlbumOrganization";
 import PlaylistCleanup from "./PlaylistCleanup";
 import "../library/organization.css";
+import { useInteractionScope } from "../ux/useInteractionScope";
 export default function OrganizationDialog() {
   const {
       modal,
@@ -21,9 +22,11 @@ export default function OrganizationDialog() {
       organizationTab,
       setOrganizationTab,
       detail,
+      setError: reportError,
     } = usePlayerContext(),
     open = modal === "organize",
     text = libraryStrings(settings?.language === "es");
+  const capture = useInteractionScope(modal);
   const [snapshot, setSnapshot] = useState<OrganizationSnapshot | null>(null),
     [error, setError] = useState(""),
     [pending, setPending] = useState(false),
@@ -64,12 +67,18 @@ export default function OrganizationDialog() {
     if (!snapshot || pending) return;
     setPending(true);
     setError("");
+    const current = capture();
     try {
       await api.organize(snapshot.state.revision, action);
       window.dispatchEvent(new Event("library-organization-changed"));
+      if (!current()) return;
       setNotice(text.done);
       await load();
     } catch (e) {
+      if (!current()) {
+        reportError(String(e instanceof Error ? e.message : e));
+        return;
+      }
       setPending(false);
       setError(String(e instanceof Error ? e.message : e));
     }

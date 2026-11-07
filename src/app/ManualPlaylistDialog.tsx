@@ -2,6 +2,8 @@ import { songIdentity } from "../library/identity";
 import { Check } from "lucide-react";
 import { Cover, Modal } from "../components";
 import { usePlayerContext } from "./PlayerContext";
+import { useEffect, useRef, useState } from "react";
+import { useInteractionScope } from "../ux/useInteractionScope";
 
 export default function ManualPlaylistDialog() {
   const {
@@ -24,6 +26,13 @@ export default function ManualPlaylistDialog() {
     refreshPicker,
     saveList,
   } = usePlayerContext();
+  const [saving, setSaving] = useState(false);
+  const writing = useRef(false),
+    draftId = useRef<string | null>(null);
+  const capture = useInteractionScope(modal);
+  useEffect(() => {
+    if (modal === "manual") draftId.current = crypto.randomUUID();
+  }, [modal]);
 
   return (
     <>
@@ -38,24 +47,33 @@ export default function ManualPlaylistDialog() {
             className="manual-playlist-form"
             onSubmit={(e) => {
               e.preventDefault();
+              if (writing.current) return;
               if (!manualIds.length) {
                 setError(t.emptySelection);
                 return;
               }
-              void act(async () => {
-                await saveList({
-                  id: crypto.randomUUID(),
-                  title: manualTitle,
-                  kind: "manual",
-                  trackIds: manualIds,
+              writing.current = true;
+              setSaving(true);
+              const current = capture();
+              void saveList({
+                id: (draftId.current ??= crypto.randomUUID()),
+                title: manualTitle,
+                kind: "manual",
+                trackIds: manualIds,
+              })
+                .then((saved) => {
+                  if (saved && current()) setModal(null);
+                })
+                .finally(() => {
+                  writing.current = false;
+                  setSaving(false);
                 });
-                setModal(null);
-              });
             }}
           >
             <label>
               {t.playlistName}
               <input
+                disabled={saving}
                 value={manualTitle}
                 required
                 maxLength={120}
@@ -66,6 +84,7 @@ export default function ManualPlaylistDialog() {
             <label>
               {t.search}
               <input
+                disabled={saving}
                 value={pickerQuery}
                 onChange={(e) => setPickerQuery(e.target.value)}
               />
@@ -78,6 +97,7 @@ export default function ManualPlaylistDialog() {
                 <label key={track.id}>
                   <input
                     type="checkbox"
+                    disabled={saving}
                     checked={manualIds.includes(track.id)}
                     onChange={(e) => {
                       if (
@@ -114,6 +134,7 @@ export default function ManualPlaylistDialog() {
               <button
                 className="text-button"
                 type="button"
+                disabled={saving}
                 onClick={() =>
                   void act(() =>
                     refreshPicker(pickerQuery, pickerTracks.length),
@@ -126,7 +147,8 @@ export default function ManualPlaylistDialog() {
             <button
               className="button primary full-width"
               type="submit"
-              disabled={!manualTitle.trim() || !manualIds.length}
+              disabled={saving || !manualTitle.trim() || !manualIds.length}
+              aria-busy={saving}
             >
               {t.save}
               <Check size={18} />

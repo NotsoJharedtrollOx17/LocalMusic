@@ -16,6 +16,7 @@ export default function PlaylistCollection({
     inlineSearch,
     t,
     openPlaylist,
+    openingPlaylist,
     formatMusicCount,
     act,
     refreshLists,
@@ -46,6 +47,7 @@ export default function PlaylistCollection({
             >
               <button
                 className="playlist-tile"
+                aria-busy={openingPlaylist === p.id}
                 onClick={() => void openPlaylist(p)}
               >
                 <div className="playlist-tile-art">
@@ -61,7 +63,11 @@ export default function PlaylistCollection({
                         : t.manual}
                   </p>
                   <h3>{p.title}</h3>
-                  <span>{formatMusicCount(p.trackIds.length)}</span>
+                  <span>
+                    {openingPlaylist === p.id
+                      ? t.loading
+                      : formatMusicCount(p.trackIds.length)}
+                  </span>
                 </div>
                 <ArrowUpRight size={22} />
               </button>

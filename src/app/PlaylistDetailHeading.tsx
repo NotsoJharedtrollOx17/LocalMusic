@@ -1,5 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
+import { useEffect, useRef, useState } from "react";
+import { useInteractionScope } from "../ux/useInteractionScope";
 
 export default function PlaylistDetailHeading() {
   const {
@@ -15,7 +17,16 @@ export default function PlaylistDetailHeading() {
     allPlaylistTracks: playlistTracks,
     setSelectionMode,
     setSelectedIds,
+    setSavingPlaylistId,
   } = useMusicAppContext();
+  const writing = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const capture = useInteractionScope(selectedList?.id);
+  useEffect(() => {
+    const id = selectedList?.id;
+    return () =>
+      setSavingPlaylistId((current) => (current === id ? null : current));
+  }, [selectedList?.id, setSavingPlaylistId]);
 
   if (!selectedList) return null;
   return (
@@ -57,11 +68,31 @@ export default function PlaylistDetailHeading() {
       {selectedList.kind !== "automatic" && (
         <button
           className="text-button"
+          disabled={saving}
+          aria-busy={saving}
           onClick={() => {
+            if (writing.current) return;
             setSelectionMode(false);
             setSelectedIds([]);
-            if (editingList) void saveList(selectedList);
-            setEditingList(!editingList);
+            if (!editingList) {
+              setEditingList(true);
+              return;
+            }
+            writing.current = true;
+            setSaving(true);
+            setSavingPlaylistId(selectedList.id);
+            const current = capture();
+            void saveList(selectedList)
+              .then((saved) => {
+                if (saved && current()) setEditingList(false);
+              })
+              .finally(() => {
+                writing.current = false;
+                if (current()) {
+                  setSaving(false);
+                  setSavingPlaylistId(null);
+                }
+              });
           }}
         >
           {editingList ? t.savePlaylist : t.editPlaylist}

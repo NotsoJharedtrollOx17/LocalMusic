@@ -117,6 +117,7 @@ export function useAppState(initialSettings?: Settings) {
     [manualTitle, setManualTitle] = useState(""),
     [manualIds, setManualIds] = useState<string[]>([]),
     [editingList, setEditingList] = useState(false);
+  const [savingPlaylistId, setSavingPlaylistId] = useState<string | null>(null);
   const [playerParent, setPlayerParent] = useState<"player" | "queue" | null>(
     null,
   );
@@ -172,6 +173,8 @@ export function useAppState(initialSettings?: Settings) {
     folderInput = useRef<HTMLInputElement>(null),
     searchInput = useRef<HTMLInputElement>(null);
   return {
+    savingPlaylistId,
+    setSavingPlaylistId,
     organizationTab,
     setOrganizationTab,
     playerParent,

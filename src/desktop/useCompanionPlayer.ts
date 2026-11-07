@@ -337,9 +337,14 @@ export function useCompanionPlayer(
     return saved;
   };
   const saveList = async (playlist: Playlist) => {
-    await api.savePlaylist(playlist);
-    await refreshLists();
-    state.setNotice(t.playlistSaved);
+    let saved = false;
+    await act(async () => {
+      await api.savePlaylist(playlist);
+      saved = true;
+      state.setNotice(t.playlistSaved);
+      await refreshLists();
+    });
+    return saved;
   };
   const changeVisibility = async (ids: string[], visible: boolean) => {
     await api.setLibraryVisibility(ids, visible);

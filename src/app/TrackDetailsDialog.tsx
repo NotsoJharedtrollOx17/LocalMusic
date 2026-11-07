@@ -2,6 +2,8 @@ import { libraryStrings } from "../library/strings";
 import { Heart } from "lucide-react";
 import { Cover, Modal, time } from "../components";
 import { usePlayerContext } from "./PlayerContext";
+import { useRef, useState } from "react";
+import { useInteractionScope } from "../ux/useInteractionScope";
 
 export default function TrackDetailsDialog() {
   const {
@@ -16,6 +18,10 @@ export default function TrackDetailsDialog() {
     settings,
     setOrganizationTab,
   } = usePlayerContext();
+  const capture = useInteractionScope(`${modal}:${detail?.id}`);
+  const writing = useRef(false);
+  const [destination, setDestination] = useState("");
+  const [saving, setSaving] = useState(false);
 
   return (
     <>
@@ -66,19 +72,30 @@ export default function TrackDetailsDialog() {
             <label>
               {t.addToPlaylist}
               <select
-                defaultValue=""
-                onChange={(e) =>
-                  void act(async () => {
-                    const p = lists.find((x) => x.id === e.target.value);
-                    if (p) {
-                      await saveList({
-                        ...p,
-                        trackIds: [...new Set([...p.trackIds, detail.id])],
-                      });
-                      setModal(null);
-                    }
+                aria-label={t.addToPlaylist}
+                value={destination}
+                disabled={saving}
+                aria-busy={saving}
+                onChange={(e) => {
+                  const p = lists.find((x) => x.id === e.target.value);
+                  if (!p || writing.current) return;
+                  const current = capture();
+                  writing.current = true;
+                  setSaving(true);
+                  setDestination(p.id);
+                  void saveList({
+                    ...p,
+                    trackIds: [...new Set([...p.trackIds, detail.id])],
                   })
-                }
+                    .then((saved) => {
+                      if (saved && current()) setModal(null);
+                    })
+                    .finally(() => {
+                      writing.current = false;
+                      setSaving(false);
+                      setDestination("");
+                    });
+                }}
               >
                 <option value="" disabled>
                   {t.selectPlaylist}
