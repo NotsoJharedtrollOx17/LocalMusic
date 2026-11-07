@@ -25,7 +25,12 @@ export default function RenamePlaylistDialog({
     if (!saving) onClose();
   };
   return (
-    <Modal title={t.renamePlaylist} closeLabel={t.close} onClose={close}>
+    <Modal
+      compact
+      title={t.renamePlaylist}
+      closeLabel={t.close}
+      onClose={close}
+    >
       <form
         className="rename-playlist-form"
         onSubmit={(event) => {

@@ -45,7 +45,12 @@ export function useLibraryMotion(
     return () => observer.disconnect();
   }, [panelNode]);
   const previous = useRef(section),
-    gesture = useRef<{ x: number; y: number } | null>(null);
+    gesture = useRef<{
+      x: number;
+      y: number;
+      pointer: number;
+      horizontal: boolean;
+    } | null>(null);
   const suppressClickUntil = useRef(0);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
@@ -78,23 +83,17 @@ export function useLibraryMotion(
   }, [section, tabsNode]);
   useLayoutEffect(() => {
     if (previous.current !== section) {
-      const direction =
-        librarySections.indexOf(section) >
-        librarySections.indexOf(previous.current)
-          ? 1
-          : -1;
       window.scrollTo({
         top: scroll.current[section] ?? 0,
         behavior: "instant",
       });
       const animation = !reducedMotion()
-        ? panel.current?.querySelector("#library-content")?.animate(
-            [
-              { opacity: 0.5, transform: `translateX(${direction * 12}px)` },
-              { opacity: 1, transform: "none" },
-            ],
-            { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" },
-          )
+        ? panel.current
+            ?.querySelector("#library-content")
+            ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
+              duration: 140,
+              easing: "ease-out",
+            })
         : undefined;
       previous.current = section;
       return () => animation?.cancel();
@@ -116,6 +115,10 @@ export function useLibraryMotion(
   const swipe = {
     onPointerDown: (e: ReactPointerEvent) => {
       suppressClickUntil.current = 0;
+      if (gesture.current && gesture.current.pointer !== e.pointerId) {
+        gesture.current = null;
+        return;
+      }
       if (
         e.pointerType !== "touch" ||
         (e.target as HTMLElement).closest(
@@ -123,26 +126,34 @@ export function useLibraryMotion(
         )
       )
         return;
-      gesture.current = { x: e.clientX, y: e.clientY };
+      gesture.current = {
+        x: e.clientX,
+        y: e.clientY,
+        pointer: e.pointerId,
+        horizontal: false,
+      };
     },
     onPointerMove: (e: ReactPointerEvent) => {
       const g = gesture.current;
-      if (!g) return;
+      if (!g || g.pointer !== e.pointerId) return;
       const dx = e.clientX - g.x,
         dy = e.clientY - g.y;
-      if (Math.abs(dy) > Math.abs(dx)) {
-        gesture.current = null;
-        if (panel.current) panel.current.style.transform = "";
-        return;
+      if (!g.horizontal) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return;
+        if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+          gesture.current = null;
+          return;
+        }
+        if (Math.abs(dx) <= Math.abs(dy) * 1.15) return;
+        g.horizontal = true;
       }
-      if (panel.current && !reducedMotion())
-        panel.current.style.transform = `translateX(${Math.max(-35, Math.min(35, dx * 0.2))}px)`;
+      suppressClickUntil.current = performance.now() + 350;
     },
     onPointerUp: (e: ReactPointerEvent) => {
       const g = gesture.current;
       gesture.current = null;
-      if (panel.current) panel.current.style.transform = "";
-      if (!g) return;
+      if (!g || g.pointer !== e.pointerId || !g.horizontal) return;
+      suppressClickUntil.current = performance.now() + 350;
       const dx = e.clientX - g.x,
         dy = e.clientY - g.y;
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
@@ -154,7 +165,6 @@ export function useLibraryMotion(
     },
     onPointerCancel: () => {
       gesture.current = null;
-      if (panel.current) panel.current.style.transform = "";
     },
     onClickCapture: (e: React.MouseEvent) => {
       if (e.detail > 0 && performance.now() < suppressClickUntil.current) {

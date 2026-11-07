@@ -19,6 +19,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 @InvokeArg class VisualizerArgs {var id:String?=null}
+@InvokeArg class AppearanceArgs {var dark:Boolean=false}
 @InvokeArg class AnalysisArgs {var active:Boolean=false;var uri:String?=null;var durationMs:Long=0}
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
@@ -33,6 +34,16 @@ import java.util.concurrent.atomic.AtomicBoolean
  Permission(strings=[Manifest.permission.READ_EXTERNAL_STORAGE],alias="legacyAudio")
 ])
 class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
+ @Command fun appearance(invoke:Invoke){val args=invoke.parseArgs(AppearanceArgs::class.java);activity.runOnUiThread{
+  val window=activity.window
+  val controls=androidx.core.view.WindowCompat.getInsetsController(window,window.decorView)
+  controls.isAppearanceLightStatusBars=!args.dark
+  controls.isAppearanceLightNavigationBars=!args.dark
+  window.statusBarColor=android.graphics.Color.TRANSPARENT
+  window.navigationBarColor=if(args.dark)android.graphics.Color.rgb(20,22,21)else android.graphics.Color.rgb(250,248,244)
+  if(Build.VERSION.SDK_INT>=29)window.isNavigationBarContrastEnforced=false
+  invoke.resolve(JSObject())
+ }}
  private val analysisWorker=Executors.newSingleThreadExecutor()
  @Command fun analysisSources(invoke:Invoke){val args=invoke.parseArgs(SoundPayloadArgs::class.java);worker.execute{try{val sources=org.json.JSONArray(args.payload?:"[]");val result=JSObject();val decoder=AcousticDecoder(activity.applicationContext);for(i in 0 until sources.length()){val s=sources.getJSONObject(i);val revision=try{decoder.fingerprint(Uri.parse(s.getString("uri")))}catch(_:Exception){"unavailable"};result.put(s.getString("id"),revision)};invoke.resolve(result)}catch(e:Exception){invoke.reject(e.message?:"Audio sources unavailable")}}}
  @Command fun analysisActivity(invoke:Invoke){val args=invoke.parseArgs(AnalysisArgs::class.java);PlaylistScanGate.activity(args.active);invoke.resolve(JSObject())}
@@ -40,6 +51,7 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  private var musicWebView:android.webkit.WebView?=null
  override fun load(webView:android.webkit.WebView){
   musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()
+  webView.overScrollMode=android.view.View.OVER_SCROLL_NEVER
   (activity as? ComponentActivity)?.onBackPressedDispatcher?.addCallback(activity,object:OnBackPressedCallback(true){
    override fun handleOnBackPressed(){webView.evaluateJavascript("Boolean(window.__musicBack && window.__musicBack())"){handled->
     if(handled!="true"){isEnabled=false;(activity as ComponentActivity).onBackPressedDispatcher.onBackPressed();isEnabled=true}

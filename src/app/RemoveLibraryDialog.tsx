@@ -23,6 +23,7 @@ export default function RemoveLibraryDialog() {
     <>
       {modal === "remove" && (
         <Modal
+          compact
           title={t.removeLibrary}
           closeLabel={t.close}
           onClose={() => setModal(null)}

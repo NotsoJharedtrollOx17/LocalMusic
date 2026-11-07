@@ -14,6 +14,16 @@ Requested 7 November 2026, continuing `dev.ui-ux-stress-audit` after `813829a`. 
 2. Library swiping translates the whole panel up to 35 px, resets it at release, then animates new content from the opposite side. Remove this recoil. Recognize horizontal intent without moving the entire Library; commit one tab change with a short non-directional transition. Preserve ordinary vertical scrolling, nested horizontal scrollers, controls, tap suppression, pinch behavior, keyboard navigation and Reduce Motion.
 3. Inspect other phone-only failures during actual use: viewport/keyboard resize, real system Back, nested overlays, focus, action-menu bounds, portrait/landscape, player/Queue and visualizer interactions. Fix reproduced defects and distinguish them from untested hardware/performance gates.
 
+### Playback blocker discovered during the audit
+
+The real device crashed with repeating `AudioSink.configure` frames after the controlled import/playback flow, then failed during queue restoration. `PcmSoundSink` used Kotlin interface delegation; Media3 1.11.1's Java default configuration overloads were not forwarded and recursively called one another. Replace this with Media3's concrete `ForwardingAudioSink`, retain the raw-PCM gate and explicitly disable offload so EQ/analysis cannot be bypassed. Add tests for both configuration entrypoints, PCM/offload eligibility, buffers, position and transport forwarding; rebuild and validate recovery without clearing app data.
+
+References: [Media3 1.11.1 forwarding implementation](https://github.com/androidx/media/blob/1.11.1/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/audio/ForwardingAudioSink.java), [AudioSink API](https://developer.android.com/reference/androidx/media3/exoplayer/audio/AudioSink), [Android 12 stretch overscroll](https://developer.android.com/about/versions/12/behavior-changes-all#overscroll-effect), [View overscroll policy](https://developer.android.com/reference/android/view/View#OVER_SCROLL_NEVER).
+
+### Native system-bar contrast
+
+Actual screenshots showed black status icons over the dark app background and a mismatched light navigation bar. Add a main-window-only Android appearance command, serialized theme updates, and system-theme change handling. Kotlin updates native system-bar icon appearance and navigation color without changing playback or persisted settings. The phone exposes real CSS safe areas of **33 px top / 48 px bottom**; full-screen task dialogs now consume those insets and the measured visible viewport, rather than adding guessed device offsets.
+
 ## Verification
 
 - Capture before/after screenshots and actual WebView geometry; trace swipe transforms on the device.
@@ -21,6 +31,17 @@ Requested 7 November 2026, continuing `dev.ui-ux-stress-audit` after `813829a`. 
 - Add focused browser regressions for fullscreen/keyboard-safe layouts and gesture intent/cancellation. Run frontend checks and affected browser journeys, build the ARM64 APK, verify signature/native-library/frontend identity, install as an update and repeat on the phone.
 - Record observed results and remaining acceptance gates here and in `docs/verification.md`. Android runtime observations do not establish physical headphone/audio quality, sustained performance, thermal/battery or TalkBack acceptance.
 
+## Implemented corrections
+
+| Severity | Reproduced problem                                                                                                                                                        | Correction                                                                                                                                                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Blocker  | Media3 configuration recursed until the Android process crashed; restoring its saved queue could repeat the crash.                                                        | Concrete `ForwardingAudioSink`, explicit PCM/offload policy, three JVM regression tests.                                                                                                              |
+| High     | Task dialogs floated above a large unused area or used desktop-card sizing in landscape.                                                                                  | Full-window Android task views, safe-area headers, scrollable bodies; compact decisions remain centered within the usable viewport.                                                                   |
+| High     | The keyboard reduced the visible viewport to about 434 px while CSS media queries still saw 868 px. Playlist Save was below the visible area inside an unscrollable body. | Observe `visualViewport`, size the scrim to its bounds, and use the short-viewport scrolling form layout when the keyboard appears.                                                                   |
+| High     | Landscape Now Playing used a 620 px floating desktop card.                                                                                                                | Full-window player/Queue in both orientations; artwork/info beside controls in short landscape windows, with side navigation insets reserved. Body scrolling no longer competes with drag-to-dismiss. |
+| High     | Dark theme retained dark native status icons and a light navigation bar.                                                                                                  | Main-window-only native appearance updates and system-theme change handling.                                                                                                                          |
+| Medium   | A swipe translated Library up to 35 px, snapped back, and entered new content from the opposite side.                                                                     | Intent-based tab changes with an opacity transition; no panel displacement. Cancel vertical, multi-pointer and canceled gestures, suppress accidental taps, and disable native stretch overscroll.    |
+
 ## Results
 
-Pending implementation and device verification.
+Actual phone evidence and remaining gates are recorded in the **7 November 2026 physical Android audit** entry in [verification.md](verification.md). Screenshots, geometry, gesture traces, build logs and package hashes are retained under ignored `artifacts/android-note10plus/`; they are evidence from this device, not an Android-wide compatibility claim.

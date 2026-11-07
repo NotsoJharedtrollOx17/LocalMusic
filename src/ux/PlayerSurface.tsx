@@ -41,6 +41,9 @@ export function PlayerSurface({
   const ref = useRef<HTMLDivElement>(null),
     closing = useRef(false),
     drag = useRef<{ y: number; t: number } | null>(null);
+  const bodyDrag =
+    view === "player" &&
+    document.documentElement.dataset.platform !== "android";
   usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
   const exitAnimation = useRef<Animation | null>(null),
@@ -161,9 +164,9 @@ export function PlayerSurface({
         <div
           className={"player-surface-body " + view}
           key={view}
-          onPointerDown={view === "player" ? down : undefined}
-          onPointerMove={view === "player" ? move : undefined}
-          onPointerUp={view === "player" ? up : undefined}
+          onPointerDown={bodyDrag ? down : undefined}
+          onPointerMove={bodyDrag ? move : undefined}
+          onPointerUp={bodyDrag ? up : undefined}
           onPointerCancel={() => {
             drag.current = null;
             if (ref.current) ref.current.style.transform = "";

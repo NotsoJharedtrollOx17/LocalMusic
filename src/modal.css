@@ -1,0 +1,100 @@
+/* Task dialogs are pages on phones; compact decisions stay centered. */
+:root[data-platform="android"] {
+  overscroll-behavior: none;
+  --task-dialog-width: 100%;
+  --task-dialog-height: 100%;
+  --task-dialog-radius: 0px;
+  --task-dialog-inset: 0px;
+  --task-dialog-header: calc(12px + env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) 12px
+    max(16px, env(safe-area-inset-left));
+  --task-dialog-body: 20px max(16px, env(safe-area-inset-right))
+    calc(20px + env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  --task-dialog-animation: dialog-appear 140ms ease-out;
+}
+@media (max-width: 600px) {
+  :root {
+    --task-dialog-width: 100%;
+    --task-dialog-height: 100%;
+    --task-dialog-radius: 0px;
+    --task-dialog-inset: 0px;
+    --task-dialog-header: calc(12px + env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right)) 12px
+      max(16px, env(safe-area-inset-left));
+    --task-dialog-body: 20px max(16px, env(safe-area-inset-right))
+      calc(20px + env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    --task-dialog-animation: dialog-appear 140ms ease-out;
+  }
+}
+.modal-scrim {
+  inset: auto;
+  top: var(--overlay-top, 0px);
+  left: var(--overlay-left, 0px);
+  width: var(--overlay-width, 100vw);
+  height: var(--overlay-height, 100dvh);
+  padding: var(--task-dialog-inset, 25px);
+  align-items: center;
+}
+.modal {
+  --modal-preferred-width: 510px;
+}
+.modal.wide {
+  --modal-preferred-width: 700px;
+}
+.modal:has(.sound-controls) {
+  --modal-preferred-width: min(940px, calc(100vw - 28px));
+}
+.modal:not(.compact) {
+  width: var(--task-dialog-width, var(--modal-preferred-width));
+  height: var(--task-dialog-height, auto);
+  max-height: 100%;
+  padding: 0;
+  border-radius: var(--task-dialog-radius, 12px);
+  animation: var(--task-dialog-animation, enter 160ms ease-out);
+}
+.modal:not(.compact) .modal-head {
+  padding: var(--task-dialog-header, 24px 30px 20px);
+  margin: 0;
+}
+.modal:not(.compact) > .modal-body {
+  padding: var(--task-dialog-body, 22px 30px 26px);
+  flex: 1 1 auto;
+}
+.modal-scrim.compact {
+  padding: max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+.modal.compact {
+  width: min(510px, 100%);
+  max-height: 100%;
+  padding: 0;
+  animation: var(--task-dialog-animation, enter 160ms ease-out);
+}
+/* Android's keyboard resizes visualViewport without changing media queries. */
+.modal-scrim[data-short-viewport]
+  .modal:has(.manual-playlist-form)
+  .modal-body {
+  display: block;
+  overflow: auto;
+}
+.modal-scrim[data-short-viewport] .manual-playlist-form .track-picker {
+  flex: none;
+  height: 140px;
+}
+.modal-scrim[data-short-viewport]
+  .manual-playlist-form
+  > button[type="submit"] {
+  position: sticky;
+  bottom: 0;
+}
+@keyframes dialog-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

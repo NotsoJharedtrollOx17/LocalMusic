@@ -15,6 +15,15 @@ export function useSyncedSettings(
     writes = useRef(Promise.resolve());
   latest.current = settings;
   useEffect(() => {
+    if (!native || !/Android/i.test(navigator.userAgent)) return;
+    const system = matchMedia("(prefers-color-scheme: dark)");
+    const changed = () => {
+      if (latest.current?.theme === "system") applyTheme("system");
+    };
+    system.addEventListener("change", changed);
+    return () => system.removeEventListener("change", changed);
+  }, []);
+  useEffect(() => {
     if (!settings) return;
     document.documentElement.lang = settings.language;
     applyTheme(settings.theme);

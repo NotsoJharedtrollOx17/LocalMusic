@@ -21,7 +21,13 @@ import "./polish.css";
 import "./player.css";
 import "./playlists.css";
 import "./focus.css";
+import "./modal.css";
 import "./desktop/desktop.css";
+document.documentElement.dataset.platform = native
+  ? /Android/i.test(navigator.userAgent)
+    ? "android"
+    : "desktop"
+  : "browser";
 installNativeShortcuts(native);
 const aboutWindow =
   native && new URLSearchParams(location.search).get("about") === "1";
