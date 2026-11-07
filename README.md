@@ -4,7 +4,7 @@ An offline local music player with weekly, monthly and yearly recaps based on ac
 
 ## Current features
 
-- **Library organization (feature branch):** Settings > Organize library provides lead-artist corrections, reviewed duplicate-song links, canonical album cards, and explicit playlist cleanup with Undo. Original file tags and raw history are retained. Windows playback can continue without an output device through real-time silent decoding; that playback counts normally. See [the implementation plan](docs/playback-library-identity-plan.md) and [verification](docs/verification.md).
+- **Library organization:** Settings > Organize library provides lead-artist corrections, reviewed duplicate-song links, canonical album cards, and explicit playlist cleanup with Undo. Original file tags and raw history are retained. Windows playback can continue without an output device through real-time silent decoding; that playback counts normally. See [the implementation plan](docs/playback-library-identity-plan.md) and [verification](docs/verification.md).
 
 - **Windows menus:** The main window has native File, Library, Playback, Window and Help menus, localized in English/Spanish. Import with Ctrl+O, create a playlist with Ctrl+N, search the current view with Ctrl+F and open Settings with Ctrl+,. Playback checkmarks follow the shared player; detached media windows retain compact headers. Local Help documents the shortcuts; About opens its own information window showing the running version. The Settings icon retains its original actions as another access route. Android/browser keep their existing menus. See [the implementation plan](docs/desktop-menu-bar-plan.md).
 - **Library:** Songs, Albums, Artists, Playlists and Your Recap appear as Library tabs. Import music sits below the tabs; Edit is in the top-right menu, and Favorites is an automatic playlist. The compact header contains the app logo, privacy motto, tabs, Search and menu, with no sidebar or redundant Library title. Browse/search songs, open album and artist collections and mark favorites. Album playback follows disc and numeric track tags; artist collections group songs by album. Song rows include album and release year when tagged.
@@ -95,7 +95,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.14.0` include the native Windows application menu and independent About window. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.14.0 release notes](docs/releases/v0.14.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.15.0` include output-independent Windows playback and reversible library organization. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.15.0 release notes](docs/releases/v0.15.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 

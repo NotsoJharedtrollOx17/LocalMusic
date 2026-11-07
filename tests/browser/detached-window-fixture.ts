@@ -102,7 +102,7 @@ export class DetachedFixture {
         }
         if (command === "desktop_state")
           return { supported: true, windows: this.windows };
-        if (command === "plugin:app|version") return "0.14.0";
+        if (command === "plugin:app|version") return "0.15.0";
         if (command === "desktop_about") {
           if (args.op === "open") {
             if (label !== "main") throw Error("Only main opens About");
@@ -121,7 +121,7 @@ export class DetachedFixture {
           if (label !== "main") throw Error("Only main owns the menu");
           if (this.menuFailure) throw Error("Simulated native menu failure");
           this.menuStates.push(args.state);
-          return { supported: true, ready: true, version: "0.14.0" };
+          return { supported: true, ready: true, version: "0.15.0" };
         }
         if (command === "get_settings") return this.settings;
         if (command === "patch_settings") {
