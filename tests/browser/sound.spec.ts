@@ -102,8 +102,8 @@ test("Normal and automatic Custom persist in narrow dark Spanish UI", async ({
   await page.keyboard.press("Escape");
   sound = await openEqualizer(page);
   await expect(
-    sound.getByRole("button", { name: "Personalizado", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+    sound.getByRole("combobox", { name: "Preajustes", exact: true }),
+  ).toHaveValue("custom");
   await expect(
     sound.getByRole("slider", { name: "1000 Hz ganancia", exact: true }),
   ).toHaveValue("-10");
@@ -360,7 +360,14 @@ test("missing native output keeps configuration editable and Retry updates runti
               excluded: false,
             };
           case "playlist_context":
-            return {artists:[],genres:[],less:[],analyzed:0,total:0,scanning:false};
+            return {
+              artists: [],
+              genres: [],
+              less: [],
+              analyzed: 0,
+              total: 0,
+              scanning: false,
+            };
           case "list_tracks":
             return { tracks: [], total: 0 };
           case "list_playlists":

@@ -79,14 +79,20 @@ test("keyboard frames stay rounded across buttons, menus, themes and forced colo
       exact: true,
     });
     await selectedTab.focus();
-    await page.keyboard.press("Tab");
+    if (width <= 760) {
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Shift+Tab");
+    } else await page.keyboard.press("Tab");
     const search = page.getByRole("button", {
       name: "Search your library",
       exact: true,
     });
     await expect(search).toBeFocused();
     await frame(page, search);
-    await page.keyboard.press("Shift+Tab");
+    if (width <= 760) {
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+    } else await page.keyboard.press("Shift+Tab");
     await expect(selectedTab).toBeFocused();
     await frame(page, selectedTab);
     await frame(

@@ -88,6 +88,13 @@ test("native menu dispatch, check state, scoped search, manual creator and local
   await expect(
     page.getByRole("dialog", { name: "Ajustes", exact: true }),
   ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page
+      .getByRole("dialog", { name: "Ajustes", exact: true })
+      .getByRole("button", { name: "Acerca de Local Music", exact: true }),
+  ).toHaveCount(0);
+  await page.setViewportSize({ width: 1280, height: 900 });
   expect(
     f.calls.some((c) =>
       /^about:(list_groups|list_tracks|get_recap|playback_snapshot|desktop_menu_sync|analysis_activity)$/.test(

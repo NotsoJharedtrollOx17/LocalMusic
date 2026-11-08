@@ -653,21 +653,6 @@ input[type="range"] {
 .group-back {
   margin-bottom: 10px;
 }
-.page-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 60px;
-  border-top: 1px solid var(--rule);
-  padding-top: 20px;
-  font-size: 8px;
-  color: var(--muted);
-  letter-spacing: 0.12em;
-}
-.page-footer span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 .mobile-brand,
 .bottom-nav {
   display: none;
@@ -1726,10 +1711,6 @@ input[type="range"] {
     padding: 12px 14px;
     font-size: 11px;
   }
-  .page-footer {
-    margin-top: 45px;
-    font-size: 7px;
-  }
   .mini-player {
     left: 0;
     right: 0;
@@ -2040,9 +2021,6 @@ input[type="range"] {
   }
   .track-picker > label {
     gap: 12px;
-  }
-  .mini-player ~ .page-footer {
-    margin-bottom: 70px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

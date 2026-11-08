@@ -155,15 +155,22 @@ test("mobile swipe tabs and player keep transport anchored, Back and reduced mot
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
   await samples(page);
-  await page.evaluate(() => window.scrollTo(0, 160));
-  await expect.poll(() => page.evaluate(() => scrollY)).toBe(160);
+  const savedScroll = await page.evaluate(() => {
+    window.scrollTo(
+      0,
+      Math.min(160, document.documentElement.scrollHeight - innerHeight),
+    );
+    return scrollY;
+  });
+  expect(savedScroll).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(savedScroll);
   await swipe(page, 320, 450, 75, 450);
   await expect(
     page.getByRole("tab", { name: "Albums", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await expect.poll(() => page.evaluate(() => scrollY)).toBe(160);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(savedScroll);
   await page
     .getByRole("button", { name: "Play A quieter orbit", exact: true })
     .click();
@@ -341,8 +348,8 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   const sound = await openEqualizer(page);
   await expect(sound).not.toContainText("Audio effects are not available");
   await expect(
-    sound.getByRole("button", { name: "Normal", exact: true }),
-  ).toBeVisible();
+    sound.getByRole("combobox", { name: "Presets", exact: true }),
+  ).toHaveValue("flat");
   await expect(sound.getByRole("slider")).toHaveCount(9);
   await closeEqualizer(page);
   await page

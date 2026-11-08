@@ -1,0 +1,356 @@
+/* Phone density is independent of WebView zoom and system font scaling. */
+#library-header-actions {
+  display: none;
+}
+:root[data-layout="phone"] {
+  font-size: 14px;
+  scroll-padding-top: calc(var(--library-sticky-height, 108px) + 8px);
+}
+:root[data-layout="phone"] :is(h1, h2, h3) {
+  font-family: Inter, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+:root[data-layout="phone"] h1 {
+  font-size: 24px;
+}
+:root[data-layout="phone"] h2 {
+  font-size: 20px;
+}
+:root[data-layout="phone"] h3 {
+  font-size: 17px;
+}
+:root[data-layout="phone"] .content-shell {
+  padding: 0 max(16px, env(safe-area-inset-right)) 24px
+    max(16px, env(safe-area-inset-left));
+}
+:root[data-layout="phone"]:has(.mini-player) .content-shell {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+:root[data-layout="phone"] .library-brand-header {
+  position: sticky;
+  top: 0;
+  z-index: 26;
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0
+    calc(-1 * max(16px, env(safe-area-inset-left)));
+  padding: calc(6px + env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) 6px
+    max(16px, env(safe-area-inset-left));
+  min-height: calc(60px + env(safe-area-inset-top));
+  background: var(--paper);
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+:root[data-layout="phone"] .library-brand-header .brand {
+  font-size: 24px;
+  gap: 8px;
+}
+:root[data-layout="phone"] .brand-mark {
+  width: 30px;
+  height: 30px;
+}
+:root[data-layout="phone"] .library-brand-note {
+  display: none;
+}
+:root[data-layout="phone"] #library-header-actions {
+  display: block;
+  margin-left: auto;
+}
+:root[data-layout="phone"] .heading-actions {
+  display: flex;
+  gap: 0;
+  margin: 0;
+}
+:root[data-layout="phone"] .icon-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  border-radius: 12px;
+}
+:root[data-layout="phone"]
+  :is(.button, input:not([type="range"]):not([type="checkbox"]), select) {
+  min-height: 48px;
+}
+:root[data-layout="phone"] .library-page > .library-navigation {
+  position: sticky;
+  top: var(--library-brand-height, calc(60px + env(safe-area-inset-top)));
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  min-height: 48px;
+  z-index: 25;
+}
+:root[data-layout="phone"] .library-navigation .section-tabs {
+  width: 100%;
+  gap: 18px;
+}
+:root[data-layout="phone"] .section-tabs button {
+  font-size: 15px;
+  min-height: 48px;
+  padding-block: 10px;
+}
+:root[data-layout="phone"] .library-navigation > .inline-search {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 4px 0 10px;
+}
+:root[data-layout="phone"] .library-navigation > .group-back {
+  min-height: 48px;
+  margin: 0;
+}
+:root[data-layout="phone"] .library-toolbar {
+  padding-block: 8px;
+  min-height: 64px;
+}
+:root[data-layout="phone"] .library-toolbar h1 {
+  font-size: 16px;
+}
+:root[data-layout="phone"] .collection-count {
+  font-size: 16px;
+}
+:root[data-layout="phone"] .player-surface-head h2 {
+  font-size: 16px;
+}
+:root[data-layout="phone"] .recap-rank.rank-1 h3 {
+  font-size: 22px;
+}
+:root[data-layout="phone"] .recap-rank.rank-2 h3 {
+  font-size: 18px;
+}
+:root[data-layout="phone"] .library-import {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+:root[data-layout="phone"] .track-row {
+  min-height: 76px;
+  padding: 8px 0;
+  gap: 2px;
+}
+:root[data-layout="phone"] .track-hit {
+  gap: 10px;
+  padding: 6px;
+  min-height: 56px;
+}
+:root[data-layout="phone"] .track-hit .cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+:root[data-layout="phone"] .track-copy strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+:root[data-layout="phone"] .track-copy > span {
+  font-size: 12px;
+}
+:root[data-layout="phone"] .track-duration {
+  margin-left: 4px;
+  font-size: 11px;
+}
+:root[data-layout="phone"] .album-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 12px;
+}
+:root[data-layout="phone"] .album-card .cover {
+  border-radius: 14px;
+}
+:root[data-layout="phone"] .album-card strong {
+  font-size: 13px;
+  line-height: 1.3;
+}
+:root[data-layout="phone"] .album-card span {
+  font-size: 12px;
+}
+:root[data-layout="phone"] .playlist-section-heading {
+  font-size: 14px;
+}
+:root[data-layout="phone"] .album-grid > .empty-small {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+:root[data-layout="phone"] .empty-small {
+  min-height: 32dvh;
+  max-width: none;
+  margin: 0;
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+:root[data-layout="phone"] .mini-player {
+  display: flex;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  height: 68px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  padding: 6px 4px 6px 10px;
+  gap: 2px;
+  overflow: hidden;
+}
+:root[data-layout="phone"] .mini-track {
+  width: auto;
+  max-width: none;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+:root[data-layout="phone"] .mini-track .cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+:root[data-layout="phone"] .mini-track strong {
+  font-size: 12px;
+}
+:root[data-layout="phone"] .mini-track small {
+  font-size: 11px;
+}
+:root[data-layout="phone"] :is(.mini-center, .mini-actions, .mini-sample) {
+  display: none;
+}
+:root[data-layout="phone"] .mobile-mini-play {
+  display: flex;
+  flex: none;
+  gap: 0;
+}
+:root[data-layout="phone"] .mobile-mini-play svg {
+  width: 19px;
+  height: 19px;
+}
+:root[data-layout="phone"] .mini-progress {
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+}
+:root[data-layout="phone"] .modal-head h2 {
+  font-size: 20px;
+}
+:root[data-layout="phone"] .modal-body {
+  font-size: 14px;
+  line-height: 1.5;
+}
+:root[data-layout="phone"] .settings-form h3 {
+  font-size: 17px;
+}
+:root[data-layout="phone"] .player-surface-head {
+  --player-head-side: 48px;
+}
+:root[data-layout="phone"] .player-surface-body {
+  animation: none;
+}
+:root[data-layout="phone"] .player-title {
+  margin: 18px 0;
+}
+:root[data-layout="phone"] .player-title h2 {
+  font-size: 21px;
+  line-height: 1.25;
+}
+:root[data-layout="phone"] .player-title p {
+  font-size: 13px;
+}
+:root[data-layout="phone"] .player-surface-footer .transport {
+  grid-template-columns: 48px 48px var(--player-play-size) 48px 48px;
+  gap: clamp(0px, calc((100vw - 300px) / 4), 16px);
+  margin: 10px 0;
+}
+:root[data-layout="phone"] .player-surface .queue-content .row-actions {
+  grid-template-columns: repeat(3, 48px);
+}
+:root[data-layout="phone"] .track-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+:root[data-layout="phone"] .track-details :is(h2, p, dl, label, button) {
+  margin-block: 0;
+}
+:root[data-layout="phone"] .track-details h2 {
+  font-size: 21px;
+}
+:root[data-layout="phone"] .track-details label {
+  text-align: start;
+}
+:root[data-layout="phone"] .sound-presets {
+  margin-top: 0;
+}
+:root[data-layout="phone"] .sound-preset-grid {
+  display: none;
+}
+:root[data-layout="phone"] .sound-controls .sound-preset-select {
+  display: grid;
+  gap: 6px;
+}
+:root[data-layout="phone"] .sound-preset-select select {
+  margin: 0;
+}
+:root[data-layout="phone"] .equalizer-frequency-guide {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 16px 0 0 42px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+:root[data-layout="phone"] .equalizer-frequency-guide small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.5;
+}
+:root[data-layout="phone"] .equalizer-inactive-note {
+  margin-top: 20px;
+  font-size: 12px;
+}
+:root[data-layout="phone"] .visualizer-header {
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+:root[data-layout="phone"]
+  .visualizer-header
+  > .visualizer-window-actions:empty {
+  display: none;
+}
+:root[data-layout="phone"] .visualizer-modes {
+  gap: 8px;
+}
+:root[data-layout="phone"] .visualizer-modes button {
+  min-height: 48px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+:root[data-layout="phone"] .visualizer-footer {
+  padding: 24px 20px 16px;
+}
+:root[data-layout="phone"] .visualizer-footer h2 {
+  font-size: 19px;
+}
+:root[data-layout="phone"] .year-page > .page-heading {
+  margin-block: 16px;
+}
+:root[data-layout="phone"] .recap-heading {
+  font-size: 24px;
+}
+@media (max-width: 350px) {
+  :root[data-layout="phone"] .mini-track .cover {
+    width: 30px;
+    height: 30px;
+  }
+  :root[data-layout="phone"] .mini-track {
+    gap: 5px;
+  }
+}
+@media (max-width: 300px) {
+  :root[data-layout="phone"] .player-surface-footer .transport {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

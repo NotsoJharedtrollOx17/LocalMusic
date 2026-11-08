@@ -1,4 +1,6 @@
 export const en = {
+  hideMiniPlayer: "Hide mini-player",
+  aboutApp: "About Local Music",
   searchSongs: "Search songs",
   searchAlbums: "Search albums",
   searchArtists: "Search artists",
@@ -299,6 +301,8 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  hideMiniPlayer: "Ocultar minirreproductor",
+  aboutApp: "Acerca de Local Music",
   searchSongs: "Buscar canciones",
   searchAlbums: "Buscar \u00e1lbumes",
   searchArtists: "Buscar artistas",

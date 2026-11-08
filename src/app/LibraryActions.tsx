@@ -2,8 +2,10 @@ import { useRef, useState } from "react";
 import { Settings2 } from "lucide-react";
 import { ActionMenu } from "../ux";
 import { useMusicAppContext } from "./MusicAppContext";
+import { usePhoneLayout } from "../ux/usePhoneLayout";
 
 export default function LibraryActions() {
+  const phone = usePhoneLayout();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const includedEdit = useRef(false);
   const {
@@ -22,6 +24,8 @@ export default function LibraryActions() {
     setSelectionMode,
     setSelectedIds,
     t,
+    player,
+    miniHidden,
   } = useMusicAppContext();
   const trackView = group
     ? group.kind === "albums" || artistView === "tracks"
@@ -54,6 +58,15 @@ export default function LibraryActions() {
           label={t.libraryActions}
           onClose={() => setAnchor(null)}
           items={[
+            ...((phone || miniHidden) && player.trackId
+              ? [
+                  {
+                    id: "now-playing",
+                    label: t.nowPlaying,
+                    action: () => setModal("player"),
+                  },
+                ]
+              : []),
             ...(includedEdit.current
               ? [
                   {

@@ -1,5 +1,14 @@
 import OutputStatus from "./OutputStatus";
-import { ListMusic, ArrowUpRight, Heart, Play, Pause } from "lucide-react";
+import {
+  ListMusic,
+  ArrowUpRight,
+  Heart,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  X,
+} from "lucide-react";
 import { api } from "../api";
 import { Cover, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -7,12 +16,21 @@ import PlaybackProgress from "./PlaybackProgress";
 import TransportControls from "./TransportControls";
 
 export default function MiniPlayer() {
-  const { player, setModal, miniDrag, t, act, current, favorite } =
-    useMusicAppContext();
+  const {
+    player,
+    setModal,
+    miniDrag,
+    t,
+    act,
+    current,
+    favorite,
+    miniHidden,
+    setMiniHidden,
+  } = useMusicAppContext();
 
   return (
     <>
-      {current && (
+      {current && !miniHidden && (
         <div className="mini-player">
           <button
             className="mini-track"
@@ -67,6 +85,12 @@ export default function MiniPlayer() {
           </div>
           <div className="mobile-mini-play">
             <IconButton
+              label={t.previous}
+              onClick={() => void act(() => api.previous())}
+            >
+              <SkipBack fill="currentColor" />
+            </IconButton>
+            <IconButton
               label={player.playing ? t.pause : t.play}
               onClick={() => void act(() => api.toggle())}
             >
@@ -75,6 +99,18 @@ export default function MiniPlayer() {
               ) : (
                 <Play fill="currentColor" />
               )}
+            </IconButton>
+            <IconButton
+              label={t.next}
+              onClick={() => void act(() => api.next())}
+            >
+              <SkipForward fill="currentColor" />
+            </IconButton>
+            <IconButton
+              label={t.hideMiniPlayer}
+              onClick={() => setMiniHidden(true)}
+            >
+              <X />
             </IconButton>
           </div>
           <span

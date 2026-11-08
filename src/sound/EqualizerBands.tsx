@@ -32,6 +32,9 @@ export default function EqualizerBands({
                 aria-label={`${f} Hz ${t.gain}`}
                 aria-valuetext={formatGain(config.gains[i])}
                 disabled={inactive.includes(i)}
+                aria-describedby={
+                  inactive.includes(i) ? "equalizer-inactive" : undefined
+                }
                 min={-10}
                 max={10}
                 step={0.5}
@@ -51,10 +54,36 @@ export default function EqualizerBands({
               <output className="sound-sr-only">
                 {formatGain(config.gains[i])}
               </output>
-              {inactive.includes(i) && <small>{t.inactive}</small>}
             </label>
           ))}
         </EqualizerGrid>
+        <div className="equalizer-frequency-guide">
+          <span>
+            {t.bass}
+            <small>63–250 Hz</small>
+          </span>
+          <span>
+            {t.mids}
+            <small>500 Hz–2 kHz</small>
+          </span>
+          <span>
+            {t.treble}
+            <small>4–16 kHz</small>
+          </span>
+        </div>
+        {inactive.length > 0 && (
+          <p
+            id="equalizer-inactive"
+            className="equalizer-inactive-note"
+            role="status"
+          >
+            {t.inactive}:{" "}
+            {EQ_BANDS.filter((band) => inactive.includes(band.index))
+              .map((band) => `${band.frequency} Hz`)
+              .join(", ")}
+            .
+          </p>
+        )}
       </div>
     </>
   );

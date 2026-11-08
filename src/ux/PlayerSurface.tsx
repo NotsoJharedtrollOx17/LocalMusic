@@ -44,6 +44,7 @@ export function PlayerSurface({
   const bodyDrag =
     view === "player" &&
     document.documentElement.dataset.platform !== "android";
+  const android = document.documentElement.dataset.platform === "android";
   usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
   const exitAnimation = useRef<Animation | null>(null),
@@ -70,7 +71,7 @@ export function PlayerSurface({
     }
     const art = node.querySelector<HTMLImageElement>(".player-cover"),
       mini = document.querySelector<HTMLImageElement>(".mini-track .cover");
-    if (art && mini)
+    if (!android && art && mini)
       exitCover.current = animateCover(
         art.getBoundingClientRect(),
         mini.getBoundingClientRect(),
@@ -78,11 +79,17 @@ export function PlayerSurface({
       );
     node.inert = true;
     const animation = node.animate(
-      [
-        { transform: getComputedStyle(node).transform, opacity: 1 },
-        { transform: "translateY(45px) scale(.97)", opacity: 0 },
-      ],
-      { duration: 240, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" },
+      android
+        ? [{ opacity: 1 }, { opacity: 0 }]
+        : [
+            { transform: getComputedStyle(node).transform, opacity: 1 },
+            { transform: "translateY(45px) scale(.97)", opacity: 0 },
+          ],
+      {
+        duration: android ? 140 : 240,
+        easing: "cubic-bezier(.4,0,1,1)",
+        fill: "forwards",
+      },
     );
     exitAnimation.current = animation;
     animation.finished.then(
@@ -98,7 +105,7 @@ export function PlayerSurface({
   useFocusScope(ref, active && !standalone);
   const entered = useRef(false);
   useLayoutEffect(() => {
-    if (!active || view !== "player" || entered.current) return;
+    if (!active || view !== "player" || entered.current || android) return;
     entered.current = true;
     const mini = document.querySelector<HTMLImageElement>(".mini-track .cover"),
       art = ref.current?.querySelector<HTMLImageElement>(".player-cover");

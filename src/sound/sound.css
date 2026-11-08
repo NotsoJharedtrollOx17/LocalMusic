@@ -72,6 +72,18 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.sound-controls .sound-preset-select {
+  display: none;
+}
+.equalizer-frequency-guide {
+  display: none;
+}
+.equalizer-inactive-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .sound-preset-grid button {
   background: var(--surface);
   border: 1px solid var(--rule);

@@ -4,8 +4,10 @@ import { api, native } from "../api";
 import { localDate } from "../recap/periods";
 import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
+import { usePhoneLayout } from "../ux/usePhoneLayout";
 
 export default function SettingsDialog() {
+  const phone = usePhoneLayout();
   const {
     settings,
     setSettings,
@@ -101,6 +103,15 @@ export default function SettingsDialog() {
               </button>
             </div>
             {!native && <p className="method-note">{t.previewHint}</p>}
+            {phone && (!native || /Android/i.test(navigator.userAgent)) && (
+              <button
+                data-about-origin
+                className="button secondary"
+                onClick={() => setModal("about")}
+              >
+                {t.aboutApp}
+              </button>
+            )}
           </div>
         </Modal>
       )}

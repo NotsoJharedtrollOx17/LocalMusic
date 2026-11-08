@@ -21,6 +21,7 @@ import TrackDetailsDialog from "./app/TrackDetailsDialog";
 import SnapshotsDialog from "./app/SnapshotsDialog";
 import RecapExportDialog from "./app/RecapExportDialog";
 import RecapStoryDialog from "./app/RecapStoryDialog";
+import AboutDialog from "./app/AboutDialog";
 
 export default function App({
   initialSettings,
@@ -44,6 +45,7 @@ export default function App({
         <SoundDialog />
         <VisualizerView />
         <SettingsDialog />
+        <AboutDialog />
         <PlayerDialog />
         <ManualPlaylistDialog />
         <TrackDetailsDialog />

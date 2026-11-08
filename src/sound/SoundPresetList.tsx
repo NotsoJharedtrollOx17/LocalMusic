@@ -14,6 +14,22 @@ export default function SoundPresetList({
   return (
     <div className="sound-presets">
       <fieldset aria-label={t.presets}>
+        <label className="sound-preset-select">
+          {t.presets}
+          <select
+            aria-label={t.presets}
+            value={config.presetId}
+            onChange={(event) =>
+              edit((c) => selectSoundPreset(c, event.target.value))
+            }
+          >
+            {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (
+              <option key={p.id} value={p.id}>
+                {t.presetNames[p.id as keyof typeof t.presetNames] ?? p.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="sound-preset-grid">
           {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (
             <button

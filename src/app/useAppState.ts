@@ -107,6 +107,7 @@ export function useAppState(initialSettings?: Settings) {
       | "visualizer"
       | "equalizer"
       | "help"
+      | "about"
       | null
     >(null),
     [detail, setDetail] = useState<Track | null>(null),
@@ -121,6 +122,7 @@ export function useAppState(initialSettings?: Settings) {
   const [playerParent, setPlayerParent] = useState<"player" | "queue" | null>(
     null,
   );
+  const [miniHidden, setMiniHidden] = useState(false);
   const [request, setRequest] = useState<PlaylistRequest>({
       blend: initialSettings?.playlistBlend ?? "balanced",
       title: "",
@@ -287,6 +289,8 @@ export function useAppState(initialSettings?: Settings) {
     groupScroll,
     lastSelected,
     miniDrag,
+    miniHidden,
+    setMiniHidden,
     groupStack,
     chooserOpen,
     setChooserOpen,

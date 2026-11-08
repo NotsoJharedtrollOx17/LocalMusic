@@ -39,6 +39,9 @@ for (const size of [
     await page.evaluate(
       () => (document.documentElement.dataset.platform = "android"),
     );
+    // Reconcile the runtime platform fixture before opening a portal-owned menu.
+    await page.getByRole("tab", { name: "Albums", exact: true }).click();
+    await page.getByRole("tab", { name: "Songs", exact: true }).click();
     const settings = await openSettings(page);
     await full(page, settings);
     await settings

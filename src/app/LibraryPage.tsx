@@ -1,13 +1,12 @@
 import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
-import SearchTriggerIcon from "./SearchTriggerIcon";
 import SearchEmpty from "./SearchEmpty";
 import { Search, ArrowLeft } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
-import LibraryActions from "./LibraryActions";
+import LibraryHeadingActions from "./LibraryHeadingActions";
 import { api } from "../api";
-import { Cover, IconButton } from "../components";
+import { Cover } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import TrackRows from "./TrackRows";
 import PlaylistsPage from "./PlaylistsPage";
@@ -33,8 +32,6 @@ export default function LibraryPage() {
     query,
     searchOpen,
     inlineSearch,
-    searchInput,
-    setSearchOpen,
     group,
     groupTracks,
     setGroupTracks,
@@ -88,25 +85,7 @@ export default function LibraryPage() {
           <LibraryTabs />
         )}
         <InlineSearch />
-        <div className="heading-actions">
-          {section !== "year" && (
-            <span data-search-trigger className="search-trigger-controls">
-              <IconButton
-                label={t.search}
-                active={inlineSearch.active}
-                onClick={() =>
-                  searchOpen
-                    ? inlineSearch.close()
-                    : (setSearchOpen(true),
-                      requestAnimationFrame(() => searchInput.current?.focus()))
-                }
-              >
-                <SearchTriggerIcon />
-              </IconButton>
-            </span>
-          )}
-          <LibraryActions />
-        </div>
+        <LibraryHeadingActions />
       </div>
       <InlineSearchStatus />
       <div

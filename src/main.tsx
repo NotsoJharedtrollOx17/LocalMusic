@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { api, native } from "./api";
 import { applyTheme } from "./theme";
 import { installNativeShortcuts } from "./ux/nativeShortcuts";
+import { installInputModality } from "./ux/usePhoneLayout";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-500-italic.css";
@@ -23,12 +24,14 @@ import "./playlists.css";
 import "./focus.css";
 import "./modal.css";
 import "./desktop/desktop.css";
+import "./phone.css";
 document.documentElement.dataset.platform = native
   ? /Android/i.test(navigator.userAgent)
     ? "android"
     : "desktop"
   : "browser";
 installNativeShortcuts(native);
+installInputModality();
 const aboutWindow =
   native && new URLSearchParams(location.search).get("about") === "1";
 async function start() {

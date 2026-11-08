@@ -16,7 +16,7 @@ Reviewed the supplied 6:26 recording using timestamped frames and an offline tra
 | 3:58-4:23 | Give visualizer controls adequate spacing. The visualizer modes themselves are accepted; retain their rendering and audio behavior. |
 | 4:23-6:26 | Adopt the reference's compact rounded mini-player, clear transport and two-column portrait album grid. Keep Local Music's palette, features and existing navigation contracts. The launcher-logo redesign is a later consideration, as stated in the recording. |
 
-Two optional product details were asked asynchronously: whether the mini-player X pauses and hides or only hides; and whether the A-Z jump rail belongs in this pass. Record the response before implementing dependent work. A genuine A-Z rail must use complete-catalog positions, not pretend substring filtering is alphabetical navigation.
+Confirmed after the recording review: **X hides the mini-player while music continues**, retaining queue and position. Provide a discoverable Now Playing entry to restore it. **A-Z navigation belongs to the next pass**; a future rail must use complete-catalog positions rather than substring filtering.
 
 ## Implementation boundaries
 
@@ -41,3 +41,13 @@ Two optional product details were asked asynchronously: whether the mini-player 
 
 - [Samsung Music's tab organization](https://www.samsung.com/au/support/apps-services/manage-tabs-samsung-music/) supports familiar top-level music browsing; the supplied recording is the visual reference for this installed Samsung version.
 - [Android accessibility guidance](https://developer.android.com/guide/topics/ui/accessibility/apps) recommends 48 dp touch targets; smaller typography must not make controls harder to tap.
+
+## Implemented scope
+
+- Added a phone presentation layer with smaller typography, two-column album cards, centered empty states and a rounded mini-player. System font scaling remains enabled. Search and Library actions share one instance in the brand header; measured header/tab heights and all four safe areas govern placement and scrolling.
+- Added Previous/Play-Pause/Next and session-only Hide. Hide does not call the playback adapter; Library actions → Now Playing restores the player. The queue and listening rules are unchanged.
+- Removed the decorative footer. Separated touch feedback from hardware-keyboard focus. Android player transitions use a single opacity transition without independent flying artwork; desktop artwork transitions remain.
+- Added the phone preset selector, bass/mid/treble guide and a full-width unsupported-frequency note, retaining the same EQ actions and nine sliders. Added mobile About with the runtime version and return focus, plus Track Details/visualizer spacing. Windows retains its independent About window.
+- Fixed issues discovered during verification: landscape controls beneath system navigation, inherited desktop mini-player grid/width limits, crowded song focus frames, oversized playlist subdivision headings, short-window tab overlap and extreme-zoom transport overflow.
+
+Actual test, build and physical-device evidence is recorded in `docs/verification.md`. A–Z navigation and launcher-logo work remain outside this pass. No merge or release is included.

@@ -231,7 +231,7 @@ test("player and Queue keep a common centerline and balanced actions across lang
         .evaluateAll((nodes) =>
           nodes.map((node) => node.getBoundingClientRect().width),
         );
-      expect(columns).toEqual([44, 44, 44]);
+      expect(columns).toEqual(Array(3).fill(size.width <= 760 ? 48 : 44));
       expect(
         await queue
           .locator(".player-surface-body")
