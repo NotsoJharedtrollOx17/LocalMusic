@@ -125,7 +125,7 @@ export function PlayerSurface({
   const move = (e: ReactPointerEvent) => {
     if (!drag.current) return;
     const y = Math.max(0, e.clientY - drag.current.y);
-    if (ref.current && !reducedMotion())
+    if (ref.current && !reducedMotion() && !android)
       ref.current.style.transform = `translateY(${Math.min(y, 250)}px)`;
   };
   const up = (e: ReactPointerEvent) => {

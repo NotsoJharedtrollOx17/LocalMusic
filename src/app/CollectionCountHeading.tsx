@@ -41,7 +41,17 @@ export default function CollectionCountHeading({
       }
       aria-label={shown === null ? t[kind] : undefined}
     >
-      {shown !== null && prefix ? `${prefix} · ${text}` : text}
+      {shown !== null && prefix ? (
+        <>
+          <span className="collection-count-prefix">
+            {prefix}
+            <span className="collection-count-separator"> · </span>
+          </span>
+          {text}
+        </>
+      ) : (
+        text
+      )}
     </h2>
   );
 }

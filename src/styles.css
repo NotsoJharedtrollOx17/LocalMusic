@@ -625,6 +625,12 @@ input[type="range"] {
   gap: 26px;
   padding: 26px 0;
 }
+.catalog-group-state {
+  grid-column: 1 / -1;
+  min-height: 32dvh;
+  display: grid;
+  place-items: center;
+}
 .album-card {
   text-align: left;
   min-width: 0;
@@ -2186,19 +2192,7 @@ input[type="range"] {
   width: 100%;
 }
 .catalog-loading-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
-.album-placeholder > div {
-  aspect-ratio: 1;
-  background: var(--hover);
-  border-radius: 6px;
-  margin-bottom: 13px;
-  display: grid;
-  place-items: center;
+  width: 100%;
 }
 .loading-indicator {
   display: flex;

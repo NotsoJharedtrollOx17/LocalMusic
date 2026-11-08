@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { BUILT_INS, selectSoundPreset } from "./model";
 import { soundCopy } from "./copy";
 import type { SoundConfig } from "./types";
@@ -16,19 +17,22 @@ export default function SoundPresetList({
       <fieldset aria-label={t.presets}>
         <label className="sound-preset-select">
           {t.presets}
-          <select
-            aria-label={t.presets}
-            value={config.presetId}
-            onChange={(event) =>
-              edit((c) => selectSoundPreset(c, event.target.value))
-            }
-          >
-            {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (
-              <option key={p.id} value={p.id}>
-                {t.presetNames[p.id as keyof typeof t.presetNames] ?? p.name}
-              </option>
-            ))}
-          </select>
+          <span className="sound-preset-field">
+            <select
+              aria-label={t.presets}
+              value={config.presetId}
+              onChange={(event) =>
+                edit((c) => selectSoundPreset(c, event.target.value))
+              }
+            >
+              {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (
+                <option key={p.id} value={p.id}>
+                  {t.presetNames[p.id as keyof typeof t.presetNames] ?? p.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} aria-hidden="true" />
+          </span>
         </label>
         <div className="sound-preset-grid">
           {[...BUILT_INS, { id: "custom", name: t.custom }].map((p) => (

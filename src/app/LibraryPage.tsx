@@ -1,3 +1,4 @@
+import CatalogGroupGrid from "./CatalogGroupGrid";
 import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
@@ -67,7 +68,6 @@ export default function LibraryPage() {
           "--library-heading-height": motion.headingHeight + "px",
         } as React.CSSProperties
       }
-      {...(!group && !selectionMode ? motion.swipe : {})}
       className={"library-page" + (motion.compact ? " is-compact" : "")}
     >
       <div
@@ -234,77 +234,7 @@ export default function LibraryPage() {
                 )}
               </>
             ) : (
-              <div
-                className="album-grid"
-                aria-busy={selectedGroupPage.status === "loading"}
-              >
-                {catalogGroups.length ? (
-                  catalogGroups.map((g) => (
-                    <button
-                      key={g.id ?? JSON.stringify([g.title, g.subtitle])}
-                      className="album-card"
-                      data-group-key={
-                        g.id ?? JSON.stringify([section, g.title, g.subtitle])
-                      }
-                      onClick={(e) =>
-                        openGroup(
-                          section as "albums" | "artists",
-                          g,
-                          e.currentTarget,
-                        )
-                      }
-                    >
-                      <Cover track={g.track} large />
-                      <strong>{g.title}</strong>
-                      <span>
-                        {g.subtitle || formatMusicCount(g.ids.length)}
-                        {section === "albums" && g.track.releaseYear
-                          ? " · " + g.track.releaseYear
-                          : ""}
-                      </span>
-                    </button>
-                  ))
-                ) : selectedGroupPage.status === "idle" ||
-                  selectedGroupPage.status === "loading" ? (
-                  <>
-                    <span
-                      className="catalog-loading-label"
-                      role="status"
-                      aria-label={
-                        section === "albums"
-                          ? t.loadingAlbums
-                          : t.loadingArtists
-                      }
-                    />
-                    {Array.from({ length: 8 }, (_, index) => (
-                      <div
-                        className="album-placeholder"
-                        aria-hidden="true"
-                        key={index}
-                      >
-                        <div>
-                          <LoadingIndicator label={t.loading} />
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                ) : selectedGroupPage.status === "error" ? (
-                  <button
-                    className="button secondary"
-                    onClick={() =>
-                      void act(() =>
-                        refreshGroups(section as "albums" | "artists"),
-                      )
-                    }
-                  >
-                    {t.retry}
-                  </button>
-                ) : (
-                  <p className="empty-small">
-                    {section === "albums" ? t.emptyAlbums : t.emptyArtists}
-                  </p>
-                )}
-              </div>
+              <CatalogGroupGrid />
             )}
             {!inlineSearch.active &&
               (group

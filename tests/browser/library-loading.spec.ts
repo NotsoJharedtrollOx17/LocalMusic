@@ -54,7 +54,10 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
       };
     IDBObjectStore.prototype.getAll = function (...args) {
       const request = original.apply(this, args);
-      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
+      if (
+        this.name === "tracks" &&
+        this.transaction.objectStoreNames.length === 1
+      ) {
         // Hold both startup reads, including the debounced Library refresh.
         request.addEventListener(
           "success",
@@ -85,10 +88,11 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
 
   await holdNextTrackRead(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-placeholder")).toHaveCount(8);
+  await expect(page.locator(".album-placeholder")).toHaveCount(0);
+  await expect(page.locator(".catalog-loading-label")).toBeVisible();
   await expect(
-    page.locator(".album-placeholder .loading-indicator"),
-  ).toHaveCount(8);
+    page.locator(".catalog-loading-label .loading-indicator"),
+  ).toHaveCount(1);
   await expect(page.locator(".toolbar-actions")).not.toContainText("Loading");
   await expect(page.locator(".catalog-loading-label")).toHaveAttribute(
     "aria-label",
@@ -98,7 +102,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   await page.emulateMedia({ reducedMotion: "reduce" });
   expect(
     await page
-      .locator(".album-placeholder svg")
+      .locator(".catalog-loading-label svg")
       .first()
       .evaluate((node) => getComputedStyle(node).animationName),
   ).toBe("none");
@@ -116,7 +120,8 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
 
   await holdNextTrackRead(page);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".album-placeholder")).toHaveCount(8);
+  await expect(page.locator(".album-placeholder")).toHaveCount(0);
+  await expect(page.locator(".catalog-loading-label")).toBeVisible();
   await expect(page.locator(".album-card")).toHaveCount(0);
   await release(page);
   await expect(page.locator(".album-card")).toHaveCount(4);

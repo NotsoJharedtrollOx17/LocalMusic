@@ -459,18 +459,14 @@ test("playlist headings share the creation toolbar and detail metadata wraps wit
       await settle(page);
       const h = (await heading.boundingBox())!,
         b = (await create.boundingBox())!;
-      if (width > 600)
-        expect(
-          Math.abs(h.y + h.height / 2 - b.y - b.height / 2),
-        ).toBeLessThanOrEqual(1);
-      else {
-        expect(b.y - h.y - h.height).toBeGreaterThanOrEqual(11);
-        expect(
-          Math.abs(
-            b.width -
-              (await page.locator(".playlist-toolbar").boundingBox())!.width,
-          ),
-        ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(h.y + h.height / 2 - b.y - b.height / 2),
+      ).toBeLessThanOrEqual(1);
+      if (width <= 760) {
+        expect(b.width).toBeLessThan(
+          (await page.locator(".playlist-toolbar").boundingBox())!.width * 0.65,
+        );
+        expect(b.height).toBeGreaterThanOrEqual(48);
       }
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),

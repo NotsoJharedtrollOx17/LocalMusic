@@ -25,7 +25,10 @@ export default function PlaylistToolbar() {
       )}
       <div className="toolbar-actions">
         <ClearSearchButton />
-        <button className="button primary" onClick={newPlaylist}>
+        <button
+          className="button primary library-create-playlist"
+          onClick={newPlaylist}
+        >
           <Plus size={18} />
           {t.newPlaylist}
         </button>

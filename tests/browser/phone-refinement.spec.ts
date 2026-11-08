@@ -34,7 +34,7 @@ for (const width of [320, 390, 411])
     await page.getByRole("tab", { name: "Songs", exact: true }).click();
     await page.locator(".track-hit").first().click();
     const mini = page.locator(".mini-player");
-    for (const name of ["Previous", "Pause", "Next", "Hide mini-player"]) {
+    for (const name of ["Previous", "Pause", "Next"]) {
       const control = mini.getByRole("button", { name, exact: true });
       await expect(control).toBeInViewport();
       const box = await control.boundingBox();
@@ -78,7 +78,7 @@ test("Android landscape keeps Library and mini-player controls outside side navi
     page.getByRole("button", { name: "Import music", exact: true }),
     page.getByRole("button", { name: "Library actions", exact: true }),
     page.locator(".track-row > button[aria-haspopup=menu]").first(),
-    mini.getByRole("button", { name: "Hide mini-player", exact: true }),
+    mini.getByRole("button", { name: "Next", exact: true }),
   ]) {
     expect(
       (await control.boundingBox())!.x + (await control.boundingBox())!.width,
@@ -86,12 +86,12 @@ test("Android landscape keeps Library and mini-player controls outside side navi
   }
   const box = (await mini.boundingBox())!,
     close = (await mini
-      .getByRole("button", { name: "Hide mini-player", exact: true })
+      .getByRole("button", { name: "Next", exact: true })
       .boundingBox())!;
   expect(box.x + box.width - close.x - close.width).toBeLessThan(12);
 });
 
-test("hide keeps music playing and Library can restore the same player", async ({
+test("persistent player stays above Library content without interrupting playback", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -117,16 +117,28 @@ test("hide keeps music playing and Library can restore the same player", async (
     src: (window as any).__playingAudio.src,
     pauses: (window as any).__pauseCalls,
   }));
-  await page
-    .getByRole("button", { name: "Hide mini-player", exact: true })
-    .click();
-  await expect(page.locator(".mini-player")).toHaveCount(0);
+  await expect(page.locator(".mobile-mini-play button")).toHaveCount(3);
+  await expect(
+    page.getByRole("button", { name: "Hide mini-player", exact: true }),
+  ).toHaveCount(0);
+  for (const tab of ["Albums", "Artists", "Playlists", "Your Recap", "Songs"]) {
+    await page.getByRole("tab", { name: tab, exact: true }).click();
+    await page.evaluate(() =>
+      scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await expect(page.locator(".mini-player")).toBeInViewport();
+  }
   expect(await page.evaluate(() => (window as any).__playingAudio.paused)).toBe(
     false,
   );
   expect(await page.evaluate(() => (window as any).__pauseCalls)).toBe(
     before.pauses,
   );
+  expect(
+    await page
+      .locator(".mini-player-dock")
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+  ).not.toBe("rgba(0, 0, 0, 0)");
   await page
     .getByRole("button", { name: "Library actions", exact: true })
     .click();
@@ -204,7 +216,7 @@ test("Android player transitions never spawn a separate flying cover", async ({
   expect(await page.evaluate(() => (window as any).__flights)).toBe(0);
 });
 
-test("phone EQ uses a vertical preset chooser and one readable sample-rate note", async ({
+test("phone EQ shows only usable bands with native presets", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -227,13 +239,18 @@ test("phone EQ uses a vertical preset chooser and one readable sample-rate note"
   await band.focus();
   await page.keyboard.press("End");
   await expect(presets).toHaveValue("custom");
-  await expect(eq.getByRole("slider")).toHaveCount(9);
+  await expect(eq.getByRole("slider")).toHaveCount(7);
   await expect(
     eq.getByRole("slider", { name: "16000 Hz gain", exact: true }),
-  ).toBeDisabled();
-  const note = eq.locator(".equalizer-inactive-note");
-  await expect(note).toContainText("16000 Hz");
-  expect((await note.boundingBox())!.width).toBeGreaterThan(250);
+  ).toHaveCount(0);
+  await expect(
+    eq.getByRole("slider", { name: "8000 Hz gain", exact: true }),
+  ).toHaveCount(0);
+  await expect(eq.locator(".equalizer-inactive-note")).toBeHidden();
+  await expect(eq.locator(".equalizer-frequency-guide")).toContainText("4 kHz");
+  await expect(eq.locator(".equalizer-frequency-guide")).not.toContainText(
+    "16 kHz",
+  );
   await expect(eq.locator(".equalizer-band small")).toHaveCount(0);
   await expect(eq.locator(".equalizer-frequency-guide")).toContainText("Bass");
 });

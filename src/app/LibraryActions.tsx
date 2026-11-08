@@ -25,7 +25,6 @@ export default function LibraryActions() {
     setSelectedIds,
     t,
     player,
-    miniHidden,
   } = useMusicAppContext();
   const trackView = group
     ? group.kind === "albums" || artistView === "tracks"
@@ -58,7 +57,7 @@ export default function LibraryActions() {
           label={t.libraryActions}
           onClose={() => setAnchor(null)}
           items={[
-            ...((phone || miniHidden) && player.trackId
+            ...(phone && player.trackId
               ? [
                   {
                     id: "now-playing",

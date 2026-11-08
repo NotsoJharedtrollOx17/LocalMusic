@@ -133,7 +133,6 @@ export function useMusicApp(initialSettings?: Settings) {
     const body = document.querySelector<HTMLElement>(".modal-body");
     if (modal && body) dialogScroll.current.set(modal, body.scrollTop);
     if (next === "player" || next === "queue") {
-      state.setMiniHidden(false);
       dialogHistory.current = [];
       state.setPlayerParent(null);
       setModalState(next);

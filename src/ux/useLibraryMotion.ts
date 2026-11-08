@@ -52,6 +52,10 @@ export function useLibraryMotion(
       horizontal: boolean;
     } | null>(null);
   const suppressClickUntil = useRef(0);
+  const resetSwipe = useCallback(() => {
+    gesture.current = null;
+    suppressClickUntil.current = 0;
+  }, []);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
   const choose = (next: LibrarySection) => {
@@ -66,9 +70,11 @@ export function useLibraryMotion(
       const active = node.querySelector<HTMLElement>('[aria-selected="true"]');
       if (active) {
         setIndicator({ width: active.offsetWidth, x: active.offsetLeft });
-        active.scrollIntoView({
-          block: "nearest",
-          inline: "center",
+        node.scrollTo({
+          left: Math.max(
+            0,
+            active.offsetLeft - (node.clientWidth - active.offsetWidth) / 2,
+          ),
           behavior: reducedMotion() ? "instant" : "smooth",
         });
       }
@@ -87,14 +93,15 @@ export function useLibraryMotion(
         top: scroll.current[section] ?? 0,
         behavior: "instant",
       });
-      const animation = !reducedMotion()
-        ? panel.current
-            ?.querySelector("#library-content")
-            ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
-              duration: 140,
-              easing: "ease-out",
-            })
-        : undefined;
+      const animation =
+        !reducedMotion() && document.documentElement.dataset.layout !== "phone"
+          ? panel.current
+              ?.querySelector("#library-content")
+              ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
+                duration: 140,
+                easing: "ease-out",
+              })
+          : undefined;
       previous.current = section;
       return () => animation?.cancel();
     }
@@ -114,13 +121,17 @@ export function useLibraryMotion(
   }, []);
   const swipe = {
     onPointerDown: (e: ReactPointerEvent) => {
-      suppressClickUntil.current = 0;
-      if (gesture.current && gesture.current.pointer !== e.pointerId) {
-        gesture.current = null;
+      if (e.pointerType !== "touch") {
+        resetSwipe();
         return;
       }
+      if (gesture.current && gesture.current.pointer !== e.pointerId) {
+        gesture.current = null;
+        suppressClickUntil.current = performance.now() + 350;
+        return;
+      }
+      suppressClickUntil.current = 0;
       if (
-        e.pointerType !== "touch" ||
         (e.target as HTMLElement).closest(
           "input,select,textarea,[data-no-swipe],.section-tabs,.album-grid-carousel",
         )
@@ -183,5 +194,6 @@ export function useLibraryMotion(
     compact,
     choose,
     swipe,
+    resetSwipe,
   };
 }
