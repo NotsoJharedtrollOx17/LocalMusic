@@ -324,7 +324,9 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   });
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
   await hit.dispatchEvent("pointerup", { pointerType: "touch" });
-  await hit.dispatchEvent("click");
+  // The compatibility click following touch has detail=1. detail=0 denotes
+  // keyboard activation and intentionally remains usable during selection.
+  await hit.dispatchEvent("click", { detail: 1 });
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await page.evaluate(() => {
     Object.defineProperty(navigator, "canShare", {
@@ -358,7 +360,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
   const selection = page.locator(".selection-toolbar");
   await selection
-    .getByRole("button", { name: "Select visible songs", exact: true })
+    .getByRole("button", { name: "Select all", exact: true })
     .click();
   await selection
     .getByRole("button", { name: "Remove from Library", exact: true })

@@ -102,7 +102,10 @@ export default function OrganizationDialog() {
       wide
     >
       <div className="organization" aria-busy={pending}>
-        <p className="small-muted">{text.hint}</p>
+        <details className="organization-help">
+          <summary>{text.localChanges}</summary>
+          <p className="small-muted">{text.hint}</p>
+        </details>
         <div
           className="organization-tabs"
           role="group"
@@ -123,6 +126,13 @@ export default function OrganizationDialog() {
             </button>
           ))}
         </div>
+        <p className="organization-purpose">
+          {organizationTab === "artists"
+            ? text.artistTask
+            : organizationTab === "songs"
+              ? text.songTask
+              : text.albumTask}
+        </p>
         <label className="organization-search">
           {text.search}
           <input value={query} onChange={(e) => setQuery(e.target.value)} />

@@ -12,6 +12,7 @@ import type {
   OrganizationAction,
 } from "../library/identity";
 import type { LibraryStrings } from "../library/strings";
+import { useOrganizationReview } from "./useOrganizationReview";
 export default function AlbumOrganization({
   snapshot,
   query,
@@ -23,6 +24,8 @@ export default function AlbumOrganization({
   text: LibraryStrings;
   change: (a: OrganizationAction) => Promise<void>;
 }) {
+  const { phone, reviewing, openReview, closeReview, clearReview, review } =
+    useOrganizationReview();
   const albums = useMemo(() => [...sourceAlbums(snapshot.tracks)], [snapshot]),
     [keys, setKeys] = useState<string[]>([]),
     [title, setTitle] = useState(""),
@@ -35,6 +38,7 @@ export default function AlbumOrganization({
     setTitle(first?.album ?? "");
     setArtist(first ? albumArtist(first) : "");
     setCoverId(first?.id ?? "");
+    if (!next.length) clearReview();
   };
   const selected = albums.filter(([key]) => keys.includes(key)),
     tracks = selected.flatMap(([, ts]) => ts),
@@ -48,32 +52,49 @@ export default function AlbumOrganization({
       ),
     );
   return (
-    <div>
+    <div
+      className={
+        "organization-workflow" + (phone && reviewing ? " is-reviewing" : "")
+      }
+    >
       <p className="small-muted">{text.albumHint}</p>
-      <h3>{text.candidates}</h3>
-      {snapshot.albumCandidates.length === 0 ? (
-        <p>{text.none}</p>
-      ) : (
-        snapshot.albumCandidates.slice(0, 30).map((c) => (
-          <div className="organization-candidate" key={c.signature}>
-            <button className="button secondary" onClick={() => select(c.ids)}>
-              {c.ids
-                .map((id) => albums.find(([k]) => k === id)?.[1][0].album)
-                .join(" / ")}
+      <div className="organization-browse">
+        <h3>{text.candidates}</h3>
+        {snapshot.albumCandidates.length === 0 ? (
+          <p>{text.none}</p>
+        ) : (
+          snapshot.albumCandidates.slice(0, 30).map((c) => (
+            <div className="organization-candidate" key={c.signature}>
+              <button
+                className="button secondary"
+                onClick={() => {
+                  select(c.ids);
+                  openReview();
+                }}
+              >
+                {c.ids
+                  .map((id) => albums.find(([k]) => k === id)?.[1][0].album)
+                  .join(" / ")}
+              </button>
+              <button
+                className="button secondary"
+                onClick={() =>
+                  void change({ op: "dismiss", signature: c.signature })
+                }
+              >
+                {text.keep}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+      {keys.length > 0 && (!phone || reviewing) && (
+        <section className="organization-review" ref={review}>
+          {phone && (
+            <button className="text-button" onClick={closeReview}>
+              {text.back}
             </button>
-            <button
-              className="button secondary"
-              onClick={() =>
-                void change({ op: "dismiss", signature: c.signature })
-              }
-            >
-              {text.keep}
-            </button>
-          </div>
-        ))
-      )}
-      {keys.length > 0 && (
-        <section className="organization-review">
+          )}
           <h3>
             {text.selected} ({selected.length})
           </h3>
@@ -157,65 +178,82 @@ export default function AlbumOrganization({
           </div>
         </section>
       )}
-      <h3>
-        {text.albums} ({pool.length})
-      </h3>
-      {pool.slice(0, page).map(([key, ts]) => (
-        <label className="organization-choice" key={key}>
-          <input
-            type="checkbox"
-            checked={keys.includes(key)}
-            onChange={() =>
-              select(
-                keys.includes(key)
-                  ? keys.filter((k) => k !== key)
-                  : [...keys, key],
-              )
-            }
-          />
-          <Cover track={ts[0]} />
-          <span>
-            <strong>{ts[0].album}</strong>
-            <small>
-              {albumArtist(ts[0])} · {ts[0].releaseYear ?? "—"} · {ts.length}{" "}
-              {text.songs.toLowerCase()}
-            </small>
-          </span>
-        </label>
-      ))}
-      {pool.length > page && (
-        <button
-          className="button secondary"
-          onClick={() => setPage((n) => n + 40)}
-        >
-          +40
-        </button>
-      )}
-      <h3>{text.linked}</h3>
-      {snapshot.state.albums.map((g) => (
-        <div className="organization-linked" key={g.id}>
-          <p>
-            <strong>{g.title}</strong> · {g.artist}
-          </p>
+      <div className="organization-browse">
+        <h3>
+          {text.albums} ({pool.length})
+        </h3>
+        {pool.slice(0, page).map(([key, ts]) => (
+          <label className="organization-choice" key={key}>
+            <input
+              type="checkbox"
+              checked={keys.includes(key)}
+              onChange={() =>
+                select(
+                  keys.includes(key)
+                    ? keys.filter((k) => k !== key)
+                    : [...keys, key],
+                )
+              }
+            />
+            <Cover track={ts[0]} />
+            <span>
+              <strong>{ts[0].album}</strong>
+              <small>
+                {albumArtist(ts[0])} · {ts[0].releaseYear ?? "—"} · {ts.length}{" "}
+                {text.songs.toLowerCase()}
+              </small>
+            </span>
+          </label>
+        ))}
+        {pool.length > page && (
           <button
             className="button secondary"
-            onClick={() => {
-              setKeys(g.keys);
-              setTitle(g.title);
-              setArtist(g.artist);
-              setCoverId(g.coverId);
-            }}
+            onClick={() => setPage((n) => n + 40)}
           >
-            {text.edit}
+            +40
           </button>
+        )}
+        <h3>{text.linked}</h3>
+        {snapshot.state.albums.map((g) => (
+          <div className="organization-linked" key={g.id}>
+            <p>
+              <strong>{g.title}</strong> · {g.artist}
+            </p>
+            <button
+              className="button secondary"
+              onClick={() => {
+                setKeys(g.keys);
+                setTitle(g.title);
+                setArtist(g.artist);
+                setCoverId(g.coverId);
+                openReview();
+              }}
+            >
+              {text.edit}
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => void change({ op: "albumUnlink", id: g.id })}
+            >
+              {text.unlink}
+            </button>
+          </div>
+        ))}
+      </div>
+      {phone && keys.length > 0 && !reviewing && (
+        <div className="organization-selection">
+          <strong>
+            {keys.length} {text.selected.toLowerCase()}
+          </strong>
           <button
-            className="button secondary"
-            onClick={() => void change({ op: "albumUnlink", id: g.id })}
+            className="button primary"
+            data-review-selection
+            onClick={openReview}
           >
-            {text.unlink}
+            {text.review}
           </button>
         </div>
-      ))}
+      )}
     </div>
   );
 }

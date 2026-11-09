@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import OverflowIcon from "../components/OverflowIcon";
 import { usePlayerContext } from "./PlayerContext";
 
 export default function PlayerMenuButton() {
@@ -18,7 +18,7 @@ export default function PlayerMenuButton() {
         setMenu({ track: current, anchor: event.currentTarget })
       }
     >
-      <MoreHorizontal size={24} aria-hidden="true" />
+      <OverflowIcon size={24} />
     </button>
   );
 }

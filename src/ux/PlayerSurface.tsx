@@ -147,7 +147,9 @@ export function PlayerSurface({
     >
       <div
         ref={ref}
-        className="player-surface"
+        className={
+          "player-surface" + (view === "player" ? " now-playing-surface" : "")
+        }
         role="dialog"
         aria-modal={standalone ? undefined : true}
         aria-label={title}

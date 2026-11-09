@@ -2,7 +2,7 @@ import { api, native } from "../api";
 import { en } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 
-import { type Track, type Playlist } from "../types";
+import { type Track, type Playlist, type ImportProgress } from "../types";
 import type { MusicAppState } from "./useAppState";
 import type { useCatalogReads } from "./useCatalogReads";
 type CatalogReads = ReturnType<typeof useCatalogReads>;
@@ -84,8 +84,14 @@ export function useMusicActions(
     setNotice("");
     const waitingForFolder = native && !/Android/i.test(navigator.userAgent);
     setChooserOpen(waitingForFolder);
-    setImportProgress(waitingForFolder ? null : { imported: 0, failed: 0 });
+    let lastProgress: ImportProgress = {
+      imported: 0,
+      failed: 0,
+      ...(native ? { phase: "checking" as const } : {}),
+    };
+    setImportProgress(waitingForFolder ? null : lastProgress);
     let selectionMade = !waitingForFolder;
+    let refreshed = false;
     let refreshing: Promise<void> | undefined;
     let pending = false;
     const refreshBatch = () => {
@@ -106,19 +112,46 @@ export function useMusicActions(
     try {
       await act(async () => {
         const n = await api.importMusic(files, mode, (progress) => {
+          lastProgress = progress;
           selectionMade = true;
           setChooserOpen(false);
           setImportProgress(progress);
-          if (progress.imported + progress.failed > 0) refreshBatch();
+          if (progress.imported > 0) refreshBatch();
         });
+        if (selectionMade)
+          setImportProgress({
+            ...lastProgress,
+            imported: n,
+            phase: "refreshing",
+          });
         await refreshing;
-        if (selectionMade) setNotice(n + " " + t.imported);
+        await refresh(latestQuery.current);
+        refreshed = true;
+        setCatalogRevision((revision) => revision + 1);
+        if (selectionMade)
+          setNotice(
+            [
+              lastProgress.cancelled
+                ? t.importCancelled
+                : n > 0
+                  ? `${n} ${t.imported}`
+                  : t.importEmpty,
+              lastProgress.cancelled && n > 0 ? `${n} ${t.imported}` : "",
+              lastProgress.failed > 0
+                ? `${lastProgress.failed} ${t.importFailed}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          );
       });
     } finally {
       await refreshing;
       try {
-        await refresh(latestQuery.current);
-        setCatalogRevision((revision) => revision + 1);
+        if (!refreshed) {
+          await refresh(latestQuery.current);
+          setCatalogRevision((revision) => revision + 1);
+        }
       } catch (e) {
         setError(String(e));
       }

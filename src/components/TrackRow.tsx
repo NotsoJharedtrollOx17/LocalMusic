@@ -1,17 +1,10 @@
 import { useEffect, useRef, type MouseEvent } from "react";
-import {
-  Play,
-  Pause,
-  Heart,
-  MoreHorizontal,
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-} from "lucide-react";
+import { Play, Pause, Heart, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { type Track } from "../types";
 import { IconButton } from "./IconButton";
 import { Cover } from "./Cover";
 import { time } from "./format";
+import OverflowIcon from "./OverflowIcon";
 
 export function TrackRow({
   track,
@@ -53,7 +46,8 @@ export function TrackRow({
 }) {
   const press = useRef<ReturnType<typeof setTimeout> | null>(null),
     origin = useRef<{ x: number; y: number } | null>(null),
-    held = useRef(false);
+    held = useRef(false),
+    touch = useRef(false);
   const cancel = () => {
     if (press.current) clearTimeout(press.current);
     press.current = null;
@@ -63,21 +57,41 @@ export function TrackRow({
     <div
       data-track-id={track.id}
       onContextMenu={(event) => {
-        if (!onMore) return;
         event.preventDefault();
         event.stopPropagation();
         cancel();
-        if (!held.current) onMore(event);
+        // Android may fire contextmenu before our hold timer, or after pointerup.
+        // A touch hold selects once; mouse/keyboard retain the song menu.
+        if (
+          touch.current ||
+          (event.nativeEvent as PointerEvent).pointerType === "touch" ||
+          ((event.nativeEvent as PointerEvent).pointerType === "pen" &&
+            document.documentElement.dataset.layout === "phone")
+        ) {
+          if (
+            (event.target as Element).closest(".icon-button,.selection-check")
+          )
+            return;
+          if (onSelect && !held.current) {
+            held.current = true;
+            onSelect();
+          }
+          return;
+        }
+        if (!held.current) onMore?.(event);
       }}
       onPointerDown={(e) => {
+        touch.current =
+          e.pointerType === "touch" ||
+          (e.pointerType === "pen" &&
+            document.documentElement.dataset.layout === "phone");
         held.current = false;
         if (
-          e.pointerType !== "touch" ||
+          !touch.current ||
           !onSelect ||
           (e.target as HTMLElement).closest(".icon-button,.selection-check")
         )
           return;
-        held.current = false;
         origin.current = { x: e.clientX, y: e.clientY };
         cancel();
         press.current = setTimeout(() => {
@@ -97,11 +111,17 @@ export function TrackRow({
       }}
       onPointerUp={cancel}
       onPointerCancel={cancel}
+      onKeyDownCapture={(e) => {
+        if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+          touch.current = false;
+          held.current = false;
+          cancel();
+        }
+      }}
       onClickCapture={(e) => {
-        if (held.current) {
+        if (held.current && e.detail > 0) {
           e.preventDefault();
           e.stopPropagation();
-          held.current = false;
         }
       }}
       className={
@@ -144,8 +164,17 @@ export function TrackRow({
         </div>
         <span className="track-copy">
           <strong>{track.title}</strong>
-          <span>
-            {track.artist || unknownArtist}
+          <span className="track-meta">
+            <span className="track-artist">
+              {track.artist || unknownArtist}
+            </span>
+            <span className="track-duration-inline">
+              {track.hidden
+                ? (labels.removedLibrary ?? "Removed from Library")
+                : track.available
+                  ? time(track.durationMs)
+                  : labels.unavailable}
+            </span>
             {track.demo && (
               <small className="sample-dot" title="Sample audio">
                 {" "}
@@ -218,7 +247,7 @@ export function TrackRow({
               onClick={onMore}
               hasMenu
             >
-              <MoreHorizontal size={22} />
+              <OverflowIcon />
             </IconButton>
           )}
         </>

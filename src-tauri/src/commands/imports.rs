@@ -1,8 +1,6 @@
 use crate::state::{MusicState, Result};
 #[cfg(not(target_os = "android"))]
 use crate::{artwork, catalog};
-#[cfg(target_os = "android")]
-use music_core::Track;
 use serde_json::json;
 use std::sync::atomic::Ordering;
 #[cfg(not(target_os = "android"))]
@@ -94,44 +92,171 @@ pub(crate) async fn import_music(
     #[cfg(target_os = "android")]
     {
         use tauri_plugin_native_music::NativeMusicExt;
+        // Mobile channels live in Tauri's process-wide registry. Reuse one rather
+        // than leaking a registered callback on every repeated library scan.
+        static PROGRESS: std::sync::OnceLock<tauri::ipc::Channel<serde_json::Value>> =
+            std::sync::OnceLock::new();
+        let progress = PROGRESS.get_or_init(|| {
+            let app = app.clone();
+            tauri::ipc::Channel::new(move |body| {
+                if let tauri::ipc::InvokeResponseBody::Json(value) = body {
+                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&value) {
+                        let _ = app.emit("catalog://progress", value);
+                    }
+                }
+                Ok(())
+            })
+        });
         let app2 = app.clone();
         let value: serde_json::Value = tauri::async_runtime::spawn_blocking(move || {
             app2.native_music()
-                .call("importMusic", json!({"mode":mode}))
+                .call("importMusic", json!({"mode":mode,"progress":progress}))
         })
         .await
         .map_err(|e| e.to_string())??;
         if value["manifestPath"].is_null() {
+            let _ = app.emit(
+                "catalog://progress",
+                json!({"imported":0,"failed":0,"cancelled":true}),
+            );
             return Ok(0);
         };
         let manifest = value["manifestPath"]
             .as_str()
-            .ok_or("Invalid import response")?;
-        let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
-        let file = std::fs::File::open(manifest).map_err(|e| e.to_string())?;
-        let mut count = 0;
-        use std::io::BufRead;
-        for line in std::io::BufReader::new(file).lines() {
-            if cancel.load(Ordering::Relaxed) {
-                break;
-            }
-            let mut t: Track = serde_json::from_str(&line.map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-            let mut store = core.lock().map_err(|e| e.to_string())?;
-            if let Some(old) = store.track(&t.id)? {
-                t.favorite = old.favorite;
-            }
-            store.upsert_track(&t)?;
-            store.set_library_visibility(&[t.id.clone()], true)?;
-            count += 1;
-            drop(store);
-            if count % 10 == 0 {
-                let _ = app.emit("catalog://progress", json!({"imported":count,"failed":0}));
-            }
+            .ok_or("Invalid import response")?
+            .to_owned();
+        // File I/O and SQLite must not occupy an async runtime worker while
+        // playback/journal and cancellation commands need that same runtime.
+        tauri::async_runtime::spawn_blocking(move || {
+            import_manifest(
+                std::path::Path::new(&manifest),
+                &core,
+                &cancel,
+                value["failed"].as_u64().unwrap_or(0) as usize,
+                |count, failed| {
+                    let _ = app.emit(
+                        "catalog://progress",
+                        json!({
+                            "phase":"saving","imported":count,"failed":failed,
+                            "scanned":value["scanned"],"total":value["ready"],
+                            "cancelled":cancel.load(Ordering::Relaxed)
+                        }),
+                    );
+                },
+            )
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+}
+
+#[cfg(any(target_os = "android", test))]
+fn import_manifest(
+    path: &std::path::Path,
+    core: &std::sync::Mutex<music_core::Store>,
+    cancel: &std::sync::atomic::AtomicBool,
+    mut failed: usize,
+    mut progress: impl FnMut(usize, usize),
+) -> Result<usize> {
+    use std::io::BufRead;
+    struct Cleanup<'a>(&'a std::path::Path);
+    impl Drop for Cleanup<'_> {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(self.0);
         }
-        let _ = app.emit("catalog://progress", json!({"imported":count,"failed":0}));
-        let _ = std::fs::remove_file(manifest);
-        Ok(count)
+    }
+    let _cleanup = Cleanup(path);
+    let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut count = 0;
+    progress(count, failed);
+    for line in std::io::BufReader::new(file).lines() {
+        if cancel.load(Ordering::Relaxed) {
+            break;
+        }
+        let line = line.map_err(|e| e.to_string())?;
+        if let Ok(mut track) = serde_json::from_str::<music_core::Track>(&line) {
+            let mut store = core.lock().map_err(|e| e.to_string())?;
+            if let Some(old) = store.track(&track.id)? {
+                track.favorite = old.favorite;
+            }
+            store.upsert_track(&track)?;
+            store.set_library_visibility(&[track.id.clone()], true)?;
+            count += 1;
+        } else {
+            failed += 1;
+        }
+        if (count + failed) % 10 == 0 {
+            progress(count, failed);
+        }
+    }
+    progress(count, failed);
+    Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{atomic::AtomicBool, Mutex};
+    fn row(id: &str) -> serde_json::Value {
+        json!({"id":id,"title":"Fixture","artist":"Artist","album":"Album","genre":"", "durationMs":60000,"sourceUri":"content://fixture","favorite":false,"available":true,"demo":false,"artworkUrl":null})
+    }
+    #[test]
+    fn manifest_reimport_preserves_favorites_counts_failures_and_cleans_up() {
+        let mut store = music_core::Store::open(":memory:").unwrap();
+        let mut track: music_core::Track = serde_json::from_value(row("a")).unwrap();
+        track.favorite = true;
+        store.upsert_track(&track).unwrap();
+        store.set_library_visibility(&["a".into()], false).unwrap();
+        let core = Mutex::new(store);
+        let path = std::env::temp_dir().join(format!("import-{}.jsonl", uuid::Uuid::new_v4()));
+        std::fs::write(&path, format!("{}\nmalformed\n{}\n", row("a"), row("b"))).unwrap();
+        let mut last = (0, 0);
+        assert_eq!(
+            import_manifest(&path, &core, &AtomicBool::new(false), 2, |n, f| last =
+                (n, f))
+            .unwrap(),
+            2
+        );
+        assert_eq!(last, (2, 3));
+        assert!(!path.exists());
+        assert!(core.lock().unwrap().track("a").unwrap().unwrap().favorite);
+        assert!(!core.lock().unwrap().track("a").unwrap().unwrap().hidden);
+        assert!(core.lock().unwrap().track("b").unwrap().is_some());
+    }
+    #[test]
+    fn cancelled_manifest_never_adds_unconsumed_rows() {
+        let core = Mutex::new(music_core::Store::open(":memory:").unwrap());
+        let path = std::env::temp_dir().join(format!("import-{}.jsonl", uuid::Uuid::new_v4()));
+        std::fs::write(&path, format!("{}\n", row("a"))).unwrap();
+        assert_eq!(
+            import_manifest(&path, &core, &AtomicBool::new(true), 0, |_, _| {}).unwrap(),
+            0
+        );
+        assert!(core.lock().unwrap().track("a").unwrap().is_none());
+        assert!(!path.exists());
+    }
+    #[test]
+    fn cancellation_between_batches_keeps_only_committed_rows() {
+        let core = Mutex::new(music_core::Store::open(":memory:").unwrap());
+        let cancel = AtomicBool::new(false);
+        let path = std::env::temp_dir().join(format!("import-{}.jsonl", uuid::Uuid::new_v4()));
+        std::fs::write(
+            &path,
+            (0..25)
+                .map(|n| format!("{}\n", row(&n.to_string())))
+                .collect::<String>(),
+        )
+        .unwrap();
+        let count = import_manifest(&path, &core, &cancel, 0, |n, _| {
+            if n == 10 {
+                cancel.store(true, Ordering::Relaxed);
+            }
+        })
+        .unwrap();
+        assert_eq!(count, 10);
+        assert!(core.lock().unwrap().track("9").unwrap().is_some());
+        assert!(core.lock().unwrap().track("10").unwrap().is_none());
+        assert!(!path.exists());
     }
 }
 

@@ -161,3 +161,79 @@
     flex-basis: 100%;
   }
 }
+
+.organization-help {
+  font-size: 12px;
+  color: var(--muted);
+}
+.organization-help summary {
+  min-height: 32px;
+  cursor: pointer;
+}
+.organization-purpose {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 12px 0 16px;
+}
+:root[data-layout="desktop"] .organization-cancel-edit {
+  display: none;
+}
+:root[data-layout="phone"] .organization-artist,
+:root[data-layout="phone"] .organization-track {
+  padding: 16px 0;
+}
+:root[data-layout="phone"] .organization-artist .cover,
+:root[data-layout="phone"] .organization-track .cover,
+:root[data-layout="phone"] .organization-choice .cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+:root[data-layout="phone"] .organization-tabs {
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+:root[data-layout="phone"] .organization-tabs button {
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  font-size: 12px;
+}
+:root[data-layout="phone"] .organization-tabs [aria-pressed="true"] {
+  background: var(--accent);
+  color: #1b1b1a;
+}
+:root[data-layout="phone"]
+  .organization-workflow.is-reviewing
+  .organization-browse {
+  display: none;
+}
+:root[data-layout="phone"] .organization-review {
+  margin: 16px 0;
+  padding: 12px;
+}
+:root[data-layout="phone"]
+  .organization-body:has(.organization-workflow.is-reviewing)
+  > .organization-review {
+  display: none;
+}
+:root[data-layout="phone"] .organization-selection {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+  font-size: 13px;
+}
+:root[data-layout="phone"] .organization-selection .button {
+  font-size: 12px;
+  padding: 10px 12px;
+}

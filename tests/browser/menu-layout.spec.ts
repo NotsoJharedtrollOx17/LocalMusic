@@ -57,9 +57,11 @@ async function aligned(surface: Locator) {
     const center = (rect: DOMRect) => rect.x + rect.width / 2;
     const root = node.getBoundingClientRect();
     const menu = box("[data-player-menu]");
+    const title = node.querySelector<HTMLElement>(".player-surface-head h2")!;
+    const visibleTitle = title.getClientRects().length > 0;
     return {
       centers: [
-        center(box(".player-surface-head h2")),
+        ...(visibleTitle ? [center(title.getBoundingClientRect())] : []),
         center(box(".play-circle")),
         center(box(".progress input")),
         center(box(".player-track-actions")),
@@ -70,9 +72,13 @@ async function aligned(surface: Locator) {
         height: menu.height,
         centerY: menu.y + menu.height / 2,
       },
-      headerY:
-        box(".player-surface-head h2").y +
-        box(".player-surface-head h2").height / 2,
+      // Phone Now Playing intentionally hides its visual title. Queue and
+      // desktop headings remain visible; compare compact headers to Back.
+      headerY: visibleTitle
+        ? title.getBoundingClientRect().y +
+          title.getBoundingClientRect().height / 2
+        : box(".player-surface-head > button").y +
+          box(".player-surface-head > button").height / 2,
       transportBottom: box(".transport").bottom,
       overflow: node.scrollWidth - node.clientWidth,
       viewportHeight: innerHeight,

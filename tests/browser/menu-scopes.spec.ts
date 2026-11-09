@@ -36,7 +36,7 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
   await menu.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await page
     .locator(".selection-toolbar")
-    .getByRole("button", { name: "Select visible songs", exact: true })
+    .getByRole("button", { name: "Select all", exact: true })
     .click();
   await expect(page.locator(".selection-toolbar")).toContainText("3 selected");
   await page

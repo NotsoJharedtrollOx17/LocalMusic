@@ -207,6 +207,71 @@
   margin-left: 4px;
   font-size: 11px;
 }
+/* Duration belongs to the metadata line instead of competing with the title. */
+:root[data-layout="phone"] .track-row > .track-duration {
+  display: none;
+}
+:root[data-layout="phone"] .track-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+:root[data-layout="phone"] .track-artist {
+  min-width: 0;
+}
+:root[data-layout="phone"] .track-duration-inline {
+  display: inline;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-layout="phone"] .track-row > .icon-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+}
+:root[data-layout="phone"] .track-row:has(.selection-check) > .icon-button {
+  display: none;
+}
+:root[data-layout="phone"] .overflow-horizontal {
+  display: none;
+}
+:root[data-layout="phone"] .overflow-vertical {
+  display: block;
+}
+:root[data-layout="phone"] .section-tabs button,
+:root[data-layout="phone"] .section-indicator {
+  transition: none;
+}
+:root[data-layout="phone"] .selection-toolbar {
+  position: sticky;
+  top: var(--library-sticky-height, 108px);
+  z-index: 24;
+  display: block;
+  padding: 8px 12px;
+  margin: 8px -4px;
+}
+:root[data-layout="phone"] .selection-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+:root[data-layout="phone"] .selection-heading strong {
+  flex: 1;
+  font-size: 14px;
+}
+:root[data-layout="phone"] .selection-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+}
+:root[data-layout="phone"] .selection-actions .text-button {
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+}
 :root[data-layout="phone"] .album-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px 12px;
@@ -223,6 +288,52 @@
 }
 :root[data-layout="phone"] .playlist-section-heading {
   font-size: 14px;
+}
+:root[data-layout="phone"] .saved-playlists {
+  padding-bottom: 32px;
+  margin-bottom: 12px;
+}
+:root[data-layout="phone"] .icon-button {
+  transition: none;
+}
+:root[data-layout="phone"] .icon-button[data-touch-pressed]:not(:disabled) {
+  background: var(--hover);
+  transform: none;
+}
+:root[data-layout="phone"][data-input="pointer"] .icon-button::before {
+  content: none;
+}
+:root[data-layout="phone"] .settings-history {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+:root[data-layout="phone"] .settings-history-body .button {
+  width: 100%;
+  font-size: 12px;
+}
+:root[data-layout="phone"] .now-playing-surface .player-surface-head > h2 {
+  display: none;
+}
+:root[data-layout="phone"] .now-playing-surface .player-surface-head {
+  grid-template-columns: 48px minmax(0, 1fr);
+  padding-top: calc(4px + env(safe-area-inset-top));
+  padding-bottom: 4px;
+}
+:root[data-layout="phone"] .now-playing-surface .player-header-actions {
+  justify-self: end;
+}
+:root[data-layout="phone"] .recap-actions {
+  display: flex;
+  margin: 20px 0;
+}
+:root[data-layout="phone"] .recap-actions .button {
+  width: auto;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+:root[data-layout="phone"] .recap-track-list {
+  margin-top: 24px;
 }
 :root[data-layout="phone"] .album-grid > .empty-small {
   grid-column: 1 / -1;

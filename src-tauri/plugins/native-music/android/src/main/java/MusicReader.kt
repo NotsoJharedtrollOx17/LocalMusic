@@ -17,19 +17,29 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MusicReader(private val context:Context,private val cancelled:AtomicBoolean){
  private var cacheBytes:Long?=null
- fun scan(folder:Uri?):File{
+ internal fun scan(folder:Uri?,progress:(ImportCounter)->Unit):Pair<File,ImportCounter>{
   val manifest=File.createTempFile("music-import-",".jsonl",context.cacheDir)
+  val counter=ImportCounter({android.os.SystemClock.elapsedRealtime()},progress)
+  try {
+  counter.emit(true)
   manifest.bufferedWriter().use{out->
-   fun write(uri:Uri,title:String,artist:String,album:String,duration:Long,size:Long){if(cancelled.get())return;try{out.write(track(uri,title,artist,album,duration,size).toString());out.newLine()}catch(_:Exception){/* An inaccessible item does not abort the whole import. */}}
+   fun write(uri:Uri,title:String,artist:String,album:String,duration:Long,size:Long){
+    if(cancelled.get())return
+    val item=try{track(uri,title,artist,album,duration,size)}catch(_:Exception){counter.checked(false);return}
+    // Storage failures must abort, rather than masquerading as unreadable source files.
+    out.write(item.toString());out.newLine();counter.checked(true)
+   }
    if(folder==null){
     val projection=arrayOf(MediaStore.Audio.Media._ID,MediaStore.Audio.Media.TITLE,MediaStore.Audio.Media.ARTIST,MediaStore.Audio.Media.ALBUM,MediaStore.Audio.Media.DURATION,MediaStore.Audio.Media.SIZE)
-    context.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,projection,null,null,null)?.use{c->while(c.moveToNext()&&!cancelled.get()){val uri=ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,c.getLong(0));write(uri,c.getString(1)?:"Untitled",c.getString(2)?:"",c.getString(3)?:"",c.getLong(4),c.getLong(5))}}
+    val cursor=context.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,projection,null,null,null)?:throw IllegalStateException("Music index unavailable. Try again or choose a folder.")
+    cursor.use{c->counter.total=c.count;counter.emit(true);while(!cancelled.get()&&c.moveToNext()){val uri=ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,c.getLong(0));write(uri,c.getString(1)?:"Untitled",c.getString(2)?:"",c.getString(3)?:"",c.getLong(4),c.getLong(5))}}
    }else{
     val root=DocumentFile.fromTreeUri(context,folder)?:throw IllegalArgumentException("Unsupported folder")
     val pending=java.util.ArrayDeque<DocumentFile>();pending.add(root)
     while(pending.isNotEmpty()&&!cancelled.get()){val d=pending.removeFirst();if(d.isDirectory)d.listFiles().forEach{pending.add(it)}else if(d.type?.startsWith("audio/")==true||Regex("(?i).*\\.(mp3|flac|wav|m4a|ogg|opus|aac)$").matches(d.name?:""))write(d.uri,(d.name?:"Untitled").substringBeforeLast('.'),"","",0,d.length())}
    }
-  };pruneCache();return manifest
+  };counter.emit(true);pruneCache();return Pair(manifest,counter)
+  }catch(e:Exception){manifest.delete();throw e}
  }
  private fun track(uri:Uri,fallbackTitle:String,artist:String,album:String,duration:Long,size:Long):JSONObject{
   val digest=MessageDigest.getInstance("SHA-256");digest.update(size.toString().toByteArray())

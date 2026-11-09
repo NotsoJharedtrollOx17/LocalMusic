@@ -45,7 +45,10 @@ test("compact Library menu opens EQ directly and keeps ordinary settings separat
   await expect(menu).toBeFocused();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const settings = await openSettings(page);
-  await expect(settings.getByRole("group")).toHaveCount(2);
+  for (const name of ["Language", "Theme", "Library", "Listening history"])
+    await expect(
+      settings.getByRole("group", { name, exact: true }),
+    ).toBeVisible();
   await expect(settings).toContainText("Listening history");
   await expect(settings).not.toContainText("time zone");
   await expect(

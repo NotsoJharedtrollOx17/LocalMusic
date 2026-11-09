@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import RenamePlaylistDialog from "./RenamePlaylistDialog";
-import { ListMusic, ArrowUpRight, MoreHorizontal } from "lucide-react";
+import { ListMusic, ArrowUpRight } from "lucide-react";
+import OverflowIcon from "../components/OverflowIcon";
 import { ActionMenu } from "../ux";
 import { api } from "../api";
 import type { Playlist } from "../types";
@@ -81,7 +82,7 @@ export default function PlaylistCollection({
                   setMenu({ playlist: p, anchor: e.currentTarget })
                 }
               >
-                <MoreHorizontal size={21} />
+                <OverflowIcon size={21} />
               </button>
             </div>
           ))}

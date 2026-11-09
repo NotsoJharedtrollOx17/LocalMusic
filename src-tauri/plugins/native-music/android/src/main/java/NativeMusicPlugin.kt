@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
 @InvokeArg class ArtworkArgs { var uri:String?=null; var idle:Boolean=false }
-@InvokeArg class ImportArgs { var mode:String?=null }
+@InvokeArg class ImportArgs { var mode:String?=null; var progress:Channel?=null }
 @InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
 @InvokeArg class ShareArgs { var uris:Array<String>?=null }
 @InvokeArg class SoundPayloadArgs { var payload:String?=null }
@@ -129,11 +129,17 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  }
  @ActivityCallback fun folderResult(invoke:Invoke,result:ActivityResult){
   val uri=result.data?.data
-  if(result.resultCode!=Activity.RESULT_OK||uri==null){invoke.resolve(JSObject().put("manifestPath",JSONObject.NULL));return}
+  if(result.resultCode!=Activity.RESULT_OK||uri==null){invoke.resolve(JSObject().put("manifestPath",JSONObject.NULL).put("cancelled",true));return}
   try{activity.contentResolver.takePersistableUriPermission(uri,(result.data!!.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION));scan(invoke,uri)}catch(e:Exception){invoke.reject(e.message?:"Folder access could not be saved")}
  }
  private fun scan(invoke:Invoke,folder:android.net.Uri?){
-  worker.execute{try{val manifest=MusicReader(activity.applicationContext,cancelled).scan(folder);invoke.resolve(JSObject().put("manifestPath",manifest.absolutePath))}catch(e:Exception){invoke.reject(e.message?:"Import failed")}}
+  val channel=invoke.parseArgs(ImportArgs::class.java).progress
+  worker.execute{try{
+   val (manifest,count)=MusicReader(activity.applicationContext,cancelled).scan(folder){c->
+    channel?.send(JSObject().put("phase","checking").put("imported",0).put("failed",c.failed).put("scanned",c.scanned).put("total",c.total?:JSONObject.NULL))
+   }
+   invoke.resolve(JSObject().put("manifestPath",manifest.absolutePath).put("scanned",count.scanned).put("failed",count.failed).put("ready",count.ready).put("cancelled",cancelled.get()))
+  }catch(e:Exception){invoke.reject(e.message?:"Import failed")}}
  }
  @Command fun exportFile(invoke:Invoke){
   val args=invoke.parseArgs(ExportArgs::class.java);val name=args.name?:"your-year.png"

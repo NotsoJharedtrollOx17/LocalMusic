@@ -75,7 +75,11 @@ export function useLibraryMotion(
             0,
             active.offsetLeft - (node.clientWidth - active.offsetWidth) / 2,
           ),
-          behavior: reducedMotion() ? "instant" : "smooth",
+          behavior:
+            reducedMotion() ||
+            document.documentElement.dataset.layout === "phone"
+              ? "instant"
+              : "smooth",
         });
       }
     };

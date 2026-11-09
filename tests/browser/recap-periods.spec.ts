@@ -198,6 +198,10 @@ test("delayed period reads never replace a newer selection and failed loading is
   page,
 }) => {
   await seed(page);
+  const height = (await page.locator(".recap-content").boundingBox())!.height;
+  const poster = await page
+    .locator(".orbit-poster canvas")
+    .evaluate((c: HTMLCanvasElement) => c.toDataURL());
   await holdNextTrackRead(page);
   await page.getByRole("button", { name: "Weekly", exact: true }).click();
   await expect
@@ -208,7 +212,19 @@ test("delayed period reads never replace a newer selection and failed loading is
       ),
     )
     .toBe(true);
-  await expect(page.locator(".recap-total")).toHaveCount(0);
+  await expect(page.locator(".recap-total")).toBeHidden();
+  await expect(page.locator(".recap-confirmed")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+  expect((await page.locator(".recap-content").boundingBox())!.height).toBe(
+    height,
+  );
+  expect(
+    await page
+      .locator(".orbit-poster canvas")
+      .evaluate((c: HTMLCanvasElement) => c.toDataURL()),
+  ).toBe(poster);
   await page.getByRole("button", { name: "Monthly", exact: true }).click();
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await release(page);
@@ -217,7 +233,10 @@ test("delayed period reads never replace a newer selection and failed loading is
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.getAll;
     IDBObjectStore.prototype.getAll = function (...args) {
-      if (this.name === "tracks" && this.transaction.objectStoreNames.length === 1) {
+      if (
+        this.name === "tracks" &&
+        this.transaction.objectStoreNames.length === 1
+      ) {
         IDBObjectStore.prototype.getAll = original;
         throw new Error("Injected recap read failure");
       }
@@ -228,7 +247,7 @@ test("delayed period reads never replace a newer selection and failed loading is
   await expect(page.locator(".year-page [role=alert]")).toHaveText(
     "Injected recap read failure",
   );
-  await expect(page.locator(".recap-total")).toHaveCount(0);
+  await expect(page.locator(".recap-total")).toBeHidden();
   await page
     .getByRole("button", { name: "Saved snapshots", exact: true })
     .click();

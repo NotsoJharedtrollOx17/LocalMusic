@@ -5,6 +5,7 @@ import { localDate } from "../recap/periods";
 import { Modal } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import { usePhoneLayout } from "../ux/usePhoneLayout";
+import { ChevronRight } from "lucide-react";
 
 export default function SettingsDialog() {
   const phone = usePhoneLayout();
@@ -62,55 +63,79 @@ export default function SettingsDialog() {
                 ))}
               </div>
             </fieldset>
-            <button
-              data-organization-origin
-              className="button secondary"
-              onClick={() => setModal("organize")}
-            >
-              {libraryStrings(settings.language === "es").organize}
-            </button>
-            <div className="settings-history">
-              <h3>{t.history}</h3>
-              <p>{t.historyHint}</p>
-              <p>
-                {t.since} {formatDate(settings.historyEnabledSince)}
-              </p>
+            <fieldset className="settings-section">
+              <legend>{t.libraryManagement}</legend>
               <button
-                className="button secondary danger"
-                onClick={() =>
-                  void act(async () => {
-                    if (confirm(t.deleteWarning)) {
-                      await api.deleteHistory();
-                      const nextSettings = await api.settings();
-                      const nextSelection = {
-                        kind: nextSettings.recapPeriod ?? ("year" as const),
-                        anchorDate: localDate(
-                          new Date(),
-                          nextSettings.timeZone,
-                        ),
-                      };
-                      setSettings(nextSettings);
-                      setSnapshotMode(false);
-                      setRecapSelection(nextSelection);
-                      setRecap(await api.recap(nextSelection));
-                      setSnapshots([]);
-                      setNotice(t.done);
-                    }
-                  })
-                }
+                data-organization-origin
+                className="settings-navigation"
+                aria-label={libraryStrings(settings.language === "es").organize}
+                aria-describedby="settings-organization-hint"
+                onClick={() => setModal("organize")}
               >
-                {t.deleteHistory}
+                <span>
+                  <strong>
+                    {libraryStrings(settings.language === "es").organize}
+                  </strong>
+                  <small id="settings-organization-hint">
+                    {t.organizationHint}
+                  </small>
+                </span>
+                <ChevronRight size={20} aria-hidden="true" />
               </button>
-            </div>
+            </fieldset>
+            <fieldset className="settings-section settings-history">
+              <legend>{t.history}</legend>
+              <div className="settings-history-body">
+                <p>{t.historyHint}</p>
+                <p>
+                  {t.since} {formatDate(settings.historyEnabledSince)}
+                </p>
+                <button
+                  className="button secondary danger"
+                  onClick={() =>
+                    void act(async () => {
+                      if (confirm(t.deleteWarning)) {
+                        await api.deleteHistory();
+                        const nextSettings = await api.settings();
+                        const nextSelection = {
+                          kind: nextSettings.recapPeriod ?? ("year" as const),
+                          anchorDate: localDate(
+                            new Date(),
+                            nextSettings.timeZone,
+                          ),
+                        };
+                        setSettings(nextSettings);
+                        setSnapshotMode(false);
+                        setRecapSelection(nextSelection);
+                        setRecap(await api.recap(nextSelection));
+                        setSnapshots([]);
+                        setNotice(t.done);
+                      }
+                    })
+                  }
+                >
+                  {t.deleteHistory}
+                </button>
+              </div>
+            </fieldset>
             {!native && <p className="method-note">{t.previewHint}</p>}
             {phone && (!native || /Android/i.test(navigator.userAgent)) && (
-              <button
-                data-about-origin
-                className="button secondary"
-                onClick={() => setModal("about")}
-              >
-                {t.aboutApp}
-              </button>
+              <fieldset className="settings-section">
+                <legend>{t.application}</legend>
+                <button
+                  data-about-origin
+                  className="settings-navigation"
+                  aria-label={t.aboutApp}
+                  aria-describedby="settings-about-hint"
+                  onClick={() => setModal("about")}
+                >
+                  <span>
+                    <strong>{t.aboutApp}</strong>
+                    <small id="settings-about-hint">{t.aboutHint}</small>
+                  </span>
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
+              </fieldset>
             )}
           </div>
         </Modal>

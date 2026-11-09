@@ -111,7 +111,9 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
   await expect(page.locator(".playlist-generation-status")).toContainText(
     "Checking available sound analysis",
   );
-  const spinner = page.locator(".playlist-generation-status .loading-indicator svg");
+  const spinner = page.locator(
+    ".playlist-generation-status .loading-indicator svg",
+  );
   await expect(spinner).toBeVisible();
   for (const motion of ["no-preference", "reduce"] as const) {
     await page.emulateMedia({ reducedMotion: motion });
@@ -649,7 +651,11 @@ test("multiple included and excluded artists yield a varied mix and report confl
   await page.getByLabel("Include artist 3", { exact: true }).fill("AC/DC");
   await expect(addInclude).toHaveCount(0);
   await page.getByLabel("Genre", { exact: true }).fill("Unmatched genre");
-  await expect(page.getByText("With selected artists, genre is a preference, not a restriction.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "With selected artists, genre is a preference, not a restriction.",
+    ),
+  ).toBeVisible();
   await page.getByLabel("Exclude artist", { exact: true }).fill("AC/DC");
   const addExclude = page.getByRole("button", {
     name: "Add artist: Exclude artist",
@@ -677,9 +683,7 @@ test("multiple included and excluded artists yield a varied mix and report confl
     .click();
   const rows = page.locator(".generated-result .track-row");
   await expect(rows).toHaveCount(6);
-  const names = await rows
-    .locator(".track-copy > span:first-of-type")
-    .allTextContents();
+  const names = await rows.locator(".track-artist").allTextContents();
   expect(names.filter((name) => name === "Alpha")).toHaveLength(3);
   expect(names.filter((name) => name === "Beta")).toHaveLength(3);
   expect(names[0]).not.toBe(names[1]);

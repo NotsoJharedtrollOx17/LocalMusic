@@ -4,8 +4,6 @@ use music_core::Store;
 #[cfg(target_os = "android")]
 use serde_json::json;
 use std::sync::{Arc, Mutex};
-#[cfg(target_os = "android")]
-use tauri::Emitter;
 
 #[cfg(target_os = "android")]
 mod android;
@@ -37,7 +35,6 @@ async fn command(
     }
     #[cfg(target_os = "android")]
     {
-        let _ = app.emit("catalog://progress", json!({"imported":0,"failed":0}));
         use tauri_plugin_native_music::NativeMusicExt;
         let op = op.to_string();
         tauri::async_runtime::spawn_blocking(move || {

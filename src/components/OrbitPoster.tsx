@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { drawOrbit } from "../export";
 
 export function OrbitPoster({
@@ -11,7 +11,7 @@ export function OrbitPoster({
   label: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const c = ref.current!,
       ctx = c.getContext("2d")!;
     c.width = 1000;

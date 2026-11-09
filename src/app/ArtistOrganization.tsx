@@ -6,6 +6,7 @@ import type {
 } from "../library/identity";
 import type { LibraryStrings } from "../library/strings";
 import ArtistOrganizationRow from "./ArtistOrganizationRow";
+import { usePhoneLayout } from "../ux/usePhoneLayout";
 export default function ArtistOrganization({
   snapshot,
   query,
@@ -20,6 +21,8 @@ export default function ArtistOrganization({
   initialId?: string;
 }) {
   const [page, setPage] = useState(40);
+  const phone = usePhoneLayout(),
+    [editingId, setEditingId] = useState(initialId ?? "");
   const terms = normalized(query).split(" ").filter(Boolean),
     tracks = [...snapshot.tracks]
       .sort(
@@ -45,6 +48,9 @@ export default function ArtistOrganization({
           text={text}
           change={change}
           corrected={snapshot.state.artists[t.id] !== undefined}
+          editing={!phone || editingId === t.id}
+          onEdit={() => setEditingId(t.id)}
+          onCancel={() => setEditingId("")}
         />
       ))}
       {tracks.length > page && (

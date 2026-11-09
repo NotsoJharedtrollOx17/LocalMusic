@@ -2,6 +2,13 @@
   es
     ? {
         edit: "Editar",
+        back: "Volver a la lista",
+        review: "Revisar selección",
+        localChanges: "Cambios locales y reversibles",
+        artistTask:
+          "Corrige el artista principal sin cambiar los créditos originales.",
+        songTask: "Elige copias para comparar antes de vincularlas.",
+        albumTask: "Elige álbumes y revisa sus canciones antes de vincularlos.",
         loadMore: "Cargar más",
         organize: "Organizar biblioteca",
         artists: "Artistas",
@@ -48,6 +55,13 @@
       }
     : {
         edit: "Edit",
+        back: "Back to list",
+        review: "Review selection",
+        localChanges: "Local, reversible changes",
+        artistTask:
+          "Correct the lead artist without changing original credits.",
+        songTask: "Choose copies to compare before linking them.",
+        albumTask: "Choose albums and review their tracks before linking them.",
         loadMore: "Load more",
         organize: "Organize library",
         artists: "Artists",

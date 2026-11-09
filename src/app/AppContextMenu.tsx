@@ -17,6 +17,14 @@ export default function AppContextMenu() {
   useEffect(() => {
     const open = (event: MouseEvent) => {
       if (event.defaultPrevented || !(event.target instanceof Element)) return;
+      if (document.documentElement.dataset.layout === "phone") {
+        // Let Android own selection/copy/paste in real editors. App labels have
+        // no text menu; song overflow is handled by its explicit button.
+        if (event.target.closest("input,textarea,[contenteditable='true']"))
+          return;
+        event.preventDefault();
+        return;
+      }
       event.preventDefault();
       const target =
         event.target instanceof HTMLElement

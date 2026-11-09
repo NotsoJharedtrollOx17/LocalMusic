@@ -5,11 +5,11 @@
   --task-dialog-height: 100%;
   --task-dialog-radius: 0px;
   --task-dialog-inset: 0px;
+  --task-dialog-safe-bottom: env(safe-area-inset-bottom);
   --task-dialog-header: calc(12px + env(safe-area-inset-top))
     max(16px, env(safe-area-inset-right)) 12px
     max(16px, env(safe-area-inset-left));
-  --task-dialog-body: 20px max(16px, env(safe-area-inset-right))
-    calc(20px + env(safe-area-inset-bottom))
+  --task-dialog-body: 20px max(16px, env(safe-area-inset-right)) 20px
     max(16px, env(safe-area-inset-left));
   --task-dialog-animation: dialog-appear 140ms ease-out;
 }
@@ -19,11 +19,11 @@
     --task-dialog-height: 100%;
     --task-dialog-radius: 0px;
     --task-dialog-inset: 0px;
+    --task-dialog-safe-bottom: env(safe-area-inset-bottom);
     --task-dialog-header: calc(12px + env(safe-area-inset-top))
       max(16px, env(safe-area-inset-right)) 12px
       max(16px, env(safe-area-inset-left));
-    --task-dialog-body: 20px max(16px, env(safe-area-inset-right))
-      calc(20px + env(safe-area-inset-bottom))
+    --task-dialog-body: 20px max(16px, env(safe-area-inset-right)) 20px
       max(16px, env(safe-area-inset-left));
     --task-dialog-animation: dialog-appear 140ms ease-out;
   }
@@ -50,7 +50,9 @@
   width: var(--task-dialog-width, var(--modal-preferred-width));
   height: var(--task-dialog-height, auto);
   max-height: 100%;
-  padding: 0;
+  /* Reserve system navigation outside the scrolling body. Padding inside a
+     scrollport does not keep scrollIntoView/focused rows above native buttons. */
+  padding: 0 0 var(--task-dialog-safe-bottom, 0px);
   border-radius: var(--task-dialog-radius, 12px);
   animation: var(--task-dialog-animation, enter 160ms ease-out);
 }

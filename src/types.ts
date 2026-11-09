@@ -144,6 +144,10 @@ export interface LibraryOptions {
 export interface ImportProgress {
   imported: number;
   failed: number;
+  phase?: "checking" | "saving" | "refreshing";
+  scanned?: number;
+  total?: number | null;
+  cancelled?: boolean;
 }
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";

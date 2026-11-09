@@ -1,6 +1,8 @@
 import RecapPeriodControls from "./RecapPeriodControls";
 import { periodFor, periodLabel } from "../recap/periods";
-import { ArrowUpRight, Repeat, Share2, MoreHorizontal } from "lucide-react";
+import { ArrowUpRight, Repeat, Share2 } from "lucide-react";
+import OverflowIcon from "../components/OverflowIcon";
+import LoadingIndicator from "../components/LoadingIndicator";
 import { coverageThrough } from "../domain";
 import { IconButton, OrbitPoster } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
@@ -54,7 +56,7 @@ export default function YourRecapPage() {
             label={t.savedSnapshots}
             onClick={() => setModal("snapshots")}
           >
-            <MoreHorizontal />
+            <OverflowIcon />
           </IconButton>
         </div>
       </div>
@@ -64,79 +66,103 @@ export default function YourRecapPage() {
           snapshotMode && recap ? recap.period : selected,
           settings?.language,
         )}
-        seed={shown ? recap!.visualSeed : "ff6600"}
+        seed={recap?.visualSeed ?? "ff6600"}
         label={t.inSound}
       />
-      {!shown && !recapError && (
-        <p role="status" className="small-muted">
-          {t.loading}
-        </p>
-      )}
-      {recapError && <p role="alert">{recapError}</p>}
-      {recap && shown && (
-        <>
-          <div className="recap-coverage">
-            <span>
-              {snapshotMode
-                ? t.snapshot
-                : recap.completePeriod
-                  ? t.fullYear
-                  : Date.parse(recap.coveredThrough) >
-                      Date.parse(recap.coveredFrom)
-                    ? t.partialYear
-                    : t.noCoverage}
-            </span>
-            <span>
-              {t.since} {formatDate(recap.coveredFrom, recap.timeZone)} ·{" "}
-              {t.through}{" "}
-              {formatDate(coverageThrough(recap).toISOString(), recap.timeZone)}
-            </span>
+      <div
+        className={"recap-content" + (!shown ? " is-pending" : "")}
+        aria-busy={!shown || recapLoading}
+      >
+        {!shown && (
+          <div className="recap-pending">
+            {recapError ? (
+              <>
+                <p role="alert">{recapError}</p>
+                <button
+                  className="button secondary"
+                  onClick={() => setRecapRevision((v) => v + 1)}
+                >
+                  {t.retry}
+                </button>
+              </>
+            ) : (
+              <LoadingIndicator label={t.loading} />
+            )}
           </div>
-          <div className="recap-total">
-            <strong>{formatMinutes(recap.listenedMs)}</strong>
-            <div>
-              <span className="eyebrow">{t.minutesListened}</span>
-              <small>
-                {recap.activeDays} {t.listeningDays} · {recap.qualifiedPlays}{" "}
-                {t.qualifiedPlays}
-              </small>
+        )}
+        {shown && recapError && <p role="alert">{recapError}</p>}
+        {recap && (
+          <div
+            className="recap-confirmed"
+            inert={!shown}
+            aria-hidden={!shown || undefined}
+          >
+            <div className="recap-coverage">
+              <span>
+                {snapshotMode
+                  ? t.snapshot
+                  : recap.completePeriod
+                    ? t.fullYear
+                    : Date.parse(recap.coveredThrough) >
+                        Date.parse(recap.coveredFrom)
+                      ? t.partialYear
+                      : t.noCoverage}
+              </span>
+              <span>
+                {t.since} {formatDate(recap.coveredFrom, recap.timeZone)} ·{" "}
+                {t.through}{" "}
+                {formatDate(
+                  coverageThrough(recap).toISOString(),
+                  recap.timeZone,
+                )}
+              </span>
             </div>
-            <button
-              className="text-button"
-              onClick={() => {
-                setStory(0);
-                setModal("story");
-              }}
-            >
-              {t.viewRecap}
-              <ArrowUpRight size={18} />
-            </button>
+            <div className="recap-total">
+              <strong>{formatMinutes(recap.listenedMs)}</strong>
+              <div>
+                <span className="eyebrow">{t.minutesListened}</span>
+                <small>
+                  {recap.activeDays} {t.listeningDays} · {recap.qualifiedPlays}{" "}
+                  {t.qualifiedPlays}
+                </small>
+              </div>
+              <button
+                className="text-button"
+                onClick={() => {
+                  setStory(0);
+                  setModal("story");
+                }}
+              >
+                {t.viewRecap}
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
+            <RecapListening />
+            <p className="month-caption">
+              {recap.listenedMs ? t.monthStory : t.recapEmpty}
+            </p>
+            <RecapRankings />
+            <div className="recap-actions">
+              <button
+                className="button secondary"
+                disabled={!recap.listenedMs || recapLoading}
+                onClick={() => {
+                  setModal(null);
+                  setShareRecap(recap);
+                }}
+              >
+                <Share2 size={18} />
+                {t.shareCard}
+              </button>
+            </div>
+            {!recap.listenedMs && (
+              <p className="small-muted">{t.recapEmptyBody}</p>
+            )}
+            <RecapTopTen />
+            <p className="method-note recap-disclaimer">{t.coverageNote}</p>
           </div>
-          <RecapListening />
-          <p className="month-caption">
-            {recap.listenedMs ? t.monthStory : t.recapEmpty}
-          </p>
-          <RecapRankings />
-          <div className="recap-actions">
-            <button
-              className="button secondary"
-              disabled={!recap.listenedMs || recapLoading}
-              onClick={() => {
-                setModal(null);
-                setShareRecap(recap);
-              }}
-            >
-              <Share2 size={18} />
-              {t.shareCard}
-            </button>
-          </div>
-          {!recap.listenedMs && (
-            <p className="small-muted">{t.recapEmptyBody}</p>
-          )}
-          <p className="method-note">{t.coverageNote}</p>
-          <RecapTopTen />
-        </>
-      )}
+        )}
+      </div>
     </section>
   );
 }
