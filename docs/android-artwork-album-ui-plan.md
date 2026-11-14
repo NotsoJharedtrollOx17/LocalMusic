@@ -1,3 +1,7 @@
 # Recording follow-up: artwork hover and album organization — 14 November 2026
 
 Review the 12:33 recording locally. Its stuck Songs control is the desktop artwork Play/Pause hover overlay retained by touch, not a sticky-position toolbar. On phone layouts, remove artwork transport overlays entirely; keep the existing mini/full-player transport, song highlight and desktop hover controls. Restyle the album detail hero and Organize library action as a compact cover/metadata row with an inline icon action, retaining the existing organization dialog and focus return. Resolve which album count to remove with the user; do not alter global Library counts. Preserve EN/ES, themes, large text, keyboard, playback and data. Verify focused browser cases and build/inspect the available phone. Record actual evidence; keep recordings/transcripts/artifacts private and out of Git. Continue the existing UI branch at 0.15.0; no merge or release.
+
+Confirmed: remove both the metadata track total and separate list-count heading from phone album details. Keep album year and all main Library/desktop counts.
+
+Clarified by the user: retain the current song artwork transport. Pause/resume it without restarting or replacing the queue; show Play while paused and Pause while playing. Remove only stale touch-hover overlays on non-current rows. This supersedes the initial interpretation of removing phone artwork controls.

@@ -20,6 +20,8 @@ export function TrackRow({
   track,
   index,
   playing,
+  current,
+  onToggle,
   onPlay,
   onFavorite,
   onMore,
@@ -33,6 +35,8 @@ export function TrackRow({
   track: Track;
   index?: number;
   playing?: boolean;
+  current?: boolean;
+  onToggle?: () => void;
   onPlay: () => void;
   onFavorite?: () => void;
   onMore?: (event: MouseEvent<HTMLElement>) => void;
@@ -42,6 +46,7 @@ export function TrackRow({
   unknownArtist: string;
   labels: {
     play: string;
+    pause?: string;
     favorite: string;
     details: string;
     actions: string;
@@ -172,6 +177,7 @@ export function TrackRow({
         "track-row" +
         (selected ? " is-selected" : "") +
         (playing ? " is-playing" : "") +
+        (current ? " is-current" : "") +
         (track.available && !track.hidden ? "" : " unavailable")
       }
     >
@@ -210,11 +216,18 @@ export function TrackRow({
             return;
           }
           flash();
-          onPlay();
+          if (current && onToggle) onToggle();
+          else onPlay();
         }}
         disabled={(!track.available || track.hidden) && !selectionMode}
         aria-label={
-          selectionMode ? track.title : labels.play + " " + track.title
+          selectionMode
+            ? track.title
+            : (current && playing && onToggle
+                ? (labels.pause ?? "Pause")
+                : labels.play) +
+              " " +
+              track.title
         }
       >
         <div className="cover-wrap">

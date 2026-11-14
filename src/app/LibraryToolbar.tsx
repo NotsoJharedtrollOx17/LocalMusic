@@ -46,7 +46,7 @@ export default function LibraryToolbar() {
         : null;
 
   return (
-    <div className="library-toolbar">
+    <div className="library-toolbar" data-collection-kind={group?.kind}>
       <CollectionCountHeading
         kind={kind}
         count={count}

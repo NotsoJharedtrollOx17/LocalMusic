@@ -3,7 +3,7 @@ import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
 import SearchEmpty from "./SearchEmpty";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, SlidersHorizontal } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryHeadingActions from "./LibraryHeadingActions";
 import { api } from "../api";
@@ -104,28 +104,34 @@ export default function LibraryPage() {
         }
       >
         {group && (
-          <div className="collection-hero">
+          <div className="collection-hero" data-kind={group.kind}>
             <Cover imageRef={detailHero} track={group.coverTrack} large />
             <div>
               <h1 tabIndex={-1}>{group.title}</h1>
               {group.subtitle && <span>{group.subtitle}</span>}
-              <span>
-                {[
-                  group.kind === "albums" ? group.coverTrack.releaseYear : null,
-                  formatMusicCount(group.ids.length),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+              <span className="collection-hero-metadata">
+                {group.kind === "albums" && group.coverTrack.releaseYear && (
+                  <span className="collection-release-year">
+                    {group.coverTrack.releaseYear}
+                  </span>
+                )}
+                <span className="collection-hero-count">
+                  {group.kind === "albums" && group.coverTrack.releaseYear
+                    ? " ? "
+                    : ""}
+                  {formatMusicCount(group.ids.length)}
+                </span>
               </span>
               {group.kind === "albums" && (
                 <button
                   data-organization-origin
-                  className="button secondary"
+                  className="button secondary collection-organize-action"
                   onClick={() => {
                     setOrganizationTab("albums");
                     setModal("organize");
                   }}
                 >
+                  <SlidersHorizontal size={16} aria-hidden="true" />
                   {libraryStrings(settings?.language === "es").organize}
                 </button>
               )}

@@ -41,6 +41,8 @@ export default function TrackRows({
             track={track}
             index={editable || numbered ? i : undefined}
             playing={player.trackId === track.id && player.playing}
+            current={player.trackId === track.id}
+            onToggle={() => void act(() => api.toggle())}
             unknownArtist={t.unknownArtist}
             labels={t}
             selectionMode={selectionMode && !editable}

@@ -65,6 +65,8 @@ export default function PlayerDialog() {
                         track={cache[id]}
                         index={i}
                         playing={i === player.queueIndex && player.playing}
+                        current={i === player.queueIndex}
+                        onToggle={() => void act(() => api.toggle())}
                         unknownArtist={t.unknownArtist}
                         labels={t}
                         onPlay={() =>

@@ -752,3 +752,60 @@
 :root[data-layout="phone"] .track-hit {
   touch-action: manipulation;
 }
+
+/* Touch hover must not leave transport overlays on previously touched rows. */
+:root[data-layout="phone"] .track-hit .cover-play {
+  opacity: 0;
+}
+:root[data-layout="phone"] .is-current .track-hit .cover-play {
+  opacity: 1;
+}
+:root[data-layout="phone"] .collection-hero[data-kind="albums"] {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 20px 0;
+  text-align: start;
+}
+:root[data-layout="phone"] .collection-hero[data-kind="albums"] .cover {
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+}
+:root[data-layout="phone"] .collection-hero[data-kind="albums"] > div {
+  gap: 6px;
+}
+:root[data-layout="phone"] .collection-hero[data-kind="albums"] h1 {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 19px;
+  line-height: 1.3;
+}
+:root[data-layout="phone"]
+  .collection-hero[data-kind="albums"]
+  .collection-organize-action {
+  align-self: start;
+  width: auto;
+  max-width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  text-align: start;
+}
+:root[data-layout="phone"] .collection-organize-action svg {
+  flex-shrink: 0;
+}
+
+:root[data-layout="phone"]
+  .collection-hero[data-kind="albums"]
+  .collection-hero-count,
+:root[data-layout="phone"]
+  .collection-hero[data-kind="albums"]
+  .collection-hero-metadata:not(:has(.collection-release-year)),
+:root[data-layout="phone"]
+  .library-toolbar[data-collection-kind="albums"]
+  > h2 {
+  display: none;
+}
