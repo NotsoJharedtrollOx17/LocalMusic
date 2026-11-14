@@ -1,3 +1,4 @@
+import LibraryPageBoundary from "./LibraryPageBoundary";
 import CatalogGroupGrid from "./CatalogGroupGrid";
 import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
@@ -28,6 +29,8 @@ export default function LibraryPage() {
     total,
     catalogTotal,
     onlyFavorites,
+    sort,
+    catalogRevision,
     libraryViewPending,
     libraryError,
     query,
@@ -257,10 +260,31 @@ export default function LibraryPage() {
                 : section === "songs"
                   ? !libraryLoading && !libraryError && tracks.length < total
                   : catalogGroups.length < groupsTotal) && (
-                <button
-                  className="button secondary load-more"
-                  onClick={() =>
-                    void act(async () => {
+                <LibraryPageBoundary
+                  progress={JSON.stringify([
+                    section,
+                    group?.id ?? group?.title,
+                    query,
+                    onlyFavorites,
+                    sort,
+                    catalogRevision,
+                    group
+                      ? groupTracks.length
+                      : section === "songs"
+                        ? tracks.length
+                        : catalogGroups.length,
+                  ])}
+                  loading={
+                    group
+                      ? groupLoading
+                      : section === "songs"
+                        ? libraryLoading
+                        : selectedGroupPage.status === "loading"
+                  }
+                  label={t.loadMore}
+                  retry={t.retry}
+                  onLoad={() =>
+                    act(async () => {
                       if (group) {
                         const version = groupRequest.current;
                         const offset = groupTracks.length;
@@ -282,20 +306,22 @@ export default function LibraryPage() {
                       }
                     })
                   }
-                >
-                  {t.loadMore}
-                </button>
+                />
               )}
           </>
         )}
         {inlineSearch.hasMore && (
-          <button
-            className="button secondary load-more"
-            disabled={inlineSearch.pending}
-            onClick={() => void inlineSearch.loadMore()}
-          >
-            {t.loadMore}
-          </button>
+          <LibraryPageBoundary
+            progress={JSON.stringify([
+              inlineSearch.page?.key,
+              inlineSearch.page?.tracks.length,
+              inlineSearch.page?.groups.length,
+            ])}
+            loading={inlineSearch.pending}
+            onLoad={() => inlineSearch.loadMore()}
+            label={t.loadMore}
+            retry={t.retry}
+          />
         )}
       </div>
     </section>
