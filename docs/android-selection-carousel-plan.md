@@ -1,0 +1,8 @@
+# Android selection and carousel refinement — 14 November 2026
+
+Continue the current UI audit branch and retain version 0.15.0. This follows the 14 November recording, including the Samsung Music demonstration, and supersedes the preceding preference for strip scrolling without selection and entirely static player entry.
+
+- Replace the font-dependent selection tick with a circular SVG control. Keep row geometry stable during selection; show a compact count/Select all/Close header and a bottom action strip with icons. Preserve selection scope, confirmations, Back, focus and existing playback/data actions.
+- Let deliberate horizontal tab-strip scrolling settle on the nearest tab, updating its emphasis. Keep ordinary taps and keyboard navigation predictable; cancel obsolete settling work. Add restrained, directional content entry for phone tab changes and a gentle opaque player reveal. Reduce Motion remains immediate. Do not animate or mount extra Library controllers or start playback from swipes.
+- Retain the preceding Songs/Artists cleanup and corrected focus-frame clearance. Improve the recap disclaimer's visual cue if it can be done without changing its wording or privacy boundaries.
+- Keep changes in React/CSS; do not change native audio, listening, identities, recommendations, data schemas or source files. Verify gesture cancellation, rapid changes, stable selection geometry, actions, EN/ES, narrow/large text and Reduce Motion. Run frontend and browser checks, build Windows/Android and inspect the authorized phone where available. Record actual results and remaining gates in verification.md. No merge or release.
