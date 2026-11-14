@@ -135,8 +135,8 @@
   margin: 0;
 }
 :root[data-layout="phone"] .library-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding-block: 8px;
   min-height: 64px;
@@ -144,12 +144,16 @@
 :root[data-layout="phone"] .library-toolbar .toolbar-actions {
   width: auto;
   min-width: 0;
-  margin: 0;
-  justify-self: end;
+  margin: 0 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
 }
 :root[data-layout="phone"] .library-toolbar > h2 {
+  flex: 1 0 max-content;
+  max-width: 100%;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
 :root[data-layout="phone"] .collection-count-prefix {
   display: block;
@@ -422,6 +426,13 @@
 :root[data-layout="phone"] .settings-form h3 {
   font-size: 17px;
 }
+:root[data-layout="phone"] .settings-choice > div {
+  flex-wrap: wrap;
+}
+:root[data-layout="phone"] .settings-choice button {
+  flex: 1 1 0;
+  min-width: max-content;
+}
 :root[data-layout="phone"] .player-surface-head {
   --player-head-side: 48px;
 }
@@ -550,9 +561,6 @@
   font-size: 24px;
 }
 @media (max-width: 350px) {
-  :root[data-layout="phone"] .library-toolbar:has(.search-clear) {
-    grid-template-columns: minmax(0, 1fr);
-  }
   :root[data-layout="phone"] .mini-track .cover {
     width: 30px;
     height: 30px;

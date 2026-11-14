@@ -13,37 +13,18 @@ import { Cover, IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlaybackProgress from "./PlaybackProgress";
 import TransportControls from "./TransportControls";
+import { useMiniPlayerGesture } from "../ux/useMiniPlayerGesture";
 
 export default function MiniPlayer() {
-  const { player, setModal, miniDrag, t, act, current, favorite } =
-    useMusicAppContext();
+  const { player, setModal, t, act, current, favorite } = useMusicAppContext();
+  const gesture = useMiniPlayerGesture(() => setModal("player"), current?.id);
 
   return (
     <>
       {current && (
         <div className="mini-player-dock">
           <div className="mini-player">
-            <button
-              className="mini-track"
-              data-no-swipe
-              onPointerDown={(e) => {
-                miniDrag.current = e.clientY;
-                e.currentTarget.setPointerCapture(e.pointerId);
-              }}
-              onPointerUp={(e) => {
-                const delta =
-                  miniDrag.current !== null ? miniDrag.current - e.clientY : 0;
-                miniDrag.current = null;
-                if (delta > 35) {
-                  e.currentTarget.focus({ preventScroll: true });
-                  setModal("player");
-                }
-              }}
-              onPointerCancel={() => {
-                miniDrag.current = null;
-              }}
-              onClick={() => setModal("player")}
-            >
+            <button className="mini-track" data-no-swipe {...gesture}>
               <Cover track={current} />
               <span>
                 <strong>{current.title}</strong>

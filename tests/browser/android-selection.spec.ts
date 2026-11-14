@@ -165,6 +165,7 @@ test("phone text holds select once, Select all crosses pagination and filtered s
   await page.keyboard.press("Escape");
   const hit = page.locator(".track-hit").first();
   await hit.dispatchEvent("pointerdown", {
+    isPrimary: true,
     pointerType: "touch",
     pointerId: 41,
     clientX: 100,

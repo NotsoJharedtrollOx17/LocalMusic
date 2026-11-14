@@ -318,6 +318,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
   await samples(page);
   const hit = page.locator(".track-hit").first();
   await hit.dispatchEvent("pointerdown", {
+    isPrimary: true,
     pointerType: "touch",
     clientX: 90,
     clientY: 430,

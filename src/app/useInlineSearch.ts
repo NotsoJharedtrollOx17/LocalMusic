@@ -94,10 +94,10 @@ export function useInlineSearch(
     section === "playlists" ? automatic : null,
     state.settings?.language,
   ]);
-  const reset = useSearchReset(
-    JSON.stringify([scope, section, artistView, query, onlyFavorites, sort]),
-    `${scope}:${section}:${artistView}`,
-  );
+  // Clearing belongs to the search context, not the tab or sort. Switching
+  // Library tabs during its brief animation must still clear the shared query.
+  // A new query or collection context still cancels an obsolete reset.
+  const reset = useSearchReset(query, scope);
   // Playlist labels are already loaded; keep input, cards and count in one render.
   const localPage = useMemo<Page | undefined>(() => {
     if (!active || section !== "playlists" || selectedList || group) return;

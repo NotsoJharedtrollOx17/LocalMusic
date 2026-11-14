@@ -7,6 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { reducedMotion } from "./motion";
+import { useGestureCancellation } from "./useGestureCancellation";
 
 export const librarySections = [
   "songs",
@@ -56,6 +57,12 @@ export function useLibraryMotion(
     gesture.current = null;
     suppressClickUntil.current = 0;
   }, []);
+  useGestureCancellation(() => {
+    if (gesture.current) {
+      gesture.current = null;
+      suppressClickUntil.current = performance.now() + 350;
+    }
+  }, section);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
   const choose = (next: LibrarySection) => {
@@ -125,7 +132,7 @@ export function useLibraryMotion(
   }, []);
   const swipe = {
     onPointerDown: (e: ReactPointerEvent) => {
-      if (e.pointerType !== "touch") {
+      if (e.pointerType !== "touch" || e.isPrimary === false) {
         resetSwipe();
         return;
       }

@@ -5,6 +5,7 @@ import { IconButton } from "./IconButton";
 import { Cover } from "./Cover";
 import { time } from "./format";
 import OverflowIcon from "./OverflowIcon";
+import { useGestureCancellation } from "../ux/useGestureCancellation";
 
 export function TrackRow({
   track,
@@ -53,6 +54,13 @@ export function TrackRow({
     press.current = null;
   };
   useEffect(() => cancel, []);
+  const interrupt = () => {
+    if (!press.current && !origin.current) return;
+    cancel();
+    origin.current = null;
+    held.current = true;
+  };
+  useGestureCancellation(interrupt, track.id);
   return (
     <div
       data-track-id={track.id}
@@ -81,6 +89,11 @@ export function TrackRow({
         if (!held.current) onMore?.(event);
       }}
       onPointerDown={(e) => {
+        if (e.isPrimary === false) {
+          interrupt();
+          held.current = true;
+          return;
+        }
         touch.current =
           e.pointerType === "touch" ||
           (e.pointerType === "pen" &&
@@ -107,10 +120,14 @@ export function TrackRow({
             e.clientY - origin.current.y,
           ) > 10
         )
-          cancel();
+          interrupt();
       }}
-      onPointerUp={cancel}
-      onPointerCancel={cancel}
+      onPointerUp={() => {
+        cancel();
+        origin.current = null;
+      }}
+      onPointerCancel={interrupt}
+      onLostPointerCapture={interrupt}
       onKeyDownCapture={(e) => {
         if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
           touch.current = false;

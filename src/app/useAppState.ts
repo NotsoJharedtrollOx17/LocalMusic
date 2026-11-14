@@ -153,8 +153,7 @@ export function useAppState(initialSettings?: Settings) {
     detailHero = useRef<HTMLImageElement>(null);
   const playlistOrigin = useRef<{ scroll: number; id: string } | null>(null);
   const groupScroll = useRef(0),
-    lastSelected = useRef<string | undefined>(undefined),
-    miniDrag = useRef<number | null>(null);
+    lastSelected = useRef<string | undefined>(undefined);
   const groupStack = useRef<
     Array<{
       group: NonNullable<typeof group>;
@@ -287,7 +286,6 @@ export function useAppState(initialSettings?: Settings) {
     playlistOrigin,
     groupScroll,
     lastSelected,
-    miniDrag,
     groupStack,
     chooserOpen,
     setChooserOpen,

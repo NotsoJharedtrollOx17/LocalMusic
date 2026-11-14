@@ -262,6 +262,7 @@ test("leaving long-press selection does not swallow the next real touch menu tap
   await uncredited(page);
   const hit = page.locator(".track-hit").first();
   await hit.dispatchEvent("pointerdown", {
+    isPrimary: true,
     pointerType: "touch",
     pointerId: 17,
     clientX: 90,

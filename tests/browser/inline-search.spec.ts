@@ -613,6 +613,32 @@ for (const width of [1280, 390]) {
   });
 }
 
+test("clearing survives immediate Library tab navigation without clearing newer typing", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample audio" }).click();
+  await revealSearch(page);
+  const input = page.getByRole("searchbox");
+  await input.fill("blue");
+  await expect(page.locator("#library-content .track-row")).toHaveCount(4);
+  await page.clock.install();
+  await page.locator(".toolbar-actions [data-search-clear]").click();
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  await page.clock.runFor(300);
+  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await expect(page.locator("[data-search-clear]")).toHaveCount(0);
+
+  await revealSearch(page);
+  await input.fill("blue");
+  await page.clock.runFor(300);
+  await page.locator(".toolbar-actions [data-search-clear]").click();
+  await input.fill("rain");
+  await page.clock.runFor(300);
+  await expect(input).toHaveValue("rain");
+  await expect(page.locator(".collection-count")).toHaveText("0 of 4 playlists");
+});
+
 test("collapsed query has a reachable clear button without reopening the field", async ({
   page,
 }) => {
