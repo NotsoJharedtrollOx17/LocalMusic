@@ -153,15 +153,27 @@ export function useLibraryMotion(
         behavior: "instant",
       });
       const phone = document.documentElement.dataset.layout === "phone";
-      const animation =
-        !phone && !reducedMotion()
-          ? panel.current
-              ?.querySelector("#library-content")
-              ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
-                duration: 140,
-                easing: "ease-out",
-              })
-          : undefined;
+      const direction =
+        librarySections.indexOf(section) >
+        librarySections.indexOf(previous.current)
+          ? 1
+          : -1;
+      const animation = !reducedMotion()
+        ? panel.current
+            ?.querySelector("#library-content")
+            ?.animate(
+              phone
+                ? [
+                    { transform: `translateX(${direction * 18}px)` },
+                    { transform: "translateX(0)" },
+                  ]
+                : [{ opacity: 0.6 }, { opacity: 1 }],
+              {
+                duration: phone ? 160 : 140,
+                easing: phone ? "cubic-bezier(0.2, 0.8, 0.2, 1)" : "ease-out",
+              },
+            )
+        : undefined;
       previous.current = section;
       return () => animation?.cancel();
     }

@@ -7,3 +7,7 @@ Refine the existing UI audit branch, retaining version 0.15.0. The user's clarif
 - Taps, content swipes, keyboard activation and deliberate strip scrolling resolve to the same left anchor. Strip scrolling chooses the tab nearest that anchor, not the viewport center. Preserve interruption cancellation and avoid recursive selection during programmatic settling.
 - Reduce Motion aligns immediately. Keep keyboard focus visible without vertical page scrolling and remeasure for resize, language and text-size changes.
 - Verify focused carousel, selection, swipe cancellation, keyboard, EN/ES, narrow/large-text and Reduce Motion cases; run frontend checks and record actual evidence. Rebuild/install the phone package only when supported by the available device; do not equate browser checks with physical acceptance. No release or merge.
+
+## Follow-up: snappy content entry
+
+The user approved the left-anchored carousel and requested the small slide between views again. Keep the carousel and stationary finger-drag behavior; add only an opaque, directional 18 px entry over 160 ms after a phone tab changes. Cancel an older entry on replacement, keep headers/player fixed, and skip the entry with Reduce Motion. Preserve desktop's existing transition. Verify animation timing/direction, absence of opacity fades, left anchors and interruption behavior; archive actual browser/build/device evidence separately.

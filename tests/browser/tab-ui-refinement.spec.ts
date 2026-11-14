@@ -219,7 +219,7 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await expect(page.locator(".cover-flight")).toHaveCount(0);
 });
 
-test("phone carousel anchors every activated tab left while content stays stationary", async ({
+test("phone carousel anchors every activated tab left and content stays stationary during dragging", async ({
   page,
 }) => {
   await samples(page);
@@ -243,34 +243,28 @@ test("phone carousel anchors every activated tab left while content stays statio
     ).toBe(0);
   }
   const content = page.locator("#library-content");
-  await page
-    .locator(".library-page")
-    .dispatchEvent("pointerdown", {
-      pointerType: "touch",
-      pointerId: 42,
-      isPrimary: true,
-      clientX: 300,
-      clientY: 350,
-    });
-  await page
-    .locator(".library-page")
-    .dispatchEvent("pointermove", {
-      pointerType: "touch",
-      pointerId: 42,
-      isPrimary: true,
-      clientX: 80,
-      clientY: 350,
-    });
+  await page.locator(".library-page").dispatchEvent("pointerdown", {
+    pointerType: "touch",
+    pointerId: 42,
+    isPrimary: true,
+    clientX: 300,
+    clientY: 350,
+  });
+  await page.locator(".library-page").dispatchEvent("pointermove", {
+    pointerType: "touch",
+    pointerId: 42,
+    isPrimary: true,
+    clientX: 80,
+    clientY: 350,
+  });
   await expect(content).toHaveCSS("transform", "none");
-  await page
-    .locator(".library-page")
-    .dispatchEvent("pointerup", {
-      pointerType: "touch",
-      pointerId: 42,
-      isPrimary: true,
-      clientX: 80,
-      clientY: 350,
-    });
+  await page.locator(".library-page").dispatchEvent("pointerup", {
+    pointerType: "touch",
+    pointerId: 42,
+    isPrimary: true,
+    clientX: 80,
+    clientY: 350,
+  });
   await expect(page.locator("#tab-albums")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -283,4 +277,40 @@ test("phone carousel anchors every activated tab left while content stays statio
       ),
     )
     .toBeLessThanOrEqual(1);
+});
+
+test("phone tab entry is brief, directional and opaque; replacement cancels it and Reduce Motion skips it", async ({
+  page,
+}) => {
+  await samples(page);
+  const inspect = (id: string) =>
+    page.evaluate(async (id) => {
+      (document.querySelector(`#tab-${id}`) as HTMLButtonElement).click();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
+      const animations = document
+        .querySelector("#library-content")!
+        .getAnimations();
+      return animations.map((a) => ({
+        frames: (a.effect as KeyframeEffect).getKeyframes(),
+        duration: a.effect!.getTiming().duration,
+      }));
+    }, id);
+  const forward = await inspect("albums");
+  expect(forward).toHaveLength(1);
+  expect(forward[0].duration).toBe(160);
+  expect(forward[0].frames[0].transform).toBe("translateX(18px)");
+  expect(forward[0].frames.every((f) => !("opacity" in f))).toBe(true);
+  const back = await inspect("songs");
+  expect(back).toHaveLength(1);
+  expect(back[0].frames[0].transform).toBe("translateX(-18px)");
+  await page
+    .locator("#library-content")
+    .evaluate((el) =>
+      Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
+    );
+  await expect(page.locator("#library-content")).toHaveCSS("transform", "none");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await inspect("albums")).toHaveLength(0);
 });
