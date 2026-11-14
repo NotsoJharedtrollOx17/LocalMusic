@@ -1,5 +1,6 @@
+import { libraryStrings } from "../library/strings";
 import ClearSearchButton from "./ClearSearchButton";
-import { Plus } from "lucide-react";
+import { Plus, SlidersHorizontal } from "lucide-react";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
 import LibraryFilters from "./LibraryFilters";
@@ -7,6 +8,9 @@ import CollectionCountHeading from "./CollectionCountHeading";
 
 export default function LibraryToolbar() {
   const {
+    settings,
+    setOrganizationTab,
+    setModal,
     total,
     libraryViewPending,
     libraryError,
@@ -53,6 +57,16 @@ export default function LibraryToolbar() {
         prefix={favorites ? t.favorites : undefined}
       />
       <div className="toolbar-actions">
+        {group?.kind === "albums" && (
+          <button
+            data-organization-origin
+            className="button secondary collection-organize-action"
+            onClick={() => { setOrganizationTab("albums"); setModal("organize"); }}
+          >
+            <SlidersHorizontal size={16} aria-hidden="true" />
+            {libraryStrings(settings?.language === "es").organize}
+          </button>
+        )}
         <ClearSearchButton />
         <LibraryFilters />
         <button

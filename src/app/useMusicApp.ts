@@ -405,7 +405,10 @@ export function useMusicApp(initialSettings?: Settings) {
       return () => cancelAnimationFrame(frame);
     }
   }, [groupIdentity, section, inlineSearch.pending, inlineSearch.stale]);
+  const refreshedCatalogRevision = useRef(catalogRevision);
   useEffect(() => {
+    if (refreshedCatalogRevision.current === catalogRevision) return;
+    refreshedCatalogRevision.current = catalogRevision;
     if (group)
       void act(() => refreshGroup(group, Math.max(60, groupTracks.length)));
   }, [catalogRevision, groupIdentity, refreshGroup, act]);
@@ -696,14 +699,17 @@ export function useMusicApp(initialSettings?: Settings) {
       ? { rect: image.getBoundingClientRect(), src: image.src }
       : null;
     setSection(kind);
-    const opening = refreshGroup({
+    const selected = {
       kind,
       id: g.id,
       title: g.title,
       subtitle: g.subtitle,
       ids: g.ids,
       coverTrack: g.track,
-    });
+    };
+    setGroup(selected);
+    setGroupTracks([]);
+    const opening = refreshGroup(selected, 60, false);
     const version = groupRequest.current;
     void act(async () => {
       await opening;

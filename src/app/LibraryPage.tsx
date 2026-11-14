@@ -1,10 +1,9 @@
 import LibraryPageBoundary from "./LibraryPageBoundary";
 import CatalogGroupGrid from "./CatalogGroupGrid";
-import { libraryStrings } from "../library/strings";
 import InlineSearch from "./InlineSearch";
 import InlineSearchStatus from "./InlineSearchStatus";
 import SearchEmpty from "./SearchEmpty";
-import { Search, ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import LoadingIndicator from "../components/LoadingIndicator";
 import LibraryHeadingActions from "./LibraryHeadingActions";
 import { api } from "../api";
@@ -125,19 +124,7 @@ export default function LibraryPage() {
                   {formatMusicCount(group.ids.length)}
                 </span>
               </span>
-              {group.kind === "albums" && (
-                <button
-                  data-organization-origin
-                  className="button secondary collection-organize-action"
-                  onClick={() => {
-                    setOrganizationTab("albums");
-                    setModal("organize");
-                  }}
-                >
-                  <SlidersHorizontal size={16} aria-hidden="true" />
-                  {libraryStrings(settings?.language === "es").organize}
-                </button>
-              )}
+
             </div>
           </div>
         )}

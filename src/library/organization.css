@@ -377,3 +377,18 @@
   > .small-muted {
   display: none;
 }
+
+/* Collection actions share one alignment rather than competing with metadata. */
+:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 8px;
+}
+:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions > .collection-organize-action,
+:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions > .library-import {
+  flex: 1 1 150px;
+  margin: 0;
+  justify-content: center;
+  min-height: 44px;
+}

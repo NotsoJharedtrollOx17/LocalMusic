@@ -414,3 +414,24 @@ test("Recap keeps its disclaimer after Top 10 and phone player keeps only its ac
   await expect(player).toBeVisible();
   await expect(player.locator(".player-surface-head > h2")).toBeHidden();
 });
+
+
+test("short phone taps activate songs and collection cards without a hold", async ({ page, context }) => {
+  await seed(page, 90);
+  const cdp = await context.newCDPSession(page);
+  const hit = page.locator(".track-hit").first();
+  await down(cdp, hit); await up(cdp);
+  await expect(page.locator(".track-row.is-playing")).toHaveCount(1);
+  await expect(page.locator(".selection-toolbar")).toHaveCount(0);
+  await down(cdp, hit); await up(cdp);
+  await expect(page.locator(".track-row.is-playing")).toHaveCount(0);
+  for (const kind of ["albums", "artists"]) {
+    await page.locator(`#tab-${kind}`).click();
+    const card = page.locator(`.catalog-${kind} .album-card`).first();
+    await expect(card).toBeVisible();
+    await down(cdp, card); await up(cdp);
+    await expect(page.locator(".collection-hero")).toBeVisible();
+    await expect(page.locator(".track-row").first()).toBeVisible();
+    await page.locator(".group-back").click();
+  }
+});

@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? Library entry response follow-up
+
+- Collection presses now present the selected album/artist immediately and read membership and the first track page once. Initial opening no longer walks every catalog page to resolve an already-known group. Catalog revision changes retain identity reconciliation; opening a group no longer triggers a duplicate refresh through its identity effect. Existing request-generation guards remain. Scope archived in `docs/library-entry-response-plan.md`.
+- Also completed the preceding album action alignment: Organize library and Import music share the toolbar action group and wrap consistently on phone widths.
+- Frontend check passed: production build and 111 unit tests. Thirteen targeted browser journeys passed in 2.3 minutes, including real CDP short-touch song play/pause, album/artist opening, hold selection, narrow layout, organization persistence/error recovery and album identity. The song nonresponse was not reproduced in this browser check; native song-start latency remains unmeasured and requires the phone follow-up. No complete browser/Rust/Kotlin suite or Windows executable rebuild is claimed.
+- Android linker initially could not execute inside the sandbox; the authorized retry compiled successfully and the established Windows copy-packaging fallback passed in 23 seconds. Device installation and native tap acceptance are pending. Version remains 0.15.0; no merge or release.
+
 ## 14 November 2026 ? Phone library organization layout
 
 - Refined the phone Artists and Albums organization views: artist editing has a consistent position, album suggestions use compact actions, and album comparison presents a focused single-column review with a clear route back. The existing linking, corrections, selections and desktop layout remain in place. Scope is recorded in `docs/phone-organization-layout-plan.md`; version remains 0.15.0 on `dev.ui-ux-stress-audit`.

@@ -91,12 +91,12 @@ export function useCatalogReads(
     [remember],
   );
   const refreshGroup = useCallback(
-    async (selected: NonNullable<typeof group>, limit = 60) => {
+    async (selected: NonNullable<typeof group>, limit = 60, reconcile = true) => {
       const version = ++groupRequest.current;
       setGroupLoading(true);
       try {
         let current = selected;
-        if (selected.id) {
+        if (reconcile && selected.id) {
           let resolvedId = selected.id;
           if (selected.kind === "albums") {
             const [representative] = await api.tracksById([
