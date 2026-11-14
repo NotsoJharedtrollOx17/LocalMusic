@@ -44,7 +44,29 @@ export default function CatalogGroupGrid() {
       key={g.id ?? JSON.stringify([g.title, g.subtitle])}
       className="album-card"
       data-group-key={g.id ?? JSON.stringify([kind, g.title, g.subtitle])}
-      onClick={(e) => openGroup(kind, g, e.currentTarget)}
+      onPointerDown={(e) => {
+        delete e.currentTarget.dataset.touchOpened;
+        if (phone) {
+          e.currentTarget.setAttribute("data-pressed", "true");
+          e.currentTarget.dataset.pressX = String(e.clientX);
+          e.currentTarget.dataset.pressY = String(e.clientY);
+        }
+      }}
+      onPointerCancel={(e) => e.currentTarget.removeAttribute("data-pressed")}
+      onPointerLeave={(e) => e.currentTarget.removeAttribute("data-pressed")}
+      onPointerUp={(e) => {
+        const card = e.currentTarget;
+        if (phone && e.pointerType === "touch" && card.hasAttribute("data-pressed") &&
+            Math.hypot(e.clientX - Number(card.dataset.pressX), e.clientY - Number(card.dataset.pressY)) < 10) {
+          card.dataset.touchOpened = "true";
+          openGroup(kind, g, card);
+        }
+        window.setTimeout(() => card.removeAttribute("data-pressed"), 180);
+      }}
+      onClick={(e) => {
+        if (e.detail > 0 && e.currentTarget.dataset.touchOpened) return;
+        openGroup(kind, g, e.currentTarget);
+      }}
     >
       <Cover track={g.track} large />
       <div className="group-card-copy">

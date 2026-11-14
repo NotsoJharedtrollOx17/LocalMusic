@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? First card tap after swiping
+
+- Extended the real CDP touch regression to swipe from Songs into Albums, tap the first card, return, then swipe into Artists and tap its first card. It reproduced the missing collection opening. After the fix the case passed (14.5 seconds total); frontend production build and all 111 unit tests also passed. PowerShell reported native warning output as an error stream despite the browser runner reporting its one case passed.
+- Phone cards activate on a stationary touch release (under 10px travel), suppress the following duplicate click, and retain mouse/keyboard activation. Swipe/cancel/leave do not activate a card. A brief orange highlight accompanies card presses/releases. Library entry motion pauses while a target is pressed so the target does not move underneath the finger. Existing Songs play/pause assertions remain in the regression.
+- This is browser evidence. A new Android build/install and actual first-tap acceptance on the phone are still pending; the preceding installed APK does not contain this follow-up.
+
 ## 14 November 2026 ? Entry response phone follow-up
 
 - Installed the new ARM64 debug APK on the authorized Note10+ (711 songs). Four CDP touch checks opened two Albums and two Artists: observed collection-shell times were 272?437 ms and visible-track times 359?592 ms, including inspection overhead. These are four observations, not a latency percentile or performance SLA.

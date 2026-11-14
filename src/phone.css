@@ -825,3 +825,8 @@
 :root[data-layout="phone"] .catalog-virtual-row.artists {
   grid-template-columns: minmax(0, 1fr);
 }
+
+:root[data-layout="phone"] .album-card:is(:active, [data-pressed="true"]) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  border-radius: 12px;
+}

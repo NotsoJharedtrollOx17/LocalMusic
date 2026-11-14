@@ -57,6 +57,13 @@ export function useLibraryMotion(
     cancelAnimationFrame(tabFrame.current);
     tabFrame.current = 0;
   }, []);
+  const pressedAnimations = useRef<Animation[]>([]);
+  const resumeEntryMotion = () => {
+    pressedAnimations.current.forEach((animation) => {
+      if (animation.playState === "paused") animation.play();
+    });
+    pressedAnimations.current = [];
+  };
   const suppressClickUntil = useRef(0);
   const dragOffset = useRef(0),
     settleAnimation = useRef<Animation | undefined>(undefined);
@@ -242,6 +249,13 @@ export function useLibraryMotion(
   }, []);
   const swipe = {
     onPointerDown: (e: ReactPointerEvent) => {
+      resumeEntryMotion();
+      // Keep the pressed target still until its click is dispatched. A moving
+      // entry animation can otherwise move a card out from under the finger.
+      pressedAnimations.current = panel.current
+        ?.querySelector<HTMLElement>("#library-content")?.getAnimations()
+        .filter((animation) => animation.playState === "running") ?? [];
+      pressedAnimations.current.forEach((animation) => animation.pause());
       if (e.pointerType !== "touch" || e.isPrimary === false) {
         resetSwipe();
         return;
@@ -323,6 +337,7 @@ export function useLibraryMotion(
       finishDrag(true);
     },
     onPointerCancel: () => {
+      resumeEntryMotion();
       gesture.current = null;
       finishDrag(true);
     },
@@ -332,6 +347,7 @@ export function useLibraryMotion(
       finishDrag(true);
     },
     onClickCapture: (e: React.MouseEvent) => {
+      resumeEntryMotion();
       if (e.detail > 0 && performance.now() < suppressClickUntil.current) {
         e.preventDefault();
         e.stopPropagation();

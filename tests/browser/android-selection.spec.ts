@@ -426,7 +426,10 @@ test("short phone taps activate songs and collection cards without a hold", asyn
   await down(cdp, hit); await up(cdp);
   await expect(page.locator(".track-row.is-playing")).toHaveCount(0);
   for (const kind of ["albums", "artists"]) {
-    await page.locator(`#tab-${kind}`).click();
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 300, y: 450 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 180, y: 450 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect(page.locator(`#tab-${kind}`)).toHaveAttribute("aria-selected", "true");
     const card = page.locator(`.catalog-${kind} .album-card`).first();
     await expect(card).toBeVisible();
     await down(cdp, card); await up(cdp);
