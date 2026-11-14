@@ -53,15 +53,38 @@ export function useLibraryMotion(
       horizontal: boolean;
     } | null>(null);
   const suppressClickUntil = useRef(0);
+  const dragOffset = useRef(0),
+    settleAnimation = useRef<Animation | undefined>(undefined);
+  const finishDrag = useCallback((animate: boolean) => {
+    const content =
+      panel.current?.querySelector<HTMLElement>("#library-content");
+    const offset = dragOffset.current;
+    dragOffset.current = 0;
+    settleAnimation.current?.cancel();
+    settleAnimation.current = undefined;
+    if (!content) return;
+    content.style.transform = "";
+    if (animate && offset && !reducedMotion()) {
+      settleAnimation.current = content.animate(
+        [
+          { transform: `translateX(${offset}px)` },
+          { transform: "translateX(0)" },
+        ],
+        { duration: 140, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      );
+    }
+  }, []);
   const resetSwipe = useCallback(() => {
     gesture.current = null;
     suppressClickUntil.current = 0;
-  }, []);
+    finishDrag(false);
+  }, [finishDrag]);
   useGestureCancellation(() => {
     if (gesture.current) {
       gesture.current = null;
       suppressClickUntil.current = performance.now() + 350;
     }
+    finishDrag(false);
   }, section);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
@@ -231,11 +254,33 @@ export function useLibraryMotion(
         g.horizontal = true;
       }
       suppressClickUntil.current = performance.now() + 350;
+      const content =
+        panel.current?.querySelector<HTMLElement>("#library-content");
+      if (
+        document.documentElement.dataset.layout === "phone" &&
+        !reducedMotion() &&
+        content &&
+        !content.inert &&
+        !content.querySelector(".selection-toolbar")
+      ) {
+        content.getAnimations().forEach((animation) => animation.cancel());
+        const next =
+          librarySections[librarySections.indexOf(section) + (dx < 0 ? 1 : -1)];
+        const limit = Math.min(96, innerWidth * 0.25);
+        dragOffset.current = Math.max(
+          -limit,
+          Math.min(limit, dx * (next ? 0.65 : 0.25)),
+        );
+        content.style.transform = `translateX(${dragOffset.current}px)`;
+      }
     },
     onPointerUp: (e: ReactPointerEvent) => {
       const g = gesture.current;
       gesture.current = null;
-      if (!g || g.pointer !== e.pointerId || !g.horizontal) return;
+      if (!g || g.pointer !== e.pointerId || !g.horizontal) {
+        finishDrag(false);
+        return;
+      }
       suppressClickUntil.current = performance.now() + 350;
       const dx = e.clientX - g.x,
         dy = e.clientY - g.y;
@@ -243,11 +288,22 @@ export function useLibraryMotion(
         suppressClickUntil.current = performance.now() + 350;
         const next =
           librarySections[librarySections.indexOf(section) + (dx < 0 ? 1 : -1)];
-        if (next) choose(next);
+        if (next) {
+          finishDrag(false);
+          choose(next);
+          return;
+        }
       }
+      finishDrag(true);
     },
     onPointerCancel: () => {
       gesture.current = null;
+      finishDrag(true);
+    },
+    onLostPointerCapture: () => {
+      if (!gesture.current) return;
+      gesture.current = null;
+      finishDrag(true);
     },
     onClickCapture: (e: React.MouseEvent) => {
       if (e.detail > 0 && performance.now() < suppressClickUntil.current) {

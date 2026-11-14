@@ -219,7 +219,7 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await expect(page.locator(".cover-flight")).toHaveCount(0);
 });
 
-test("phone carousel anchors every activated tab left and content stays stationary during dragging", async ({
+test("phone carousel anchors every activated tab left and content follows horizontal dragging", async ({
   page,
 }) => {
   await samples(page);
@@ -257,7 +257,11 @@ test("phone carousel anchors every activated tab left and content stays stationa
     clientX: 80,
     clientY: 350,
   });
-  await expect(content).toHaveCSS("transform", "none");
+  const dx = await content.evaluate(
+    (el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41,
+  );
+  expect(dx).toBeLessThan(-20);
+  expect(dx).toBeGreaterThanOrEqual(-96);
   await page.locator(".library-page").dispatchEvent("pointerup", {
     pointerType: "touch",
     pointerId: 42,
