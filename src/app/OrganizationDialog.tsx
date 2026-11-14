@@ -101,7 +101,11 @@ export default function OrganizationDialog() {
       }}
       wide
     >
-      <div className="organization" aria-busy={pending}>
+      <div
+        className="organization"
+        data-section={organizationTab}
+        aria-busy={pending}
+      >
         <details className="organization-help">
           <summary>{text.localChanges}</summary>
           <p className="small-muted">{text.hint}</p>
