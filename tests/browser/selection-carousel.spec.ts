@@ -59,7 +59,7 @@ test("deliberate strip scrolling updates emphasis and interrupted settling canno
     el.scrollLeft = el.scrollWidth;
     el.dispatchEvent(new Event("scroll"));
   });
-  await expect(page.locator("#tab-playlists")).toHaveAttribute(
+  await expect(page.locator("#tab-year")).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -75,7 +75,7 @@ test("deliberate strip scrolling updates emphasis and interrupted settling canno
   });
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await page.waitForTimeout(250);
-  await expect(page.locator("#tab-playlists")).toHaveAttribute(
+  await expect(page.locator("#tab-year")).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -88,23 +88,17 @@ test("selection header and action strip remain separated and reachable with enla
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await expect(page.locator(".track-row")).toHaveCount(8);
-  await page
-    .locator(".track-hit")
-    .first()
-    .dispatchEvent("pointerdown", {
-      pointerType: "touch",
-      pointerId: 9,
-      isPrimary: true,
-    });
+  await page.locator(".track-hit").first().dispatchEvent("pointerdown", {
+    pointerType: "touch",
+    pointerId: 9,
+    isPrimary: true,
+  });
   await expect(page.locator(".selection-heading")).toContainText("1 selected");
-  await page
-    .locator(".track-row")
-    .first()
-    .dispatchEvent("pointerup", {
-      pointerType: "touch",
-      pointerId: 9,
-      isPrimary: true,
-    });
+  await page.locator(".track-row").first().dispatchEvent("pointerup", {
+    pointerType: "touch",
+    pointerId: 9,
+    isPrimary: true,
+  });
   await page
     .locator(".selection-toolbar button,.selection-toolbar strong")
     .evaluateAll((els) => {

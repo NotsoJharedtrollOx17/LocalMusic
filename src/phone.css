@@ -121,6 +121,11 @@
   width: 100%;
   gap: 18px;
 }
+:root[data-layout="phone"] .section-tabs::after {
+  content: "";
+  flex: 0 0 var(--tab-tail-width, 0px);
+  pointer-events: none;
+}
 :root[data-layout="phone"] .section-tabs button {
   font-size: 15px;
   min-height: 48px;

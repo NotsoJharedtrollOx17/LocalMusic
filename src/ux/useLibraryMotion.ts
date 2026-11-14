@@ -56,18 +56,12 @@ export function useLibraryMotion(
   const resetSwipe = useCallback(() => {
     gesture.current = null;
     suppressClickUntil.current = 0;
-    const content =
-      panel.current?.querySelector<HTMLElement>("#library-content");
-    if (content) content.style.transform = "";
   }, []);
   useGestureCancellation(() => {
     if (gesture.current) {
       gesture.current = null;
       suppressClickUntil.current = performance.now() + 350;
     }
-    const content =
-      panel.current?.querySelector<HTMLElement>("#library-content");
-    if (content) content.style.transform = "";
   }, section);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
@@ -84,7 +78,13 @@ export function useLibraryMotion(
     const start = node.scrollLeft,
       end = start + node.clientWidth;
     const target =
-      left < start ? left : right > end ? right - node.clientWidth : start;
+      document.documentElement.dataset.layout === "phone"
+        ? left
+        : left < start
+          ? left
+          : right > end
+            ? right - node.clientWidth
+            : start;
     if (Math.abs(target - start) > 1)
       node.scrollTo({
         left: target,
@@ -96,6 +96,18 @@ export function useLibraryMotion(
     if (!node) return;
     let geometry = "";
     const update = () => {
+      const buttons = node.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+      const last = buttons[buttons.length - 1];
+      if (last)
+        node.style.setProperty(
+          "--tab-tail-width",
+          `${Math.max(
+            0,
+            node.clientWidth -
+              last.offsetWidth -
+              parseFloat(getComputedStyle(node).columnGap || "0"),
+          )}px`,
+        );
       const active = node.querySelector<HTMLElement>('[aria-selected="true"]');
       if (active) {
         const width = active.offsetWidth,
@@ -141,27 +153,15 @@ export function useLibraryMotion(
         behavior: "instant",
       });
       const phone = document.documentElement.dataset.layout === "phone";
-      const direction =
-        librarySections.indexOf(section) >
-        librarySections.indexOf(previous.current)
-          ? 1
-          : -1;
-      const animation = !reducedMotion()
-        ? panel.current?.querySelector("#library-content")?.animate(
-            phone
-              ? [
-                  {
-                    transform: `translateX(${direction * Math.min(innerWidth * 0.16, 64)}px)`,
-                  },
-                  { transform: "translateX(0)" },
-                ]
-              : [{ opacity: 0.6 }, { opacity: 1 }],
-            {
-              duration: phone ? 180 : 140,
-              easing: "ease-out",
-            },
-          )
-        : undefined;
+      const animation =
+        !phone && !reducedMotion()
+          ? panel.current
+              ?.querySelector("#library-content")
+              ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
+                duration: 140,
+                easing: "ease-out",
+              })
+          : undefined;
       previous.current = section;
       return () => animation?.cancel();
     }
@@ -219,23 +219,10 @@ export function useLibraryMotion(
         g.horizontal = true;
       }
       suppressClickUntil.current = performance.now() + 350;
-      if (
-        !reducedMotion() &&
-        document.documentElement.dataset.layout === "phone" &&
-        !panel.current?.querySelector(".selection-toolbar")
-      ) {
-        const content =
-          panel.current?.querySelector<HTMLElement>("#library-content");
-        if (content)
-          content.style.transform = `translateX(${Math.max(-64, Math.min(64, dx * 0.3))}px)`;
-      }
     },
     onPointerUp: (e: ReactPointerEvent) => {
       const g = gesture.current;
       gesture.current = null;
-      const content =
-        panel.current?.querySelector<HTMLElement>("#library-content");
-      if (content) content.style.transform = "";
       if (!g || g.pointer !== e.pointerId || !g.horizontal) return;
       suppressClickUntil.current = performance.now() + 350;
       const dx = e.clientX - g.x,
@@ -249,9 +236,6 @@ export function useLibraryMotion(
     },
     onPointerCancel: () => {
       gesture.current = null;
-      const content =
-        panel.current?.querySelector<HTMLElement>("#library-content");
-      if (content) content.style.transform = "";
     },
     onClickCapture: (e: React.MouseEvent) => {
       if (e.detail > 0 && performance.now() < suppressClickUntil.current) {
@@ -292,20 +276,23 @@ export function useLibraryMotion(
         if (!g.manual) return;
         g.manual = false;
         if (tabs.current !== node) return;
-        const center = node.scrollLeft + node.clientWidth / 2;
+        const anchor = node.scrollLeft;
         const buttons = [
           ...node.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
         ];
         const target = buttons.reduce(
           (best, button) =>
-            Math.abs(button.offsetLeft + button.offsetWidth / 2 - center) <
-            Math.abs(best.offsetLeft + best.offsetWidth / 2 - center)
+            Math.abs(button.offsetLeft - anchor) <
+            Math.abs(best.offsetLeft - anchor)
               ? button
               : best,
           buttons[0],
         );
         const index = buttons.indexOf(target);
-        if (index >= 0) latestChoose.current(librarySections[index]);
+        if (index >= 0) {
+          latestChoose.current(librarySections[index]);
+          revealTab(target);
+        }
       }, 160);
     },
     onClickCapture: (e: React.MouseEvent) => {

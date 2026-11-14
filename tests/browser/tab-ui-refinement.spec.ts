@@ -10,7 +10,7 @@ async function samples(page: Page) {
   await page.evaluate(() => document.fonts.ready);
 }
 
-test("visible tab selection preserves strip position and every label's geometry", async ({
+test("selected phone tabs align left without changing label geometry", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -26,14 +26,18 @@ test("visible tab selection preserves strip position and every label's geometry"
         width: (el as HTMLElement).offsetWidth,
       })),
     );
-  const before = await geometry(),
-    left = await strip.evaluate((el) => el.scrollLeft);
+  const before = await geometry();
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   await expect(
     page.getByRole("tab", { name: "Artists", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   expect(await geometry()).toEqual(before);
-  expect(await strip.evaluate((el) => el.scrollLeft)).toBeCloseTo(left, 0);
+  expect(
+    Math.abs(
+      (await page.locator("#tab-artists").boundingBox())!.x -
+        (await strip.boundingBox())!.x,
+    ),
+  ).toBeLessThanOrEqual(1);
   // Moving the strip itself must not choose a different collection.
   await strip.evaluate((el) => {
     el.scrollLeft = el.scrollWidth;
@@ -213,4 +217,70 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await page.keyboard.press("Escape");
   await expect(player).toHaveCount(0);
   await expect(page.locator(".cover-flight")).toHaveCount(0);
+});
+
+test("phone carousel anchors every activated tab left while content stays stationary", async ({
+  page,
+}) => {
+  await samples(page);
+  const strip = page.locator(".section-tabs");
+  for (const id of ["albums", "artists", "playlists", "year", "songs"]) {
+    await page.locator(`#tab-${id}`).click();
+    await expect
+      .poll(async () => {
+        const selected = (await page.locator(`#tab-${id}`).boundingBox())!;
+        return Math.abs(selected.x - (await strip.boundingBox())!.x);
+      })
+      .toBeLessThanOrEqual(1);
+    await expect(page.locator("#library-content")).toHaveCSS(
+      "transform",
+      "none",
+    );
+    expect(
+      await page
+        .locator("#library-content")
+        .evaluate((node) => node.getAnimations().length),
+    ).toBe(0);
+  }
+  const content = page.locator("#library-content");
+  await page
+    .locator(".library-page")
+    .dispatchEvent("pointerdown", {
+      pointerType: "touch",
+      pointerId: 42,
+      isPrimary: true,
+      clientX: 300,
+      clientY: 350,
+    });
+  await page
+    .locator(".library-page")
+    .dispatchEvent("pointermove", {
+      pointerType: "touch",
+      pointerId: 42,
+      isPrimary: true,
+      clientX: 80,
+      clientY: 350,
+    });
+  await expect(content).toHaveCSS("transform", "none");
+  await page
+    .locator(".library-page")
+    .dispatchEvent("pointerup", {
+      pointerType: "touch",
+      pointerId: 42,
+      isPrimary: true,
+      clientX: 80,
+      clientY: 350,
+    });
+  await expect(page.locator("#tab-albums")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect
+    .poll(async () =>
+      Math.abs(
+        (await page.locator("#tab-albums").boundingBox())!.x -
+          (await strip.boundingBox())!.x,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
 });
