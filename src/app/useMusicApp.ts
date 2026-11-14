@@ -226,6 +226,7 @@ export function useMusicApp(initialSettings?: Settings) {
     `${player.trackId}|${player.playing}|${player.excluded}`,
     remember,
     setSelectedList,
+    !state.libraryLoading,
   );
   useEffect(() => {
     if (section !== "playlists" || selectedList?.kind !== "automatic") return;

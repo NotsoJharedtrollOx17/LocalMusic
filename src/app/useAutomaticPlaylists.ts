@@ -8,6 +8,7 @@ export function useAutomaticPlaylists(
   playbackKey: string,
   remember: (tracks: Track[]) => void,
   setSelectedList: React.Dispatch<React.SetStateAction<Playlist | null>>,
+  ready = true,
 ) {
   const [playlists, setPlaylists] = useState<Playlist[]>([]),
     [loading, setLoading] = useState(true),
@@ -39,6 +40,13 @@ export function useAutomaticPlaylists(
       }
     }
   }, [remember, setSelectedList]);
+  useEffect(() => {
+    if (active || !ready) return;
+    const timer = setTimeout(() => {
+      if (!document.hidden) void refresh();
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [active, ready, revision, playbackKey, refresh]);
   useEffect(() => {
     ++version.current;
     if (!active) return;

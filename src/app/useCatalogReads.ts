@@ -195,8 +195,38 @@ export function useCatalogReads(
     act,
     remember,
   ]);
+  const generation = JSON.stringify([catalogRevision, catalogTotal]);
+  const currentGeneration = useRef(generation);
+  currentGeneration.current = generation;
+  const warmPages = useRef(
+    new Map<
+      string,
+      { generation: string; groups: CatalogGroup[]; total: number }
+    >(),
+  );
+  const groupOwners = useRef<Record<string, string>>({});
   const refreshGroups = useCallback(
     async (kind: "albums" | "artists", offset = 0) => {
+      const owner = currentGeneration.current;
+      const cached = warmPages.current.get(kind);
+      if (!offset && cached?.generation === owner) {
+        setGroupPages((old) =>
+          (groupOwners.current[kind] === owner &&
+            old[kind].groups.length > cached.groups.length) ||
+          (old[kind].groups === cached.groups && old[kind].status === "ready")
+            ? old
+            : {
+                ...old,
+                [kind]: {
+                  groups: cached.groups,
+                  total: cached.total,
+                  status: "ready",
+                  loaded: true,
+                },
+              },
+        );
+        return;
+      }
       const version = ++groupsRequest.current[kind];
       setGroupPages((old) => ({
         ...old,
@@ -204,15 +234,25 @@ export function useCatalogReads(
       }));
       try {
         const p = await api.groups(kind, offset);
-        if (version !== groupsRequest.current[kind]) return;
+        if (
+          version !== groupsRequest.current[kind] ||
+          owner !== currentGeneration.current
+        )
+          return;
+        const warmed = warmPages.current.get(kind);
+        groupOwners.current[kind] = owner;
         setGroupPages((old) => ({
           ...old,
           [kind]: {
-            groups: offset
-              ? old[kind].groups.length === offset
-                ? [...old[kind].groups, ...p.groups]
-                : old[kind].groups
-              : p.groups,
+            groups:
+              warmed?.generation === owner &&
+              warmed.groups.length >= offset + p.groups.length
+                ? warmed.groups
+                : offset
+                  ? old[kind].groups.length === offset
+                    ? [...old[kind].groups, ...p.groups]
+                    : old[kind].groups
+                  : p.groups,
             total: p.total,
             status: "ready",
             loaded: true,
@@ -220,7 +260,10 @@ export function useCatalogReads(
         }));
         remember(p.groups.map((g) => g.track));
       } catch (error) {
-        if (version === groupsRequest.current[kind])
+        if (
+          version === groupsRequest.current[kind] &&
+          owner === currentGeneration.current
+        )
           setGroupPages((old) => ({
             ...old,
             [kind]: { ...old[kind], status: "error" },
@@ -230,6 +273,96 @@ export function useCatalogReads(
     },
     [remember],
   );
+  useEffect(() => {
+    if (
+      catalogTotal === null ||
+      state.libraryLoading ||
+      !libraryRead ||
+      libraryRead.failed
+    )
+      return;
+    let stopped = false,
+      running = false,
+      next = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const kinds = ["albums", "artists"] as const;
+    const seed = (kind: "albums" | "artists") => {
+      const cached = warmPages.current.get(kind);
+      return cached?.generation === generation
+        ? { groups: [...cached.groups], total: cached.total }
+        : { groups: [] as CatalogGroup[], total: Infinity };
+    };
+    const pages = { albums: seed("albums"), artists: seed("artists") };
+    const schedule = () => {
+      if (!stopped && !document.hidden)
+        timer = setTimeout(() => void step(), 60);
+    };
+    const step = async () => {
+      if (stopped || running || document.hidden) return;
+      const kind = kinds[next++ % 2],
+        local = pages[kind];
+      if (local.groups.length >= local.total) {
+        if (kinds.some((k) => pages[k].groups.length < pages[k].total))
+          schedule();
+        return;
+      }
+      running = true;
+      try {
+        const page = await api.groups(kind, local.groups.length);
+        if (stopped || generation !== currentGeneration.current) return;
+        local.groups.push(...page.groups);
+        local.total = page.total;
+        if (!page.groups.length) local.total = local.groups.length;
+        const cached = {
+          generation,
+          groups: [...local.groups],
+          total: local.total,
+        };
+        const sameOwner = groupOwners.current[kind] === generation;
+        warmPages.current.set(kind, cached);
+        groupOwners.current[kind] = generation;
+        setGroupPages((old) =>
+          sameOwner && old[kind].groups.length > cached.groups.length
+            ? old
+            : {
+                ...old,
+                [kind]: {
+                  groups: cached.groups,
+                  total: cached.total,
+                  status: "ready",
+                  loaded: true,
+                },
+              },
+        );
+        remember(page.groups.map((g) => g.track));
+      } catch {
+        stopped = true; /* Foreground reads/retry retain their own errors. */
+      } finally {
+        running = false;
+        if (kinds.some((k) => pages[k].groups.length < pages[k].total))
+          schedule();
+      }
+    };
+    const resume = () => {
+      if (!document.hidden && !running) {
+        clearTimeout(timer);
+        schedule();
+      }
+    };
+    schedule();
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [
+    generation,
+    state.libraryLoading,
+    libraryRead?.key,
+    libraryRead?.failed,
+    remember,
+  ]);
   const refreshPicker = useCallback(
     async (q = "", offset = 0) => {
       const page = await api.listTracks(q, offset, 60);
