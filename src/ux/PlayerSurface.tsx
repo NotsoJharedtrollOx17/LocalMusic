@@ -78,15 +78,19 @@ export function PlayerSurface({
         art.src,
       );
     node.inert = true;
+    if (android) node.dataset.closing = "true";
     const animation = node.animate(
       android
-        ? [{ opacity: 1 }, { opacity: 0 }]
+        ? [
+            { transform: getComputedStyle(node).transform },
+            { transform: "translateY(100%)" },
+          ]
         : [
             { transform: getComputedStyle(node).transform, opacity: 1 },
             { transform: "translateY(45px) scale(.97)", opacity: 0 },
           ],
       {
-        duration: android ? 140 : 240,
+        duration: android ? 200 : 240,
         easing: "cubic-bezier(.4,0,1,1)",
         fill: "forwards",
       },

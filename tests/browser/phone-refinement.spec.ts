@@ -272,6 +272,12 @@ test("mobile About returns to Settings and empty artist text spans the grid", as
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   const empty = page.locator(".album-grid .empty-small");
   await expect(empty).toBeVisible();
+  await expect
+    .poll(async () => {
+      const rect = (await empty.boundingBox())!;
+      return Math.abs(rect.x + rect.width / 2 - 195);
+    })
+    .toBeLessThanOrEqual(1);
   const rect = (await empty.boundingBox())!;
   expect(Math.abs(rect.x + rect.width / 2 - 195)).toBeLessThanOrEqual(1);
   const settings = await openSettings(page);

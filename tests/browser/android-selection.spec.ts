@@ -220,6 +220,7 @@ test("phone duration, vertical overflow, single active tab and playlist spacing 
     const row = page.locator(".track-row").first();
     await expect(row.locator(":scope > .track-duration")).toBeHidden();
     await expect(row.locator(".track-duration-inline")).toHaveText("4:03");
+    await expect(row.locator(".track-duration-inline")).toBeHidden();
     await expect(row.locator(".overflow-vertical")).toBeVisible();
     await expect(row.locator(".overflow-horizontal")).toBeHidden();
     expect(
@@ -241,6 +242,16 @@ test("phone duration, vertical overflow, single active tab and playlist spacing 
   const selected = page.getByRole("tab", { name: "Playlists", exact: true });
   await expect(selected).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("[role=tab][aria-selected=true]")).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const tab = (await selected.boundingBox())!,
+        line = (await page.locator(".section-indicator").boundingBox())!;
+      return Math.max(
+        Math.abs(tab.x - line.x),
+        Math.abs(tab.width - line.width),
+      );
+    })
+    .toBeLessThan(1);
   const r = (await selected.boundingBox())!,
     indicator = (await page.locator(".section-indicator").boundingBox())!;
   expect(Math.abs(r.x - indicator.x)).toBeLessThan(1);

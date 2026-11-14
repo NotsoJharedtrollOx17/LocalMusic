@@ -1,4 +1,13 @@
-import { X } from "lucide-react";
+import {
+  X,
+  Circle,
+  Play,
+  ListPlus,
+  Heart,
+  Share2,
+  Trash2,
+  LoaderCircle,
+} from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { IconButton } from "../components";
@@ -32,6 +41,37 @@ export default function SelectionToolbar() {
   } = useMusicAppContext();
   const request = useRef(0),
     [selecting, setSelecting] = useState(false);
+  const actions = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const node = actions.current,
+      shell = node?.closest<HTMLElement>(".content-shell");
+    if (!node || !shell) return;
+    const layout = document.documentElement;
+    const content = node.closest<HTMLElement>("#library-content");
+    content?.getAnimations().forEach((animation) => animation.cancel());
+    if (content) content.style.transform = "";
+    const toolbar = node.closest<HTMLElement>(".selection-toolbar");
+    const measure = () => {
+      layout.style.setProperty(
+        "--selection-actions-height",
+        `${node.getBoundingClientRect().height}px`,
+      );
+      if (toolbar)
+        layout.style.setProperty(
+          "--selection-head-height",
+          `${toolbar.getBoundingClientRect().height}px`,
+        );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    if (toolbar) observer.observe(toolbar);
+    return () => {
+      observer.disconnect();
+      layout.style.removeProperty("--selection-actions-height");
+      layout.style.removeProperty("--selection-head-height");
+    };
+  }, []);
   const scope = JSON.stringify([
     section,
     group?.id,
@@ -100,6 +140,19 @@ export default function SelectionToolbar() {
           aria-busy={selecting}
           onClick={selectAll}
         >
+          {selecting ? (
+            <LoaderCircle
+              className="selection-action-icon selection-busy"
+              size={18}
+              aria-hidden="true"
+            />
+          ) : (
+            <Circle
+              className="selection-action-icon"
+              size={18}
+              aria-hidden="true"
+            />
+          )}
           {t.selectAll}
         </button>
         <IconButton
@@ -112,12 +165,17 @@ export default function SelectionToolbar() {
           <X />
         </IconButton>
       </div>
-      <div className="selection-actions">
+      <div className="selection-actions" ref={actions}>
         <button
           className="text-button"
           disabled={!selectedIds.length}
           onClick={() => void act(() => api.play(selectedIds))}
         >
+          <Play
+            className="selection-action-icon"
+            size={20}
+            aria-hidden="true"
+          />
           {t.play}
         </button>
         <button
@@ -128,6 +186,11 @@ export default function SelectionToolbar() {
             setModal("add");
           }}
         >
+          <ListPlus
+            className="selection-action-icon"
+            size={20}
+            aria-hidden="true"
+          />
           {t.addToPlaylist}
         </button>
         <button
@@ -143,6 +206,11 @@ export default function SelectionToolbar() {
             })
           }
         >
+          <Heart
+            className="selection-action-icon"
+            size={20}
+            aria-hidden="true"
+          />
           {t.favorite}
         </button>
         <button
@@ -150,6 +218,11 @@ export default function SelectionToolbar() {
           disabled={!selectedIds.length || sharing}
           onClick={() => void share(selectedIds)}
         >
+          <Share2
+            className="selection-action-icon"
+            size={20}
+            aria-hidden="true"
+          />
           {shareLabel}
         </button>
         <button
@@ -160,6 +233,11 @@ export default function SelectionToolbar() {
             setModal("remove");
           }}
         >
+          <Trash2
+            className="selection-action-icon"
+            size={20}
+            aria-hidden="true"
+          />
           {t.removeLibrary}
         </button>
       </div>

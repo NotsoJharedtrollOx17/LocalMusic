@@ -152,7 +152,7 @@ test("search ignores late reads and keeps playback available", async ({
 test("mobile swipe tabs and player keep transport anchored, Back and reduced motion", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 390, height: 640 });
   await page.emulateMedia({ colorScheme: "dark" });
   await samples(page);
   const savedScroll = await page.evaluate(() => {

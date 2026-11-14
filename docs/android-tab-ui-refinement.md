@@ -7,7 +7,7 @@ Continue `dev.ui-ux-stress-audit` from `36eb549`, retaining version **0.15.0**. 
 ## Requested behavior
 
 - Keep the manually scrolled Library tab strip in place when selecting an already-visible tab. Reveal an off-screen selection by the smallest horizontal movement, with restrained motion and an immediate Reduce Motion equivalent. Scrolling the strip alone does not select a tab.
-- Reserve the emphasized label's width so selection cannot stretch the strip or shift neighboring labels. Keyboard focus must reveal tabs horizontally without scrolling the page vertically. Retain the orange indicator, accessible tab semantics and focus frames.
+- Reserve the emphasized label's width so selection cannot stretch the strip or shift neighboring labels. Resize and label-size changes reveal the selected tab, or the keyboard-focused tab during keyboard navigation. Keyboard focus must reveal tabs horizontally without scrolling the page vertically. Retain the orange indicator, accessible tab semantics and focus frames.
 - Phone Songs rows show artwork, title and artist without numeric duration or album/year clutter. Preserve unavailable/removed status, selection, favorites and menus. Full metadata remains in Track Details and existing collection/desktop presentations.
 - Present phone Artists as full-width rows with small leading artwork, artist name and track count. Preserve artist navigation/search, stable group IDs, loading/error states and Albums' two-column layout. Desktop artist cards remain available.
 - Remove the mini-player's tiny orange progress sliver; retain its controls, opaque dock and full player's seek/timing controls.

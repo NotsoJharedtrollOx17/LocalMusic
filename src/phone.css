@@ -23,6 +23,7 @@
   font-size: 17px;
 }
 :root[data-layout="phone"] .content-shell {
+  overflow-x: clip;
   position: relative;
   --mini-dock-height: 24px;
   min-height: 100dvh;
@@ -124,6 +125,18 @@
   font-size: 15px;
   min-height: 48px;
   padding-block: 10px;
+}
+:root[data-layout="phone"] .tab-caption {
+  display: inline-block;
+  white-space: nowrap;
+}
+:root[data-layout="phone"] .tab-caption::after {
+  content: attr(data-label);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
 }
 :root[data-layout="phone"] .library-navigation > .inline-search {
   grid-column: 1;
@@ -229,13 +242,18 @@
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
+:root[data-layout="phone"]
+  .library-page:has(#tab-songs[aria-selected="true"])
+  :is(.track-duration-inline[data-duration], .album-label) {
+  display: none;
+}
 :root[data-layout="phone"] .track-row > .icon-button {
   width: 48px;
   min-width: 48px;
   height: 48px;
 }
 :root[data-layout="phone"] .track-row:has(.selection-check) > .icon-button {
-  display: none;
+  visibility: hidden;
 }
 :root[data-layout="phone"] .overflow-horizontal {
   display: none;
@@ -245,36 +263,156 @@
 }
 :root[data-layout="phone"] .section-tabs button,
 :root[data-layout="phone"] .section-indicator {
-  transition: none;
+  transition:
+    transform 180ms var(--ease-music),
+    width 180ms var(--ease-music);
 }
 :root[data-layout="phone"] .selection-toolbar {
-  position: sticky;
-  top: var(--library-sticky-height, 108px);
-  z-index: 24;
+  animation: none;
+  transform: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 45;
   display: block;
-  padding: 8px 12px;
-  margin: 8px -4px;
+  padding: calc(6px + env(safe-area-inset-top)) 16px 6px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper);
 }
 :root[data-layout="phone"] .selection-heading {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 48px;
 }
 :root[data-layout="phone"] .selection-heading strong {
   flex: 1;
   font-size: 14px;
 }
 :root[data-layout="phone"] .selection-actions {
+  position: fixed;
+  /* Cover fractional device-pixel seams at the opaque mini-player dock. */
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  z-index: 45;
+  background: var(--paper);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px 8px;
-  padding-top: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 8px max(8px, env(safe-area-inset-right)) 8px
+    max(8px, env(safe-area-inset-left));
   border-top: 1px solid var(--rule);
 }
 :root[data-layout="phone"] .selection-actions .text-button {
   justify-content: center;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 2px;
+  min-height: 56px;
+  overflow-wrap: anywhere;
+}
+.selection-action-icon {
+  display: none;
+}
+.selection-busy {
+  animation: import-spin 1s linear infinite;
+}
+:root[data-layout="phone"] .selection-action-icon {
+  display: block;
+  flex: none;
+}
+:root[data-layout="phone"]:has(.selection-toolbar) .library-brand-header {
+  visibility: hidden;
+  min-height: max(
+    calc(60px + env(safe-area-inset-top)),
+    var(--selection-head-height, 0px)
+  );
+}
+:root[data-layout="phone"]:has(.selection-toolbar) .content-shell {
+  padding-bottom: calc(
+    var(--mini-dock-height) + var(--selection-actions-height, 110px)
+  );
+}
+:root[data-layout="phone"]:has(.selection-toolbar) {
+  scroll-padding-bottom: calc(
+    85px + env(safe-area-inset-bottom) + var(--selection-actions-height, 110px)
+  );
+}
+:root[data-layout="phone"]:has(.selection-toolbar):not(:has(.mini-player)) {
+  scroll-padding-bottom: calc(
+    env(safe-area-inset-bottom) + var(--selection-actions-height, 110px)
+  );
+}
+:root[data-layout="phone"] .recap-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 16px;
+}
+:root[data-layout="phone"] .recap-disclaimer svg {
+  flex: none;
+  color: var(--muted);
+}
+:root[data-layout="phone"] .track-row {
+  position: relative;
+}
+:root[data-layout="phone"] .selection-check {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+}
+:root[data-layout="phone"] .selection-check[aria-pressed="true"] {
+  background: transparent;
+  color: white;
+}
+:root[data-layout="phone"] .selection-check::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  background: var(--paper);
+}
+:root[data-layout="phone"] .selection-check[aria-pressed="true"]::after {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+:root[data-layout="phone"] .selection-check svg {
+  position: relative;
+  z-index: 1;
+}
+:root[data-layout="phone"] .selection-check .selection-empty {
+  visibility: hidden;
+}
+:root[data-layout="phone"] .selection-heading > .text-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+}
+:root[data-layout="phone"]:not(:has(.mini-player)) .selection-actions {
+  bottom: env(safe-area-inset-bottom);
+}
+:root[data-layout="phone"] .track-row:has(.selection-check) .cover {
+  opacity: 0.3;
 }
 :root[data-layout="phone"] .album-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -289,6 +427,38 @@
 }
 :root[data-layout="phone"] .album-card span {
   font-size: 12px;
+}
+:root[data-layout="phone"] .catalog-artists {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-block: 8px;
+}
+:root[data-layout="phone"] .catalog-artists .album-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px 6px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--rule);
+}
+:root[data-layout="phone"] .catalog-artists .cover {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  border-radius: 8px;
+}
+:root[data-layout="phone"] .catalog-artists .group-card-copy {
+  flex: 1;
+  min-width: 0;
+}
+:root[data-layout="phone"] .catalog-artists strong {
+  font-size: 14px;
+}
+:root[data-layout="phone"] .collection-hero {
+  animation: none;
 }
 :root[data-layout="phone"] .playlist-section-heading {
   font-size: 14px;
@@ -407,14 +577,6 @@
 :root[data-layout="phone"] .mobile-mini-play svg {
   width: 19px;
   height: 19px;
-}
-:root[data-layout="phone"] .mini-progress {
-  display: block;
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--accent);
 }
 :root[data-layout="phone"] .modal-head h2 {
   font-size: 20px;

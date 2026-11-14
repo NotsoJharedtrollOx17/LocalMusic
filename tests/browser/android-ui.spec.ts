@@ -143,7 +143,7 @@ test("task dialogs follow visible viewport resize and keep compact renaming cent
   ).toBeInViewport();
 });
 
-test("horizontal intent changes one tab without moving the Library or activating short drags", async ({
+test("horizontal intent slides content without moving the Library or activating short drags", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -180,7 +180,7 @@ test("horizontal intent changes one tab without moving the Library or activating
         .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes())
         .some((f) => "transform" in f),
     ),
-  ).toBe(false);
+  ).toBe(true);
   // A vertical scroll, canceled gesture or second finger must not navigate.
   await panel.dispatchEvent("pointerdown", pointer(300, 350));
   await panel.dispatchEvent("pointermove", pointer(280, 480));

@@ -82,16 +82,6 @@ export default function MiniPlayer() {
                 <SkipForward fill="currentColor" />
               </IconButton>
             </div>
-            <span
-              className="mini-progress"
-              style={{
-                width:
-                  Math.min(
-                    100,
-                    (player.positionMs / Math.max(1, player.durationMs)) * 100,
-                  ) + "%",
-              }}
-            />
           </div>
         </div>
       )}

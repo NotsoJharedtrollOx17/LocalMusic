@@ -838,8 +838,7 @@ input[type="range"] {
   align-items: center;
   gap: 4px;
 }
-.mobile-mini-play,
-.mini-progress {
+.mobile-mini-play {
   display: none;
 }
 .playlist-collection {
@@ -1826,14 +1825,6 @@ input[type="range"] {
   }
   .mobile-mini-play {
     display: block;
-  }
-  .mini-progress {
-    display: block;
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 2px;
-    background: var(--accent);
   }
   .bottom-nav {
     position: fixed;

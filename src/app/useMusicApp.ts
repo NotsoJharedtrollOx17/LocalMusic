@@ -703,6 +703,7 @@ export function useMusicApp(initialSettings?: Settings) {
       node = detailHero.current;
     if (!group || !origin || !node) return;
     coverOrigin.current = null;
+    if (document.documentElement.dataset.layout === "phone") return;
     return animateCover(origin.rect, node.getBoundingClientRect(), origin.src);
   }, [group?.title, group?.kind]);
   useEffect(() => {

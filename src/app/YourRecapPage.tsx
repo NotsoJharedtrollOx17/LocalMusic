@@ -1,6 +1,6 @@
 import RecapPeriodControls from "./RecapPeriodControls";
 import { periodFor, periodLabel } from "../recap/periods";
-import { ArrowUpRight, Repeat, Share2 } from "lucide-react";
+import { ArrowUpRight, Repeat, Share2, Info } from "lucide-react";
 import OverflowIcon from "../components/OverflowIcon";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { coverageThrough } from "../domain";
@@ -159,7 +159,10 @@ export default function YourRecapPage() {
               <p className="small-muted">{t.recapEmptyBody}</p>
             )}
             <RecapTopTen />
-            <p className="method-note recap-disclaimer">{t.coverageNote}</p>
+            <p className="method-note recap-disclaimer">
+              <Info size={16} aria-hidden="true" />
+              {t.coverageNote}
+            </p>
           </div>
         )}
       </div>

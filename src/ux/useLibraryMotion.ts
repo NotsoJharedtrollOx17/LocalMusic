@@ -56,12 +56,18 @@ export function useLibraryMotion(
   const resetSwipe = useCallback(() => {
     gesture.current = null;
     suppressClickUntil.current = 0;
+    const content =
+      panel.current?.querySelector<HTMLElement>("#library-content");
+    if (content) content.style.transform = "";
   }, []);
   useGestureCancellation(() => {
     if (gesture.current) {
       gesture.current = null;
       suppressClickUntil.current = performance.now() + 350;
     }
+    const content =
+      panel.current?.querySelector<HTMLElement>("#library-content");
+    if (content) content.style.transform = "";
   }, section);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
@@ -70,49 +76,92 @@ export function useLibraryMotion(
     scroll.current[section] = window.scrollY;
     onChange(next);
   };
+  const revealTab = useCallback((active: HTMLElement) => {
+    const node = tabs.current;
+    if (!node) return;
+    const left = active.offsetLeft,
+      right = left + active.offsetWidth;
+    const start = node.scrollLeft,
+      end = start + node.clientWidth;
+    const target =
+      left < start ? left : right > end ? right - node.clientWidth : start;
+    if (Math.abs(target - start) > 1)
+      node.scrollTo({
+        left: target,
+        behavior: reducedMotion() ? "instant" : "smooth",
+      });
+  }, []);
   useLayoutEffect(() => {
     const node = tabsNode;
     if (!node) return;
+    let geometry = "";
     const update = () => {
       const active = node.querySelector<HTMLElement>('[aria-selected="true"]');
       if (active) {
-        setIndicator({ width: active.offsetWidth, x: active.offsetLeft });
-        node.scrollTo({
-          left: Math.max(
-            0,
-            active.offsetLeft - (node.clientWidth - active.offsetWidth) / 2,
+        const width = active.offsetWidth,
+          x = active.offsetLeft;
+        setIndicator((old) =>
+          old.width === width && old.x === x ? old : { width, x },
+        );
+        const dimensions = [
+          node.clientWidth,
+          ...Array.from(
+            node.querySelectorAll("button"),
+            (button) => `${button.offsetLeft}:${button.offsetWidth}`,
           ),
-          behavior:
-            reducedMotion() ||
-            document.documentElement.dataset.layout === "phone"
-              ? "instant"
-              : "smooth",
-        });
+        ].join(",");
+        if (geometry && geometry !== dimensions) {
+          const focused = document.activeElement;
+          revealTab(
+            document.documentElement.dataset.input === "keyboard" &&
+              focused instanceof HTMLElement &&
+              node.contains(focused) &&
+              focused.matches('[role="tab"]')
+              ? focused
+              : active,
+          );
+        }
+        geometry = dimensions;
       }
     };
     update();
+    const active = node.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (active) revealTab(active);
     const observer = new ResizeObserver(update);
     observer.observe(node);
     node
       .querySelectorAll("button")
       .forEach((button) => observer.observe(button));
     return () => observer.disconnect();
-  }, [section, tabsNode]);
+  }, [section, tabsNode, revealTab]);
   useLayoutEffect(() => {
     if (previous.current !== section) {
       window.scrollTo({
         top: scroll.current[section] ?? 0,
         behavior: "instant",
       });
-      const animation =
-        !reducedMotion() && document.documentElement.dataset.layout !== "phone"
-          ? panel.current
-              ?.querySelector("#library-content")
-              ?.animate([{ opacity: 0.6 }, { opacity: 1 }], {
-                duration: 140,
-                easing: "ease-out",
-              })
-          : undefined;
+      const phone = document.documentElement.dataset.layout === "phone";
+      const direction =
+        librarySections.indexOf(section) >
+        librarySections.indexOf(previous.current)
+          ? 1
+          : -1;
+      const animation = !reducedMotion()
+        ? panel.current?.querySelector("#library-content")?.animate(
+            phone
+              ? [
+                  {
+                    transform: `translateX(${direction * Math.min(innerWidth * 0.16, 64)}px)`,
+                  },
+                  { transform: "translateX(0)" },
+                ]
+              : [{ opacity: 0.6 }, { opacity: 1 }],
+            {
+              duration: phone ? 180 : 140,
+              easing: "ease-out",
+            },
+          )
+        : undefined;
       previous.current = section;
       return () => animation?.cancel();
     }
@@ -170,10 +219,23 @@ export function useLibraryMotion(
         g.horizontal = true;
       }
       suppressClickUntil.current = performance.now() + 350;
+      if (
+        !reducedMotion() &&
+        document.documentElement.dataset.layout === "phone" &&
+        !panel.current?.querySelector(".selection-toolbar")
+      ) {
+        const content =
+          panel.current?.querySelector<HTMLElement>("#library-content");
+        if (content)
+          content.style.transform = `translateX(${Math.max(-64, Math.min(64, dx * 0.3))}px)`;
+      }
     },
     onPointerUp: (e: ReactPointerEvent) => {
       const g = gesture.current;
       gesture.current = null;
+      const content =
+        panel.current?.querySelector<HTMLElement>("#library-content");
+      if (content) content.style.transform = "";
       if (!g || g.pointer !== e.pointerId || !g.horizontal) return;
       suppressClickUntil.current = performance.now() + 350;
       const dx = e.clientX - g.x,
@@ -187,12 +249,71 @@ export function useLibraryMotion(
     },
     onPointerCancel: () => {
       gesture.current = null;
+      const content =
+        panel.current?.querySelector<HTMLElement>("#library-content");
+      if (content) content.style.transform = "";
     },
     onClickCapture: (e: React.MouseEvent) => {
       if (e.detail > 0 && performance.now() < suppressClickUntil.current) {
         e.preventDefault();
         e.stopPropagation();
       }
+    },
+  };
+  const stripDrag = useRef({
+    manual: false,
+    start: 0,
+    suppress: 0,
+    timer: undefined as ReturnType<typeof setTimeout> | undefined,
+  });
+  const latestChoose = useRef(choose);
+  latestChoose.current = choose;
+  const cancelStrip = () => {
+    clearTimeout(stripDrag.current.timer);
+    stripDrag.current.manual = false;
+  };
+  useGestureCancellation(cancelStrip, section);
+  const strip = {
+    onPointerDown: (e: ReactPointerEvent) => {
+      cancelStrip();
+      stripDrag.current.suppress = 0;
+      if (e.isPrimary && e.pointerType === "touch") {
+        stripDrag.current.manual = true;
+        stripDrag.current.start = tabs.current?.scrollLeft ?? 0;
+      }
+    },
+    onScroll: () => {
+      const g = stripDrag.current,
+        node = tabs.current;
+      if (!g.manual || !node || Math.abs(node.scrollLeft - g.start) < 8) return;
+      g.suppress = performance.now() + 350;
+      clearTimeout(g.timer);
+      g.timer = setTimeout(() => {
+        if (!g.manual) return;
+        g.manual = false;
+        if (tabs.current !== node) return;
+        const center = node.scrollLeft + node.clientWidth / 2;
+        const buttons = [
+          ...node.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+        ];
+        const target = buttons.reduce(
+          (best, button) =>
+            Math.abs(button.offsetLeft + button.offsetWidth / 2 - center) <
+            Math.abs(best.offsetLeft + best.offsetWidth / 2 - center)
+              ? button
+              : best,
+          buttons[0],
+        );
+        const index = buttons.indexOf(target);
+        if (index >= 0) latestChoose.current(librarySections[index]);
+      }, 160);
+    },
+    onClickCapture: (e: React.MouseEvent) => {
+      if (e.detail > 0 && performance.now() < stripDrag.current.suppress) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      cancelStrip();
     },
   };
   return {
@@ -202,6 +323,8 @@ export function useLibraryMotion(
     bindPanel,
     headingHeight,
     indicator,
+    revealTab,
+    strip,
     compact,
     choose,
     swipe,

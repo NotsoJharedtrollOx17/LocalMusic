@@ -26,7 +26,7 @@ export default function CatalogGroupGrid() {
   }, [kind, initialRead]);
   const empty = kind === "albums" ? t.emptyAlbums : t.emptyArtists;
   return (
-    <div className="album-grid" aria-busy={pending}>
+    <div className={"album-grid catalog-" + kind} aria-busy={pending}>
       {catalogGroups.map((g) => (
         <button
           key={g.id ?? JSON.stringify([g.title, g.subtitle])}
@@ -35,13 +35,15 @@ export default function CatalogGroupGrid() {
           onClick={(e) => openGroup(kind, g, e.currentTarget)}
         >
           <Cover track={g.track} large />
-          <strong>{g.title}</strong>
-          <span>
-            {g.subtitle || formatMusicCount(g.ids.length)}
-            {kind === "albums" && g.track.releaseYear
-              ? " · " + g.track.releaseYear
-              : ""}
-          </span>
+          <div className="group-card-copy">
+            <strong>{g.title}</strong>
+            <span>
+              {g.subtitle || formatMusicCount(g.ids.length)}
+              {kind === "albums" && g.track.releaseYear
+                ? " · " + g.track.releaseYear
+                : ""}
+            </span>
+          </div>
         </button>
       ))}
       {!catalogGroups.length &&

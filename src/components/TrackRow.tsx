@@ -1,5 +1,14 @@
 import { useEffect, useRef, type MouseEvent } from "react";
-import { Play, Pause, Heart, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Heart,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  Check,
+  Circle,
+} from "lucide-react";
 import { type Track } from "../types";
 import { IconButton } from "./IconButton";
 import { Cover } from "./Cover";
@@ -155,7 +164,10 @@ export function TrackRow({
           aria-pressed={!!selected}
           onClick={(e) => onSelect(e.shiftKey)}
         >
-          {selected ? "✓" : "○"}
+          {selected && <Check size={15} strokeWidth={2.5} aria-hidden="true" />}
+          {!selected && (
+            <Circle className="selection-empty" size={22} aria-hidden="true" />
+          )}
         </button>
       )}
       {index !== undefined && (
@@ -185,7 +197,12 @@ export function TrackRow({
             <span className="track-artist">
               {track.artist || unknownArtist}
             </span>
-            <span className="track-duration-inline">
+            <span
+              className="track-duration-inline"
+              data-duration={
+                track.available && !track.hidden ? true : undefined
+              }
+            >
               {track.hidden
                 ? (labels.removedLibrary ?? "Removed from Library")
                 : track.available
