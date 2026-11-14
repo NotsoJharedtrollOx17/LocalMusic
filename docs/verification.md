@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Entry response phone follow-up
+
+- Installed the new ARM64 debug APK on the authorized Note10+ (711 songs). Four CDP touch checks opened two Albums and two Artists: observed collection-shell times were 272?437 ms and visible-track times 359?592 ms, including inspection overhead. These are four observations, not a latency percentile or performance SLA.
+- The attempted song-command interception did not intercept native playback: the queue changed and playback occurred. This invalidates the intended no-playback/no-history-change condition of that probe; native song-start latency was not measured. No listening records were deleted or rolled back to conceal it. Restored only the playback queue preference from the fresh pre-install snapshot, then verified the original 58-track queue, paused position, playback flags, settings, sound configuration, saved playlists and catalog total matched that snapshot. A first debugging-pipe restoration timed out; a bounded file copy completed restoration before reopening paused.
+- Repeated collection-only navigation after restoration preserved that baseline. App crash buffer was empty; temporary device forwarding was removed. Screenshots, private restoration material and timing results remain ignored under `artifacts/entry-taps/`. The phone is released. Native song-response investigation remains open; browser touch play/pause passed in the preceding batch.
+
 ## 14 November 2026 ? Library entry response follow-up
 
 - Collection presses now present the selected album/artist immediately and read membership and the first track page once. Initial opening no longer walks every catalog page to resolve an already-known group. Catalog revision changes retain identity reconciliation; opening a group no longer triggers a duplicate refresh through its identity effect. Existing request-generation guards remain. Scope archived in `docs/library-entry-response-plan.md`.
