@@ -56,6 +56,7 @@ pub fn run() {
             commands::visualizer::stop_visualizer,
             commands::window::show_main_window,
             commands::window::set_android_appearance,
+            commands::window::touch_feedback,
             desktop_windows::desktop_state,
             desktop_windows::desktop_action,
             desktop_windows::desktop_changed,

@@ -10,6 +10,9 @@ async function samples(page: Page) {
 }
 async function full(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
+  await dialog.evaluate((el) =>
+    Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
+  );
   const box = await dialog.boundingBox();
   const viewport = await page.evaluate(() => ({
     width: visualViewport!.width,

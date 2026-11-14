@@ -34,6 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  Permission(strings=[Manifest.permission.READ_EXTERNAL_STORAGE],alias="legacyAudio")
 ])
 class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
+ @Command fun touchFeedback(invoke:Invoke){activity.runOnUiThread{
+  activity.window.decorView.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+  invoke.resolve(JSObject())
+ }}
  @Command fun appearance(invoke:Invoke){val args=invoke.parseArgs(AppearanceArgs::class.java);activity.runOnUiThread{
   val window=activity.window
   val controls=androidx.core.view.WindowCompat.getInsetsController(window,window.decorView)

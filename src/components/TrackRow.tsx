@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, type MouseEvent } from "react";
 import {
   Play,
@@ -177,9 +178,15 @@ export function TrackRow({
       )}
       <button
         className="track-hit"
-        onClick={(e) =>
-          selectionMode && onSelect ? onSelect(e.shiftKey) : onPlay()
-        }
+        onClick={(e) => {
+          if (selectionMode && onSelect) {
+            onSelect(e.shiftKey);
+            return;
+          }
+          if (document.documentElement.dataset.platform === "android")
+            void invoke("touch_feedback").catch(() => {});
+          onPlay();
+        }}
         disabled={(!track.available || track.hidden) && !selectionMode}
         aria-label={
           selectionMode ? track.title : labels.play + " " + track.title

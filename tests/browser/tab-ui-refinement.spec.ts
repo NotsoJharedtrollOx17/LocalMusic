@@ -211,7 +211,7 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await page.locator(".mini-track").click();
   const player = page.getByRole("dialog", { name: "Now playing", exact: true });
   await expect(player).toBeVisible();
-  await expect(player).toHaveCSS("animation-name", "phone-player-reveal");
+  await expect(player).toHaveCSS("animation-name", "none");
   await expect(player.locator(".player-cover")).toBeVisible();
   await expect(player.locator(".progress input")).toBeVisible();
   await page.keyboard.press("Escape");

@@ -743,3 +743,8 @@
     justify-content: center;
   }
 }
+
+:root[data-layout="phone"] .track-hit:active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  border-radius: 10px;
+}

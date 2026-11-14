@@ -40,6 +40,39 @@ export default function InlineSearch() {
     document.addEventListener("click", collapse, true);
     return () => document.removeEventListener("click", collapse, true);
   }, [visible, setSearchOpen]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (
+      !visible ||
+      document.documentElement.dataset.platform !== "android" ||
+      !viewport
+    )
+      return;
+    let fullHeight = viewport.height,
+      width = viewport.width,
+      keyboardSeen = false;
+    const resized = () => {
+      if (document.hidden) {
+        keyboardSeen = false;
+        return;
+      }
+      if (Math.abs(viewport.width - width) > 40) {
+        width = viewport.width;
+        fullHeight = viewport.height;
+        keyboardSeen = false;
+        return;
+      }
+      fullHeight = Math.max(fullHeight, viewport.height);
+      if (fullHeight - viewport.height > 120) keyboardSeen = true;
+      else if (keyboardSeen && fullHeight - viewport.height < 60) {
+        keyboardSeen = false;
+        searchInput.current?.blur();
+        setSearchOpen(false);
+      }
+    };
+    viewport.addEventListener("resize", resized);
+    return () => viewport.removeEventListener("resize", resized);
+  }, [visible, searchInput, setSearchOpen]);
   useBackLayer((visible || inlineSearch.active) && !modal && !menu, () =>
     query ? inlineSearch.clear() : inlineSearch.close(),
   );

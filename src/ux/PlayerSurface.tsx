@@ -47,10 +47,19 @@ export function PlayerSurface({
   const android = document.documentElement.dataset.platform === "android";
   usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
+  const entryAnimation = useRef<Animation | null>(null);
+  const miniTransform = (node: HTMLElement) => {
+    const mini = document
+      .querySelector<HTMLElement>(".mini-player")
+      ?.getBoundingClientRect();
+    if (!mini || !mini.width || !mini.height) return "scale(0.97)";
+    return `translate(${mini.left}px, ${mini.top}px) scale(${mini.width / node.offsetWidth}, ${mini.height / node.offsetHeight})`;
+  };
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);
   useEffect(
     () => () => {
+      entryAnimation.current?.cancel();
       exitAnimation.current?.cancel();
       exitCover.current?.();
     },
@@ -77,13 +86,15 @@ export function PlayerSurface({
         mini.getBoundingClientRect(),
         art.src,
       );
+    const startTransform = getComputedStyle(node).transform;
+    entryAnimation.current?.cancel();
     node.inert = true;
     if (android) node.dataset.closing = "true";
     const animation = node.animate(
       android
         ? [
-            { transform: getComputedStyle(node).transform },
-            { transform: "translateY(100%)" },
+            { transform: startTransform, borderRadius: "0px" },
+            { transform: miniTransform(node), borderRadius: "24px" },
           ]
         : [
             { transform: getComputedStyle(node).transform, opacity: 1 },
@@ -109,8 +120,20 @@ export function PlayerSurface({
   useFocusScope(ref, active && !standalone);
   const entered = useRef(false);
   useLayoutEffect(() => {
-    if (!active || view !== "player" || entered.current || android) return;
+    if (!active || view !== "player" || entered.current) return;
     entered.current = true;
+    if (android) {
+      const node = ref.current;
+      if (node && !standalone && !reducedMotion())
+        entryAnimation.current = node.animate(
+          [
+            { transform: miniTransform(node), borderRadius: "24px" },
+            { transform: "none", borderRadius: "0px" },
+          ],
+          { duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+        );
+      return;
+    }
     const mini = document.querySelector<HTMLImageElement>(".mini-track .cover"),
       art = ref.current?.querySelector<HTMLImageElement>(".player-cover");
     if (mini && art)
