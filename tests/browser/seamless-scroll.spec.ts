@@ -43,7 +43,11 @@ test("phone Albums and Artists load later pages automatically; desktop keeps its
     await page.getByRole("tab", { name, exact: true }).click();
     await expect(page.locator(".album-card").first()).toBeVisible();
     await drain(page);
-    await expect(page.locator(".album-card")).toHaveCount(130);
+    await expect(page.locator(".album-grid")).toHaveAttribute(
+      "data-catalog-total",
+      "130",
+    );
+    expect(await page.locator(".album-card").count()).toBeLessThan(60);
   }
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.reload();

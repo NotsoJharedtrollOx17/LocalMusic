@@ -1,13 +1,21 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import {
+  useWindowVirtualizer,
+  type VirtualItem,
+} from "@tanstack/react-virtual";
+const measurements = new Map<string, VirtualItem[]>();
 export default function TrackList({
   count,
   render,
   virtual = true,
+  estimateSize = 92,
+  measurementKey,
 }: {
   count: number;
   render: (index: number) => ReactNode;
   virtual?: boolean;
+  estimateSize?: number;
+  measurementKey?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [margin, setMargin] = useState(0);
@@ -23,11 +31,24 @@ export default function TrackList({
   }, [count, enabled]);
   const list = useWindowVirtualizer({
     count: enabled ? count : 0,
-    estimateSize: () => 92,
+    estimateSize: () => estimateSize,
+    initialMeasurementsCache: measurementKey
+      ? measurements.get(measurementKey)
+      : undefined,
     overscan: 6,
     scrollMargin: margin,
     enabled,
   });
+  useLayoutEffect(
+    () => () => {
+      if (measurementKey && enabled) {
+        measurements.set(measurementKey, list.takeSnapshot());
+        while (measurements.size > 8)
+          measurements.delete(measurements.keys().next().value!);
+      }
+    },
+    [measurementKey, enabled, list],
+  );
   if (!enabled)
     return (
       <div className="track-list" ref={ref}>

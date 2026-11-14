@@ -809,3 +809,19 @@
   > h2 {
   display: none;
 }
+
+:root[data-layout="phone"] .album-grid.catalog-virtual {
+  display: block;
+}
+:root[data-layout="phone"] .catalog-virtual-row {
+  display: grid;
+  min-width: 0;
+}
+:root[data-layout="phone"] .catalog-virtual-row.albums {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px;
+  padding-bottom: 26px;
+}
+:root[data-layout="phone"] .catalog-virtual-row.artists {
+  grid-template-columns: minmax(0, 1fr);
+}

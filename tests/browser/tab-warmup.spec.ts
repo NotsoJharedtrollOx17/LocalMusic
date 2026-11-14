@@ -17,11 +17,18 @@ test("startup warms complete group catalogs without hidden cards and revisits re
         await new Promise<void>((resolve) =>
           requestAnimationFrame(() => resolve()),
         );
-        return document.querySelectorAll(".album-card").length;
+        return Number(
+          (document.querySelector(".album-grid") as HTMLElement).dataset
+            .catalogTotal,
+        );
       });
     expect(immediate).toBe(130);
     await page.waitForTimeout(250);
-    await expect(page.locator(".album-card")).toHaveCount(130);
+    await expect(page.locator(".album-grid")).toHaveAttribute(
+      "data-catalog-total",
+      "130",
+    );
+    expect(await page.locator(".album-card").count()).toBeLessThan(60);
     await expect(page.locator(".catalog-loading-label")).toHaveCount(0);
   }
 });
@@ -33,7 +40,11 @@ test("import invalidates warmed tabs and includes the new album and artist", asy
   await seedInlineCatalog(page);
   await page.waitForTimeout(2000);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(130);
+  await expect(page.locator(".album-grid")).toHaveAttribute(
+    "data-catalog-total",
+    "130",
+  );
+  expect(await page.locator(".album-card").count()).toBeLessThan(60);
   await page
     .locator("input[type=file]")
     .first()
@@ -46,12 +57,18 @@ test("import invalidates warmed tabs and includes the new album and artist", asy
       }),
     });
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(131);
+  await expect(page.locator(".album-grid")).toHaveAttribute(
+    "data-catalog-total",
+    "131",
+  );
   await expect(
     page.locator(".album-card strong").filter({ hasText: "Fresh warm album" }),
   ).toHaveCount(1);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(131);
+  await expect(page.locator(".album-grid")).toHaveAttribute(
+    "data-catalog-total",
+    "131",
+  );
   await expect(
     page.locator(".album-card strong").filter({ hasText: "Fresh warm artist" }),
   ).toHaveCount(1);

@@ -52,6 +52,11 @@ export function useLibraryMotion(
       pointer: number;
       horizontal: boolean;
     } | null>(null);
+  const tabFrame = useRef(0);
+  const cancelTabMotion = useCallback(() => {
+    cancelAnimationFrame(tabFrame.current);
+    tabFrame.current = 0;
+  }, []);
   const suppressClickUntil = useRef(0);
   const dragOffset = useRef(0),
     settleAnimation = useRef<Animation | undefined>(undefined);
@@ -80,6 +85,7 @@ export function useLibraryMotion(
     finishDrag(false);
   }, [finishDrag]);
   useGestureCancellation(() => {
+    cancelTabMotion();
     if (gesture.current) {
       gesture.current = null;
       suppressClickUntil.current = performance.now() + 350;
@@ -93,27 +99,47 @@ export function useLibraryMotion(
     scroll.current[section] = window.scrollY;
     onChange(next);
   };
-  const revealTab = useCallback((active: HTMLElement) => {
-    const node = tabs.current;
-    if (!node) return;
-    const left = active.offsetLeft,
-      right = left + active.offsetWidth;
-    const start = node.scrollLeft,
-      end = start + node.clientWidth;
-    const target =
-      document.documentElement.dataset.layout === "phone"
-        ? left
-        : left < start
+  const revealTab = useCallback(
+    (active: HTMLElement) => {
+      const node = tabs.current;
+      if (!node) return;
+      const left = active.offsetLeft,
+        right = left + active.offsetWidth;
+      const start = node.scrollLeft,
+        end = start + node.clientWidth;
+      const target =
+        document.documentElement.dataset.layout === "phone"
           ? left
-          : right > end
-            ? right - node.clientWidth
-            : start;
-    if (Math.abs(target - start) > 1)
-      node.scrollTo({
-        left: target,
-        behavior: reducedMotion() ? "instant" : "smooth",
-      });
-  }, []);
+          : left < start
+            ? left
+            : right > end
+              ? right - node.clientWidth
+              : start;
+      cancelTabMotion();
+      if (Math.abs(target - start) <= 1) return;
+      if (
+        document.documentElement.dataset.layout !== "phone" ||
+        reducedMotion()
+      ) {
+        node.scrollTo({
+          left: target,
+          behavior: reducedMotion() ? "instant" : "smooth",
+        });
+        return;
+      }
+      const started = performance.now();
+      const frame = (time: number) => {
+        const t = Math.min(1, (time - started) / 160);
+        node.scrollTo({
+          left: start + (target - start) * (1 - Math.pow(1 - t, 3)),
+          behavior: "instant",
+        });
+        tabFrame.current = t < 1 ? requestAnimationFrame(frame) : 0;
+      };
+      tabFrame.current = requestAnimationFrame(frame);
+    },
+    [cancelTabMotion],
+  );
   useLayoutEffect(() => {
     const node = tabsNode;
     if (!node) return;

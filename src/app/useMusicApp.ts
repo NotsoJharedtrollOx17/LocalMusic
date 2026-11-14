@@ -374,8 +374,21 @@ export function useMusicApp(initialSettings?: Settings) {
       !inlineSearch.pending &&
       !inlineSearch.stale
     ) {
+      if (groupOrigin.current.section !== section) {
+        restoreGroupFocus.current = false;
+        return;
+      }
       const selector = groupOrigin.current.selector;
-      const frame = requestAnimationFrame(() => {
+      let attempts = 0,
+        frame = 0;
+      const restore = () => {
+        const requested = selector
+          ? document.querySelector<HTMLElement>(selector)
+          : null;
+        if (selector && !requested && ++attempts < 12) {
+          frame = requestAnimationFrame(restore);
+          return;
+        }
         const button =
           document.querySelector<HTMLElement>(
             selector ?? '.section-tabs [aria-selected="true"]',
@@ -387,10 +400,11 @@ export function useMusicApp(initialSettings?: Settings) {
           button.focus({ preventScroll: true });
           restoreGroupFocus.current = false;
         }
-      });
+      };
+      frame = requestAnimationFrame(restore);
       return () => cancelAnimationFrame(frame);
     }
-  }, [groupIdentity, inlineSearch.pending, inlineSearch.stale]);
+  }, [groupIdentity, section, inlineSearch.pending, inlineSearch.stale]);
   useEffect(() => {
     if (group)
       void act(() => refreshGroup(group, Math.max(60, groupTracks.length)));
