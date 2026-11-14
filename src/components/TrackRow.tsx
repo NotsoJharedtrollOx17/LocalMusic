@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, type MouseEvent } from "react";
 import {
   Play,
@@ -55,6 +54,20 @@ export function TrackRow({
   };
   edit?: { up?: () => void; down?: () => void; remove?: () => void };
 }) {
+  const hit = useRef<HTMLButtonElement>(null),
+    feedback = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const clearFeedback = () => {
+    clearTimeout(feedback.current);
+    hit.current?.removeAttribute("data-pressed");
+  };
+  const flash = () => {
+    if (document.documentElement.dataset.layout !== "phone" || selectionMode)
+      return;
+    clearFeedback();
+    hit.current?.setAttribute("data-pressed", "true");
+    feedback.current = setTimeout(clearFeedback, 180);
+  };
+  useEffect(() => clearFeedback, []);
   const press = useRef<ReturnType<typeof setTimeout> | null>(null),
     origin = useRef<{ x: number; y: number } | null>(null),
     held = useRef(false),
@@ -65,6 +78,7 @@ export function TrackRow({
   };
   useEffect(() => cancel, []);
   const interrupt = () => {
+    clearFeedback();
     if (!press.current && !origin.current) return;
     cancel();
     origin.current = null;
@@ -119,6 +133,7 @@ export function TrackRow({
         cancel();
         press.current = setTimeout(() => {
           held.current = true;
+          clearFeedback();
           onSelect();
         }, 480);
       }}
@@ -137,7 +152,9 @@ export function TrackRow({
         origin.current = null;
       }}
       onPointerCancel={interrupt}
-      onLostPointerCapture={interrupt}
+      onLostPointerCapture={() => {
+        if (origin.current) interrupt();
+      }}
       onKeyDownCapture={(e) => {
         if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
           touch.current = false;
@@ -177,14 +194,22 @@ export function TrackRow({
         </span>
       )}
       <button
+        ref={hit}
         className="track-hit"
+        onPointerDown={() => {
+          if (!selectionMode) {
+            clearTimeout(feedback.current);
+            hit.current?.setAttribute("data-pressed", "true");
+          }
+        }}
+        onPointerUp={() => (held.current ? clearFeedback() : flash())}
+        onPointerCancel={clearFeedback}
         onClick={(e) => {
           if (selectionMode && onSelect) {
             onSelect(e.shiftKey);
             return;
           }
-          if (document.documentElement.dataset.platform === "android")
-            void invoke("touch_feedback").catch(() => {});
+          flash();
           onPlay();
         }}
         disabled={(!track.available || track.hidden) && !selectionMode}

@@ -41,13 +41,3 @@ pub(crate) fn set_android_appearance(
     let _ = (app, dark);
     Ok(())
 }
-
-#[tauri::command]
-pub(crate) fn touch_feedback(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<()> {
-    if window.label() != "main" { return Err("Touch feedback belongs to the main window".into()); }
-    #[cfg(target_os = "android")]
-    { use tauri_plugin_native_music::NativeMusicExt; app.native_music().call::<serde_json::Value>("touchFeedback", serde_json::json!({}))?; }
-    #[cfg(not(target_os = "android"))]
-    let _ = app;
-    Ok(())
-}

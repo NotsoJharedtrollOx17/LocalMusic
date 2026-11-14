@@ -184,3 +184,35 @@ fn failed_organization_write_is_atomic_and_reopen_is_idempotent() {
     }
     let _ = std::fs::remove_file(path);
 }
+
+#[test]
+fn playback_batch_preserves_order_corrections_duplicates_and_visibility() {
+    let (tracks, _, _) = fixture();
+    let mut store = Store::open(":memory:").unwrap();
+    for t in &tracks {
+        store.upsert_track(t).unwrap();
+    }
+    store
+        .organize_library(0, json!({"op":"artist","ids":["a"],"name":"Corrected"}))
+        .unwrap();
+    store
+        .connection
+        .execute("INSERT INTO hidden_tracks(track_id) VALUES (?1)", ["b"])
+        .unwrap();
+    let ids: Vec<String> = ["a", "missing", "b", "g", "a"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    let batch = store.playback_tracks(&ids).unwrap();
+    assert_eq!(
+        batch.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+        vec!["a", "g", "a"]
+    );
+    for (id, track) in batch {
+        assert_eq!(
+            serde_json::to_value(track).unwrap(),
+            serde_json::to_value(store.track(&id).unwrap().unwrap()).unwrap()
+        );
+    }
+    assert!(store.playback_tracks(&[]).unwrap().is_empty());
+}

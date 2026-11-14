@@ -744,7 +744,11 @@
   }
 }
 
-:root[data-layout="phone"] .track-hit:active {
+:root[data-layout="phone"] .track-hit:is(:active, [data-pressed="true"]) {
   background: color-mix(in srgb, var(--accent) 12%, var(--paper));
   border-radius: 10px;
+}
+
+:root[data-layout="phone"] .track-hit {
+  touch-action: manipulation;
 }

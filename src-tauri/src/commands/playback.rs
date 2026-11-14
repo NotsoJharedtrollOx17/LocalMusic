@@ -62,15 +62,9 @@ pub(crate) async fn play_queue(
         Some(index) => Some(ids.get(index).ok_or("Select an available track")?.clone()),
         None => None,
     };
-    let ids: Vec<String> = {
+    let (ids, tracks): (Vec<String>, Vec<_>) = {
         let store = state.core.lock().map_err(|e| e.to_string())?;
-        ids.iter()
-            .filter_map(|id| match store.track(id) {
-                Ok(Some(t)) if !t.hidden => Some(Ok(id.clone())),
-                Ok(_) => None,
-                Err(e) => Some(Err(e)),
-            })
-            .collect::<Result<_>>()?
+        store.playback_tracks(&ids)?.into_iter().unzip()
     };
     if ids.is_empty() {
         return Err("Select an available track".into());
@@ -84,12 +78,7 @@ pub(crate) async fn play_queue(
     };
     #[cfg(target_os = "android")]
     {
-        let tracks = {
-            let store = state.core.lock().map_err(|e| e.to_string())?;
-            ids.iter()
-                .map(|id| store.track(id)?.ok_or("Unknown track".into()))
-                .collect::<Result<Vec<_>>>()?
-        };
+        let tracks: Vec<_> = tracks.into_iter().map(|t| json!({"id":t.id,"sourceUri":t.source_uri,"title":t.title,"artist":t.artist,"album":t.album})).collect();
         return dispatch(
             app,
             &state,
@@ -98,6 +87,8 @@ pub(crate) async fn play_queue(
         )
         .await;
     }
+    #[cfg(not(target_os = "android"))]
+    let _ = tracks;
     #[cfg(not(target_os = "android"))]
     dispatch(app, &state, "play", json!({"ids":ids,"index":index})).await
 }

@@ -8,31 +8,11 @@ async function setup(page: import("@playwright/test").Page) {
     () => (document.documentElement.dataset.platform = "android"),
   );
 }
-test("song Play requests one system touch feedback; a cancelled hold does not", async ({
+test("song press highlights immediately and briefly after activation without haptics", async ({
   page,
 }) => {
   await setup(page);
-  await page.evaluate(() => {
-    (window as any).__touchCalls = [];
-    (window as any).__TAURI_INTERNALS__ = {
-      invoke: async (command: string) => {
-        (window as any).__touchCalls.push(command);
-        return {};
-      },
-    };
-  });
   const hit = page.locator(".track-hit").first();
-  await hit.click();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as any).__touchCalls.filter(
-            (x: string) => x === "touch_feedback",
-          ).length,
-      ),
-    )
-    .toBe(1);
   await hit.dispatchEvent("pointerdown", {
     pointerType: "touch",
     pointerId: 5,
@@ -40,20 +20,33 @@ test("song Play requests one system touch feedback; a cancelled hold does not", 
     clientX: 100,
     clientY: 300,
   });
-  await hit.dispatchEvent("pointercancel", {
-    pointerType: "touch",
-    pointerId: 5,
-    isPrimary: true,
+  await expect(hit).toHaveAttribute("data-pressed", "true");
+  const active = await hit.evaluate((el) => {
+    el.dispatchEvent(
+      new PointerEvent("pointerup", {
+        bubbles: true,
+        pointerType: "touch",
+        pointerId: 5,
+        isPrimary: true,
+      }),
+    );
+    el.dispatchEvent(
+      new PointerEvent("lostpointercapture", {
+        bubbles: true,
+        pointerType: "touch",
+        pointerId: 5,
+        isPrimary: true,
+      }),
+    );
+    const afterRelease = el.getAttribute("data-pressed");
+    (el as HTMLElement).click();
+    return { afterRelease, afterActivation: el.getAttribute("data-pressed") };
   });
-  expect(
-    await page.evaluate(
-      () =>
-        (window as any).__touchCalls.filter(
-          (x: string) => x === "touch_feedback",
-        ).length,
-    ),
-  ).toBe(1);
+  expect(active).toEqual({ afterRelease: "true", afterActivation: "true" });
+  await expect(page.locator(".mini-player")).toBeVisible();
+  await expect(hit).not.toHaveAttribute("data-pressed", "true");
 });
+
 test("Android player grows from the mini rectangle and closes by shrinking back", async ({
   page,
 }) => {
@@ -71,8 +64,8 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
       .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes());
   });
   const player = page.locator(".player-surface");
-  expect(frames[0].transform).toContain("scale(");
-  expect(frames[0].transform).toContain("translate(");
+  expect(frames[0].clipPath).toContain("inset(");
+  expect(frames.every((f) => !("transform" in f))).toBe(true);
   expect(frames.every((f) => !("opacity" in f))).toBe(true);
   await player.evaluate((el) =>
     Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
@@ -85,8 +78,8 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
       .getAnimations()
       .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes()),
   );
-  expect(exit.at(-1)!.transform).toContain("scale(");
-  expect(exit.at(-1)!.transform).not.toContain("100%");
+  expect(exit.at(-1)!.clipPath).toContain("inset(");
+  expect(exit.every((f) => !("transform" in f))).toBe(true);
   await expect(player).toHaveCount(0);
   await expect(page.locator(".mini-track")).toBeFocused();
 });

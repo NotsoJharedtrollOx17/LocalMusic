@@ -138,6 +138,27 @@ impl Store {
             .set(self.catalog_revision.get().wrapping_add(1));
         Ok(())
     }
+    /// Resolve a playback queue using one organization snapshot and one prepared query.
+    /// Keep caller order and repeated IDs; omit only missing/hidden library entries.
+    pub fn playback_tracks(&self, ids: &[String]) -> Result<Vec<(String, Track)>> {
+        let organization = self.organization()?;
+        let mut statement = self.connection.prepare(
+            "SELECT data, EXISTS(SELECT 1 FROM hidden_tracks WHERE track_id=tracks.id) FROM tracks WHERE id=?1"
+        ).map_err(|e| e.to_string())?;
+        let mut tracks = Vec::with_capacity(ids.len());
+        for id in ids {
+            let mut rows = statement.query([id]).map_err(|e| e.to_string())?;
+            if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+                let data: String = row.get(0).map_err(|e| e.to_string())?;
+                let mut track: Track = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+                track.hidden = row.get(1).map_err(|e| e.to_string())?;
+                if !track.hidden {
+                    tracks.push((id.clone(), organization.apply(track)));
+                }
+            }
+        }
+        Ok(tracks)
+    }
     pub fn track(&self, id: &str) -> Result<Option<Track>> {
         let mut st = self
             .connection

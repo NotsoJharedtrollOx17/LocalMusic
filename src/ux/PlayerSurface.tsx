@@ -48,12 +48,12 @@ export function PlayerSurface({
   usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
   const entryAnimation = useRef<Animation | null>(null);
-  const miniTransform = (node: HTMLElement) => {
+  const miniClip = (node: HTMLElement) => {
     const mini = document
       .querySelector<HTMLElement>(".mini-player")
       ?.getBoundingClientRect();
-    if (!mini || !mini.width || !mini.height) return "scale(0.97)";
-    return `translate(${mini.left}px, ${mini.top}px) scale(${mini.width / node.offsetWidth}, ${mini.height / node.offsetHeight})`;
+    if (!mini) return "inset(0px round 0px)";
+    return `inset(${Math.max(0, mini.top)}px ${Math.max(0, node.offsetWidth - mini.right)}px ${Math.max(0, node.offsetHeight - mini.bottom)}px ${Math.max(0, mini.left)}px round 24px)`;
   };
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);
@@ -86,15 +86,18 @@ export function PlayerSurface({
         mini.getBoundingClientRect(),
         art.src,
       );
-    const startTransform = getComputedStyle(node).transform;
+    const startClip = getComputedStyle(node).clipPath;
     entryAnimation.current?.cancel();
     node.inert = true;
     if (android) node.dataset.closing = "true";
     const animation = node.animate(
       android
         ? [
-            { transform: startTransform, borderRadius: "0px" },
-            { transform: miniTransform(node), borderRadius: "24px" },
+            {
+              clipPath:
+                startClip === "none" ? "inset(0px round 0px)" : startClip,
+            },
+            { clipPath: miniClip(node) },
           ]
         : [
             { transform: getComputedStyle(node).transform, opacity: 1 },
@@ -126,10 +129,7 @@ export function PlayerSurface({
       const node = ref.current;
       if (node && !standalone && !reducedMotion())
         entryAnimation.current = node.animate(
-          [
-            { transform: miniTransform(node), borderRadius: "24px" },
-            { transform: "none", borderRadius: "0px" },
-          ],
+          [{ clipPath: miniClip(node) }, { clipPath: "inset(0px round 0px)" }],
           { duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
         );
       return;
