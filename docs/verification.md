@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Align Artist and Album detail headers
+
+- Applied the existing compact phone Album header rules to Artist details: 76px artwork, 16px gap, 19px title, left alignment and matching spacing/corners. Retained Artist subview controls and counts. Archived scope in `docs/artist-album-layout-alignment-plan.md`.
+- Frontend build and 111 unit tests passed. ARM64 Android compilation and copy-fallback packaging passed (Gradle 23 seconds). Installed APK on the Note10+ and launched it. Actual Artist header checks confirmed grid layout, 76x76 artwork and title placement to its right; selector visible. Captured and visually inspected `artifacts/artist-align/artist.png`.
+- Compared post-navigation playback, queue, settings, sound, playlists and catalog total against the fresh paused baseline: unchanged. Returned to Songs; no playback or import was issued. App crash buffer empty and inspection forward removed. This phone layout check does not establish EN/ES, TalkBack, every text scale or full regression acceptance. No merge/release/version bump.
+
 ## 14 November 2026 ? Incremental-import update installation check
 
 - At the user's request, installed the current ARM64 APK on the Note10+ successfully and launched the app. Actual native Album and Artist navigation confirmed the redundant album/year and artist row elements are absent. Captured private screenshots under `artifacts/incremental-phone/`.

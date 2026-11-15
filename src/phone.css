@@ -760,7 +760,7 @@
 :root[data-layout="phone"] .is-current .track-hit .cover-play {
   opacity: 1;
 }
-:root[data-layout="phone"] .collection-hero[data-kind="albums"] {
+:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) {
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
   align-items: start;
@@ -768,15 +768,15 @@
   padding: 20px 0;
   text-align: start;
 }
-:root[data-layout="phone"] .collection-hero[data-kind="albums"] .cover {
+:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) .cover {
   width: 76px;
   height: 76px;
   border-radius: 10px;
 }
-:root[data-layout="phone"] .collection-hero[data-kind="albums"] > div {
+:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) > div {
   gap: 6px;
 }
-:root[data-layout="phone"] .collection-hero[data-kind="albums"] h1 {
+:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) h1 {
   font-family: Inter, system-ui, sans-serif;
   font-size: 19px;
   line-height: 1.3;
