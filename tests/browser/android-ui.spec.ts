@@ -48,10 +48,10 @@ for (const size of [
     const settings = await openSettings(page);
     await full(page, settings);
     await settings
-      .getByRole("button", { name: "Organize library", exact: true })
+      .getByRole("button", { name: "Organize", exact: true })
       .click();
     const org = page.getByRole("dialog", {
-      name: "Organize library",
+      name: "Organize",
       exact: true,
     });
     await full(page, org);

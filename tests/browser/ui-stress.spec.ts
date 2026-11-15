@@ -249,9 +249,9 @@ test("album review selectors expose concise accessible names", async ({
   await seed(page);
   const settings = await openSettings(page);
   await settings
-    .getByRole("button", { name: "Organize library", exact: true })
+    .getByRole("button", { name: "Organize", exact: true })
     .click();
-  const d = page.getByRole("dialog", { name: "Organize library", exact: true });
+  const d = page.getByRole("dialog", { name: "Organize", exact: true });
   await d.getByRole("button", { name: "Albums", exact: true }).click();
   await d.locator(".organization-choice").first().getByRole("checkbox").check();
   await expect(d.locator("select")).toHaveAccessibleName("Artwork");

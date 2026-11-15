@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? Shorten Organize and align Album actions
+
+- Renamed the shared action and dialog title to Organize / Organizar. Album detail Organize now matches Import Music's primary colour and icon size. Phone action rows stretch to equal height while allowing wrapping at larger text scales. Existing behavior remains. Archived scope in `docs/organize-action-label-plan.md`.
+- Frontend production build and 111 unit tests passed. Three targeted browser journeys passed (English/Spanish organization, album aliases and Spanish narrow/dark). Updated other browser expectations to the new labels; those additional suites were not rerun. The first phone sizing attempt exposed a 21px height difference; added stretch alignment and rebuilt. Final ARM64 compilation and copy-fallback packaging passed (Gradle 23 seconds).
+- Installed final APK on the Note10+ at the existing 130% text scale. The two buttons measured equal widths (185.7 CSS px), equal heights (44.6 CSS px) and matching orange backgrounds. Visually inspected `artifacts/organize-short/buttons.png`; Organize opened and dismissed the renamed dialog. Fresh paused playback, queue, settings, sound, playlists and catalog total matched after navigation. Crash buffer empty; inspection forward removed. No playback or imports were triggered.
+- Other physical text scales, TalkBack, complete browser/native regressions and Windows runtime remain separate acceptance gates. No merge/release/version bump.
+
 ## 14 November 2026 ? Compact Organize Library flows
 
 - Removed repeated top-level task descriptions in Songs/Albums while retaining their matching/edition guidance and expandable local-changes explanation. Empty possible-match sections no longer displace the manual lists. Phone spacing is tighter; song and album suggestion actions share the compact layout. Both phone review modes temporarily hide top-level browse controls while keeping Back and restoration. Scope archived in `docs/organize-library-compact-flow-plan.md`.

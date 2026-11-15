@@ -49,7 +49,7 @@ test("phone album details use compact organization action, omit both totals and 
   await page.locator(".catalog-albums .album-card").first().click();
   const hero = page.locator(".collection-hero[data-kind=albums]"),
     action = hero.getByRole("button", {
-      name: "Organize library",
+      name: "Organize",
       exact: true,
     });
   await expect(hero.locator(".collection-hero-count")).toBeHidden();
@@ -62,7 +62,7 @@ test("phone album details use compact organization action, omit both totals and 
   await expect(action.locator("svg")).toBeVisible();
   await action.click();
   await expect(
-    page.getByRole("dialog", { name: "Organize library", exact: true }),
+    page.getByRole("dialog", { name: "Organize", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(action).toBeFocused();

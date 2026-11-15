@@ -70,12 +70,12 @@ async function open(page: Page, es = false) {
   await openSettings(page);
   await page
     .getByRole("button", {
-      name: es ? "Organizar biblioteca" : "Organize library",
+      name: es ? "Organizar" : "Organize",
       exact: true,
     })
     .click();
   const d = page.getByRole("dialog", {
-    name: es ? "Organizar biblioteca" : "Organize library",
+    name: es ? "Organizar" : "Organize",
     exact: true,
   });
   await expect(d.locator(".organization-body")).toBeVisible();
@@ -195,10 +195,10 @@ test("confirmed album aliases form one searchable card and unlink restores origi
     ),
   ).toBe(true);
   await page
-    .getByRole("button", { name: "Organize library", exact: true })
+    .getByRole("button", { name: "Organize", exact: true })
     .click();
   const organization = page.getByRole("dialog", {
-    name: "Organize library",
+    name: "Organize",
     exact: true,
   });
   await expect(
@@ -234,7 +234,7 @@ test("Spanish dark narrow organization remains reachable, accessible and within 
     page.getByRole("dialog", { name: "Ajustes", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Organizar biblioteca", exact: true }),
+    page.getByRole("button", { name: "Organizar", exact: true }),
   ).toBeFocused();
 });
 

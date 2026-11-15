@@ -320,12 +320,12 @@ test("phone Settings hierarchy and organization browse-review flows work in EN/E
     expect(new Set(sizes).size).toBe(1);
     await settings
       .getByRole("button", {
-        name: es ? "Organizar biblioteca" : "Organize library",
+        name: es ? "Organizar" : "Organize",
         exact: true,
       })
       .click();
     const org = page.getByRole("dialog", {
-      name: es ? "Organizar biblioteca" : "Organize library",
+      name: es ? "Organizar" : "Organize",
       exact: true,
     });
     const lead = es ? "Artista principal" : "Lead artist",

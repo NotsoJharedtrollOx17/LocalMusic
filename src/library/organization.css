@@ -384,6 +384,7 @@
   .toolbar-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: stretch;
   width: 100%;
   gap: 8px;
 }

@@ -60,10 +60,10 @@ export default function LibraryToolbar() {
         {group?.kind === "albums" && (
           <button
             data-organization-origin
-            className="button secondary collection-organize-action"
+            className="button primary collection-organize-action"
             onClick={() => { setOrganizationTab("albums"); setModal("organize"); }}
           >
-            <SlidersHorizontal size={16} aria-hidden="true" />
+            <SlidersHorizontal size={18} aria-hidden="true" />
             {libraryStrings(settings?.language === "es").organize}
           </button>
         )}
