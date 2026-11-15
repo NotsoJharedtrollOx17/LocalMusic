@@ -288,7 +288,7 @@ test("mobile About returns to Settings and empty artist text spans the grid", as
     name: "About Local Music",
     exact: true,
   });
-  await expect(about).toContainText("0.17.0");
+  await expect(about).toContainText("0.18.0");
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(settings).toBeVisible();
