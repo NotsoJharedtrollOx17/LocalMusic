@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Duration and playback-response phone verification
+
+- Installed the updated ARM64 debug APK on the ready Note10+ after capturing a fresh paused 711-song baseline. Six CDP swipe/first-card sequences across Albums and Artists passed, including single-Back return. Observed visible-track times were 416?1097 ms including inspection overhead; these six samples are not a percentile guarantee.
+- Checked rendered song-row duration slots contain no time values. Following entry into Albums and Artists, briefly played and paused the current track through the visible mini-player controls. Observed Play acknowledgement was 311/304 ms and Pause acknowledgement 240/303 ms including inspection overhead. This is actual native playback, not an intercepted command. The brief playback follows ordinary listening accounting; no history rollback was attempted.
+- Restored the original paused position via seek. Verified full captured playback/queue state, settings, sound, saved playlists and catalog total match the fresh baseline afterward. App crash buffer was empty and temporary ADB forwarding removed. Private evidence remains under ignored `artifacts/duration-phone/`. Native duration inspection covered rendered song rows; Queue/organization/detail duration removal is implemented in source but was not separately navigated in this device run. Sustained responsiveness, every-device guarantees and full runtime regression remain separate acceptance gates.
+
 ## 14 November 2026 ? Duration labels and command response
 
 - Removed individual song-duration text from shared track rows (including Queue and playlist rows), song/album organization review and Track Details. Playback seek timing remains. Unavailable and removed statuses remain visible; empty duration slots collapse. Archived scope in `docs/song-duration-playback-response-plan.md`.
