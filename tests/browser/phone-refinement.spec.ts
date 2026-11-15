@@ -45,7 +45,7 @@ for (const width of [320, 390, 411])
       await mini.evaluate((el) =>
         parseFloat(getComputedStyle(el).borderRadius),
       ),
-    ).toBeGreaterThanOrEqual(16);
+    ).toBe(12); // Compact mini-player corners, while controls keep 48px targets.
     await page.evaluate(() => scrollTo(0, 350));
     const brand = await page.locator(".library-brand-header").boundingBox(),
       tabs = await page.locator(".library-navigation").boundingBox();
@@ -288,7 +288,7 @@ test("mobile About returns to Settings and empty artist text spans the grid", as
     name: "About Local Music",
     exact: true,
   });
-  await expect(about).toContainText("0.15.0");
+  await expect(about).toContainText("0.17.0");
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(settings).toBeVisible();

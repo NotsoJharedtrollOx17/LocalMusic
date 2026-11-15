@@ -48,7 +48,7 @@ test("phone album details use compact organization action, omit both totals and 
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
   await page.locator(".catalog-albums .album-card").first().click();
   const hero = page.locator(".collection-hero[data-kind=albums]"),
-    action = hero.getByRole("button", {
+    action = page.locator(".library-toolbar").getByRole("button", {
       name: "Organize",
       exact: true,
     });

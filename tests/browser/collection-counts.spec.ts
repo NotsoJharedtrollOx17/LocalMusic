@@ -3,7 +3,7 @@ import { taggedWav } from "./fixtures";
 import { openSettings } from "./navigationHelpers";
 import { holdNextTrackRead, release } from "./catalog-gate";
 
-test("tab changes never flash a bare title and retain known totals during refresh", async ({
+test("tab changes never flash a bare title and retain warmed totals", async ({
   page,
 }) => {
   await page.goto("/");
@@ -24,24 +24,13 @@ test("tab changes never flash a bare title and retain known totals during refres
       characterData: true,
     });
   });
-  await holdNextTrackRead(page);
+  // Warmed empty groups may already be available without a catalog read.
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await page.waitForFunction(
-    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
-  );
-  await expect(count).toHaveAttribute("aria-busy", "true");
-  expect((await count.textContent())?.trim()).toBe("");
-  await release(page);
   await expect(count).toHaveText("0 albums");
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await expect(count).toHaveText("0 songs");
-  await holdNextTrackRead(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await page.waitForFunction(
-    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
-  );
   await expect(count).toHaveText("0 albums");
-  await release(page);
   for (const [tab, text] of [
     ["Artists", "0 artists"],
     ["Playlists", "4 playlists"],

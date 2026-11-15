@@ -381,6 +381,7 @@ test("privacy pending and failure states recover while menus and queue actions r
   await expect(privacy).toBeEnabled();
   await privacy.click();
   await expect(privacy).toHaveAttribute("aria-checked", "false");
+  await expect(privacy).toBeEnabled();
   await privacy.focus();
   await page.keyboard.press("Space");
   await expect(privacy).toHaveAttribute("aria-checked", "true");

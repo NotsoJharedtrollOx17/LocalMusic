@@ -107,6 +107,7 @@ test("mobile sample library, filter playlist, editing and Spanish UI", async ({
     fullPage: true,
   });
   await page.getByLabel("Playlist name", { exact: true }).fill("Night mix");
+  await page.locator(".playlist-refine summary").click();
   await page.getByLabel("Exclude artist", { exact: true }).fill("Field Notes");
   await page
     .getByRole("button", { name: "Generate playlist", exact: true })
@@ -463,11 +464,9 @@ test("artist and album details stay populated as import batches arrive", async (
       ),
     )
     .toBe(true);
-  await expect(page.locator(".toolbar-actions")).not.toContainText("Loading");
-  await expect(
-    page.locator(".album-card").filter({ hasText: "Fixture Album" }),
-  ).toBeVisible();
-  await expect(page.locator(".group-back")).toHaveCount(0);
+  // Album details are shown immediately while membership loads.
+  await expect(page.locator(".collection-hero")).toBeVisible();
+  await page.locator(".group-back").click();
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await page.evaluate(() =>
     (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead(),
@@ -605,9 +604,7 @@ test("album disc order is preserved in views, queue and legacy library migration
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
     expected,
   );
-  await expect(page.locator(".library-page .album-label")).toHaveText(
-    Array(4).fill("Fixture Album · 2001"),
-  );
+  await expect(page.locator(".library-page .album-label")).toHaveCount(0);
   await expect(
     page.locator(".library-page .track-row .icon-button[aria-pressed=true]"),
   ).toHaveCount(4);

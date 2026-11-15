@@ -140,7 +140,7 @@ test("Spanish dark tabs retain their geometry at 320px with doubled text", async
   ).toBeLessThanOrEqual(1);
 });
 
-test("phone Songs keep title and artist while collection and desktop metadata remain available", async ({
+test("phone Songs keep title and artist while redundant collection metadata stays hidden", async ({
   page,
 }) => {
   await samples(page);
@@ -156,12 +156,12 @@ test("phone Songs keep title and artist while collection and desktop metadata re
   await page.locator(".album-card").first().click();
   await expect(
     page.locator(".track-row .track-duration-inline").first(),
-  ).toBeVisible();
+  ).toBeHidden();
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(row.locator(".album-label")).toBeVisible();
-  await expect(row.locator(":scope > .track-duration")).toBeVisible();
+  await expect(row.locator(":scope > .track-duration")).toBeHidden();
 });
 
 test("phone Artists are full-width rows while Albums and desktop Artists retain cards", async ({

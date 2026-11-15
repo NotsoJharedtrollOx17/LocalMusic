@@ -95,7 +95,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.15.0` include output-independent Windows playback and reversible library organization. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.15.0 release notes](docs/releases/v0.15.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.17.0` include the phone interface, navigation and library stability improvements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.17.0 release notes](docs/releases/v0.17.0.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 

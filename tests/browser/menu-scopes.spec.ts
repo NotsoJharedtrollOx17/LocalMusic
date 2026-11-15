@@ -145,10 +145,9 @@ test("a delayed album navigation cannot overwrite a newer Songs choice", async (
   await page
     .getByRole("menuitem", { name: "Go to album", exact: true })
     .click();
-  await expect(
-    page.getByRole("tab", { name: "Albums", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  // Collection details now appear immediately while the track read is pending.
+  await expect(page.locator(".collection-hero")).toBeVisible();
+  await page.locator(".group-back").click();
   await release(page);
   await expect(page.locator(".track-row")).toHaveCount(3);
   await expect(page.locator(".collection-hero")).toHaveCount(0);

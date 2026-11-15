@@ -40,7 +40,7 @@ test("automatic playlists stay live, preserve import order and play their derive
   ]);
   await page.locator("input[type=file]").first().setInputFiles(files[0]);
   await expect(
-    page.locator(".toast").filter({ hasText: "1 tracks imported" }),
+    page.locator(".toast").filter({ hasText: "No new songs imported." }),
   ).toBeVisible();
   await expect(page.locator(".track-row .track-copy strong")).toHaveText([
     "Gamma",

@@ -20,10 +20,11 @@ async function importLibrary(page: Page) {
   await expect(page.locator(".library-toolbar")).toContainText("3 songs");
 }
 
-async function choose(page: Page, name: string) {
+async function choose(page: Page, name: string, hold = false) {
   await page
     .getByRole("button", { name: "Filter and sort", exact: true })
     .click();
+  if (hold) await holdNextTrackRead(page);
   await page
     .getByRole("menu", { name: "Filter and sort" })
     .getByRole("menuitemradio", { name, exact: true })
@@ -56,8 +57,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
 }) => {
   await importLibrary(page);
   await watchWrongEmptyStates(page);
-  await holdNextTrackRead(page);
-  await choose(page, "Favorites");
+  await choose(page, "Favorites", true);
   await expect(page.locator(".catalog-loading")).toBeVisible();
   await expect(page.locator(".empty-favorites")).toHaveCount(0);
   await page.waitForFunction(
@@ -69,8 +69,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
   );
   await expect(page.locator(".library-toolbar")).toContainText("0 songs");
   for (const name of ["Sort by artist", "Sort by album", "Sort by title"]) {
-    await holdNextTrackRead(page);
-    await choose(page, name);
+    await choose(page, name, true);
     await expect(page.locator(".catalog-loading")).toBeVisible();
     await page.waitForFunction(
       () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
@@ -88,8 +87,7 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
   });
 
   // A stale Favorites request must not hide collections or replace All music.
-  await holdNextTrackRead(page);
-  await choose(page, "Sort by artist");
+  await choose(page, "Sort by artist", true);
   await expect(page.locator(".catalog-loading")).toBeVisible();
   await page.waitForFunction(
     () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
@@ -212,6 +210,7 @@ test("Favorites recovers after a failed read and after removing its last song", 
 }) => {
   await importLibrary(page);
   await watchWrongEmptyStates(page);
+  await page.getByRole("button", {name:"Filter and sort", exact:true}).click();
   await page.evaluate(() => {
     const original = IDBObjectStore.prototype.get;
     IDBObjectStore.prototype.get = function (...args) {
@@ -226,7 +225,7 @@ test("Favorites recovers after a failed read and after removing its last song", 
       return original.apply(this, args);
     };
   });
-  await choose(page, "Favorites");
+  await page.getByRole("menu", {name:"Filter and sort"}).getByRole("menuitemradio", {name:"Favorites", exact:true}).click();
   await expect(page.locator(".library-toolbar")).not.toContainText("3 songs");
   await page
     .locator("#library-content")
