@@ -75,7 +75,8 @@ export function TrackRow({
   const press = useRef<ReturnType<typeof setTimeout> | null>(null),
     origin = useRef<{ x: number; y: number } | null>(null),
     held = useRef(false),
-    touch = useRef(false);
+    touch = useRef(false),
+    touchActivated = useRef(false);
   const cancel = () => {
     if (press.current) clearTimeout(press.current);
     press.current = null;
@@ -127,6 +128,7 @@ export function TrackRow({
           (e.pointerType === "pen" &&
             document.documentElement.dataset.layout === "phone");
         held.current = false;
+        touchActivated.current = false;
         if (
           !touch.current ||
           !onSelect ||
@@ -207,9 +209,18 @@ export function TrackRow({
             hit.current?.setAttribute("data-pressed", "true");
           }
         }}
-        onPointerUp={() => (held.current ? clearFeedback() : flash())}
+        onPointerUp={(e) => {
+          if (held.current) { clearFeedback(); return; }
+          flash();
+          if (touch.current && !selectionMode && origin.current &&
+              Math.hypot(e.clientX - origin.current.x, e.clientY - origin.current.y) < 10) {
+            touchActivated.current = true;
+            if (current && onToggle) onToggle(); else onPlay();
+          }
+        }}
         onPointerCancel={clearFeedback}
         onClick={(e) => {
+          if (e.detail > 0 && touchActivated.current) return;
           if (selectionMode && onSelect) {
             onSelect(e.shiftKey);
             return;

@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Confirmed first-song-tap report
+
+- User clarified that the first tap fails and later taps work. Phone TrackRow now activates on a stationary touch release with under-10px movement and no hold/selection gesture. The subsequent synthetic click is ignored to avoid duplicate toggles. Mouse/keyboard and selection-mode click paths remain. Scope archived in `docs/first-song-touch-plan.md`.
+- Frontend build and 111 unit tests passed. Three CDP touch journeys passed (43.6 seconds): holds/selection, short song/card taps and repeated song changes/toggles. After explicitly revising the regression to swipe from Albums into Songs before its first tap, that case passed separately in 16.7 seconds. All tested tracks contain playable fixture audio. This demonstrates the intended path in browser preview, not a measured native reproduction of the original defect.
+- ARM64 Android compilation and copy-fallback packaging passed (Gradle 8 seconds, cached tasks). Physical phone installation and first-song acceptance await the readiness response. The preceding Artist segmented-control change is included. No release/merge/version bump.
+
 ## 14 November 2026 ? Artist selector and repeated-tap investigation
 
 - Artist detail Songs/Albums controls now share a compact rounded segmented group, matching existing selectors, with equal-width 44px minimum targets and an orange selected state. Archived scope in `docs/artist-controls-repeated-song-taps-plan.md`.

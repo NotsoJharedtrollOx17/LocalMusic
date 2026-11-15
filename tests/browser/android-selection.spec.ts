@@ -443,6 +443,11 @@ test("short phone taps activate songs and collection cards without a hold", asyn
 test("consecutive phone song taps change tracks and toggle the current song", async ({ page, context }) => {
   await seed(page, 6, false, true);
   const cdp = await context.newCDPSession(page);
+  await page.locator('#tab-albums').click();
+  await cdp.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:90,y:450}]});
+  await cdp.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:230,y:450}]});
+  await cdp.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
+  await expect(page.locator('#tab-songs')).toHaveAttribute('aria-selected','true');
   for (const index of [0, 1, 2, 0]) {
     const row = page.locator('.track-row').nth(index);
     await down(cdp, row.locator('.track-hit')); await up(cdp);
