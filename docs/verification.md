@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Swipe first-tap device acceptance
+
+- Built ARM64 Android successfully using the established Windows copy-packaging fallback (23 seconds), installed the new debug APK on the Note10+, and captured a fresh paused 711-song baseline before installation.
+- Six actual WebView CDP touch sequences swiped from Songs to Albums and then Artists, immediately tapped the first card, and returned with one Back action. All six opened successfully. Observed shell times were 298?967 ms and visible-track times 347?1059 ms, including test overhead. These limited observations do not establish a percentile target. Playback, queue/position, settings, sound, saved playlists and catalog total matched the fresh baseline afterward. No song taps or playback commands were issued during these six checks.
+- The additional native press-colour/cancel screenshot check did not run: automatic approval review first hit its usage limit, then after continuation the phone reconnected and its WebView inspection endpoint repeatedly timed out. No highlight acceptance claim is made from that attempt. The temporary ADB forward was removed. Browser press implementation and unit/build evidence remain as recorded above; native highlight acceptance remains pending. Private evidence is under ignored `artifacts/swipe-first-tap/`.
+
 ## 14 November 2026 ? First card tap after swiping
 
 - Extended the real CDP touch regression to swipe from Songs into Albums, tap the first card, return, then swipe into Artists and tap its first card. It reproduced the missing collection opening. After the fix the case passed (14.5 seconds total); frontend production build and all 111 unit tests also passed. PowerShell reported native warning output as an error stream despite the browser runner reporting its one case passed.
