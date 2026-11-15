@@ -57,16 +57,17 @@ pub(crate) async fn import_music(
                 }
                 let result = catalog::read_file(p, &cache).and_then(|mut track| {
                     let mut store = core.lock().map_err(|e| e.to_string())?;
-                    if let Some(old) = store.track(&track.id)? {
-                        track.favorite = old.favorite;
-                    }
+                    let old = store.track(&track.id)?;
+                    let is_new = old.as_ref().map_or(true, |old| old.hidden || !old.available);
+                    if let Some(old) = old { track.favorite = old.favorite; }
                     store.upsert_track(&track)?;
-                    store.set_library_visibility(&[track.id.clone()], true)
+                    store.set_library_visibility(&[track.id.clone()], true)?;
+                    Ok(is_new)
                 });
-                if result.is_ok() {
-                    n += 1;
-                } else {
-                    failures += 1;
+                match result {
+                    Ok(true) => n += 1,
+                    Ok(false) => {},
+                    Err(_) => failures += 1,
                 }
                 if (n + failures) % 10 == 0 {
                     let _ = app2.emit(
@@ -107,10 +108,12 @@ pub(crate) async fn import_music(
                 Ok(())
             })
         });
+        let known_ids: Vec<String> = core.lock().map_err(|e| e.to_string())?
+            .all_tracks()?.into_iter().filter(|t| t.available && !t.hidden).map(|t| t.id).collect();
         let app2 = app.clone();
         let value: serde_json::Value = tauri::async_runtime::spawn_blocking(move || {
             app2.native_music()
-                .call("importMusic", json!({"mode":mode,"progress":progress}))
+                .call("importMusic", json!({"mode":mode,"progress":progress,"knownIds":known_ids}))
         })
         .await
         .map_err(|e| e.to_string())??;
@@ -169,23 +172,23 @@ fn import_manifest(
     let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
     let mut count = 0;
     progress(count, failed);
-    for line in std::io::BufReader::new(file).lines() {
+    for (index, line) in std::io::BufReader::new(file).lines().enumerate() {
         if cancel.load(Ordering::Relaxed) {
             break;
         }
         let line = line.map_err(|e| e.to_string())?;
         if let Ok(mut track) = serde_json::from_str::<music_core::Track>(&line) {
             let mut store = core.lock().map_err(|e| e.to_string())?;
-            if let Some(old) = store.track(&track.id)? {
-                track.favorite = old.favorite;
-            }
+            let old = store.track(&track.id)?;
+            let is_new = old.as_ref().map_or(true, |old| old.hidden || !old.available);
+            if let Some(old) = old { track.favorite = old.favorite; }
             store.upsert_track(&track)?;
             store.set_library_visibility(&[track.id.clone()], true)?;
-            count += 1;
+            if is_new { count += 1; }
         } else {
             failed += 1;
         }
-        if (count + failed) % 10 == 0 {
+        if (index + 1) % 10 == 0 {
             progress(count, failed);
         }
     }
@@ -222,6 +225,16 @@ mod tests {
         assert!(core.lock().unwrap().track("a").unwrap().unwrap().favorite);
         assert!(!core.lock().unwrap().track("a").unwrap().unwrap().hidden);
         assert!(core.lock().unwrap().track("b").unwrap().is_some());
+    }
+    #[test]
+    fn visible_reimport_is_not_counted_as_new() {
+        let core = Mutex::new(music_core::Store::open(":memory:").unwrap());
+        let path = std::env::temp_dir().join(format!("import-{}.jsonl", uuid::Uuid::new_v4()));
+        std::fs::write(&path, format!("{}\n", row("a"))).unwrap();
+        assert_eq!(import_manifest(&path, &core, &AtomicBool::new(false), 0, |_, _| {}).unwrap(), 1);
+        std::fs::write(&path, format!("{}\n", row("a"))).unwrap();
+        assert_eq!(import_manifest(&path, &core, &AtomicBool::new(false), 0, |_, _| {}).unwrap(), 0);
+        assert_eq!(core.lock().unwrap().all_tracks().unwrap().len(), 1);
     }
     #[test]
     fn cancelled_manifest_never_adds_unconsumed_rows() {

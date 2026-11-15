@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MusicReader(private val context:Context,private val cancelled:AtomicBoolean){
  private var cacheBytes:Long?=null
- internal fun scan(folder:Uri?,progress:(ImportCounter)->Unit):Pair<File,ImportCounter>{
+ internal fun scan(folder:Uri?,knownIds:Set<String> = emptySet(),progress:(ImportCounter)->Unit):Pair<File,ImportCounter>{
   val manifest=File.createTempFile("music-import-",".jsonl",context.cacheDir)
   val counter=ImportCounter({android.os.SystemClock.elapsedRealtime()},progress)
   try {
@@ -25,7 +25,8 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
   manifest.bufferedWriter().use{out->
    fun write(uri:Uri,title:String,artist:String,album:String,duration:Long,size:Long){
     if(cancelled.get())return
-    val item=try{track(uri,title,artist,album,duration,size)}catch(_:Exception){counter.checked(false);return}
+    val item=try{track(uri,title,artist,album,duration,size,knownIds)}catch(_:Exception){counter.checked(false);return}
+    if(item==null){counter.skipped();return}
     // Storage failures must abort, rather than masquerading as unreadable source files.
     out.write(item.toString());out.newLine();counter.checked(true)
    }
@@ -41,10 +42,11 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
   };counter.emit(true);pruneCache();return Pair(manifest,counter)
   }catch(e:Exception){manifest.delete();throw e}
  }
- private fun track(uri:Uri,fallbackTitle:String,artist:String,album:String,duration:Long,size:Long):JSONObject{
+ private fun track(uri:Uri,fallbackTitle:String,artist:String,album:String,duration:Long,size:Long,knownIds:Set<String>):JSONObject?{
   val digest=MessageDigest.getInstance("SHA-256");digest.update(size.toString().toByteArray())
   context.contentResolver.openFileDescriptor(uri,"r")?.use{fd->FileInputStream(fd.fileDescriptor).use{input->val data=ByteArray(65536);val n=input.read(data);if(n>0)digest.update(data,0,n);try{if(size>65536){input.channel.position(size-65536);val last=input.read(data);if(last>0)digest.update(data,0,last)}}catch(_:Exception){}}}?:throw IllegalStateException("Unavailable music")
   val id=digest.digest().joinToString(""){"%02x".format(it)}
+  if(id in knownIds)return null
   val result=JSONObject().put("id",id).put("title",fallbackTitle).put("artist",if(artist=="<unknown>")"" else artist).put("album",if(album=="<unknown>")"" else album).put("genre","").put("durationMs",duration.coerceAtLeast(0)).put("sourceUri",uri.toString()).put("favorite",false).put("available",true).put("demo",false).put("artworkUrl",JSONObject.NULL)
   val retriever=MediaMetadataRetriever()
   try{

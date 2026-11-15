@@ -30,7 +30,11 @@ export function TrackRow({
   onSelect,
   selected,
   selectionMode,
+  hideArtist = false,
+  hideAlbum = false,
 }: {
+  hideArtist?: boolean;
+  hideAlbum?: boolean;
   track: Track;
   index?: number;
   playing?: boolean;
@@ -249,9 +253,9 @@ export function TrackRow({
         <span className="track-copy">
           <strong>{track.title}</strong>
           <span className="track-meta">
-            <span className="track-artist">
+            {!hideArtist && <span className="track-artist">
               {track.artist || unknownArtist}
-            </span>
+            </span>}
             <span
               className="track-duration-inline"
               data-duration={
@@ -271,7 +275,7 @@ export function TrackRow({
               </small>
             )}
           </span>
-          {track.album && (
+          {!hideAlbum && track.album && (
             <span
               className="album-label"
               title={

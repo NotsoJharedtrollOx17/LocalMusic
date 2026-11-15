@@ -126,7 +126,7 @@ test("empty and unreadable scans stay honest and allow retry", async ({
   });
   f.finish(0);
   await expect(page.locator(".toast")).toContainText(
-    "No songs imported. Try choosing a music folder. · 4 files skipped",
+    "No new songs imported. · 4 files skipped",
   );
   await expect(page.getByText("1 song", { exact: true })).toBeVisible();
   await f.start();

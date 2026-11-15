@@ -321,4 +321,11 @@ test("real tagged imports group featuring credits under the lead artist without 
   await expect(
     page.getByText("Lead feat. Guest", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator('.track-row .album-label')).toHaveCount(0);
+  await page.locator('.group-back').click();
+  await page.locator('input[type=file]').first().setInputFiles({name:'collab.wav',mimeType:'audio/wav',buffer:taggedWav('Collab',101,1,{artist:'Lead feat. Guest',album:'Album'})});
+  await expect(page.getByText('No new songs imported.',{exact:true})).toBeVisible();
+  await page.getByRole('tab',{name:'Songs',exact:true}).click();
+  await expect(page.locator('.track-row')).toHaveCount(3);
+
 });

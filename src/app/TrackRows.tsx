@@ -16,6 +16,7 @@ export default function TrackRows({
   numbered?: boolean;
 }) {
   const {
+    group,
     player,
     selectedList,
     savingPlaylistId,
@@ -39,6 +40,8 @@ export default function TrackRows({
           <TrackRow
             key={track.id}
             track={track}
+            hideArtist={group?.kind === "artists" && !editable}
+            hideAlbum={group?.kind === "albums" && !editable}
             index={editable || numbered ? i : undefined}
             playing={player.trackId === track.id && player.playing}
             current={player.trackId === track.id}

@@ -272,7 +272,7 @@ export const en = {
   importChecked: "files checked",
   importSaving: "Saving songs…",
   importRefreshing: "Updating your library…",
-  importEmpty: "No songs imported. Try choosing a music folder.",
+  importEmpty: "No new songs imported.",
   importCancelled: "Import cancelled",
   loading: "Loading songs…",
   loadingLibrary: "Loading library…",
@@ -584,8 +584,7 @@ export const es: typeof en = {
   importChecked: "archivos revisados",
   importSaving: "Guardando canciones…",
   importRefreshing: "Actualizando tu biblioteca…",
-  importEmpty:
-    "No se importaron canciones. Prueba a elegir una carpeta de música.",
+  importEmpty: "No se importaron canciones nuevas.",
   importCancelled: "Importación cancelada",
   loading: "Cargando canciones…",
   loadingLibrary: "Cargando biblioteca…",

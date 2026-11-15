@@ -1074,7 +1074,7 @@ export class BrowserMusic implements MusicApi {
         cover,
       });
       this.invalidateCatalog();
-      count++;
+      if (!existing || existing.hidden || !existing.available) count++;
       if (count % 10 === 0) onProgress?.({ imported: count, failed: 0 });
     }
     onProgress?.({ imported: count, failed: 0 });

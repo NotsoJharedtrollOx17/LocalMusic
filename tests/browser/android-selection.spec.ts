@@ -435,6 +435,8 @@ test("short phone taps activate songs and collection cards without a hold", asyn
     await down(cdp, card); await up(cdp);
     await expect(page.locator(".collection-hero")).toBeVisible();
     await expect(page.locator(".track-row").first()).toBeVisible();
+    if (kind === "albums") await expect(page.locator(".track-row .album-label")).toHaveCount(0);
+    if (kind === "artists") await expect(page.locator(".track-row .track-artist")).toHaveCount(0);
     await page.locator(".group-back").click();
   }
 });

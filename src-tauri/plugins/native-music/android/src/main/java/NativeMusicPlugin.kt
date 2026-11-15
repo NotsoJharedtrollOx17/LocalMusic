@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class ControlArgs { var op:String?=null; var payload:String?=null }
 @InvokeArg class AckArgs { var through:Long?=null }
 @InvokeArg class ArtworkArgs { var uri:String?=null; var idle:Boolean=false }
-@InvokeArg class ImportArgs { var mode:String?=null; var progress:Channel?=null }
+@InvokeArg class ImportArgs { var mode:String?=null; var progress:Channel?=null; var knownIds:Array<String>?=null }
 @InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
 @InvokeArg class ShareArgs { var uris:Array<String>?=null }
 @InvokeArg class SoundPayloadArgs { var payload:String?=null }
@@ -133,9 +133,10 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
   try{activity.contentResolver.takePersistableUriPermission(uri,(result.data!!.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION));scan(invoke,uri)}catch(e:Exception){invoke.reject(e.message?:"Folder access could not be saved")}
  }
  private fun scan(invoke:Invoke,folder:android.net.Uri?){
-  val channel=invoke.parseArgs(ImportArgs::class.java).progress
+  val importArgs=invoke.parseArgs(ImportArgs::class.java)
+  val channel=importArgs.progress
   worker.execute{try{
-   val (manifest,count)=MusicReader(activity.applicationContext,cancelled).scan(folder){c->
+   val (manifest,count)=MusicReader(activity.applicationContext,cancelled).scan(folder,if(folder==null)importArgs.knownIds?.toSet()?:emptySet() else emptySet()){c->
     channel?.send(JSObject().put("phase","checking").put("imported",0).put("failed",c.failed).put("scanned",c.scanned).put("total",c.total?:JSONObject.NULL))
    }
    invoke.resolve(JSObject().put("manifestPath",manifest.absolutePath).put("scanned",count.scanned).put("failed",count.failed).put("ready",count.ready).put("cancelled",cancelled.get()))

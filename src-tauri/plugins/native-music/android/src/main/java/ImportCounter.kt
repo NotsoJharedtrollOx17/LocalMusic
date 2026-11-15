@@ -17,6 +17,8 @@ internal class ImportCounter(
         emit()
     }
 
+    fun skipped() { scanned++; emit() }
+
     fun emit(force: Boolean = false) {
         val now = clock()
         if (force || last == Long.MIN_VALUE || now - last >= 250) {

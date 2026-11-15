@@ -4,6 +4,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ImportCounterTest {
+    @Test fun knownFilesAreCheckedButNotReadyOrFailed() {
+        val count = ImportCounter({ 0L }) {}
+        repeat(3) { count.skipped() }
+        count.checked(true)
+        count.checked(false)
+        assertEquals(5, count.scanned)
+        assertEquals(1, count.ready)
+        assertEquals(1, count.failed)
+    }
+
     @Test fun separateChecksAndFailuresWithBoundedUpdates() {
         var now = 0L
         val updates = mutableListOf<Triple<Int, Int, Int>>()
