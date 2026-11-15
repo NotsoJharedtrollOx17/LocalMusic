@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? Settings consistency pass
+
+- Standardized phone Settings section gaps, legend typography, surface backgrounds/corners, navigation row padding and History text/button rhythm. Existing controls and descriptions remain. Scope archived in `docs/settings-consistency-plan.md`.
+- Frontend production build and 111 unit tests passed. Two targeted Settings browser journeys passed in 42.1 seconds, including EN/ES organization navigation and safe-inset reachability. ARM64 Android compile/copy-fallback packaging passed (Gradle 22 seconds).
+- Installed on the Note10+ and opened Settings. Confirmed matching 12px surface radii, reachable About row and no horizontal overflow; captured and visually inspected top/bottom screenshots. Closed Settings and verified playback, queue, preferences, sound, playlists and 711-song total against the fresh paused baseline. No preferences/history were modified. Crash buffer empty and debugging forward removed. Private evidence under ignored `artifacts/settings-polish/`.
+- Full browser/native regressions, TalkBack and additional physical font scales remain separate gates for this styling-only change. No merge/release/version bump.
+
 ## 14 November 2026 ? Lean phone playlist creator
 
 - Reorganized creator into visible name/song count and blend, plus Refine your mix / Ajustar la mezcla for genre, included/excluded artists and preference switches. Selected metadata appears in the disclosure summary. Desktop refinements start open. Reduced heading/analysis clutter, kept explicit analysis-on-generation wording and stages, and made Generate full-width on phones. No ranking/analysis/persistence rules changed. Scope archived in `docs/phone-playlist-creator-plan.md`.
