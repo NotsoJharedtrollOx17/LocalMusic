@@ -202,8 +202,10 @@
   border-radius: 5px;
   font-size: 13px;
 }
-.action-menu button:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .action-menu button:hover {
+    background: var(--hover);
+  }
 }
 .action-menu button[role="menuitemcheckbox"] {
   display: flex;

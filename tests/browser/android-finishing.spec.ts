@@ -13,15 +13,20 @@ test("song press highlights immediately and briefly after activation without hap
 }) => {
   await setup(page);
   const hit = page.locator(".track-hit").first();
-  await hit.dispatchEvent("pointerdown", {
-    pointerType: "touch",
-    pointerId: 5,
-    isPrimary: true,
-    clientX: 100,
-    clientY: 300,
-  });
-  await expect(hit).toHaveAttribute("data-pressed", "true");
   const active = await hit.evaluate((el) => {
+    // Keep a short tap in one browser task: runner/compile load must not
+    // accidentally turn a press-feedback check into a 480 ms selection hold.
+    el.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        pointerType: "touch",
+        pointerId: 5,
+        isPrimary: true,
+        clientX: 100,
+        clientY: 300,
+      }),
+    );
+    const duringPress = el.getAttribute("data-pressed");
     el.dispatchEvent(
       new PointerEvent("pointerup", {
         bubbles: true,
@@ -40,9 +45,17 @@ test("song press highlights immediately and briefly after activation without hap
     );
     const afterRelease = el.getAttribute("data-pressed");
     (el as HTMLElement).click();
-    return { afterRelease, afterActivation: el.getAttribute("data-pressed") };
+    return {
+      duringPress,
+      afterRelease,
+      afterActivation: el.getAttribute("data-pressed"),
+    };
   });
-  expect(active).toEqual({ afterRelease: "true", afterActivation: "true" });
+  expect(active).toEqual({
+    duringPress: "true",
+    afterRelease: "true",
+    afterActivation: "true",
+  });
   await expect(page.locator(".mini-player")).toBeVisible();
   await expect(hit).not.toHaveAttribute("data-pressed", "true");
 });

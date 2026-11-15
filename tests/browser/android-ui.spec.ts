@@ -169,6 +169,16 @@ test("horizontal intent switches tabs with entry motion without dragging the Lib
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
+  await panel.locator("#library-content").evaluate((node) => {
+    const captured: Keyframe[] = [];
+    Object.assign(window, { tabEntryFrames: captured });
+    const animate = node.animate.bind(node);
+    node.animate = (...args) => {
+      const animation = animate(...args);
+      captured.push(...(animation.effect as KeyframeEffect).getKeyframes());
+      return animation;
+    };
+  });
   await panel.dispatchEvent("pointerdown", pointer(310, 350));
   await panel.dispatchEvent("pointermove", pointer(80, 350));
   await expect(panel).toHaveCSS("transform", "none");
@@ -177,11 +187,10 @@ test("horizontal intent switches tabs with entry motion without dragging the Lib
     page.getByRole("tab", { name: "Albums", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   expect(
-    await panel.locator("#library-content").evaluate((node) =>
-      node
-        .getAnimations()
-        .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes())
-        .some((f) => "transform" in f),
+    await page.evaluate(() =>
+      (window as unknown as { tabEntryFrames: Keyframe[] }).tabEntryFrames.some(
+        (f) => "transform" in f,
+      ),
     ),
   ).toBe(true);
   // A vertical scroll, canceled gesture or second finger must not navigate.

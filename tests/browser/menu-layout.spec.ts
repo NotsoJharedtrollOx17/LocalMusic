@@ -372,8 +372,14 @@ test("privacy pending and failure states recover while menus and queue actions r
       }
       return original.apply(this, args);
     };
+    // Dispatch in the injection task so a playback poll cannot consume the
+    // one-shot failure between two automation calls.
+    document
+      .querySelector<HTMLButtonElement>(
+        '.action-menu [role="menuitemcheckbox"]',
+      )!
+      .click();
   });
-  await privacy.click();
   await expect(page.getByRole("alert")).toContainText(
     "Privacy fixture read failed",
   );

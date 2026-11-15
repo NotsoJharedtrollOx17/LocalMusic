@@ -8,6 +8,9 @@ export default function AboutContent({
   return (
     <div className="settings-form">
       <h2>Local Music {version}</h2>
+      <p className="about-credit">
+        {spanish ? "Creado por" : "Created by"} Abraham Jhared Flores Azcona
+      </p>
       <p>
         {spanish
           ? "Tu música local, playlists y resúmenes de escucha. Sin cuenta ni servicios de streaming."

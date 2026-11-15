@@ -14,7 +14,7 @@
   letter-spacing: -0.025em;
 }
 :root[data-layout="phone"] h1 {
-  font-size: 24px;
+  font-size: 22px;
 }
 :root[data-layout="phone"] h2 {
   font-size: 20px;
@@ -219,7 +219,7 @@
   border-radius: 8px;
 }
 :root[data-layout="phone"] .track-copy strong {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 :root[data-layout="phone"] .track-copy > span {
@@ -460,7 +460,7 @@
   min-width: 0;
 }
 :root[data-layout="phone"] .catalog-artists strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 :root[data-layout="phone"] .collection-hero {
   animation: none;
@@ -475,7 +475,8 @@
 :root[data-layout="phone"] .icon-button {
   transition: none;
 }
-:root[data-layout="phone"] .icon-button[data-touch-pressed]:not(:disabled) {
+:root[data-layout="phone"]
+  :is(.icon-button, .action-menu button)[data-touch-pressed]:not(:disabled) {
   background: var(--hover);
   transform: none;
 }
@@ -584,7 +585,7 @@
   height: 19px;
 }
 :root[data-layout="phone"] .modal-head h2 {
-  font-size: 20px;
+  font-size: 18px;
 }
 :root[data-layout="phone"] .modal-body {
   font-size: 14px;
@@ -623,6 +624,41 @@
 }
 :root[data-layout="phone"] .player-surface .queue-content .row-actions {
   grid-template-columns: repeat(3, 48px);
+  margin: 0;
+  flex: 0 0 144px;
+}
+:root[data-layout="phone"] .player-surface .queue-content .track-row {
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding-block: 8px;
+}
+:root[data-layout="phone"] .player-surface .queue-content .track-hit {
+  flex: 1 1 0;
+  gap: 6px;
+  padding-inline: 0;
+}
+:root[data-layout="phone"] .player-surface .queue-content .cover {
+  width: 36px;
+  height: 36px;
+}
+:root[data-layout="phone"] .player-surface .queue-content .track-number {
+  width: 16px;
+  flex: 0 0 16px;
+}
+:root[data-layout="phone"] .player-surface .queue-content .icon-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+}
+:root[data-layout="phone"] .modal:has(.sound-controls) > .modal-body {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-layout="phone"] .modal-body > .sound-controls {
+  flex: 0 0 auto;
+  margin-block: auto;
+  padding-block: 12px;
 }
 :root[data-layout="phone"] .track-details {
   display: flex;
@@ -708,12 +744,31 @@
   display: none;
 }
 :root[data-layout="phone"] .visualizer-modes {
-  gap: 8px;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
 }
 :root[data-layout="phone"] .visualizer-modes button {
   min-height: 48px;
-  padding: 8px 12px;
+  min-width: 0;
+  padding: 8px 4px;
+  border-color: transparent;
+  background: transparent;
+  overflow-wrap: anywhere;
   font-size: 13px;
+}
+:root[data-layout="phone"] .visualizer-modes button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+:root[data-layout="phone"] .playlist-tile h3 {
+  font-size: 17px;
 }
 :root[data-layout="phone"] .visualizer-footer {
   padding: 24px 20px 16px;
@@ -760,7 +815,8 @@
 :root[data-layout="phone"] .is-current .track-hit .cover-play {
   opacity: 1;
 }
-:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) {
+:root[data-layout="phone"]
+  .collection-hero:is([data-kind="albums"], [data-kind="artists"]) {
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
   align-items: start;
@@ -768,15 +824,21 @@
   padding: 20px 0;
   text-align: start;
 }
-:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) .cover {
+:root[data-layout="phone"]
+  .collection-hero:is([data-kind="albums"], [data-kind="artists"])
+  .cover {
   width: 76px;
   height: 76px;
   border-radius: 10px;
 }
-:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) > div {
+:root[data-layout="phone"]
+  .collection-hero:is([data-kind="albums"], [data-kind="artists"])
+  > div {
   gap: 6px;
 }
-:root[data-layout="phone"] .collection-hero:is([data-kind="albums"], [data-kind="artists"]) h1 {
+:root[data-layout="phone"]
+  .collection-hero:is([data-kind="albums"], [data-kind="artists"])
+  h1 {
   font-family: Inter, system-ui, sans-serif;
   font-size: 19px;
   line-height: 1.3;
@@ -826,22 +888,62 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-:root[data-layout="phone"] .album-card:is(:active, [data-pressed="true"]) {
+:root[data-layout="phone"]
+  :is(.album-card, .playlist-tile)[data-touch-pressed] {
   background: color-mix(in srgb, var(--accent) 12%, var(--paper));
   border-radius: 12px;
 }
 
 /* Settings uses the same section rhythm and rounded surfaces throughout. */
-:root[data-layout="phone"] .settings-form { gap: 18px; }
-:root[data-layout="phone"] :is(.settings-choice, .settings-section) legend { font-size: 12px; font-weight: 600; padding-bottom: 8px; }
-:root[data-layout="phone"] :is(.settings-choice > div, .settings-navigation, .settings-history-body) { border-radius: 12px; background: var(--surface); }
-:root[data-layout="phone"] .settings-choice button { border-radius: 8px; min-height: 44px; }
-:root[data-layout="phone"] .settings-navigation { min-height: 64px; padding: 12px 14px; gap: 12px; }
-:root[data-layout="phone"] .settings-navigation strong { font-size: 14px; font-weight: 600; line-height: 1.35; }
-:root[data-layout="phone"] .settings-navigation small { margin-top: 4px; line-height: 1.4; }
-:root[data-layout="phone"] .settings-history-body { padding: 12px 14px; }
-:root[data-layout="phone"] .settings-history-body p { margin: 0 0 10px; line-height: 1.5; }
-:root[data-layout="phone"] .settings-history-body .button { min-height: 44px; border-radius: 8px; }
+:root[data-layout="phone"] .settings-form {
+  gap: 18px;
+}
+:root[data-layout="phone"] :is(.settings-choice, .settings-section) legend {
+  font-size: 12px;
+  font-weight: 600;
+  padding-bottom: 8px;
+}
+:root[data-layout="phone"]
+  :is(.settings-choice > div, .settings-navigation, .settings-history-body) {
+  border-radius: 12px;
+  background: var(--surface);
+}
+:root[data-layout="phone"] .settings-choice button {
+  border-radius: 8px;
+  min-height: 44px;
+}
+:root[data-layout="phone"] .settings-navigation {
+  min-height: 64px;
+  padding: 12px 14px;
+  gap: 12px;
+}
+:root[data-layout="phone"] .settings-navigation strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+:root[data-layout="phone"] .settings-navigation small {
+  margin-top: 4px;
+  line-height: 1.4;
+}
+:root[data-layout="phone"] .settings-history-body {
+  padding: 12px 14px;
+}
+:root[data-layout="phone"] .settings-history-body p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+:root[data-layout="phone"] .settings-history-body .button {
+  min-height: 44px;
+  border-radius: 8px;
+}
 
-:root[data-layout="phone"] .mini-player { height: 64px; border-radius: 12px; padding: 6px 8px; background: var(--surface); }
-:root[data-layout="phone"] .mini-track .cover { border-radius: 8px; }
+:root[data-layout="phone"] .mini-player {
+  height: 64px;
+  border-radius: 12px;
+  padding: 6px 8px;
+  background: var(--surface);
+}
+:root[data-layout="phone"] .mini-track .cover {
+  border-radius: 8px;
+}

@@ -23,8 +23,13 @@ export function usePhoneLayout() {
 /** Touch feedback and hardware-keyboard focus have different lifetimes. */
 export function installInputModality() {
   const root = document.documentElement;
-  let press: { node: HTMLElement; id: number; x: number; y: number } | null =
-    null;
+  let press: {
+    node: HTMLElement;
+    id: number;
+    x: number;
+    y: number;
+    scrollY: number;
+  } | null = null;
   const clearPress = () => {
     press?.node.removeAttribute("data-touch-pressed");
     press = null;
@@ -34,12 +39,13 @@ export function installInputModality() {
     "pointerdown",
     (event) => {
       root.dataset.input = "pointer";
-      const wasPressed = !!press;
       clearPress();
-      if (wasPressed || event.button !== 0) return;
+      if (event.button !== 0) return;
       const node =
         event.target instanceof Element
-          ? event.target.closest<HTMLElement>(".icon-button:not(:disabled)")
+          ? event.target.closest<HTMLElement>(
+              ".icon-button:not(:disabled),.album-card,.playlist-tile:not(:disabled),.action-menu button:not([aria-disabled='true'])",
+            )
           : null;
       if (node && root.dataset.layout === "phone") {
         press = {
@@ -47,6 +53,7 @@ export function installInputModality() {
           id: event.pointerId,
           x: event.clientX,
           y: event.clientY,
+          scrollY: window.scrollY,
         };
         node.setAttribute("data-touch-pressed", "true");
       }
@@ -72,6 +79,29 @@ export function installInputModality() {
   ] as const)
     document.addEventListener(event, clearPress, true);
   window.addEventListener("blur", clearPress);
+  document.addEventListener(
+    "scroll",
+    (event) => {
+      if (
+        press &&
+        (window.scrollY !== press.scrollY ||
+          (event.target instanceof Element &&
+            event.target.contains(press.node)))
+      )
+        clearPress();
+    },
+    true,
+  );
+  const ownership = new MutationObserver(() => {
+    if (press && (!press.node.isConnected || press.node.closest("[inert]")))
+      clearPress();
+  });
+  ownership.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["inert"],
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) clearPress();
   });

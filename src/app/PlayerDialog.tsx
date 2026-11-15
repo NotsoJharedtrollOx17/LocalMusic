@@ -63,6 +63,7 @@ export default function PlayerDialog() {
                       <TrackRow
                         key={id + ":" + i}
                         track={cache[id]}
+                        hideAlbum
                         index={i}
                         playing={i === player.queueIndex && player.playing}
                         current={i === player.queueIndex}

@@ -57,27 +57,37 @@ export function useLibraryMotion(
     cancelAnimationFrame(tabFrame.current);
     tabFrame.current = 0;
   }, []);
-  const pressedAnimations = useRef<Animation[]>([]);
+  // Entry and snap-back share one owner; an interrupted snap must never resume
+  // over a newer tab's entry animation.
+  const contentMotion = useRef<Animation | undefined>(undefined),
+    motionKind = useRef<"entry" | "settle">("entry"),
+    pressedMotion = useRef<Animation | undefined>(undefined);
   const resumeEntryMotion = () => {
-    pressedAnimations.current.forEach((animation) => {
-      if (animation.playState === "paused") animation.play();
-    });
-    pressedAnimations.current = [];
+    const animation = pressedMotion.current;
+    if (
+      animation === contentMotion.current &&
+      animation?.playState === "paused"
+    )
+      animation.play();
+    pressedMotion.current = undefined;
   };
   const suppressClickUntil = useRef(0);
-  const dragOffset = useRef(0),
-    settleAnimation = useRef<Animation | undefined>(undefined);
+  const dragOffset = useRef(0);
   const finishDrag = useCallback((animate: boolean) => {
     const content =
       panel.current?.querySelector<HTMLElement>("#library-content");
     const offset = dragOffset.current;
     dragOffset.current = 0;
-    settleAnimation.current?.cancel();
-    settleAnimation.current = undefined;
+    if (motionKind.current === "settle") {
+      contentMotion.current?.cancel();
+      contentMotion.current = undefined;
+    }
     if (!content) return;
     content.style.transform = "";
     if (animate && offset && !reducedMotion()) {
-      settleAnimation.current = content.animate(
+      contentMotion.current?.cancel();
+      motionKind.current = "settle";
+      contentMotion.current = content.animate(
         [
           { transform: `translateX(${offset}px)` },
           { transform: "translateX(0)" },
@@ -204,6 +214,13 @@ export function useLibraryMotion(
   }, [section, tabsNode, revealTab]);
   useLayoutEffect(() => {
     if (previous.current !== section) {
+      contentMotion.current?.cancel();
+      contentMotion.current = undefined;
+      pressedMotion.current = undefined;
+      dragOffset.current = 0;
+      const content =
+        panel.current?.querySelector<HTMLElement>("#library-content");
+      if (content) content.style.transform = "";
       window.scrollTo({
         top: scroll.current[section] ?? 0,
         behavior: "instant",
@@ -215,22 +232,22 @@ export function useLibraryMotion(
           ? 1
           : -1;
       const animation = !reducedMotion()
-        ? panel.current
-            ?.querySelector("#library-content")
-            ?.animate(
-              phone
-                ? [
-                    { transform: `translateX(${direction * 18}px)` },
-                    { transform: "translateX(0)" },
-                  ]
-                : [{ opacity: 0.6 }, { opacity: 1 }],
-              {
-                duration: phone ? 160 : 140,
-                easing: phone ? "cubic-bezier(0.2, 0.8, 0.2, 1)" : "ease-out",
-              },
-            )
+        ? content?.animate(
+            phone
+              ? [
+                  { transform: `translateX(${direction * 18}px)` },
+                  { transform: "translateX(0)" },
+                ]
+              : [{ opacity: 0.6 }, { opacity: 1 }],
+            {
+              duration: phone ? 160 : 140,
+              easing: phone ? "cubic-bezier(0.2, 0.8, 0.2, 1)" : "ease-out",
+            },
+          )
         : undefined;
       previous.current = section;
+      motionKind.current = "entry";
+      contentMotion.current = animation;
       return () => animation?.cancel();
     }
   }, [section]);
@@ -252,10 +269,10 @@ export function useLibraryMotion(
       resumeEntryMotion();
       // Keep the pressed target still until its click is dispatched. A moving
       // entry animation can otherwise move a card out from under the finger.
-      pressedAnimations.current = panel.current
-        ?.querySelector<HTMLElement>("#library-content")?.getAnimations()
-        .filter((animation) => animation.playState === "running") ?? [];
-      pressedAnimations.current.forEach((animation) => animation.pause());
+      if (contentMotion.current?.playState === "running") {
+        pressedMotion.current = contentMotion.current;
+        pressedMotion.current.pause();
+      }
       if (e.pointerType !== "touch" || e.isPrimary === false) {
         resetSwipe();
         return;
@@ -303,7 +320,9 @@ export function useLibraryMotion(
         !content.inert &&
         !content.querySelector(".selection-toolbar")
       ) {
-        content.getAnimations().forEach((animation) => animation.cancel());
+        contentMotion.current?.cancel();
+        contentMotion.current = undefined;
+        pressedMotion.current = undefined;
         const next =
           librarySections[librarySections.indexOf(section) + (dx < 0 ? 1 : -1)];
         const limit = Math.min(96, innerWidth * 0.25);
@@ -356,6 +375,7 @@ export function useLibraryMotion(
   };
   const stripDrag = useRef({
     manual: false,
+    touching: false,
     start: 0,
     suppress: 0,
     timer: undefined as ReturnType<typeof setTimeout> | undefined,
@@ -365,9 +385,49 @@ export function useLibraryMotion(
   const cancelStrip = () => {
     clearTimeout(stripDrag.current.timer);
     stripDrag.current.manual = false;
+    stripDrag.current.touching = false;
   };
   useGestureCancellation(cancelStrip, section);
+  const settleStrip = () => {
+    const g = stripDrag.current,
+      node = tabs.current;
+    if (!g.manual || !node || Math.abs(node.scrollLeft - g.start) < 8) return;
+    g.suppress = performance.now() + 350;
+    clearTimeout(g.timer);
+    g.timer = setTimeout(() => {
+      if (!g.manual || g.touching || tabs.current !== node) return;
+      g.manual = false;
+      const anchor = node.scrollLeft;
+      const buttons = [
+        ...node.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+      ];
+      const target = buttons.reduce(
+        (best, button) =>
+          Math.abs(button.offsetLeft - anchor) <
+          Math.abs(best.offsetLeft - anchor)
+            ? button
+            : best,
+        buttons[0],
+      );
+      const index = buttons.indexOf(target);
+      if (index >= 0) {
+        latestChoose.current(librarySections[index]);
+        revealTab(target);
+      }
+    }, 160);
+  };
   const strip = {
+    onTouchStart: () => {
+      stripDrag.current.touching = true;
+    },
+    onTouchEnd: () => {
+      stripDrag.current.touching = false;
+      settleStrip();
+    },
+    onTouchCancel: () => {
+      stripDrag.current.touching = false;
+      settleStrip();
+    },
     onPointerDown: (e: ReactPointerEvent) => {
       cancelStrip();
       stripDrag.current.suppress = 0;
@@ -376,35 +436,7 @@ export function useLibraryMotion(
         stripDrag.current.start = tabs.current?.scrollLeft ?? 0;
       }
     },
-    onScroll: () => {
-      const g = stripDrag.current,
-        node = tabs.current;
-      if (!g.manual || !node || Math.abs(node.scrollLeft - g.start) < 8) return;
-      g.suppress = performance.now() + 350;
-      clearTimeout(g.timer);
-      g.timer = setTimeout(() => {
-        if (!g.manual) return;
-        g.manual = false;
-        if (tabs.current !== node) return;
-        const anchor = node.scrollLeft;
-        const buttons = [
-          ...node.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-        ];
-        const target = buttons.reduce(
-          (best, button) =>
-            Math.abs(button.offsetLeft - anchor) <
-            Math.abs(best.offsetLeft - anchor)
-              ? button
-              : best,
-          buttons[0],
-        );
-        const index = buttons.indexOf(target);
-        if (index >= 0) {
-          latestChoose.current(librarySections[index]);
-          revealTab(target);
-        }
-      }, 160);
-    },
+    onScroll: settleStrip,
     onClickCapture: (e: React.MouseEvent) => {
       if (e.detail > 0 && performance.now() < stripDrag.current.suppress) {
         e.preventDefault();
