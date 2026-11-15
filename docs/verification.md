@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Card highlight confirmation
+
+- Retried on the connected Note10+. Inspection endpoints initially timed out again; bringing the existing app task to the foreground and waking its screen restored the WebView connection without restarting playback.
+- Actual CDP touch-down on both Album and Artist cards set the pressed marker and changed their computed background colour. Captured and inspected screenshots. Touch cancellation removed the marker and did not open a collection. Returned to Songs; authoritative playback was paused. This run issued no playback commands. The phone's current queue differs from the earlier baseline, so this follow-up does not claim equality to that older queue snapshot.
+- Native press-colour and cancellation acceptance is now confirmed alongside the six prior successful swipe/first-tap checks. Both temporary ADB forwarding ports were removed. Private evidence: `artifacts/swipe-first-tap/highlight-foreground.log`, `albums-pressed.png`, `artists-pressed.png`. No code changes, merge or release in this follow-up.
+
 ## 14 November 2026 ? Swipe first-tap device acceptance
 
 - Built ARM64 Android successfully using the established Windows copy-packaging fallback (23 seconds), installed the new debug APK on the Note10+, and captured a fresh paused 711-song baseline before installation.
