@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? First-song touch and Artist selector on phone
+
+- Captured a fresh paused 711-song baseline and installed the updated ARM64 APK on the ready Note10+. Filtered Songs to the current track to preserve the existing queue. Three real CDP swipes from Albums back to Songs followed by a first touch on that song all started playback; subsequent touches paused it. Observed first-tap response was 1105, 244 and 221 ms; pause response 215, 284 and 308 ms, including inspection overhead. No missed touch in these three attempts, but the first playback start remains noticeably slower. Unfiltered large-list native first-tap performance is not established by this filtered test; the unfiltered browser regression passed separately.
+- The initial harness swipe was below the short empty filtered Albums content and did not change tabs. Corrected its coordinates to the actual content area before the passing run. Restored paused playback position and verified captured playback/queue, settings, sound, playlists and total against the fresh baseline. Brief playback follows normal accounting; listening records were not rolled back.
+- Artist detail Songs/Albums selector was checked on the phone: equal 173px widths and 44px minimum heights, orange selected state, and both buttons changed selection. Screenshot inspected; it captured the Albums subview while loading, so this is selector acceptance rather than a completed album-content/loading-performance claim.
+- Returned to Songs with playback paused. Crash buffer empty and temporary debugging forward removed. Private evidence under ignored `artifacts/first-song-phone/`. Native first-start delay remains an open performance limitation; no universal responsiveness or release claim.
+
 ## 14 November 2026 ? Confirmed first-song-tap report
 
 - User clarified that the first tap fails and later taps work. Phone TrackRow now activates on a stationary touch release with under-10px movement and no hold/selection gesture. The subsequent synthetic click is ignored to avoid duplicate toggles. Mouse/keyboard and selection-mode click paths remain. Scope archived in `docs/first-song-touch-plan.md`.
