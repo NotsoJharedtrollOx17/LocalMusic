@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Incremental-import update installation check
+
+- At the user's request, installed the current ARM64 APK on the Note10+ successfully and launched the app. Actual native Album and Artist navigation confirmed the redundant album/year and artist row elements are absent. Captured private screenshots under `artifacts/incremental-phone/`.
+- Playback remained paused; full playback snapshot, including queue and position, matched before and after navigation. App crash buffer empty. Removed temporary inspection forwarding. No personal-library import scan was initiated, so native scan behavior remains supported by the preceding native/Kotlin/build tests rather than a device-scan claim.
+- User requires installation plus a device check for each future update when the phone is available. If unavailable, explicitly report that gate as pending rather than treating the build alone as completion.
+
 ## 14 November 2026 ? Contextual collection labels and incremental imports
 
 - Album detail rows omit their redundant album/year label; Artist detail rows omit their redundant artist credit. Shared rows elsewhere retain those fields and stored metadata is unchanged. Scope archived in `docs/collection-labels-incremental-import-plan.md`.
