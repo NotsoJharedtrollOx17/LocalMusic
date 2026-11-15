@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Settings entry motion
+
+- Phone Settings now settles upward by 10px over 200ms with a near-opaque fade, without content scaling. Desktop dialog motion is unchanged; Reduce Motion disables the animation. Scope archived in `docs/settings-opening-motion-plan.md`.
+- Frontend production build and 111 unit tests passed; two targeted Settings browser journeys passed in 48.8 seconds. ARM64 Android compilation/copy-fallback packaging passed (Gradle 30 seconds). Installed on the Note10+ and used WebView media emulation to verify the Settings animation name and Reduce Motion override; Settings opened/dismissed, bottom content remained reachable and no overflow occurred. Media emulation was reset.
+- Fresh playback/queue, preferences, sound, playlists and 711-song catalog matched after inspection. No playback or settings changes were made; crash buffer empty and temporary debug forwarding removed. Subjective motion feel, frame timing, manual accessibility and complete native/browser regressions remain separate acceptance gates. No merge/release/version bump.
+
 ## 14 November 2026 ? Settings consistency pass
 
 - Standardized phone Settings section gaps, legend typography, surface backgrounds/corners, navigation row padding and History text/button rhythm. Existing controls and descriptions remain. Scope archived in `docs/settings-consistency-plan.md`.

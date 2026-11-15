@@ -842,3 +842,14 @@
 :root[data-layout="phone"] .settings-history-body { padding: 12px 14px; }
 :root[data-layout="phone"] .settings-history-body p { margin: 0 0 10px; line-height: 1.5; }
 :root[data-layout="phone"] .settings-history-body .button { min-height: 44px; border-radius: 8px; }
+
+/* Settings enters as a page, without scaling or stretching its contents. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-layout="phone"] .modal:has(.settings-form) {
+    animation: settings-page-enter 200ms cubic-bezier(.22, .75, .25, 1);
+  }
+  @keyframes settings-page-enter {
+    from { opacity: .96; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
