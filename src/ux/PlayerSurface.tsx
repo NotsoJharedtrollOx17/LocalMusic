@@ -49,11 +49,11 @@ export function PlayerSurface({
   const latestClose = useRef(onClose);
   const entryAnimation = useRef<Animation | null>(null);
   const miniClip = (node: HTMLElement) => {
-    const mini = document
-      .querySelector<HTMLElement>(".mini-player")
-      ?.getBoundingClientRect();
-    if (!mini) return "inset(0px round 0px)";
-    return `inset(${Math.max(0, mini.top)}px ${Math.max(0, node.offsetWidth - mini.right)}px ${Math.max(0, node.offsetHeight - mini.bottom)}px ${Math.max(0, mini.left)}px round 24px)`;
+    const miniNode = document.querySelector<HTMLElement>(".mini-player");
+    if (!miniNode) return "inset(0px round 0px)";
+    const mini = miniNode.getBoundingClientRect(), bounds = node.getBoundingClientRect();
+    const radius = getComputedStyle(miniNode).borderRadius;
+    return `inset(${Math.max(0, mini.top - bounds.top)}px ${Math.max(0, bounds.right - mini.right)}px ${Math.max(0, bounds.bottom - mini.bottom)}px ${Math.max(0, mini.left - bounds.left)}px round ${radius})`;
   };
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);
@@ -104,8 +104,8 @@ export function PlayerSurface({
             { transform: "translateY(45px) scale(.97)", opacity: 0 },
           ],
       {
-        duration: android ? 200 : 240,
-        easing: "cubic-bezier(.4,0,1,1)",
+        duration: android ? 240 : 240,
+        easing: "cubic-bezier(.4,0,.2,1)",
         fill: "forwards",
       },
     );
@@ -130,7 +130,7 @@ export function PlayerSurface({
       if (node && !standalone && !reducedMotion())
         entryAnimation.current = node.animate(
           [{ clipPath: miniClip(node) }, { clipPath: "inset(0px round 0px)" }],
-          { duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+          { duration: 280, easing: "cubic-bezier(.2,0,0,1)" },
         );
       return;
     }

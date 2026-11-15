@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Refine Settings and mini-player motion
+
+- Replaced the phone Settings vertical fade with a restrained 24px horizontal page entry over 240ms, keeping opaque content and no scaling. Phone mini-player now has a 64px compact rounded rectangular surface with 12px corners and 8px artwork corners. Player expansion/collapse clipping uses the mini-player's measured bounds relative to the player surface and computed radius, replacing fixed viewport assumptions/24px radius. Entry/exit easing and durations adjusted; Reduce Motion remains respected. Archived scope in `docs/settings-player-motion-refinement-plan.md`.
+- Frontend production build and 111 unit tests passed. Two targeted Settings browser journeys passed in 44 seconds. ARM64 compile/copy-fallback packaging passed (Gradle 23 seconds). Installed on the Note10+; verified Settings normal/Reduce Motion behavior, reachable contents and dismissal, then three Now Playing expansion/collapse cycles with no lingering clipping and measured mini-player radius. Inspected final mini-player screenshot.
+- Fresh paused playback, queue, preferences, sound, playlists and 711-song total matched after inspection. No playback or preference changes were issued; media emulation reset. Crash buffer empty and temporary debug forward removed. Private evidence under ignored `artifacts/refined-motion/`. This is functional/device-layout evidence, not subjective equivalence to Samsung Music, a motion frame-time measurement or complete player regression acceptance. No merge/release/version bump.
+
 ## 14 November 2026 ? Settings entry motion
 
 - Phone Settings now settles upward by 10px over 200ms with a near-opaque fade, without content scaling. Desktop dialog motion is unchanged; Reduce Motion disables the animation. Scope archived in `docs/settings-opening-motion-plan.md`.
