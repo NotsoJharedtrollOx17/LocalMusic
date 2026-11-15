@@ -1,4 +1,5 @@
-import { ArrowRight, Hammer, Shuffle, Shield } from "lucide-react";
+import { usePhoneLayout } from "../ux/usePhoneLayout";
+import { ArrowRight, Hammer, Shuffle } from "lucide-react";
 import { useMusicAppContext } from "./MusicAppContext";
 import PlaylistFilters from "./PlaylistFilters";
 import PlaylistOptions from "./PlaylistOptions";
@@ -7,14 +8,14 @@ import PlaylistAnalysis from "./PlaylistAnalysis";
 import LoadingIndicator from "../components/LoadingIndicator";
 
 export default function PlaylistBuilder() {
-  const { catalogTotal, busy, buildingMix, generationPhase, t, buildMix } =
+  const phone = usePhoneLayout();
+  const { catalogTotal, busy, buildingMix, generationPhase, t, buildMix, request } =
     useMusicAppContext();
 
   return (
     <div className="generator">
       <div className="generator-title">
         <div>
-          <p className="eyebrow">01 / {t.generate.toUpperCase()}</p>
           <h2>{t.makePlaylist}</h2>
           <p>{t.mixSubtitle}</p>
         </div>
@@ -37,7 +38,13 @@ export default function PlaylistBuilder() {
       >
         <PlaylistFilters />
         <PlaylistBlend />
-        <PlaylistOptions />
+        <details className="playlist-refine" open={!phone}>
+          <summary>{t.refinePlaylist}
+            <span className="refine-summary">{[request.genre, request.includeArtist, ...(request.includeArtists ?? []), request.excludeArtist, ...(request.excludeArtists ?? [])].filter(x => x.trim()).join(" ? ")}</span>
+          </summary>
+          <PlaylistFilters part="filters" />
+          <PlaylistOptions />
+        </details>
         <PlaylistAnalysis />
         <div
           className="playlist-generation-status"
@@ -58,10 +65,6 @@ export default function PlaylistBuilder() {
           )}
         </div>
         <div className="generator-bottom">
-          <span className="small-muted">
-            <Shield size={16} />
-            {t.filters}
-          </span>
           <button
             className="button primary"
             disabled={busy || !catalogTotal}

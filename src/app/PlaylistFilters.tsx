@@ -2,12 +2,12 @@ import { useMusicAppContext } from "./MusicAppContext";
 import ArtistFilter from "./ArtistFilter";
 import { key } from "../domain";
 
-export default function PlaylistFilters() {
+export default function PlaylistFilters({ part = "basics" }: { part?: "basics" | "filters" }) {
   const { playlistContext, request, setRequest, target, setTarget, t } =
     useMusicAppContext();
 
-  return (
-    <div className="generator-fields">
+  if (part === "basics") return (
+    <div className="generator-fields generator-basics">
       <label>
         {t.playlistName}
         <input
@@ -22,7 +22,7 @@ export default function PlaylistFilters() {
         />
       </label>
       <label>
-        {t.trackCount}
+        {t.songs}
         <input
           aria-label={t.count}
           type="number"
@@ -33,6 +33,10 @@ export default function PlaylistFilters() {
           required
         />
       </label>
+    </div>
+  );
+  return (
+    <div className="generator-fields generator-refinements">
       <label>
         {t.genre}
         <input

@@ -267,3 +267,29 @@
 .playlist-search-results .automatic-playlist-error {
   grid-column: 1 / -1;
 }
+
+.playlist-refine { border: 1px solid var(--rule); border-radius: 12px; margin: 16px 0; padding: 0 14px; }
+.playlist-refine summary { min-height: 48px; padding: 14px 0; cursor: pointer; font-weight: 600; }
+.playlist-refine .generator-refinements { margin: 8px 0 16px; }
+.playlist-generation-status:empty { display: none; }
+:root[data-layout="phone"] .generator { padding-block: 20px; }
+:root[data-layout="phone"] .generator-title { gap: 12px; margin-bottom: 20px; }
+:root[data-layout="phone"] .generator-title h2 { font-size: 23px; line-height: 1.2; }
+:root[data-layout="phone"] .generator-title p { font-size: 13px; margin: 8px 0 0; }
+:root[data-layout="phone"] .generator-mark { width: 48px; height: 48px; }
+:root[data-layout="phone"] .generator-basics { display: grid; grid-template-columns: minmax(0,1fr) 88px; gap: 12px; }
+:root[data-layout="phone"] .generator-fields label { font-size: 13px; min-width: 0; }
+:root[data-layout="phone"] .playlist-blend { margin: 18px 0; }
+:root[data-layout="phone"] .playlist-refine .generator-refinements { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; }
+:root[data-layout="phone"] .generator-options { display: grid; gap: 12px; padding: 0; margin: 16px 0; }
+:root[data-layout="phone"] .generator .analysis-coverage { border: 0; padding: 0; margin: 12px 0; background: transparent; font-size: 12px; line-height: 1.45; color: var(--muted); }
+:root[data-layout="phone"] .generator-bottom { display: block; }
+:root[data-layout="phone"] .generator-bottom > .button { width: 100%; min-height: 48px; justify-content: center; }
+
+.generator-basics { grid-template-columns: minmax(0, 2fr) minmax(88px, 1fr); }
+.generator .generator-basics > label { grid-column: auto; }
+.generator .generator-refinements > label, .generator .generator-refinements > fieldset { grid-column: auto; }
+.refine-summary { display: block; font-size: 12px; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
+.refine-summary:empty { display: none; }
+
+.generator-basics { align-items: end; }

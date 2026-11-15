@@ -1,0 +1,3 @@
+# Lean phone playlist creator
+
+Keep name, count and Familiar/Balanced/Explore visible. Group genre, artist inclusion/exclusion and preference switches under Refine your mix / Ajustar la mezcla on phones; show chosen metadata in the summary. Retain all controls, stable preview, explicit generation and saving, generation stages and constraints. Reduce title/analysis clutter and give Generate a full-width phone action. Desktop refinements begin expanded. Verify narrow layouts, optional controls, generation/preview/save and EN/ES; build/install Android and inspect without generating or saving personal playlists. Version remains 0.15.0 on the UI audit branch.

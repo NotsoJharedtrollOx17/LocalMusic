@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? Lean phone playlist creator
+
+- Reorganized creator into visible name/song count and blend, plus Refine your mix / Ajustar la mezcla for genre, included/excluded artists and preference switches. Selected metadata appears in the disclosure summary. Desktop refinements start open. Reduced heading/analysis clutter, kept explicit analysis-on-generation wording and stages, and made Generate full-width on phones. No ranking/analysis/persistence rules changed. Scope archived in `docs/phone-playlist-creator-plan.md`.
+- Production build and 111 unit tests passed. Initial two targeted cases passed. Full playlist-feature browser file initially had nine passes and one timeout because a phone test tried to fill collapsed filters; updated it to open refinements. Final full file: ten passed in 1.2 minutes, including 320px generation, multi-artist constraints/conflicts, stale generation, feedback/Undo and save/rename/delete flows. Updated old placeholder expectations to the shorter wording. This is the feature suite, not the complete browser suite.
+- Final ARM64 Android compile/copy-fallback package passed (Gradle 27 seconds). Installed on the Note10+ and inspected compact/expanded screenshots. First device inspection found a wrapped Track count label and uneven inputs; changed the visible label to Songs and aligned field bottoms, rebuilt and reinstalled. Final check confirmed count 30, aligned inputs, optional controls, no horizontal overflow and the Generate action fully above the mini-player at the end of scrolling. Browser scroll-into-view alone initially left it behind the fixed dock; manual end scrolling proved reachability. No personal generation/save was performed.
+- Captured playback, queue, settings, sound, saved playlists and 711-song catalog matched the fresh paused baseline after device navigation. Crash buffer empty; inspection forward removed. Private evidence under ignored `artifacts/lean-playlist/`. Native generation performance, TalkBack, every physical text scale and complete native/browser regressions remain separate gates. No merge/release/version bump.
+
 ## 14 November 2026 ? Shorten Organize and align Album actions
 
 - Renamed the shared action and dialog title to Organize / Organizar. Album detail Organize now matches Import Music's primary colour and icon size. Phone action rows stretch to equal height while allowing wrapping at larger text scales. Existing behavior remains. Archived scope in `docs/organize-action-label-plan.md`.
