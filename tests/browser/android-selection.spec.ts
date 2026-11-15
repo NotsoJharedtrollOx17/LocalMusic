@@ -37,14 +37,14 @@ test("phone Settings keeps its final navigation row above the system inset", asy
   await page.keyboard.press("Escape");
   await expect(settings).toBeVisible();
 });
-async function seed(page: Page, count = 70, es = false) {
+async function seed(page: Page, count = 70, es = false, allAudio = false) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
   ).toBeVisible();
   await page.evaluate(
-    async ({ count, es, audio }) => {
+    async ({ count, es, audio, allAudio }) => {
       const db = await new Promise<IDBDatabase>((resolve) => {
         const r = indexedDB.open("local-music-v1");
         r.onsuccess = () => resolve(r.result);
@@ -81,7 +81,7 @@ async function seed(page: Page, count = 70, es = false) {
               durationMs: 243000,
               available: true,
               favorite: i % 2 === 0,
-              file: i === 0 ? file : new Blob(),
+              file: i === 0 || allAudio ? file : new Blob(),
               sourceUri: `/fixtures/${id}`,
               identityMetadataRead: true,
               orderMetadataRead: true,
@@ -123,7 +123,7 @@ async function seed(page: Page, count = 70, es = false) {
       });
       db.close();
     },
-    { count, es, audio: Array.from(wav(12)) },
+    { count, es, allAudio, audio: Array.from(wav(12)) },
   );
   await page.reload();
   await expect(page.locator(".collection-count")).toContainText(String(count));
@@ -436,5 +436,19 @@ test("short phone taps activate songs and collection cards without a hold", asyn
     await expect(page.locator(".collection-hero")).toBeVisible();
     await expect(page.locator(".track-row").first()).toBeVisible();
     await page.locator(".group-back").click();
+  }
+});
+
+
+test("consecutive phone song taps change tracks and toggle the current song", async ({ page, context }) => {
+  await seed(page, 6, false, true);
+  const cdp = await context.newCDPSession(page);
+  for (const index of [0, 1, 2, 0]) {
+    const row = page.locator('.track-row').nth(index);
+    await down(cdp, row.locator('.track-hit')); await up(cdp);
+    await expect(row).toHaveClass(/is-playing/);
+    await down(cdp, row.locator('.track-hit')); await up(cdp);
+    await expect(row).not.toHaveClass(/is-playing/);
+    await expect(row).toHaveClass(/is-current/);
   }
 });

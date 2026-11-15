@@ -95,18 +95,25 @@
 }
 .artist-view {
   display: flex;
-  gap: 8px;
-  margin: 10px 0 18px;
+  gap: 4px;
+  width: min(100%, 360px);
+  padding: 4px;
+  margin: 12px 0 18px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
 }
 .artist-view button {
+  flex: 1;
+  min-width: 0;
   min-height: 44px;
-  padding: 8px 18px;
-  border: 1px solid var(--rule);
-  border-radius: 24px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
 }
 .artist-view [aria-selected="true"] {
-  background: var(--hover);
-  color: var(--accent-ink);
+  background: var(--accent);
+  color: #1b1b1a;
 }
 .selection-toolbar {
   display: flex;

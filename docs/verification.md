@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Artist selector and repeated-tap investigation
+
+- Artist detail Songs/Albums controls now share a compact rounded segmented group, matching existing selectors, with equal-width 44px minimum targets and an orange selected state. Archived scope in `docs/artist-controls-repeated-song-taps-plan.md`.
+- Frontend production build and 111 unit tests passed. A corrected CDP touch regression played and paused tracks in order 0, 1, 2, 0 successfully (14.5 seconds). Initial failures were invalid evidence: the reused seed supplied audio only to track zero and empty files to the others. Added an explicit playable-audio seed option for this test. Removed speculative touch/browser playback changes after identifying the fixture issue; no playback fix is claimed.
+- An intermediate Android build passed, but final-source device inspection and installation are pending. The reported phone failure still needs clarification of whether the first tap fails or later taps fail; the user question is pending. No native repeated-tap acceptance, merge or release is claimed. Generated schema changes are outside this UI commit.
+
 ## 14 November 2026 ? Duration and playback-response phone verification
 
 - Installed the updated ARM64 debug APK on the ready Note10+ after capturing a fresh paused 711-song baseline. Six CDP swipe/first-card sequences across Albums and Artists passed, including single-Back return. Observed visible-track times were 416?1097 ms including inspection overhead; these six samples are not a percentile guarantee.
