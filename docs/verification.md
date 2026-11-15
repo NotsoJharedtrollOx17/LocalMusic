@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Settings shares task-menu entry
+
+- Removed the Settings-specific horizontal animation. Settings now inherits the same brief dialog-appear opacity entry used by Organize and other task dialogs, without translation or scaling. Accepted mini-player/Now Playing styling and motion were not changed. Scope archived in `docs/settings-shared-menu-motion-plan.md`.
+- Frontend production build and 111 unit tests passed. ARM64 Android compilation/copy-fallback packaging passed (Gradle 23 seconds). Installed on the Note10+ and verified the shared animation name, Reduce Motion suppression, Settings dismissal and reachable bottom row. Reset inspection media emulation afterward.
+- Fresh paused playback/queue, preferences, sound, playlists and 711-song catalog matched after navigation. No audio or settings writes issued; crash buffer empty and debug forwarding removed. Private evidence under ignored `artifacts/settings-shared/`. No new complete browser/native suite, frame-time measurement or subjective-motion acceptance claim. No merge/release/version bump.
+
 ## 14 November 2026 ? Refine Settings and mini-player motion
 
 - Replaced the phone Settings vertical fade with a restrained 24px horizontal page entry over 240ms, keeping opaque content and no scaling. Phone mini-player now has a 64px compact rounded rectangular surface with 12px corners and 8px artwork corners. Player expansion/collapse clipping uses the mini-player's measured bounds relative to the player surface and computed radius, replacing fixed viewport assumptions/24px radius. Entry/exit easing and durations adjusted; Reduce Motion remains respected. Archived scope in `docs/settings-player-motion-refinement-plan.md`.
