@@ -54,12 +54,10 @@ export default function SongOrganization({
     >
       <p className="small-muted">{text.songHint}</p>
       {error && <p role="alert">{error}</p>}
-      <div className="organization-browse">
-        <h3>{text.candidates}</h3>
-        {snapshot.songCandidates.length === 0 ? (
-          <p>{text.none}</p>
-        ) : (
-          snapshot.songCandidates.slice(0, 30).map((c) => (
+      {snapshot.songCandidates.length > 0 && (
+        <div className="organization-browse">
+          <h3>{text.candidates}</h3>
+          {snapshot.songCandidates.slice(0, 30).map((c) => (
             <div className="organization-candidate" key={c.signature}>
               <button
                 className="button secondary"
@@ -84,9 +82,9 @@ export default function SongOrganization({
                 {text.keep}
               </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
       {selected.length > 0 && (!phone || reviewing) && (
         <section className="organization-review" ref={review}>
           {phone && (
@@ -103,9 +101,7 @@ export default function SongOrganization({
               <div>
                 <strong>{t.title}</strong>
                 <p>{t.artist}</p>
-                <small>
-                  {t.album}
-                </small>
+                <small>{t.album}</small>
               </div>
               <button
                 className="button secondary"

@@ -58,12 +58,10 @@ export default function AlbumOrganization({
       }
     >
       <p className="small-muted">{text.albumHint}</p>
-      <div className="organization-browse">
-        <h3>{text.candidates}</h3>
-        {snapshot.albumCandidates.length === 0 ? (
-          <p>{text.none}</p>
-        ) : (
-          snapshot.albumCandidates.slice(0, 30).map((c) => (
+      {snapshot.albumCandidates.length > 0 && (
+        <div className="organization-browse">
+          <h3>{text.candidates}</h3>
+          {snapshot.albumCandidates.slice(0, 30).map((c) => (
             <div className="organization-candidate" key={c.signature}>
               <button
                 className="button secondary"
@@ -85,9 +83,9 @@ export default function AlbumOrganization({
                 {text.keep}
               </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
       {keys.length > 0 && (!phone || reviewing) && (
         <section className="organization-review" ref={review}>
           {phone && (
@@ -120,10 +118,7 @@ export default function AlbumOrganization({
                     return (
                       <li key={t.id}>
                         <strong>{t.title}</strong>
-                        <small>
-
-                          {matches ? text.matched : text.unmatched}
-                        </small>
+                        <small>{matches ? text.matched : text.unmatched}</small>
                       </li>
                     );
                   })}

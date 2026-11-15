@@ -1,5 +1,12 @@
 # Verification evidence
 
+## 14 November 2026 ? Compact Organize Library flows
+
+- Removed repeated top-level task descriptions in Songs/Albums while retaining their matching/edition guidance and expandable local-changes explanation. Empty possible-match sections no longer displace the manual lists. Phone spacing is tighter; song and album suggestion actions share the compact layout. Both phone review modes temporarily hide top-level browse controls while keeping Back and restoration. Scope archived in `docs/organize-library-compact-flow-plan.md`.
+- Frontend production build and 111 unit tests passed. Three targeted browser journeys passed (49.2 seconds): EN/ES phone organization navigation, song linking/cleanup/Undo and album linking/unlinking. After the final Songs review styling adjustment, the EN/ES organization journey passed again (39.4 seconds). ARM64 Android compile and copy-fallback packaging passed (Gradle 24 seconds).
+- Installed on the Note10+ after capturing a fresh paused 711-song baseline. Verified Artist edit/cancel; Album and Song selections, review, Back and selection/focus restoration; inspected album browse and song review screenshots. The first song review inspection matched an additional hidden playlist-cleanup review panel and failed strict locator selection; narrowing the inspection selector passed. No links, corrections, or audio were saved/started. Playback, queue, settings, sound, playlists and catalog total matched the baseline after both checks; crash buffer empty and debugging forward removed. Private captures/logs remain under ignored `artifacts/organization-compact/`.
+- No full browser/Rust/Kotlin rerun or Windows rebuild is claimed for this presentation change. TalkBack and additional physical font scales remain separate checks. No merge/release/version bump.
+
 ## 14 November 2026 ? Align Artist and Album detail headers
 
 - Applied the existing compact phone Album header rules to Artist details: 76px artwork, 16px gap, 19px title, left alignment and matching spacing/corners. Retained Artist subview controls and counts. Archived scope in `docs/artist-album-layout-alignment-plan.md`.

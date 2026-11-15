@@ -285,7 +285,7 @@
   grid-column: 1 / -1;
 }
 :root[data-layout="phone"]
-  .organization[data-section="albums"]
+  .organization:is([data-section="albums"], [data-section="songs"])
   .organization-candidate {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -296,7 +296,7 @@
   border-bottom: 1px solid var(--rule);
 }
 :root[data-layout="phone"]
-  .organization[data-section="albums"]
+  .organization:is([data-section="albums"], [data-section="songs"])
   .organization-candidate
   > button {
   width: auto;
@@ -307,7 +307,7 @@
   line-height: 1.35;
 }
 :root[data-layout="phone"]
-  .organization[data-section="albums"]
+  .organization:is([data-section="albums"], [data-section="songs"])
   .organization-candidate
   > button:first-child {
   justify-content: flex-start;
@@ -362,7 +362,7 @@
   margin: 16px 0;
 }
 :root[data-layout="phone"]
-  .organization[data-section="albums"]:has(.organization-workflow.is-reviewing)
+  .organization:is([data-section="albums"], [data-section="songs"]):has(.organization-workflow.is-reviewing)
   :is(
     .organization-help,
     .organization-tabs,
@@ -372,23 +372,55 @@
   display: none;
 }
 :root[data-layout="phone"]
-  .organization[data-section="albums"]
+  .organization:is([data-section="albums"], [data-section="songs"])
   .organization-workflow.is-reviewing
   > .small-muted {
   display: none;
 }
 
 /* Collection actions share one alignment rather than competing with metadata. */
-:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions {
+:root[data-layout="phone"]
+  .library-toolbar[data-collection-kind="albums"]
+  .toolbar-actions {
   display: flex;
   flex-wrap: wrap;
   width: 100%;
   gap: 8px;
 }
-:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions > .collection-organize-action,
-:root[data-layout="phone"] .library-toolbar[data-collection-kind="albums"] .toolbar-actions > .library-import {
+:root[data-layout="phone"]
+  .library-toolbar[data-collection-kind="albums"]
+  .toolbar-actions
+  > .collection-organize-action,
+:root[data-layout="phone"]
+  .library-toolbar[data-collection-kind="albums"]
+  .toolbar-actions
+  > .library-import {
   flex: 1 1 150px;
   margin: 0;
   justify-content: center;
   min-height: 44px;
+}
+
+:root[data-layout="phone"] .organization-tabs {
+  margin: 8px 0 12px;
+}
+:root[data-layout="phone"] .organization-purpose {
+  margin: 8px 0 12px;
+}
+:root[data-layout="phone"] .organization-body h3 {
+  margin: 16px 0 10px;
+}
+:root[data-layout="phone"]
+  .organization-body
+  > .organization-workflow
+  > .small-muted {
+  margin: 10px 0;
+  line-height: 1.4;
+}
+:root[data-layout="phone"] .organization-artist,
+:root[data-layout="phone"] .organization-track {
+  padding: 12px 0;
+}
+:root[data-layout="phone"] .organization p[role="status"]:empty {
+  display: none;
 }

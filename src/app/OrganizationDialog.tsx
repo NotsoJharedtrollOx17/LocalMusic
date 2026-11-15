@@ -130,13 +130,9 @@ export default function OrganizationDialog() {
             </button>
           ))}
         </div>
-        <p className="organization-purpose">
-          {organizationTab === "artists"
-            ? text.artistTask
-            : organizationTab === "songs"
-              ? text.songTask
-              : text.albumTask}
-        </p>
+        {organizationTab === "artists" && (
+          <p className="organization-purpose">{text.artistTask}</p>
+        )}
         <label className="organization-search">
           {text.search}
           <input value={query} onChange={(e) => setQuery(e.target.value)} />
