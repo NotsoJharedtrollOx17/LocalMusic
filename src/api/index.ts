@@ -257,10 +257,16 @@ class NativeMusic implements MusicApi {
     };
   }
   play(ids: string[], index?: number) {
-    return cmd<void>("play_queue", { ids, index: index ?? null });
+    return this.playbackUpdates.seek(
+      () => cmd<void>("play_queue", { ids, index: index ?? null }),
+      () => this.playback(),
+    );
   }
   toggle() {
-    return cmd<void>("toggle_playback");
+    return this.playbackUpdates.seek(
+      () => cmd<void>("toggle_playback"),
+      () => this.playback(),
+    );
   }
   seek(ms: number) {
     return this.playbackUpdates.seek(
@@ -269,10 +275,10 @@ class NativeMusic implements MusicApi {
     );
   }
   next() {
-    return cmd<void>("next_track");
+    return this.playbackUpdates.seek(() => cmd<void>("next_track"), () => this.playback());
   }
   previous() {
-    return cmd<void>("previous_track");
+    return this.playbackUpdates.seek(() => cmd<void>("previous_track"), () => this.playback());
   }
   setShuffle(value: boolean) {
     return cmd<void>("set_shuffle", { value });

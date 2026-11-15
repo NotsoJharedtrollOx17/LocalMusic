@@ -2328,3 +2328,5 @@ input[type="range"] {
   font-size: 32px;
   line-height: 1.2;
 }
+
+.track-duration:empty, .track-duration-inline:empty { display: none; }

@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from "react";
-import { Cover, time } from "../components";
+import { Cover } from "../components";
 import {
   sourceAlbums,
   albumArtist,
@@ -121,7 +121,7 @@ export default function AlbumOrganization({
                       <li key={t.id}>
                         <strong>{t.title}</strong>
                         <small>
-                          {time(t.durationMs)} ·{" "}
+
                           {matches ? text.matched : text.unmatched}
                         </small>
                       </li>
@@ -156,7 +156,7 @@ export default function AlbumOrganization({
             >
               {tracks.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.album} · {t.title}
+                  {t.album} {t.title}
                 </option>
               ))}
             </select>

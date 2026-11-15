@@ -1,5 +1,11 @@
 # Verification evidence
 
+## 14 November 2026 ? Duration labels and command response
+
+- Removed individual song-duration text from shared track rows (including Queue and playlist rows), song/album organization review and Track Details. Playback seek timing remains. Unavailable and removed statuses remain visible; empty duration slots collapse. Archived scope in `docs/song-duration-playback-response-plan.md`.
+- Native queue Play, Play/Pause and Previous/Next now use the existing ordered command/snapshot update mechanism, publishing an authoritative snapshot after completion rather than waiting for the one-second poll. Older poll responses are invalidated while commands are pending. This removes the known polling delay; it is not a universal latency guarantee.
+- Production build and 111 unit tests passed, including existing ordered playback-update tests. The CDP swipe/first-tap and narrow-duration-layout browser journeys passed separately (19.2 seconds and 31.2 seconds). Updated the duration assertion to require empty text. ARM64 Android compilation and copy-fallback packaging passed (Gradle 1m 39s). Actual Android selection timing and device UI acceptance for this update remain pending. No full browser/Rust/Kotlin suite or Windows rebuild is claimed.
+
 ## 14 November 2026 ? Card highlight confirmation
 
 - Retried on the connected Note10+. Inspection endpoints initially timed out again; bringing the existing app task to the foreground and waking its screen restored the WebView connection without restarting playback.

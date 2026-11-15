@@ -219,7 +219,7 @@ test("phone duration, vertical overflow, single active tab and playlist spacing 
     await page.setViewportSize({ width, height: 844 });
     const row = page.locator(".track-row").first();
     await expect(row.locator(":scope > .track-duration")).toBeHidden();
-    await expect(row.locator(".track-duration-inline")).toHaveText("4:03");
+    await expect(row.locator(".track-duration-inline")).toHaveText("");
     await expect(row.locator(".track-duration-inline")).toBeHidden();
     await expect(row.locator(".overflow-vertical")).toBeVisible();
     await expect(row.locator(".overflow-horizontal")).toBeHidden();

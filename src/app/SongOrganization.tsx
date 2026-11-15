@@ -1,6 +1,6 @@
 ﻿import { useState } from "react";
 import { api } from "../api";
-import { Cover, time } from "../components";
+import { Cover } from "../components";
 import { leadArtist, normalized } from "../library/identity";
 import type {
   OrganizationSnapshot,
@@ -104,7 +104,7 @@ export default function SongOrganization({
                 <strong>{t.title}</strong>
                 <p>{t.artist}</p>
                 <small>
-                  {t.album} · {time(t.durationMs)}
+                  {t.album}
                 </small>
               </div>
               <button
@@ -168,7 +168,7 @@ export default function SongOrganization({
             <span>
               <strong>{t.title}</strong>
               <small>
-                {t.artist} · {t.album} · {time(t.durationMs)}
+                {t.artist} · {t.album}
               </small>
             </span>
           </label>

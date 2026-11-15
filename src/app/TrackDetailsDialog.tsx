@@ -1,6 +1,6 @@
 import { libraryStrings } from "../library/strings";
 import { Heart } from "lucide-react";
-import { Cover, Modal, time } from "../components";
+import { Cover, Modal } from "../components";
 import { usePlayerContext } from "./PlayerContext";
 import { useRef, useState } from "react";
 import { useInteractionScope } from "../ux/useInteractionScope";
@@ -54,10 +54,7 @@ export default function TrackDetailsDialog() {
                 <dt>{t.genre}</dt>
                 <dd>{detail.genre || "—"}</dd>
               </div>
-              <div>
-                <dt>{t.duration}</dt>
-                <dd>{time(detail.durationMs)}</dd>
-              </div>
+
             </dl>
             <button
               className="button secondary full-width"

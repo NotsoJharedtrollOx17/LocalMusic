@@ -12,7 +12,6 @@ import {
 import { type Track } from "../types";
 import { IconButton } from "./IconButton";
 import { Cover } from "./Cover";
-import { time } from "./format";
 import OverflowIcon from "./OverflowIcon";
 import { useGestureCancellation } from "../ux/useGestureCancellation";
 
@@ -251,7 +250,7 @@ export function TrackRow({
               {track.hidden
                 ? (labels.removedLibrary ?? "Removed from Library")
                 : track.available
-                  ? time(track.durationMs)
+                  ? ""
                   : labels.unavailable}
             </span>
             {track.demo && (
@@ -279,7 +278,7 @@ export function TrackRow({
         {track.hidden
           ? (labels.removedLibrary ?? "Removed from Library")
           : track.available
-            ? time(track.durationMs)
+            ? ""
             : labels.unavailable}
       </span>
       {edit ? (
