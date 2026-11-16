@@ -1,176 +1,45 @@
-# Developer guide
+# Development
 
-This is the current code map for work based on `dev`. Read [AGENTS.md](../AGENTS.md), the [implementation plan](implementation-plan.md) and the original `.AGENTS` guide before substantial changes. The implementation plan records historical targets; its dated revisions and this guide describe the current product. Preserve the four reference images.
+Read the root [AGENTS.md](../AGENTS.md), [architecture](architecture.md) and relevant domain guide before substantial changes. Original reference material under `agents/` is historical; preserve its four images.
 
-## Ownership and entry points
+## Prerequisites and commands
 
-| Area                            | Source                                                                                                         | Responsibility                                                                                                                  |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| React composition               | `src/App.tsx`, `src/app/MusicAppContext.ts`                                                                    | Assemble independently named views using the typed app model                                                                    |
-| State, reads and commands       | `src/app/useAppState.ts`, `src/app/useMusicApp.ts`, `src/app/useCatalogReads.ts`, `src/app/useMusicActions.ts` | Coordinate state, guard asynchronous catalog reads, handle import and playlist actions                                          |
-| Feature views                   | `src/app/*.tsx`                                                                                                | One component per file: Library, playlists, recap, navigation, player, selection and individual dialogs                         |
-| Shared controls                 | `src/components/*.tsx`, `src/TrackList.tsx`                                                                    | Cover, TrackRow, Modal, IconButton, OrbitPoster and virtualized rows; `index.ts` is a barrel, `format.ts` holds time formatting |
-| Motion and overlays             | `src/ux/`, `src/navigation.ts`, `src/ux.css`                                                                   | Player/menu surfaces and inline search, gestures, focus restoration, Reduced Motion and the Android Back layer stack                       |
-| Shared frontend contract        | `src/types.ts`, `src/api/index.ts`                                                                             | `MusicApi` types, Tauri command adapter and playback subscription                                                               |
-| Browser preview                 | `src/api/browser.ts`                                                                                           | IndexedDB catalog/journal, HTML audio playback and local import                                                                 |
-| Sound interface and browser DSP | `src/sound/`                                                                                                   | Typed configuration/session contract, individual React components, serialized updates, Web Audio graph and AudioWorklet         |
-| Windows sound                   | `src-tauri/src/sound/`, `src-tauri/src/playback/desktop/sound_control.rs`                                      | DSP, Rodio wrapper, output notifications and worker-owned setup/retry                                                           |
-| Android sound                   | `src-tauri/plugins/native-music/android/src/main/java/Sound*.kt`, `PersonalSoundSession.kt`, `PcmSoundSink.kt` | Service-owned preferences, custom Media3 PCM processing and finite foreground setup playback                                    |
-| Recap image                     | `src/ShareRecap.tsx`, `src/export.ts`                                                                          | Story/Feed preview, canvas rendering, privacy check and save feedback                                                           |
-| Startup, theme and language     | `src/main.tsx`, `src/theme.ts`, `src/i18n.ts`                                                                  | Preference hydration, theme application and UI strings                                                                          |
-| Native entry and state          | `src-tauri/src/lib.rs`, `src-tauri/src/state.rs`                                                               | Register platform plugins and command paths; initialize the catalog, shared state and player                                    |
-| Native WebView policy           | `src-tauri/src/webview_policy.rs`, `src/ux/nativeShortcuts.ts`                                                 | Suppress default Windows menus/devtools and selectively intercept reload/inspector shortcuts, preserving editing and zoom       |
-| Native command boundary         | `src-tauri/src/commands/`                                                                                      | Catalog, imports, playback, playlists, recap, settings, sharing, sound and window handlers                                      |
-| Native playback bridge          | `src-tauri/src/playback/mod.rs`, `src-tauri/src/playback/desktop.rs`, `src-tauri/src/playback/android.rs`      | Dispatch operations to the Windows worker or Media3; import and acknowledge the Android journal                                 |
-| Native import/artwork           | `src-tauri/src/catalog.rs`, `src-tauri/src/artwork.rs`, `src-tauri/src/album_order.rs`                         | Metadata, cached cover variants and legacy tag backfill                                                                         |
-| Shared native domain            | `crates/music-core/src/`                                                                                       | SQLite store, catalog queries, group order, playlist rules and recap aggregation                                                |
-| Android integration             | `src-tauri/plugins/native-music/`                                                                              | MediaStore/document access, Media3 foreground service and durable pending journal                                               |
+Use Node 24, npm with the committed lockfile, Rust stable and the required native platform tools. On PowerShell use `npm.cmd`. Windows hosted builds use the MSVC toolchain and NSIS packaging. Local portable builds can use the checked setup script's LLVM-MinGW toolchain. Android uses SDK/API 36, build-tools 36.0.0, NDK 29.0.14206865 and compatible JDK/Gradle; CI uses JDK 21.
 
-The frontend detects Tauri in `src/api/index.ts` and chooses `NativeMusic` or `BrowserMusic`. New cross-platform operations should extend `MusicApi`, implement both adapters, then add or update the Tauri command and native domain behavior. Browser tests validate the preview adapter; Rust tests validate native rules. One adapter is not evidence for the other's runtime behavior.
+```powershell
+npm.cmd ci
+npm.cmd run dev
+npm.cmd run check
+. ./scripts/env.ps1
+npm.cmd run test:core
+npm.cmd run test:browser
+./scripts/build-desktop.ps1 -Portable
+./scripts/build-android.ps1 -Debug -Target aarch64
+```
 
-## Rust module layout
+`scripts/doctor.ps1` checks the local toolchain. `scripts/setup-portable.ps1` bootstraps the pinned optional local toolchain. `scripts/env.ps1` discovers existing local tools. Do not rerun Android initialization during ordinary development. The copy-packaging fallback handles Windows symlink restrictions only after native compilation succeeded.
 
-`src-tauri/src/lib.rs` is the application entry point. Keep startup state in `state.rs`, IPC handlers in the appropriate `commands/*.rs` feature module, and player dispatch/journal handling under `playback/`. Register each handler by its module path in `generate_handler!`; the frontend invokes its original function name. Handlers and shared state are crate-visible, rather than a public library API. Preserve the mobile entry-point attribute on `run`.
+## Source map
 
-The command modules expose platform operations and delegate catalog, playlist and recap rules to `music-core`. `commands/catalog.rs` uses the playback command only to prune removed tracks from the current queue. Recap/history commands use the playback bridge to flush or clear listening. These explicit dependencies keep UI commands from becoming an alternative playback clock or journal owner. Existing domain files in `crates/music-core/src/` remain the owners of persistence and policies.
+| Area | Entry points |
+| --- | --- |
+| Composition/controllers | `src/App.tsx`, `src/app/`, `src/components/` |
+| Contracts/adapters | `src/types.ts`, `src/api/`, `src/domain.ts` |
+| Native commands/player/windows | `src-tauri/src/` |
+| Persistent domain/store | `crates/music-core/src/` |
+| Android service/processors/journal | `src-tauri/plugins/native-music/android/src/` |
+| EQ/visualizer/browser DSP | `src/sound/`, `src/visualizer/` |
+| Recap display/export | `src/recap/`, `src/export.ts`, `src/ShareRecap.tsx` |
+| Regression suites | `tests/browser/`, `tests/native/`, crate tests and Kotlin tests |
 
-For native-only refactors, run Rust core/native tests and builds for Windows and Android: desktop compilation does not check Android's conditional modules. A browser journey cannot exercise the Rust IPC handlers. Keep command names, arguments, serialized return values, event names and journal acknowledgement ordering stable during moves.
+## Change workflow
 
-Right-click actions use the shared `ActionMenu`: track rows open the same actions as the visible overflow button; `AppContextMenu` supplies navigation, card opening and text-editing actions. It captures text selections before focus moves and updates controlled editors through their native value setter/input event. Clipboard failures leave text intact and report keyboard alternatives. Menus constrain their position to the viewport, restore focus, and close on Escape, outside click, scrolling that moves the anchor, resize or window blur. Ignore queued opener-reveal scroll events that leave its bounds unchanged.
+Start from updated `dev`, create `dev.feature-name`, and archive a substantial approved plan before implementation. Commit focused changes and evidence. Merge reviewed work into `dev`; integrate a verified release into `main` and tag that reviewed main commit. Never develop a feature directly on `main`, rewrite historical release tags or delete unmerged work.
 
-Windows config disables devtools and the native policy disables default WebView menus. Its accelerator callback consumes F5/F12 and Ctrl+R (including Shift), leaving other keys to WebView and React. The frontend native-only capture guard also blocks equivalent reload/inspector combinations. Browser preview retains its normal developer shortcuts; a web page cannot guarantee control over browser chrome. Do not disable all browser accelerators: that also removes useful editing/zoom behavior.
+Trace a feature through its UI call site, adapter contract, native domain rule and browser counterpart. Native catalog/history/playlist policy belongs in Rust; Android background playback and durable journaling belong in Media3. Treat browser, mocked desktop and actual-device evidence separately. Preserve existing source tags, track IDs, history and saved snapshots through organization changes.
 
-## Data paths and invariants
+Keep imports cancellable, search/generation replies revision-scoped, overlay focus isolated and error recovery usable. Do not start listening sessions from analysis or demos. New documentation must describe current behavior and link to [measured evidence](verification.md). Relevant [tests](testing.md) and [release checks](release-process.md) are required; reversible cosmetic work does not need redundant implementation-mirroring tests.
 
-- **Import:** Native imports resolve file or granted-URI metadata, reconcile stable identities and aliases, then publish `catalog://progress`. React refreshes catalog views as processed counts advance. The browser adapter has its own IndexedDB import. Start progress after the user selects a source; cancellation must leave the Library usable. Refresh Album and Artist caches independently and guard late responses by request version.
-- **Ordering:** Persist `discNumber`, `trackNumber` and `releaseYear` when tags exist. Native `groups.rs`/`catalog_query.rs` and the browser adapter determine group IDs and ordering. React must retain that order in detail rows and playback IDs. Missing disc means disc one; unnumbered songs follow numbered ones with a stable fallback. Manual playlists and reordered queues retain their own explicit order. Legacy metadata backfill keeps track IDs, favorites and history stable.
-- **Artwork:** Native catalog rows use a small cached variant, while cards/detail/player/recap can request larger variants. Preserve the currently displayed image until a larger one decodes. Low resolution embedded source art cannot be made intrinsically sharp. Missing art uses a stable design for a named album.
-- **Visibility:** SQLite `hidden_tracks` is a separate visibility table (schema version 2); history still references the original track. Browser records use an optional `hidden` flag. Catalog pages, groups, scoped search, generation and recap playback exclude hidden tracks. Historical recap rankings retain them. Reimport explicitly restores native visibility; browser reimport replaces the hidden flag. Preserve playlist membership so Undo/reimport can recover it. Never delete source audio for this action.
-- **Inline scoped search:** The search icon reveals a field beneath the Library navigation. Queries carry across main tabs and are suspended in Your Recap; detail searches start clear and Back restores parent query, results, scroll and focus. `groups(kind, offset, query)` and `filterTrackIds(ids, query)` complement paged `listTracks`; matching is an AND of case-insensitive NFKC-normalized literal substrings. Filter the complete catalog/membership before paging. Rust owns native matching; the browser keeps one worker index and checks a backward-compatible catalog revision setting before using its metadata snapshot. Catalog writes bump that revision atomically; no IndexedDB schema upgrade is needed. The UI retains at most 24 recent result pages, scopes stale replies by key/sequence, and uses a 160 ms debounce, immediate Clear/scope/cached updates and explicit Enter/Retry. Pending stale rows are retained visually and marked busy/inert. Saved playlist editing maps visible IDs back to membership positions. See [the plan](inline-search-plan.md) and `scripts/benchmark-search.mjs` for the timing protocol.
-- **Sharing and effects:** `shareAudio` reports `opened`, `saved`, `download` or `canceled`. A chooser opening is not proof of delivery. Windows saves copies; browser file sharing falls back to downloads; Android passes content URIs with temporary read grants. Application sound processing is available independently of system-effects panels; proprietary effects stay in the device panel.
-- **Playback and history:** The player owns the playback clock and queue. Android Media3 persists pending journal intervals while the WebView is suspended; Rust imports and acknowledges them idempotently. Paused, buffering and seeked-over time never count. Keep the browser preview's sample audio excluded from recap.
-  An omitted playback index starts at the first visible track; an explicit index identifies a track in the original ID list and must be remapped after filtering. Reject an explicitly removed selection. Playlist editing must map visible indices to stored membership positions, preserving hidden entries for Undo.
-- **Recap and export:** Rust owns native aggregation and playlist selection; the browser adapter mirrors those rules for preview. Consult [recap methodology](recap-methodology.md) before changing time accounting. A snapshot is frozen; export rechecks its privacy revision. The user-facing PNG includes display data and coverage only, never source paths, exact timestamps, device IDs or private sessions. The preview and download must use the same rendered blob.
-- **Startup and Library state:** Load saved settings before mounting the shell, apply the theme to the document early, and reveal the Windows window only after the themed shell commits. Each Library group tab owns its cache, request version, loading and error state. Show a loading placeholder during a first read, and show an empty message only after a completed empty result.
-- **Settings and error feedback:** Timezone presentation is removed from Settings. Native `get_settings` and browser settings reads replace old manual overrides with the device IANA zone. React resynchronizes on focus, visibility return and once a minute while visible; the existing settings write gate updates live recap calculations. Frozen snapshots retain their recorded zone. Language and Theme use inline pressed buttons with fieldset labels rather than dropdowns. Playback-error reporting tracks error transitions; repeating the same snapshot must not reopen a dismissed banner. Recovery resets that suppression, and explicit failed actions still report errors. Modal focus scopes include the error banner's controls, returning focus to the active surface when it is dismissed.
+## Branding
 
-## Implementing a feature
-
-1. Branch from `dev`. Inspect the relevant `MusicApi` method, React call site, Rust command/domain path, browser adapter and existing tests before editing.
-2. Put UI behavior and loading/error feedback in React; put persistent catalog, playlist and recap rules in the Rust core. Keep Android background playback and its journal in the native plugin.
-3. Extend types and both adapters when adding an operation. Preserve data migration and idempotency when changing stored fields or journal records. Update English and Spanish strings and keyboard/screen-reader states for new controls.
-   Keep one component per `.tsx` file. Put reusable interaction hooks and non-rendering helpers in `.ts` files; keep `App.tsx` as composition. Avoid moving JSX back into the coordinator or adding a second exported component to a shared-control file. Context types derive from the coordinator with a type-only import, preventing a runtime dependency cycle.
-4. Test the affected rule at its owner and run the relevant end-to-end journey. On PowerShell: `npm.cmd run check`, `. ./scripts/env.ps1` then `npm.cmd run test:core`, and `npm.cmd run test:browser` when UI behavior changes. Use `npm.cmd run doctor` to inspect native prerequisites.
-5. Record actual results and remaining native acceptance work in [verification.md](verification.md). Android runtime acceptance requires a booted emulator; background reliability and performance require separately measured device evidence. Keep artifacts and `.tools/` out of Git.
-
-## Sound contracts and development
-
-`SoundConfig` version 2 contains only version, enabled, gains, preamp, presetId and presets. `MusicApi` exposes soundCapabilities, setSound and soundAction; native IPC uses sound_capabilities, set_sound and sound_action. Actions are output retry and internal bypass only. No calibration/profile IPC or device-panel shortcut remains.
-
-Storage retains the `sound-v1` key and ten slots (hidden neutral 31 Hz, then 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 Hz). TypeScript, Rust and Kotlin validate ordinary version-one fields, discard retired fields without parsing profiles, normalize to version 2 and atomically persist before processing. Preserve saved ordinary gains/preset/Custom, never convert retired stereo curves, and keep persistence failure retryable without applying unsaved processing. Shared migration cases are in `tests/fixtures/sound-normalization.json`.
-
-Backends report saved configuration independently from runtime status. EQ remains editable without playback/output. The app-scoped controller coalesces edits over 50 ms, serializes acknowledgements, flushes on release and rolls failed writes back. Old polls cannot replace pending drafts. Normal is neutral; Custom auto-saves nine editable bands within +/-10 dB, with slot zero and preamp neutral.
-
-DSP helpers remain in TypeScript, Rust and Kotlin, with shared `sound-dsp.csv` coefficients, 20 ms crossfades and the linked peak limiter. No automatic global attenuation is applied. Android keeps the existing Media3 PCM16 renderer/sink and one-time legacy device-EQ migration; blocking persistence/control work stays outside audio callbacks. Run `:tauri-plugin-native-music:testDebugUnitTest` alongside frontend/browser and Rust gates. See [the removal plan](remove-adapt-sound-plan.md) and [verification](verification.md) for scope and platform evidence.
-
-## Current boundaries
-
-The personalized-playlists feature branch adds typed blend/seed generation, reversible feedback and source-descriptor caches. Native rules/storage live in `music-core::recommendation`, `recommendation_store` and `acoustic`; app IPC/lifecycle is in `commands/recommendations.rs`. Browser counterparts are under `src/playlists/`, with separate ranking/analysis workers and an IndexedDB upgrade. Android `AcousticDecoder` is independent of Media3 and the listening journal. See [playlist methodology](personalized-playlists.md) and the [approved plan](personalized-playlists-plan.md) before changing weights, analysis or privacy behavior. Do not save transient recommendation fields with playlists.
-
-Use a temporary unique application identifier and a synthetic catalog for native UI automation. Keep that QA executable separate from the normal development package, verify its data-directory isolation before interaction, and restore the verified development binary afterward. Foreground ownership checks must pass before sending OS input. Record incomplete native/device checks explicitly.
-
-The browser preview, desktop startup checks and a built/signed ARM64 debug APK are recorded in the verification log. Android runtime acceptance has not completed on a connected emulator or phone; the x86_64 APK is older than the latest UI changes. Semantic playlist interpretation, online enrichment and model downloads remain deferred. Treat the original plan's JSON export and 1080 × 1920 card targets as superseded by its dated recap export revision.
-
-See [Phase 2](phase-two-ux-flow.md) for the motion/interaction contract and [verification](verification.md) for current results. Browser accessibility automation is separate from Narrator/TalkBack and native gesture acceptance.
-
-### Normal and automatic Custom
-
-Ordinary EQ is always enabled, uses the confirmed nine frequencies (63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 Hz) and bounds of -10 to +10 dB. Normal (`flat` ID) supplies zero gain; Pop/Rock/Jazz/Classical remain. `saveCustom` stores edits automatically in the reserved `custom` record; selecting Normal or another preset retains that curve. Named preset creation, boost/Voice choices, Reset, preamp and enable switch are absent. TypeScript/Rust/Kotlin migrate version-one settings to EQ-only version two: current gains are clamped, ordinary EQ enabled and global preamp zeroed. Retired/named active curves migrate to Custom; archived named records remain stored. Ten-slot compatibility storage keeps slot zero neutral; the second slot is now 63 Hz. Shared cases: `tests/fixtures/sound-normalization.json`. See [eq-simplification.md](eq-simplification.md).
-
-### UI polish ownership
-
-`SoundStateController.ts` is a React-independent coordinator with one serialized write/action queue and revision-guarded reads. `useSoundController` owns it at app scope; dialogs only present its snapshot. Closing flushes edits and reverses temporary bypass, without abandoning pending writes. Language is presentation-only and must not create a second sound configuration. Native service/DSP ownership is unchanged.
-
-The visible overlay owns focus and Back. Suspend the retained player with hidden/inert flags and deactivate its focus/Back hooks while a child is open; CSS z-index alone is insufficient. `Modal` keeps its header outside the scrolling body. Navigation remembers ordinary dialog body scroll on return, while the mounted player retains its queue view and scroll. Profile management uses the existing anchored menu, and inactive ordinary presets use a disclosure. See [the polish plan](ui-ux-polish-plan.md) and [verification](verification.md).
-
-### Library ordering (screenshot follow-up)
-
-Library is the main destination. `LibrarySection` contains Songs, Albums, Artists, Playlists and Your Recap in that order. Recap reads, playback caches and Back handling follow the selected section; do not introduce a second independent recap destination state. All five tabs share keyboard navigation, swipe handling and remembered scroll positions. The shell has no sidebar or redundant mobile destination bar.
-
-`LibraryToolbar` owns the orange Import music button below the tabs. `LibraryFilters` restores the Songs-only Favorites and title/artist/album menu without Select/Edit; collection details retain album ordering. `LibraryActions` provides Edit, Equalizer and Settings through the top-right menu. Favorites also remains an automatic playlist. `LibraryBrand` replaces sidebar/mobile branding with one logo and localized shield motto above Library. Keep track menus and long press as selection entry paths. EQ now uses its six preset choices and nine faders, with automatic Custom persistence and Normal as reset. Switch, Bypass, preamp and named-preset controls are absent.
-
-`usePlayerArtworkSize` observes the visible player body and its content to fit square artwork into the remaining height above transport controls. Non-artwork content and body padding are measured, so title wrapping and changes to the footer also affect sizing. Keep both artwork dimensions tied together and retain scroll access at extremely short heights. The queue remains independently scrollable.
-
-Recap omits its former destination eyebrow and uses a 20px inset below Library tabs. The Songs toolbar puts Filter and sort beside Import; the top navigation owns selection and settings actions.
-
-## Automatic playlists
-
-`MusicApi.automaticPlaylists()` returns four derived, read-only collections with fixed `automatic:` IDs. `crates/music-core/src/automatic_playlists.rs` owns native ordering/eligibility; the command flushes the native playback journal before querying. Browser preview mirrors those rules in `src/automaticPlaylists.ts` and tracks first-import order in `src/api/browserImportOrder.ts`. React localizes display labels and refreshes with stale-request protection through `useAutomaticPlaylists`. Shared fixtures and ordering definitions: [automatic-playlists.md](automatic-playlists.md). Saved manual playlists remain separate.
-
-JVM settings-migration fixtures use the test-only [JSON-java reference implementation](https://github.com/stleary/JSON-java/tree/20240303); Android supplies its platform JSON implementation at runtime.
-
-### Compact navigation revision
-
-`LibraryActions.tsx` owns contextual Edit, Equalizer and Settings on every platform. The Windows native menu bar provides additional routes to those actions. Songs filtering stays separate from selection. Playlists shares the creation toolbar, counts all collections and omits a repeated overview title. The player has Queue/Favorite/Add above progress and transport; its header menu opens EQ directly and ends with recap exclusion then library removal. The EQ dialog uses the app-scoped controller and returns directly to the originating view/focus. Settings owns Language, Theme and Listening history; device calendar synchronization remains automatic.
-
-Above 760px, the compact player uses symmetric side columns around its centered transport/progress column. `.mini-center` uses `display: contents` so its transport and progress occupy separate grid rows; right-side actions share the transport row. Keep DOM controls and keyboard behavior intact. Mobile keeps its existing layout.
-
-### Loading feedback
-
-`components/LoadingIndicator.tsx` renders a circular loader with a localized accessible status name and no visible label. Initial Album/Artist requests place these indicators inside the artwork placeholders; cached results stay visible during refresh, with a content-area indicator. Songs, artist album views, automatic playlist counts and search use the same component. Keep loading feedback out of the Import toolbar so it does not move its actions. Reduce Motion stops rotation while retaining the visible indicator. Ordinary EQ saving renders no transient status row; controller persistence, stale-write protection and inline errors remain unchanged.
-
-
-## Your Recap periods
-
-Use the shared recap period request/types; do not pass a bare year to MusicApi.recap. Calendar weeks start Monday; months/years use their calendar boundaries in the device zone. React remembers timeframe preference, always follows the current calendar period outside frozen snapshots, and guards read acknowledgements against stale requests. Period changes hide unmatched totals; same-period refresh retains confirmed content and exposes retryable errors. Snapshots select their own period without replacing the live preference.
-
-Rust/browser share calendar fixtures under tests/fixtures/recap-periods.json. New schema-two results use period, completePeriod and buckets; compatibility readers project legacy yearly snapshots without rewriting records. Charts/posters/story and both PNG formats consume this same period metadata. Preserve playback/listening/seek/privacy invariants and keep actual device acceptance separate from test/build evidence.
-
-The current-only UI revision removes period browsing entirely. ISO week labels use the week-year, which may differ from the calendar year near New Year. Live recaps refresh without saving snapshots; the Save snapshot action has been removed from the current UI. Previously stored snapshots remain readable. Returning from a frozen snapshot opens the current period.
-
-
-## Focus and Recap presentation
-
-Keyboard focus frames are centralized in `src/focus.css`, use contrasting orange strokes in each theme and are independent of circular transport surfaces. Icon hover shares the unfilled rounded frame. Library entries reserve padding around artwork and text so the whole frame remains visible within scroll containers. Keep keyboard frames visible inside scrolling surfaces and maintain selected-state contrast and forced-color support.
-
-Recap view and PNG export consume the shared ranking presentation helper. Export artwork is resolved locally with bounded loading, deterministic cover fallbacks and cancellation; only display values and decoded images reach the canvas ranking renderer. Story and Feed retain their existing dimensions and share three ranking columns with content-sized vertical rows and consistent padding below section dividers. Preview readiness is tied to its format, language and source Recap, with privacy rechecked after preparation and before saving.
-
-
-Recap rankings order songs, artists and albums by qualified play count descending, then the latest qualifying session start within the selected period. Group recency is the latest qualifying play across all of its contributing tracks. Excluded, sub-30-second, future and out-of-period sessions cannot affect either count or recency. Exact-time ties retain the existing song listening-duration/ID and artist/album alphabetical fallbacks. This internal comparison metadata is not added to exports or saved snapshots; existing snapshots retain their frozen order.
-
-
-## Windows application menu
-
-The main Windows window has a native File / Library / Playback / Window / Help bar (Archivo / Biblioteca / Reproducción / Ventana / Ayuda). It reuses existing React controllers for import, manual playlists, scoped search, Settings, playback and media windows. Ctrl+O imports, Ctrl+N creates a manual playlist, Ctrl+F opens scoped search and Ctrl+, opens Settings. Alt/F10 and native menu mnemonics retain Windows behavior. Space and / retain their existing scoped WebView behavior. Help and About are bundled local dialogs; About reads the running native version.
-
-Rust owns fixed command IDs, native resources, main-window validation, enabled/check state and normal Exit. React subscribes before publishing revisioned state, revalidates command availability, serializes pending dispatch and does not send playback position updates into the menu. Playback remains available under dialogs; navigation and dialog creation are disabled. Native checkboxes immediately restore confirmed state while a command completes. Main-only window attachment prevents companion menu inheritance. Queue requests switch an existing detached player, deferring its base view while a nested child dialog is active.
-
-The Library actions icon retains its full contextual Edit, Equalizer and Settings menu, including on Windows. The native bar is another access route. Native Library navigation uses the existing slide without focusing a tab or leaving a focus rectangle; ordinary Tab/arrow focus remains visible. About opens one independent Windows information window, reuses it on repeated activation and closes without opening a main-window popup. Its dedicated React root reads version/settings and follows language/theme without starting the Library, playback or Recap controllers. Main shutdown closes it. There is no new MusicApi or storage schema. See [the approved plan](desktop-menu-bar-plan.md) and [verification](verification.md). `scripts/verify-desktop-menu.mjs` inspects real Win32 menus and WebView2 with the isolated `app.localmusic.menuprobe20261101` identity; generated profiles/evidence stay outside Git.
-
-## Detached desktop player views
-
-On Windows, Now Playing/Queue, Visualizer and Equalizer can each use one independent decorated window. Their header controls detach, return and optionally pin the window. Ordinary Now Playing opening stays in-app; its Visualizer and Equalizer menu actions open/focus separate windows directly; Library Equalizer does the same. An already detached view is focused instead of duplicated. Closing a child or using its Back arrow dismisses its view; the explicit Return control restores it to main, with ordered deferred presentation while another main dialog is active. Closing main exits all windows. Bounds are remembered only for the session and fitted to monitor work areas; pinning and open windows are not persisted. Android/browser remain in-app.
-
-Rust owns fixed local routes, caller validation and the `opening -> transferring -> detached -> returning` lifecycle. A source unmount acknowledgement precedes presentation in the new host; startup timeout restores a source already released. Window generations reject stale handoffs. Exactly one visualizer host may start analysis; old analysis-session cleanup cannot stop its replacement. Visibility/minimization and wake cleanup follow the actual visualizer window.
-
-`src/desktop/` contains the typed desktop adapter, focused companion controller and window composition. `PlayerContext` shares existing presentation/dialog components without mounting the Library controller in a child. Children load current/visible Queue metadata and explicitly requested dialogs; they never start playlist analysis or Recap refresh. Favorite/catalog, playlist, feedback, privacy and sound invalidations carry a revision and originating window, with bounded changed IDs. Consumers reconcile on startup/resume. Playback events and reads carry a transient native revision so a stale response from another window cannot move the seek position backward; persisted playback/listening schemas are unchanged.
-
-Preference edits use atomic native field patches against the latest stored record. Incoming settings update theme/language/mode without writing them back; history/privacy-owned fields cannot be supplied in patches. The existing full settings API remains available for compatibility. Native WebView shortcut/context-menu policies and theme-aware startup apply to every window. Capabilities list only the known local window labels; no arbitrary URL/window creation API is exposed.
-
-See [the archived plan](detached-player-windows-plan.md) and [verification](verification.md). Actual Windows checks use an isolated app identity and synthetic catalog; browser IPC simulations do not establish native audio/device behavior. `scripts/verify-detached-windows.mjs` documents the native inspection entry point.
-
-
-### Repeat the isolated Windows inspection
-
-`tests/native/seed-detached-player.py` creates a new fixed probe identity with twelve synthetic sample tracks, unique source aliases and a paused queue. It refuses an existing database or fixture. Build with `TAURI_CONFIG` set to the generated `artifacts/detached-windows/probe-config.json`; copy the executable and its runtime DLLs into that artifact directory before restoring a standard build. Launch only that copy with WebView2's local remote-debugging argument, record its PID, and run `node scripts/verify-detached-windows.mjs PORT PID OUTPUT_DIRECTORY`. The runner checks the isolated identifier before actions; `tests/native/window-os.py` limits OS operations to the supplied PID and exact title match. Keep all generated databases, recordings, inspection profiles and binaries out of Git. A paused fixture checks UI/state/lifecycle only and cannot establish audible playback, audio synchronization or device performance.
-
-
-Detached content uses bounded viewport-based CSS sizing rather than transforms or forced browser zoom. Player artwork fits remaining height with a 96-512 px range; detached titles/artists keep 20/14 px floors and buttons keep at least 44 px interaction targets. Controls and Queue metadata grow within caps on larger windows. Narrow visualizers wrap mode choices below navigation; very constrained player transport wraps, and short views scroll once readable floors are reached. The 360 x 480 logical native minimum and the visualizer's existing drawing-resolution cap remain unchanged.
-
-## Playback and library identity revision
-
-The `dev.playback-library-identity` branch adds Settings > Organize library. Original credits and source-file tags remain intact; resolved lead artists drive grouping and playlist artist constraints. Confirmed song links prevent repeats in new playlists and consolidate live song rankings. Confirmed album aliases provide one named album card with selected artwork; explicit unlink restores their source entries. Existing playlist cleanup requires preview/confirmation and supports Undo. See [the archived specification](playback-library-identity-plan.md).
-
-Rust owns `identity.rs`, reversible SQLite organization records and native catalog/playlist/Recap policies. Browser equivalents live in `src/library/`, with an IndexedDB upgrade and a review worker. Structured artist and album-artist tags enter through the platform importers; bounded legacy metadata reads run while visible and paused. Stable source-album memberships retain local album links across metadata refresh, while catalog groups use opaque IDs. Invalidation refreshes matching views and rejects stale organization writes, generation and live exports.
-
-Windows now has device and paced silent outputs under `playback/desktop/output.rs`. Silent output consumes real decoded post-EQ PCM with bounded scheduling; it is not a UI timer. It preserves sessions through route transfers and counts under the ordinary listening rules. Output absence is an informational playback status. Android keeps its Media3 interruption rules; browser playback keeps its existing audio-element clock. Physical disconnection/reconnection acceptance requires its own native evidence.
+`src/brand/mark.svg` is the centered note/ring master used by the header and Recap stamp. `node scripts/generate-icons.mjs` derives the broken-ring/orange-period launcher variant and platform resources; Android foregrounds include explicit mask-safe padding. Intermediate output belongs under ignored artifacts. Preserve runtime theme contrast and inspect real native icon masks when changing these assets.

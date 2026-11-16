@@ -1,3 +1,0 @@
-# Collection labels and incremental import
-
-Hide the album/year row inside Album details and the artist credit inside Artist details, preserving full metadata in other lists and source records. Android whole-library import should fingerprint source audio and skip known available visible track identities before metadata/artwork work. Explicit folder import retains metadata refresh and unavailable/removed restoration. Count only new/restored entries in import totals across adapters. Preserve favorites, existing organization, IDs, playback and history. Verify shared rows, unchanged/repeated imports, new/restored tracks, cancellation, skip counters and native/browser builds. Keep version 0.15.0 on the UI audit branch; record actual evidence separately.

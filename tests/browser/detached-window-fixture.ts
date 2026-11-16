@@ -177,6 +177,7 @@ export class DetachedFixture {
         if (command === "resolve_cover") return this.tracks[0].artworkUrl;
         if (command === "set_favorite") {
           this.tracks[0].favorite = args.favorite;
+          ++this.serial;
           return;
         }
         if (command === "toggle_playback") {
@@ -297,6 +298,12 @@ export class DetachedFixture {
       },
     );
     await page.addInitScript((label) => {
+      // This fixture models Windows companions even on Linux CI. Native change
+      // broadcasts are intentionally Windows-only in the production adapter.
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) LocalMusicTest",
+      });
       const w = window as any;
       w.isTauri = true;
       w.__callbacks = {};

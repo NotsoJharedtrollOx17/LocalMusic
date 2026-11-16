@@ -1,3 +1,4 @@
+import { settleUI, stableBounds } from "./settleUI";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { openSettings } from "./navigationHelpers";
 
@@ -18,6 +19,8 @@ async function frame(page: Page, control: Locator) {
         .map((animation) => animation.finished.catch(() => {})),
     ),
   );
+  await settleUI(page);
+  await stableBounds(control);
   const before = await control.boundingBox();
   const style = await control.evaluate((node) => {
     const ring = getComputedStyle(node, "::before");

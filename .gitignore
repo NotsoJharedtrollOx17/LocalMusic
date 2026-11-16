@@ -17,3 +17,10 @@ test-results/
 
 # Native inspection helper caches
 __pycache__/
+
+# Private signing credentials; public certificate fingerprints are allowed.
+*.jks
+*.keystore
+*.p12
+*.pfx
+signing.json

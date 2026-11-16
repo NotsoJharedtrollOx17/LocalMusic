@@ -135,6 +135,7 @@
   display: inline-block;
   white-space: nowrap;
 }
+:root[data-layout="phone"] .tab-caption::before,
 :root[data-layout="phone"] .tab-caption::after {
   content: attr(data-label);
   display: block;
@@ -142,6 +143,11 @@
   overflow: hidden;
   visibility: hidden;
   font-weight: 700;
+}
+:root[data-layout="phone"] .tab-caption::before {
+  /* Some glyph combinations are wider at regular weight than at bold. Reserve
+     both widths so selection cannot shift neighboring tabs by one pixel. */
+  font-weight: 400;
 }
 :root[data-layout="phone"] .library-navigation > .inline-search {
   grid-column: 1;

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { settleUI } from "./settleUI";
 
 test("song menus are compact, scoped and equivalent across pointer and keyboard", async ({
   page,
@@ -44,6 +45,8 @@ test("song menus are compact, scoped and equivalent across pointer and keyboard"
     .getByRole("button", { name: "Pause", exact: true })
     .click();
   await page.setViewportSize({ width: 390, height: 700 });
+  await settleUI(page);
+  await expect(row).toBeVisible();
   await row.evaluate((el) =>
     el.dispatchEvent(
       new MouseEvent("contextmenu", {
