@@ -95,7 +95,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
 
-`dev` is the integration branch. `main` and `v0.18.0` include the Android UI consistency, Queue, Equalizer and tab-interaction refinements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.18.0 release notes](docs/releases/v0.18.0.md) for scope and validation boundaries.
+`dev` is the integration branch. `main` and `v0.18.1` include the Windows UI stability refinements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.18.1 release notes](docs/releases/v0.18.1.md) for scope and validation boundaries.
 
 ### Compact navigation and sound views
 

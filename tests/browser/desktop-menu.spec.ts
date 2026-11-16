@@ -67,7 +67,7 @@ test("native menu dispatch, check state, scoped search, manual creator and local
   const about = f.about!;
   await expect(
     about.getByRole("main", { name: "About Local Music", exact: true }),
-  ).toContainText("0.18.0");
+  ).toContainText("0.18.1");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await command("about");
   expect(f.about).toBe(about);
