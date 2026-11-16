@@ -52,3 +52,14 @@ jobs:
             artifacts/release-assets/windows-SHA256SUMS.txt
             artifacts/release-assets/windows-frontend.json
           if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: windows-package-failure
+          path: |
+            src-tauri/target/release/local-music.exe
+            src-tauri/target/release/build/local-music-*/out/tauri-codegen-assets/*.js
+            src-tauri/target/release/build/local-music-*/out/tauri-codegen-assets/*.css
+            dist/assets/*.js
+            dist/assets/*.css
+          retention-days: 7

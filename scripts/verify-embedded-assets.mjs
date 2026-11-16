@@ -15,20 +15,24 @@ assert(args["--binary"] && args["--build"] && args["--output"],
   "Use --binary FILE --build TARGET/release/build --output REPORT.json");
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const binary = readFileSync(args["--binary"]), encoded = new Map();
+const stats = { directories: [], scanned: 0, embedded: 0, hashes: [] };
 for (const crate of readdirSync(args["--build"]).filter((n) => n.startsWith("local-music-"))) {
   const directory = join(args["--build"], crate, "out", "tauri-codegen-assets");
   if (!existsSync(directory)) continue;
+  stats.directories.push(directory);
   for (const file of readdirSync(directory).filter((n) => /\.(js|css)$/.test(n))) {
     const data = readFileSync(join(directory, file));
+    stats.scanned++;
     let plain;
     try { plain = brotliDecompressSync(data); } catch { plain = data; }
     const key = hash(plain);
-    if (binary.includes(data)) encoded.set(key, data.length);
+    stats.hashes.push(key);
+    if (binary.includes(data)) { encoded.set(key, data.length); stats.embedded++; }
   }
 }
 const assets = readdirSync("dist/assets").filter((n) => /\.(js|css)$/.test(n)).map((name) => {
   const sha256 = hash(readFileSync(join("dist/assets", name)));
-  assert(encoded.has(sha256), `Frozen frontend payload missing or changed: ${name}`);
+  assert(encoded.has(sha256), `Frozen frontend payload missing or changed: ${name}; expected ${sha256}; diagnostic ${JSON.stringify(stats)}`);
   return { path: `assets/${name}`, sha256, embeddedBytes: encoded.get(sha256) };
 });
 assert(assets.length > 0, "No frontend assets checked");

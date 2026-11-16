@@ -296,6 +296,20 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
     });
   }
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
+  // Preference persistence is asynchronous. Confirm its transaction before
+  // deliberately destroying the document with a hard reload.
+  await expect.poll(() => page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("local-music-v1");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    return new Promise<string | undefined>((resolve, reject) => {
+      const request = db.transaction("settings").objectStore("settings").get("preferences");
+      request.onsuccess = () => { db.close(); resolve(request.result?.visualizerMode); };
+      request.onerror = () => { db.close(); reject(request.error); };
+    });
+  })).toBe("xmb");
   expect(
     await view.evaluate((node) => node.scrollWidth <= node.clientWidth),
   ).toBe(true);
