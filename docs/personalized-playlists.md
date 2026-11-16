@@ -37,7 +37,7 @@ The browser decodes full files at 48,000 Hz using an offline audio context, pres
 
 Windows fingerprints include source identity, duration, file size and modification time. Android checks provider size/modification metadata before/after decoding and refreshes source revisions before generation; providers without usable version metadata remain metadata-only. Browser fingerprints include stored source identity, duration, Blob size and File modification time. Source changes invalidate cached descriptors. Corrupt or unknown-version descriptors are ignored and retried. No raw PCM/excerpts are persisted.
 
-SQLite adds idempotent `suggestion_less` and `acoustic_features` tables (user version three); IndexedDB upgrades version one to two while retaining existing stores/records. Feedback and content descriptors survive history deletion, like favorites. Deleting history removes learned listening influence. Existing saved playlists are not regenerated.
+SQLite stores feedback and descriptors in the idempotent `suggestion_less` and `acoustic_features` tables; later library-organization upgrades preserve them. IndexedDB upgrades version one to two while retaining existing stores/records. Feedback and content descriptors survive history deletion, like favorites. Deleting history removes learned listening influence. Existing saved playlists are not regenerated.
 
 ## Acceptance boundaries
 
