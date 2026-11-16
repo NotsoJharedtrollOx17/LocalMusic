@@ -1,9 +1,15 @@
 name: Windows package
 on:
+  push:
+    branches: [dev.release-preparation]
+    paths: ['src-tauri/**', 'src/**', 'scripts/**', 'package*.json', '.github/workflows/windows-package.yml']
   workflow_dispatch:
   workflow_call:
 permissions:
   contents: read
+concurrency:
+  group: windows-package-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   windows:
     runs-on: windows-2025
