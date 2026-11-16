@@ -1,3 +1,4 @@
+import { settleUI } from "./settleUI";
 import { test, expect, type Page } from "@playwright/test";
 import { seedInlineCatalog } from "./inlineSearchFixture";
 import { openSettings } from "./navigationHelpers";
@@ -26,6 +27,7 @@ test("selected phone tabs align left without changing label geometry", async ({
         width: (el as HTMLElement).offsetWidth,
       })),
     );
+  await settleUI(page);
   const before = await geometry();
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   await expect(
@@ -137,6 +139,7 @@ test("Spanish dark tabs retain their geometry at 320px with doubled text", async
         width: (el as HTMLElement).offsetWidth,
       })),
     );
+  await settleUI(page);
   const before = await geometry();
   await page.getByRole("tab", { name: "Álbumes", exact: true }).click();
   await expect(

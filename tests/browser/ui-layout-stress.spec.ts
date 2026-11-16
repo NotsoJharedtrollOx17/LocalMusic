@@ -1,9 +1,11 @@
+import { settleUI } from "./settleUI";
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { en, es } from "../../src/i18n";
 import { openSettings } from "./navigationHelpers";
 
 async function inspect(page: Page, scope: Locator = page.locator("body")) {
+  await settleUI(page);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth - innerWidth,

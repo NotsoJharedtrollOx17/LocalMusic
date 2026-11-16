@@ -177,6 +177,7 @@ export class DetachedFixture {
         if (command === "resolve_cover") return this.tracks[0].artworkUrl;
         if (command === "set_favorite") {
           this.tracks[0].favorite = args.favorite;
+          ++this.serial;
           return;
         }
         if (command === "toggle_playback") {

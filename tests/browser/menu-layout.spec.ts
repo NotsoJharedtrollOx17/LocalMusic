@@ -347,8 +347,8 @@ test("privacy pending and failure states recover while menus and queue actions r
       }
       return request;
     };
+    document.querySelector<HTMLButtonElement>('.action-menu [role="menuitemcheckbox"]')!.click();
   });
-  await privacy.click();
   await expect(privacy).toHaveAttribute("aria-checked", "true");
   await expect(privacy).toBeDisabled();
   await expect(privacy).toHaveAttribute("aria-busy", "true");
