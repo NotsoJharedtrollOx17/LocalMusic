@@ -1,121 +1,75 @@
-# Local Music + Your Recap
+# Local Music
 
-An offline local music player with weekly, monthly and yearly recaps based on actual listening. Android is the primary target; Windows is the development desktop. The browser build is a separate preview backed by IndexedDB and an HTML audio element. The interface supports English and Spanish.
+[![Verify](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/workflows/ci.yml)
 
-## Current features
+An offline music player for Android and Windows, with local playlists, an equalizer, audio-reactive visualizers and listening summaries. No account, streaming subscription or downloaded recommendation model is required. English and Spanish; light, dark and system themes.
 
-- **Library organization:** Settings > Organize library provides lead-artist corrections, reviewed duplicate-song links, canonical album cards, and explicit playlist cleanup with Undo. Original file tags and raw history are retained. Windows playback can continue without an output device through real-time silent decoding; that playback counts normally. See [the implementation plan](docs/playback-library-identity-plan.md) and [verification](docs/verification.md).
+## Get the app
 
-- **Windows menus:** The main window has native File, Library, Playback, Window and Help menus, localized in English/Spanish. Import with Ctrl+O, create a playlist with Ctrl+N, search the current view with Ctrl+F and open Settings with Ctrl+,. Playback checkmarks follow the shared player; detached media windows retain compact headers. Local Help documents the shortcuts; About opens its own information window showing the running version. The Settings icon retains its original actions as another access route. Android/browser keep their existing menus. See [the implementation plan](docs/desktop-menu-bar-plan.md).
-- **Library:** Songs, Albums, Artists, Playlists and Your Recap appear as Library tabs. Import music sits below the tabs; Edit is in the top-right menu, and Favorites is an automatic playlist. The compact header contains the app logo, privacy motto, tabs, Search and menu, with no sidebar or redundant Library title. Browse/search songs, open album and artist collections and mark favorites. Album playback follows disc and numeric track tags; artist collections group songs by album. Song rows include album and release year when tagged.
-- **Import and artwork:** Import audio through the browser file picker, a Windows folder chooser, or Android MediaStore/selected folders. Android reports file checking separately from saving songs and refreshing the library; unreadable files are counted, and an empty scan is not reported as a successful import. Catalog changes appear during saving in batches of ten processed audio files. Missing covers receive stable geometric artwork. Native grids request larger cached cover variants as they enter view.
-- **Playback and playlists:** Now Playing and the mini player support a persistent queue, play/pause, seek, skip, shuffle, repeat, queue editing and session exclusion. Playlists includes automatic Recently added, Recently played, Most played and Favorites collections, refreshed from your library and eligible listening history. Create/edit playlists manually or generate Familiar, Balanced or Explore mixes using listening history, metadata and available source-audio analysis. Android playback is owned by a Media3 foreground service; Windows uses a Rust playback worker.
-- **Visualizer:** Open Now Playing → Visualizer for orange-to-blue Spectrum bars, Origin of Symmetry Geometry or layered XMB waves driven by post-EQ audio. The selected style is remembered. Controls include seek and playback; animation starts automatically after a brief warm-up and settles naturally on pause/completion. Reduce Motion uses gentler automatic movement. Analysis is transient and stops when hidden or closed. Galaxy Note10 performance, battery and synchronization acceptance require physical measurements. See [implementation contract](docs/music-visualizer-plan.md).
-- **Your Recap:** Choose calendar weeks (Monday–Sunday), months or years for the current period. Yearly is the initial view; the chosen timeframe is remembered. Recaps show interval-based listening, starting-period qualified plays, active days, daily/monthly charts, top music and a playable queue. Device time zone and honest coverage apply; frozen snapshots retain their original zone. Existing yearly snapshots remain readable. Story **2160 × 3840** and Feed **2160 × 2700** PNG previews/downloads reflect the selected period, with separate top-song, artist and album rankings and song/album cover artwork, with privacy checks and accurate save/cancel feedback. JSON export is not part of the current UI.
-- **Interface:** Light, dark and system themes, English/Spanish strings, responsive layouts and reduced-motion support. Keyboard focus uses consistent rounded rectangular outlines across buttons and menus. Desktop startup waits for the resolved theme; Library tabs keep separate loading and cached results, so switching tabs does not show another tab's cards or a premature empty state.
-- **Music flow:** Mobile tab swipes, centered selection and remembered tab scroll; desktop keyboard tabs; artist Songs/Albums switch; a growing player surface with the queue and transport in one place. Hold a song on phones to select it; Select all includes the complete filtered collection, beyond the loaded page. Phone rows use compact inline durations and vertical menus; app labels do not invoke text selection, while editors remain selectable. Search opens inline and filters the current tab or collection while keeping the mini player available. Queries carry across Library tabs; opened collections start clear and Back restores the parent search.
-- **Sound:** Always-active nine-band equalizer on Windows, Android and browser preview: 63 Hz to 16 kHz, -10 to +10 dB. Normal keeps every band at zero; Pop, Rock, Jazz and Classical remain, and edits automatically save into one Custom option. No EQ switch, preamp or manual preset naming is needed. Older active named/boost presets migrate to Custom, archived records remain stored, and hidden manual preamp gain is reset to zero. The peak limiter remains. Controls work before playback or without an output, with truthful runtime status and Retry. EQ-only configuration version 2 retains ordinary presets/Custom while removing retired personalization data during upgrade. Migration is persisted before processing; failed writes remain retryable.
-- **Context actions:** Track menus and selection through long press, the menu's Edit action, mouse or keyboard. Play, favorite, add to playlists, share audio/save copies, and remove from Library with Undo. Removal preserves audio files and listening history; reimport restores visibility. Resolvable Android system-effects panels remain separate from the app's equalizer.
-  Right-click menus use the app's design, including text actions and keyboard navigation. The native shell blocks F5/F12 and reload/inspector shortcut variants; Windows retains editing and zoom controls. Browser preview keeps its developer shortcuts.
+Download published packages from [GitHub Releases](https://github.com/NotsoJharedtrollOx17/LocalMusic/releases): Windows x64 installer/portable ZIP and Android ARM64 APK. Compare package hashes with the release's SHA256SUMS. Windows packages are unsigned. Android production releases use the permanent release certificate; earlier debug-signed installations cannot be updated in place with that certificate. Back up and review app data before switching to a clean installation.
 
-The app works locally without an account, metadata service or downloaded model. Personalized playlists combine eligible listening, metadata and available source-audio matching, with reversible Suggest less feedback. Source analysis runs only when a playlist is generated. Selected artists take precedence over the genre preference; exclusions remain hard constraints. Semantic AI is a future feature. Library demo tracks are available only in browser preview. Browser demo audio is excluded from recap. See [playlist methodology](docs/personalized-playlists.md) for ranking, analysis limits and acceptance boundaries.
+Windows requires WebView2; the installer may need connectivity to obtain it if it is absent. Android minimum API is 26 (Android 8). GitHub packages are direct downloads, not store listings. Exact build/device results and pending manual gates are in [verification](docs/verification.md).
 
-## Browser preview
+## What it does
 
-Install Node.js 24 LTS, then run from the repository root:
+- **Library:** Import local audio, browse complete Songs/Albums/Artists collections, filter the current view, and organize lead-artist credits, reviewed duplicate songs and equivalent albums without rewriting tags or deleting files.
+- **Playback:** Mini/full player, queue editing, seek, shuffle, repeat and favorites. Android Media3 owns background playback. Windows can consume audio silently when no output device exists; that playback counts toward history.
+- **Playlists:** Four automatic collections, manual lists and explicit Familiar/Balanced/Explore generation. Suggestions combine eligible listening, metadata and available source-audio descriptors; reversible Suggest less feedback affects future generations. Source analysis runs only when generating, while visible and paused.
+- **Sound and visuals:** Nine-band Equalizer with live Custom saving, plus Spectrum, Geometry and XMB waves driven by post-EQ audio. Windows supports detached player/queue, visualizer and equalizer windows and a native menu bar.
+- **Your Recap:** Current calendar week/month/year, real history coverage, top songs/artists/albums, artwork and an explicitly saved top-ten playlist. Privacy-checked Story/Feed PNGs have stable previews, one-tap Android 10+ Gallery saving and system sharing. Opening a chooser does not publish to social media.
+- **Phone interaction:** Complete prepared metadata with bounded rendered rows, adjacent-page content swipes, left-anchored tab carousel, selection actions and a persistent mini-player.
+
+See [usage](docs/usage.md), [playlist methodology](docs/personalized-playlists.md) and [Recap/privacy rules](docs/recap-methodology.md). Adapt Sound is no longer part of the application. Recommendations describe broad spectral resemblance, not AI mood/genre recognition.
+
+## Privacy and data
+
+Music, metadata, feedback, acoustic descriptors and history stay local. The app does not upload listening data or source audio. Optional browser sample audio is original and excluded from Recap. PNG exports contain display names, artwork and calendar coverage, not source paths, exact listening timestamps, device IDs or private sessions. Sharing hands the image to a destination you choose.
+
+History deletion removes listening-derived influence and snapshots while retaining favorites, explicit recommendation preferences, source descriptors and music. Local library organization is reversible. See [library/accounting rules](docs/library-and-playback.md).
+
+## Develop and verify
+
+Use Node 24, Rust stable and the appropriate native platform tools. Android CI uses JDK 21, SDK 36 and NDK 29.0.14206865. On PowerShell use `npm.cmd`.
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
-```
-
-Open http://127.0.0.1:1420. Import your own audio or explicitly add the original sample tones. Browser imports and playback history stay in that browser's IndexedDB. Browser behavior does not establish Android background playback reliability.
-
-## Native setup on Windows
-
-The standard route uses Rust stable, Visual Studio Build Tools with Desktop development with C++, Windows SDK, WebView2, Java 17 and Android SDK/NDK. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
-
-This checkout also has an ignored portable toolchain under `.tools/`. Its setup script downloads pinned LLVM MinGW, Java and Android command-line tools and verifies archive hashes. It needs Rustup and Node already installed, internet access and several GB of disk space.
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-portable.ps1
-. ./scripts/env.ps1
-npm.cmd ci
-npm.cmd run doctor
-```
-
-### Windows app
-
-Stop a separately running Vite server before starting Tauri; Tauri starts its own.
-
-```powershell
-. ./scripts/env.ps1
-npm.cmd run tauri -- dev
-./scripts/build-desktop.ps1 -Debug
-```
-
-The portable LLVM route builds a standalone debug executable at `src-tauri/target/debug/local-music.exe`. When moving it, keep the copied runtime DLLs and `llvm-runtime.txt` beside it. The destination also needs WebView2 Runtime. A standard MSVC environment can produce the configured NSIS installer.
-
-### Android app
-
-The generated project is checked in at `src-tauri/gen/android`. Normal development does not require rerunning Android initialization. The configured minimum is API 26; compile/target setup uses API 36.
-
-```powershell
-. ./scripts/env.ps1
-./scripts/build-android.ps1 -Debug -Target x86_64 # emulator
-./scripts/build-android.ps1 -Debug -Target aarch64 # ARM64 phone
-npm.cmd run tauri -- android dev
-```
-
-Debug APKs are written under `src-tauri/gen/android/app/build/outputs/apk`: `x86_64/debug/app-x86_64-debug.apk` and `arm64/debug/app-arm64-debug.apk`. With a booted matching device, use `adb install -r <apk-path>`. Use `build-android.ps1` for a complete build; `package-android.ps1` only packages an already compiled native library. Release distribution requires your signing key.
-
-The latest recorded ARM64 debug APK was built and signature checked. The x86_64 APK was not refreshed for the latest UI changes, and no connected Android device/emulator completed runtime acceptance. See [verification evidence](docs/verification.md) before making native reliability claims.
-
-## Checks
-
-```powershell
 npm.cmd run check
+python.exe scripts/check-docs.py
+node.exe scripts/check-version.mjs
 . ./scripts/env.ps1
 npm.cmd run test:core
 npx.cmd playwright install chromium
 npm.cmd run test:browser
 ```
 
-The browser suite uses an isolated server on port 1421 and writes screenshots/traces to ignored `artifacts/`. The verification log distinguishes builds, browser checks, Windows startup checks and remaining Android runtime work. A native build alone does not establish screen-off playback, audio focus, battery behavior or latency.
+Browser preview uses separate IndexedDB/Web Audio storage and does not establish Android background reliability. See [development/setup](docs/developer-guide.md), [testing](docs/testing.md) and [release/signing](docs/release-process.md). Builds, browser mocks and physical-device performance are separate evidence categories; sustained battery/thermal behavior and manual accessibility require measured acceptance.
 
-## For contributors
+New development starts from `dev` on a `dev.feature-name` branch. Reviewed changes return to `dev`; `main` contains reviewed release integrations and release tags. Read [AGENTS.md](AGENTS.md) before substantial changes. Keep build artifacts, personal profiles and signing material out of Git.
 
-- [Developer guide](docs/developer-guide.md): current module map, data contracts, change workflow and test boundaries.
-- [Architecture](docs/architecture.md): runtime ownership and data flow.
-- [Continuous Library rendering](docs/continuous-library-rendering.md): complete catalog preparation, bounded rows/artwork and the phone content pager.
-- [Recap rules and privacy](docs/recap-methodology.md): time accounting, coverage, snapshots and export.
-- [Branding and image delivery](docs/branding-and-export.md): shared icons, bounded Recap previews, Gallery saving and system sharing.
-- [Implementation plan](docs/implementation-plan.md): original plan and approved revisions.
-- [EQ-only revision](docs/remove-adapt-sound-plan.md): current sound contracts, migration and verification requirements.
-- [Verification evidence](docs/verification.md): what has actually been built and tested.
-- [Third-party notices](docs/third-party-notices.md) and [MIT license](LICENSE).
+## Documentation
 
-Read [project instructions](agents/AGENTS.md), the [development guide](agents/Music-Player-MVP-Recap-Codex-Guide.md) and the [UX/UI reference](agents/Codex-UX-UI-Design-Reference.md) before substantial changes. Preserve the four images in `agents/reference-ui-pics` as design source material. Keep build outputs, development tools and test artifacts out of Git.
+[Documentation index](docs/README.md) links current usage, architecture, domain rules, verification and release instructions. Superseded plans remain available through Git history. [Release history](docs/releases/history.md) preserves version/branch traceability; original reference images and development briefs remain under `agents/`.
 
-`dev` is the integration branch. `main` and `v0.18.1` include the Windows UI stability refinements. Earlier release tags remain unchanged. Start focused feature branches from `dev` and merge reviewed work back into it. See [v0.18.1 release notes](docs/releases/v0.18.1.md) for scope and validation boundaries.
+## AI-use acknowledgement
 
-### Compact navigation and sound views
+ChatGPT/Codex assisted with implementation planning, code development, documentation and test interpretation. Abraham Jhared Flores Azcona reviewed the work and made the product decisions. Automated assistance and passing tests do not replace the native/device acceptance recorded in this repository. No public conversation archive is claimed.
 
-Library tabs share the top row with Search and the menu. Its Edit action selects songs; Equalizer opens the nine-band EQ directly. The Songs toolbar restores Favorites filtering and title/artist/album sorting without another selection action. Playlists uses the same orange creation toolbar without a repeated overview title. Settings explains that Listening history powers Your Recap, Recently played and Most played. EQ edits apply live; sound views have no Resume button. Desktop transport and progress are centered, with action icons on the same row. The device calendar still updates recap boundaries automatically without a timezone setting. See [navigation revision](docs/library-sound-navigation.md).
+## Cite this software
 
-v0.7.0 removes Adapt Sound across all adapters and exposes Equalizer directly. Configuration upgrades overwrite the existing sound settings key with version 2, delete retired profiles and retain the last ordinary EQ; no personal curve is converted into Custom. Native processing, output recovery and live edits remain, with no calibration or profile actions. The local release includes Windows portable and signed ARM64 development packages. See [the removal plan](docs/remove-adapt-sound-plan.md) and [verification](docs/verification.md).
+```bibtex
+@software{floresazcona2026localmusic,
+  author  = {Flores Azcona, Abraham Jhared},
+  title   = {Local Music},
+  year    = {2026},
+  version = {0.20.0},
+  url     = {https://github.com/NotsoJharedtrollOx17/LocalMusic},
+  license = {MIT}
+}
+```
 
+Machine-readable metadata is in [CITATION.cff](CITATION.cff). Cite the version you used; a GitHub repository is not a peer-reviewed publication.
 
-v0.8.0 integrates the reviewed `dev.your-recap-periods` work: live calendar periods, ISO week numbers, top-three artwork/story rankings and an explicitly saved top-ten playlist. See [the archived specification](docs/your-recap-periods-plan.md) and [verification](docs/verification.md).
+## License and credits
 
-Your Recap shows the top three songs, artists and albums with descending rank emphasis. Its ranked top-ten song list can be played or explicitly saved as an editable playlist for that period; unavailable or removed tracks are not queued or saved.
-
-
-## Music visualizers - v0.9.0
-
-v0.9.0 integrates `dev.music-visualizers`: post-EQ Spectrum, Origin of Symmetry Geometry and layered XMB waves, theme-aware controls and natural playback settling. See [release notes](docs/releases/v0.9.0.md) and [verification](docs/verification.md) for actual results and pending physical-device/performance acceptance.
-
-
-### Detached player windows (feature branch)
-
-On Windows, choosing **Visualizer** from Now Playing or **Equalizer** from Library or Now Playing opens or focuses its separate window directly. Use the header's **Open in separate window** control to detach Now Playing/Queue. The windows adapt their contents to their size, with readable minimums and scrolling when needed. Each has its own optional **Always on top** toggle. Close a child window to dismiss its view, or use Return to main window to restore it in the app; closing the main app exits all windows. Android and browser preview keep the existing in-app views. See the [archived plan](docs/detached-player-windows-plan.md) and [verification](docs/verification.md).
+Copyright Abraham Jhared Flores Azcona. [MIT license](LICENSE). Dependency/artwork/font/runtime attribution appears in [third-party notices](docs/third-party-notices.md) and the bundled license files. Reference screenshots guide design; they do not imply affiliation with Samsung, Sony or Apple.
