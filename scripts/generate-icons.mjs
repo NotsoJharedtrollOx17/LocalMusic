@@ -5,6 +5,18 @@ const root = resolve(import.meta.dirname, ".."),
   out = resolve(root, "artifacts/brand-icons");
 const mark = readFileSync(resolve(root, "src/brand/mark.svg"), "utf8");
 const inner = mark.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+// Launcher variant: the wordmark's period interrupts the ring at the lower right.
+// Header and Recap keep their existing mark; both platforms share this variant.
+const ring =
+  '<circle cx="50" cy="50" r="44" fill="none" stroke="#ff6816" stroke-width="3"/>';
+if (!inner.includes(ring))
+  throw new Error(
+    "Update the launcher ring replacement for the revised master",
+  );
+const launcher = inner.replace(
+  ring,
+  '<path d="M65.05 91.35A44 44 0 1 1 91.35 65.05" fill="none" stroke="#ff6816" stroke-width="3" stroke-linecap="round"/><circle cx="81.11" cy="81.11" r="6.5" fill="#ff6816"/>',
+);
 // Adaptive-icon foregrounds extend beyond the launcher's visible mask.
 // Pad the same master explicitly so its ring survives circular/squircle crops.
 const androidSource = resolve(root, "artifacts/brand-source");
@@ -12,13 +24,13 @@ mkdirSync(androidSource, { recursive: true });
 writeFileSync(
   resolve(androidSource, "android-mark.svg"),
   '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="-30 -30 160 160">' +
-    inner +
+    launcher +
     "</svg>",
 );
 writeFileSync(
   resolve(root, "public/icon.svg"),
   '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#faf8f4"/>' +
-    inner +
+    launcher +
     "</svg>",
 );
 const result = spawnSync(

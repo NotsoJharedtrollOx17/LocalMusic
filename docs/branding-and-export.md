@@ -4,6 +4,8 @@
 
 Recap export reserves the preview area before rendering, decodes the PNG before showing it, and retains the action positions when changing format. Loading has a rotating indicator, slowed under Reduce Motion; the preview only fades in. The inline save confirmation expires after three seconds without moving focus.
 
+The Windows/Android launcher variant interrupts the ring at its lower-right edge with a large orange period. It is derived by the generator; header and Recap marks retain their complete rings. See the [launcher refinement](launcher-dot-refinement.md).
+
 Android 10 and later save to **Pictures/Local Music** using MediaStore, without a destination picker or new storage permission. A pending image is published only after a successful write; failure removes the new row. Android 8–9 retain the document picker. Windows retains Save As and reports cancellation accurately; browser preview starts a download rather than claiming the file reached a device folder.
 
 **Share image** opens Android's system share sheet with a temporary PNG URI, or the browser's file-sharing API where supported. Available social destinations depend on installed apps; choosing a destination and publishing remain user actions. Sharing does not save a Gallery copy or display a saved confirmation. Windows uses Save As. Share-cache access is restricted to the export directory; each new share prunes files older than 24 hours, and new cache writes are capped at 64 MiB.
