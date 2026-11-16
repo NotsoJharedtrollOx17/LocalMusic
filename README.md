@@ -62,7 +62,7 @@ ChatGPT/Codex assisted with implementation planning, code development, documenta
   author  = {Flores Azcona, Abraham Jhared},
   title   = {Local Music},
   year    = {2026},
-  version = {0.20.0},
+  version = {1.0.0},
   url     = {https://github.com/NotsoJharedtrollOx17/LocalMusic},
   license = {MIT}
 }
