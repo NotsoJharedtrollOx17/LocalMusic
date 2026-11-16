@@ -30,9 +30,9 @@ for (const width of [320, 390])
     await page
       .getByRole("button", { name: "Explore with sample audio", exact: true })
       .click();
-    await expect(page.locator(".track-row")).toHaveCount(8);
+    await expect(page.locator("#library-content .track-row")).toHaveCount(8);
     await page.evaluate(() => document.fonts.ready);
-    const title = page.locator(".track-copy strong").first();
+    const title = page.locator("#library-content .track-copy strong").first();
     const height = () =>
       title.evaluate((el) => {
         const range = document.createRange();
@@ -42,11 +42,13 @@ for (const width of [320, 390])
     const before = await height();
     await enlargeText(page);
     expect(await height()).toBeGreaterThanOrEqual(before * 1.8);
-    const lines = await page.locator(".collection-count").evaluate((el) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      return range.getClientRects().length;
-    });
+    const lines = await page
+      .locator("#library-content .collection-count")
+      .evaluate((el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return range.getClientRects().length;
+      });
     expect(lines).toBe(1);
     expect(
       await page.evaluate(

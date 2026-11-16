@@ -79,6 +79,7 @@ export function installInputModality() {
   ] as const)
     document.addEventListener(event, clearPress, true);
   window.addEventListener("blur", clearPress);
+  document.addEventListener("library-paging", clearPress);
   document.addEventListener(
     "scroll",
     (event) => {

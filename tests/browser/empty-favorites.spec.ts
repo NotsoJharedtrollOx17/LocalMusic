@@ -5,7 +5,7 @@ import { openSettings } from "./navigationHelpers";
 
 async function importLibrary(page: Page) {
   await page.goto("/");
-  await expect(page.locator(".empty-library")).toBeVisible();
+  await expect(page.locator("#library-content .empty-library")).toBeVisible();
   await page
     .locator("input[type=file]")
     .first()
@@ -16,8 +16,10 @@ async function importLibrary(page: Page) {
         buffer: taggedWav(title, i + 1),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(3);
-  await expect(page.locator(".library-toolbar")).toContainText("3 songs");
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "3 songs",
+  );
 }
 
 async function choose(page: Page, name: string, hold = false) {
@@ -52,35 +54,39 @@ async function watchWrongEmptyStates(page: Page) {
   });
 }
 
-test("empty Favorites stays scoped through delayed sorting and collection navigation", async ({
+test("empty Favorites and sorting reuse prepared metadata even with another catalog read held", async ({
   page,
 }) => {
   await importLibrary(page);
   await watchWrongEmptyStates(page);
   await choose(page, "Favorites", true);
-  await expect(page.locator(".catalog-loading")).toBeVisible();
-  await expect(page.locator(".empty-favorites")).toHaveCount(0);
-  await page.waitForFunction(
-    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
-  );
+  await expect(page.locator(".catalog-loading")).toHaveCount(0);
+  await expect(page.locator("#library-content .empty-favorites")).toBeVisible();
   await release(page);
-  await expect(page.locator(".empty-favorites")).toContainText(
+  await expect(page.locator("#library-content .empty-favorites")).toContainText(
     "No favorite songs yet",
   );
-  await expect(page.locator(".library-toolbar")).toContainText("0 songs");
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "0 songs",
+  );
   for (const name of ["Sort by artist", "Sort by album", "Sort by title"]) {
     await choose(page, name, true);
-    await expect(page.locator(".catalog-loading")).toBeVisible();
-    await page.waitForFunction(
-      () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
-    );
+    await expect(page.locator(".catalog-loading")).toHaveCount(0);
     await release(page);
-    await expect(page.locator(".track-row")).toHaveCount(3);
-    await expect(page.locator(".empty-favorites")).toHaveCount(0);
-    await expect(page.locator(".collection-count")).toHaveText("3 songs");
-    await expect(page.locator(".library-toolbar")).toContainText("3 songs");
+    await expect(page.locator("#library-content .track-row")).toHaveCount(3);
+    await expect(page.locator("#library-content .empty-favorites")).toHaveCount(
+      0,
+    );
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "3 songs",
+    );
+    await expect(
+      page.locator("#library-content .library-toolbar"),
+    ).toContainText("3 songs");
     await choose(page, "Favorites");
-    await expect(page.locator(".empty-favorites")).toBeVisible();
+    await expect(
+      page.locator("#library-content .empty-favorites"),
+    ).toBeVisible();
   }
   await page.screenshot({
     path: "artifacts/favorites-filter-review/empty-favorites-en.png",
@@ -88,24 +94,25 @@ test("empty Favorites stays scoped through delayed sorting and collection naviga
 
   // A stale Favorites request must not hide collections or replace All music.
   await choose(page, "Sort by artist", true);
-  await expect(page.locator(".catalog-loading")).toBeVisible();
-  await page.waitForFunction(
-    () => (window as unknown as { catalogReadHeld: boolean }).catalogReadHeld,
-  );
+  await expect(page.locator(".catalog-loading")).toHaveCount(0);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(1);
-  await expect(page.locator(".collection-count")).toHaveText("1 album");
-  await page.locator(".album-card").click();
-  await expect(page.locator(".track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "1 album",
+  );
+  await page.locator("#library-content .album-card").click();
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await expect(page.locator('.generator button[type="submit"]')).toBeEnabled();
   await release(page);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await expect(page.locator(".track-row")).toHaveCount(3);
-  await expect(page.locator(".library-toolbar")).toContainText("3 songs");
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "3 songs",
+  );
   expect(
     await page.evaluate(
       () =>
@@ -118,16 +125,20 @@ test("Favorites has its own empty state even before the first import", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".empty-library")).toBeVisible();
+  await expect(page.locator("#library-content .empty-library")).toBeVisible();
   await choose(page, "Favorites");
-  await expect(page.locator(".empty-favorites")).toContainText(
+  await expect(page.locator("#library-content .empty-favorites")).toContainText(
     "No favorite songs yet",
   );
-  await expect(page.locator(".library-toolbar")).toContainText("0 songs");
-  await expect(page.locator(".empty-library")).toHaveCount(0);
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "0 songs",
+  );
+  await expect(page.locator("#library-content .empty-library")).toHaveCount(0);
   await choose(page, "Sort by title");
-  await expect(page.locator(".empty-library")).toBeVisible();
-  await expect(page.locator(".empty-favorites")).toHaveCount(0);
+  await expect(page.locator("#library-content .empty-library")).toBeVisible();
+  await expect(page.locator("#library-content .empty-favorites")).toHaveCount(
+    0,
+  );
 });
 
 test("Favorites keeps its label, exclusive selection and opening focus after sorting", async ({
@@ -159,13 +170,15 @@ test("Favorites keeps its label, exclusive selection and opening focus after sor
     await menu
       .getByRole("menuitemradio", { name: artist, exact: true })
       .click();
-    await expect(page.locator(".track-row")).toHaveCount(3);
+    await expect(page.locator("#library-content .track-row")).toHaveCount(3);
     await filter.click();
     await expect(
       menu.getByRole("menuitemradio", { name: artist, exact: true }),
     ).toBeFocused();
     await favoriteOption.click();
-    await expect(page.locator(".empty-favorites")).toBeVisible();
+    await expect(
+      page.locator("#library-content .empty-favorites"),
+    ).toBeVisible();
     for (let reopen = 0; reopen < 2; reopen++) {
       await filter.click();
       await expect(favoriteOption).toHaveAttribute("aria-checked", "true");
@@ -177,7 +190,9 @@ test("Favorites keeps its label, exclusive selection and opening focus after sor
         }),
       ).toHaveCount(0);
       await page.keyboard.press("Enter");
-      await expect(page.locator(".empty-favorites")).toBeVisible();
+      await expect(
+        page.locator("#library-content .empty-favorites"),
+      ).toBeVisible();
       await expect(filter).toBeFocused();
     }
     await filter.click();
@@ -191,7 +206,7 @@ test("Favorites keeps its label, exclusive selection and opening focus after sor
     await filter.click();
     await expect(favoriteOption).toBeFocused();
     await menu.getByRole("menuitemradio", { name: title, exact: true }).click();
-    await expect(page.locator(".track-row")).toHaveCount(3);
+    await expect(page.locator("#library-content .track-row")).toHaveCount(3);
     await filter.click();
     await expect(favoriteOption).toHaveAttribute("aria-checked", "false");
     await expect(
@@ -205,13 +220,11 @@ test("Favorites keeps its label, exclusive selection and opening focus after sor
   }
 });
 
-test("Favorites recovers after a failed read and after removing its last song", async ({
+test("catalog read failure retries and Favorites updates when its last song is removed", async ({
   page,
 }) => {
   await importLibrary(page);
-  await watchWrongEmptyStates(page);
-  await page.getByRole("button", {name:"Filter and sort", exact:true}).click();
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
     const original = IDBObjectStore.prototype.get;
     IDBObjectStore.prototype.get = function (...args) {
       if (
@@ -225,32 +238,38 @@ test("Favorites recovers after a failed read and after removing its last song", 
       return original.apply(this, args);
     };
   });
-  await page.getByRole("menu", {name:"Filter and sort"}).getByRole("menuitemradio", {name:"Favorites", exact:true}).click();
-  await expect(page.locator(".library-toolbar")).not.toContainText("3 songs");
+  await page.reload();
   await page
     .locator("#library-content")
     .getByRole("button", { name: "Try again", exact: true })
     .click();
-  await expect(page.locator(".empty-favorites")).toBeVisible();
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
+  await watchWrongEmptyStates(page);
+  await choose(page, "Favorites");
+  await expect(page.locator("#library-content .empty-favorites")).toBeVisible();
   await page
-    .locator(".empty-favorites")
+    .locator("#library-content .empty-favorites")
     .getByRole("button", { name: "All music", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
   await choose(page, "Favorites");
-  await expect(page.locator(".track-row")).toHaveCount(1);
-  await expect(page.locator(".library-toolbar")).toContainText("1 song");
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "1 song",
+  );
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
-  await expect(page.locator(".empty-favorites")).toBeVisible();
-  await expect(page.locator(".library-toolbar")).toContainText("0 songs");
+  await expect(page.locator("#library-content .empty-favorites")).toBeVisible();
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "0 songs",
+  );
   expect(
     await page.evaluate(
       () =>
@@ -261,12 +280,16 @@ test("Favorites recovers after a failed read and after removing its last song", 
   const settings = await openSettings(page);
   await settings.getByRole("button", { name: "Español", exact: true }).click();
   await page.keyboard.press("Escape");
-  await expect(page.locator(".empty-favorites")).toContainText(
+  await expect(page.locator("#library-content .empty-favorites")).toContainText(
     "Aún no tienes canciones favoritas",
   );
-  await expect(page.locator(".library-toolbar")).toContainText("0 canciones");
+  await expect(page.locator("#library-content .library-toolbar")).toContainText(
+    "0 canciones",
+  );
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".empty-favorites button")).toBeInViewport();
+  await expect(
+    page.locator("#library-content .empty-favorites button"),
+  ).toBeInViewport();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);

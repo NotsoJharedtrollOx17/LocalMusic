@@ -14,7 +14,7 @@ async function uncredited(page: Page) {
       mimeType: "audio/wav",
       buffer: wav(12),
     });
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
 }
 async function swipe(cdp: CDPSession, y: number, from = 320, to = 70) {
   await cdp.send("Input.dispatchTouchEvent", {
@@ -85,7 +85,9 @@ test("empty Albums and Artists retain confirmed state without placeholder flashe
   // The phone warmup may already have the confirmed empty groups cached.
   for (const tab of ["Albums", "Artists", "Albums"]) {
     await page.getByRole("tab", { name: tab, exact: true }).click();
-    await expect(page.locator(".album-grid > .empty-small")).toBeVisible();
+    await expect(
+      page.locator("#library-content .album-grid > .empty-small"),
+    ).toBeVisible();
     await expect(page.locator(".album-placeholder")).toHaveCount(0);
   }
   expect(await page.evaluate(() => (window as any).__placeholders)).toBe(0);
@@ -131,9 +133,9 @@ test("Favorites, search and New playlist reflow with larger EN/ES phone text", a
       });
       const check = async () => {
         const heading = (await page
-            .locator(".collection-count")
+            .locator("#library-content .collection-count")
             .boundingBox())!,
-          actions = (await page.locator(".toolbar-actions").boundingBox())!;
+          actions = (await page.locator("#library-content .toolbar-actions").boundingBox())!;
         expect(
           heading.x + heading.width <= actions.x + 1 ||
             heading.y + heading.height <= actions.y + 1,
@@ -152,7 +154,9 @@ test("Favorites, search and New playlist reflow with larger EN/ES phone text", a
         })
         .click();
       await page.locator(".inline-search input").fill("orbit");
-      await expect(page.locator("[data-search-clear]")).toBeVisible();
+      await expect(
+        page.locator("#library-content [data-search-clear]"),
+      ).toBeVisible();
       await check();
       await page.keyboard.press("Escape");
       await page.keyboard.press("Escape");
@@ -166,7 +170,9 @@ test("Favorites, search and New playlist reflow with larger EN/ES phone text", a
         box = (await button.boundingBox())!;
       expect(box.width).toBeLessThan(200);
       expect(box.height).toBeGreaterThanOrEqual(48);
-      const title = (await page.locator(".collection-count").boundingBox())!;
+      const title = (await page
+        .locator("#library-content .collection-count")
+        .boundingBox())!;
       expect(title.y + title.height).toBeLessThanOrEqual(
         box.y + box.height + 1,
       );
@@ -190,7 +196,7 @@ test("Android player header swipe dismisses without stretching its surface", asy
   await page.evaluate(() => {
     document.documentElement.dataset.platform = "android";
   });
-  await page.locator(".track-hit").click();
+  await page.locator("#library-content .track-hit").click();
   await page.locator(".mini-track").click();
   const player = page.getByRole("dialog", { name: "Now playing", exact: true }),
     head = player.locator(".player-surface-head");
@@ -247,7 +253,7 @@ test("leaving long-press selection does not swallow the next real touch menu tap
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await uncredited(page);
-  const hit = page.locator(".track-hit").first();
+  const hit = page.locator("#library-content .track-hit").first();
   await hit.dispatchEvent("pointerdown", {
     isPrimary: true,
     pointerType: "touch",

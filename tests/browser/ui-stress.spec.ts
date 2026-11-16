@@ -5,7 +5,7 @@ import { openSettings } from "./navigationHelpers";
 async function seed(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
       const r = indexedDB.open("local-music-v1");
@@ -41,9 +41,9 @@ async function seed(page: Page) {
   });
   await page.reload();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
-  await expect(page.locator(".saved-playlist-card .playlist-tile")).toHaveCount(
-    2,
-  );
+  await expect(
+    page.locator("#library-content .saved-playlist-card .playlist-tile"),
+  ).toHaveCount(2);
 }
 const tile = (page: Page, title: string) =>
   page.locator(".playlist-tile").filter({ hasText: title });
@@ -193,7 +193,9 @@ test("failed playlist editing keeps edit controls and unsaved order available", 
     .getByRole("button", { name: "Move down", exact: true })
     .first()
     .click();
-  const titles = await page.locator(".track-copy strong").allTextContents();
+  const titles = await page
+    .locator("#library-content .track-copy strong")
+    .allTextContents();
   await failPlaylistWrite(page);
   await page
     .getByRole("button", { name: "Save playlist", exact: true })
@@ -204,7 +206,9 @@ test("failed playlist editing keeps edit controls and unsaved order available", 
   await expect(
     page.getByRole("button", { name: "Save playlist", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".track-copy strong")).toHaveText(titles);
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText(
+    titles,
+  );
   await page
     .getByRole("button", { name: "Save playlist", exact: true })
     .click();
@@ -219,7 +223,7 @@ test("a dismissed add-to-playlist write cannot close a newly opened Settings dia
   await seed(page);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Track actions:/ })
     .click();
@@ -248,9 +252,7 @@ test("album review selectors expose concise accessible names", async ({
 }) => {
   await seed(page);
   const settings = await openSettings(page);
-  await settings
-    .getByRole("button", { name: "Organize", exact: true })
-    .click();
+  await settings.getByRole("button", { name: "Organize", exact: true }).click();
   const d = page.getByRole("dialog", { name: "Organize", exact: true });
   await d.getByRole("button", { name: "Albums", exact: true }).click();
   await d.locator(".organization-choice").first().getByRole("checkbox").check();
@@ -273,7 +275,7 @@ test("playlist rows cannot change while their order is being saved", async ({
     .poll(() => page.evaluate(() => (window as any).playlistWriteHeld))
     .toBe(true);
   for (const button of await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /^(Move up|Move down|Remove)$/ })
     .all())
     await expect(button).toBeDisabled();

@@ -39,9 +39,9 @@ async function open(page: Page) {
       mimeType: "audio/wav",
       buffer: taggedWav("Visualizer fixture", 1, 120),
     });
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /^Play / })
     .click();
   await page.locator(".mini-track").click();

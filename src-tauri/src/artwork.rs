@@ -18,6 +18,8 @@ pub fn resolve(
         64
     } else if size <= 128 {
         128
+    } else if size <= 256 {
+        256
     } else {
         512
     };
@@ -33,8 +35,8 @@ pub fn resolve(
         .and_then(|s| s.strip_prefix("cache:"))
         .unwrap_or(&seed);
     let mut path = cache.join(format!("{key}-{size}.png"));
-    if size == 128 {
-        let _ = derive_row_cover(cache, key);
+    if size == 128 || size == 256 {
+        let _ = derive_cover(cache, key, size);
     }
     if !path.exists() && key != seed {
         #[cfg(not(target_os = "android"))]
@@ -58,8 +60,8 @@ pub fn resolve(
                 .native_music()
                 .call("artwork", serde_json::json!({"uri":track.source_uri}));
         }
-        if size == 128 {
-            let _ = derive_row_cover(cache, key);
+        if size == 128 || size == 256 {
+            let _ = derive_cover(cache, key, size);
         }
         if !path.exists() {
             path = cache.join(format!("{seed}-{size}.png"));
@@ -77,13 +79,16 @@ pub fn resolve(
     ))
 }
 fn derive_row_cover(cache: &Path, key: &str) -> Result<(), String> {
-    let destination = cache.join(format!("{key}-128.png"));
+    derive_cover(cache, key, 128)
+}
+fn derive_cover(cache: &Path, key: &str, size: u32) -> Result<(), String> {
+    let destination = cache.join(format!("{key}-{size}.png"));
     if !destination.exists() {
         let source = cache.join(format!("{key}-512.png"));
         if source.exists() {
             image::open(source)
                 .map_err(|e| e.to_string())?
-                .thumbnail(128, 128)
+                .thumbnail(size, size)
                 .save(destination)
                 .map_err(|e| e.to_string())?;
         }
@@ -105,7 +110,7 @@ pub fn save_embedded(bytes: &[u8], cache: &Path) -> Result<String, String> {
     let image = reader.decode().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(cache).map_err(|e| e.to_string())?;
     let key = blake3::hash(bytes).to_hex().to_string();
-    for size in [64, 128, 512] {
+    for size in [64, 128, 256, 512] {
         let path = cache.join(format!("{key}-{size}.png"));
         if !path.exists() {
             image
@@ -227,7 +232,7 @@ mod tests {
         source.write_to(&mut bytes, ImageFormat::Png).unwrap();
         let reference = super::save_embedded(bytes.get_ref(), &cache).unwrap();
         let key = reference.strip_prefix("cache:").unwrap();
-        for size in [64, 128, 512] {
+        for size in [64, 128, 256, 512] {
             let image = image::open(cache.join(format!("{key}-{size}.png"))).unwrap();
             assert_eq!(image.width(), size);
             assert_eq!(image.height(), size);

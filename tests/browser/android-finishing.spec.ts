@@ -3,7 +3,7 @@ test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 async function setup(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await page.evaluate(
     () => (document.documentElement.dataset.platform = "android"),
   );
@@ -12,7 +12,7 @@ test("song press highlights immediately and briefly after activation without hap
   page,
 }) => {
   await setup(page);
-  const hit = page.locator(".track-hit").first();
+  const hit = page.locator("#library-content .track-hit").first();
   const active = await hit.evaluate((el) => {
     // Keep a short tap in one browser task: runner/compile load must not
     // accidentally turn a press-feedback check into a 480 ms selection hold.
@@ -64,17 +64,22 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
   page,
 }) => {
   await setup(page);
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   const frames = await page.locator(".mini-track").evaluate(async (el) => {
+    const captured: Keyframe[] = [];
+    Object.assign(window, { playerTransitionFrames: captured });
+    const animate = HTMLElement.prototype.animate;
+    HTMLElement.prototype.animate = function (...args) {
+      if (this.matches(".player-surface") && Array.isArray(args[0]))
+        captured.push(...(args[0] as Keyframe[]));
+      return animate.apply(this, args);
+    };
     (el as HTMLElement).focus();
     (el as HTMLElement).click();
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => resolve()),
     );
-    return document
-      .querySelector(".player-surface")!
-      .getAnimations()
-      .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes());
+    return captured;
   });
   const player = page.locator(".player-surface");
   expect(frames[0].clipPath).toContain("inset(");
@@ -83,14 +88,16 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
   await player.evaluate((el) =>
     Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
   );
-  await player
+  const exit = await player
     .getByRole("button", { name: "Close", exact: true })
-    .evaluate((el) => (el as HTMLElement).click());
-  const exit = await player.evaluate((el) =>
-    el
-      .getAnimations()
-      .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes()),
-  );
+    .evaluate((el) => {
+      const frames = (
+        window as unknown as { playerTransitionFrames: Keyframe[] }
+      ).playerTransitionFrames;
+      frames.length = 0;
+      (el as HTMLElement).click();
+      return frames;
+    });
   expect(exit.at(-1)!.clipPath).toContain("inset(");
   expect(exit.every((f) => !("transform" in f))).toBe(true);
   await expect(player).toHaveCount(0);
@@ -122,6 +129,8 @@ test("closing an observed Android keyboard collapses search while retaining its 
     visualViewport!.dispatchEvent(new Event("resize"));
   }, viewport);
   await expect(input).toHaveCount(0);
-  await expect(page.locator(".track-row")).toHaveCount(1);
-  await expect(page.locator(".track-row")).toContainText("A quieter orbit");
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toContainText(
+    "A quieter orbit",
+  );
 });

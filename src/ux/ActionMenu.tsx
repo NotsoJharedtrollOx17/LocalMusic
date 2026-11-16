@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useBackLayer } from "../navigation";
 import { claimMenu, consumeDismissalClick } from "./menuLayer";
@@ -139,7 +140,7 @@ export function ActionMenu({
       document.removeEventListener("scroll", scroll, true);
     };
   }, [anchor, point]);
-  return (
+  return createPortal(
     <div
       ref={ref}
       className="action-menu"
@@ -170,8 +171,7 @@ export function ActionMenu({
           event.preventDefault();
           restore();
           latestClose.current();
-          const scope =
-            anchor.closest('[role="dialog"]') ?? document.body;
+          const scope = anchor.closest('[role="dialog"]') ?? document.body;
           const controls = Array.from(
             scope.querySelectorAll<HTMLElement>(
               'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],[tabindex="0"]',
@@ -224,6 +224,7 @@ export function ActionMenu({
           )}
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }

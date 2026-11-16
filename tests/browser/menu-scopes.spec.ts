@@ -16,7 +16,7 @@ async function importTracks(page: Page, album = "Fixture Album") {
         buffer: taggedWav(title, i + 1, 1, { album }),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
 }
 async function headerMenu(page: Page) {
   await page
@@ -30,8 +30,8 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
 }) => {
   await importTracks(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await page.locator(".album-card").click();
-  await expect(page.locator(".collection-hero h1")).toHaveText("Fixture Album");
+  await page.locator("#library-content .album-card").click();
+  await expect(page.locator("#library-content .collection-hero h1")).toHaveText("Fixture Album");
   let menu = await headerMenu(page);
   await menu.getByRole("menuitem", { name: "Edit", exact: true }).click();
   await page
@@ -45,14 +45,14 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
     .click();
   await page.keyboard.press("Escape");
   await expect(page.locator(".selection-toolbar")).toContainText("3 selected");
-  await expect(page.locator(".collection-hero h1")).toHaveText("Fixture Album");
+  await expect(page.locator("#library-content .collection-hero h1")).toHaveText("Fixture Album");
   menu = await headerMenu(page);
   await menu
     .getByRole("menuitem", { name: "Done selecting", exact: true })
     .click();
   await expect(page.locator(".selection-toolbar")).toHaveCount(0);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Track actions:/ })
     .click();
@@ -62,7 +62,7 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
   await page
     .getByRole("menuitem", { name: "Go to artist", exact: true })
     .click();
-  await expect(page.locator(".collection-hero h1")).toHaveText(
+  await expect(page.locator("#library-content .collection-hero h1")).toHaveText(
     "Fixture Artist",
   );
   await page
@@ -81,14 +81,17 @@ test("collection Edit stays in scope, retains selection across dialogs and separ
     .click();
   menu = await headerMenu(page);
   await menu.getByRole("menuitem", { name: "Edit", exact: true }).click();
-  await page.locator(".track-row .selection-check").first().click();
+  await page
+    .locator("#library-content .track-row .selection-check")
+    .first()
+    .click();
   await expect(page.locator(".selection-toolbar")).toContainText("1 selected");
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page
-    .locator(".automatic-playlist-tile")
+    .locator("#library-content .automatic-playlist-tile")
     .filter({ hasText: "Recently added" })
     .click();
   menu = await headerMenu(page);
@@ -137,7 +140,7 @@ test("a delayed album navigation cannot overwrite a newer Songs choice", async (
 }) => {
   await importTracks(page);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Track actions:/ })
     .click();
@@ -146,11 +149,11 @@ test("a delayed album navigation cannot overwrite a newer Songs choice", async (
     .getByRole("menuitem", { name: "Go to album", exact: true })
     .click();
   // Collection details now appear immediately while the track read is pending.
-  await expect(page.locator(".collection-hero")).toBeVisible();
+  await expect(page.locator("#library-content .collection-hero")).toBeVisible();
   await page.locator(".group-back").click();
   await release(page);
-  await expect(page.locator(".track-row")).toHaveCount(3);
-  await expect(page.locator(".collection-hero")).toHaveCount(0);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .collection-hero")).toHaveCount(0);
   await expect(page.getByRole("menu")).toHaveCount(0);
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
@@ -174,7 +177,7 @@ test("localized long collection names and menus remain usable in desktop and nar
   for (const width of [1280, 640, 390, 320]) {
     await page.setViewportSize({ width, height: 600 });
     await page
-      .locator(".track-row")
+      .locator("#library-content .track-row")
       .first()
       .getByRole("button", { name: /^Acciones de la canción:/ })
       .click();
@@ -201,7 +204,7 @@ test("localized long collection names and menus remain usable in desktop and nar
     await page.keyboard.press("Escape");
   }
   await page.getByRole("tab", { name: "Álbumes", exact: true }).click();
-  await page.locator(".album-card").click();
+  await page.locator("#library-content .album-card").click();
   await expect(
     page.getByRole("heading", { name: album, exact: true }),
   ).toHaveCount(1);
@@ -229,18 +232,20 @@ test("album navigation distinguishes artists with the same album title", async (
         }),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(2);
-  const row = page.locator(".track-row").filter({ hasText: "Second artist" });
+  await expect(page.locator("#library-content .track-row")).toHaveCount(2);
+  const row = page
+    .locator("#library-content .track-row")
+    .filter({ hasText: "Second artist" });
   await row.getByRole("button", { name: /^Track actions:/ }).click();
   await page
     .getByRole("menuitem", { name: "Go to album", exact: true })
     .click();
-  await expect(page.locator(".collection-hero")).toContainText("Second artist");
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Track-1",
-  ]);
+  await expect(page.locator("#library-content .collection-hero")).toContainText("Second artist");
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Track-1"]);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /^Track actions:/ })
     .click();
   await expect(
@@ -289,7 +294,7 @@ test("unavailable audio keeps details without copy actions or invented destinati
       }),
   );
   await page.reload();
-  const row = page.locator(".track-row").first();
+  const row = page.locator("#library-content .track-row").first();
   await row.getByRole("button", { name: /^Track actions:/ }).click();
   await expect(page.getByRole("menuitem")).toHaveText([
     "Add to playlist",

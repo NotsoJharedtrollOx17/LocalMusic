@@ -269,7 +269,9 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
   await expect(page.getByText("125 songs", { exact: true })).toBeVisible({
     timeout: 20000,
   });
-  expect(await page.locator(".track-row").count()).toBeLessThan(40);
+  expect(
+    await page.locator("#library-content .track-row").count(),
+  ).toBeLessThan(40);
   await page.getByRole("button", { name: "Search your library" }).click();
   await page.getByRole("searchbox").fill("Fixture 120");
   await expect(
@@ -281,12 +283,12 @@ test("catalog pagination, favorites and manual picker cover unloaded songs", asy
     .click();
   await expect(page.getByRole("search")).toHaveCount(0);
   await page
-    .locator(".toolbar-actions")
+    .locator("#library-content .toolbar-actions")
     .getByRole("button", { name: "Clear search", exact: true })
     .click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page
-    .locator(".automatic-playlist-tile")
+    .locator("#library-content .automatic-playlist-tile")
     .filter({ hasText: "Favorites" })
     .click();
   await expect(
@@ -344,7 +346,7 @@ test("import publishes ten tracks before the remaining files finish", async ({
   await expect(page.locator(".import-status")).toContainText(
     "10 tracks imported",
   );
-  const cover = page.locator(".track-row .cover").first();
+  const cover = page.locator("#library-content .track-row .cover").first();
   await expect(cover).toHaveAttribute("src", /^data:image\/svg/);
   expect(
     await cover.evaluate((image) => (image as HTMLImageElement).naturalWidth),
@@ -373,7 +375,7 @@ test("artist and album details stay populated as import batches arrive", async (
   await expect(page.locator(".toast")).toContainText("1 tracks imported");
   await page.getByRole("tab", { name: "Artists" }).click();
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Artist" })
     .click();
   await expect(
@@ -420,64 +422,26 @@ test("artist and album details stay populated as import batches arrive", async (
   await page.locator(".group-back").click();
   await page.getByRole("tab", { name: "Albums" }).click();
   await expect(
-    page.locator(".album-card").filter({ hasText: "Fixture Album" }),
+    page
+      .locator("#library-content .album-card")
+      .filter({ hasText: "Fixture Album" }),
   ).toBeVisible();
-  await page.evaluate(() => {
-    // Group membership is cached; opening still validates its catalog revision.
-    const original = IDBObjectStore.prototype.get;
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead =
-      release;
-    IDBObjectStore.prototype.get = function (...args) {
-      const request = original.apply(this, args);
-      if (
-        this.name === "settings" &&
-        args[0] === "catalog-revision" &&
-        this.transaction.objectStoreNames.length === 1
-      ) {
-        IDBObjectStore.prototype.get = original;
-        request.addEventListener(
-          "success",
-          (event) => {
-            event.stopImmediatePropagation();
-            (window as unknown as { albumReadHeld: boolean }).albumReadHeld =
-              true;
-            void gate.then(() => request.onsuccess?.call(request, event));
-          },
-          { once: true },
-        );
-      }
-      return request;
-    };
-  });
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Album" })
     .click();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window as unknown as { albumReadHeld: boolean }).albumReadHeld,
-      ),
-    )
-    .toBe(true);
-  // Album details are shown immediately while membership loads.
-  await expect(page.locator(".collection-hero")).toBeVisible();
+  // Complete membership is already prepared; opening needs no new metadata read.
+  await expect(page.locator("#library-content .collection-hero")).toBeVisible();
   await page.locator(".group-back").click();
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await page.evaluate(() =>
-    (window as unknown as { releaseAlbumRead: () => void }).releaseAlbumRead(),
-  );
+
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".group-back")).toHaveCount(0);
   await page.getByRole("tab", { name: "Albums" }).click();
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Album" })
     .click();
   await expect(
@@ -530,12 +494,12 @@ test("album disc order is preserved in views, queue and legacy library migration
   await page.getByRole("tab", { name: "Albums" }).click();
   await expect(
     page
-      .locator(".album-card")
+      .locator("#library-content .album-card")
       .filter({ hasText: "Fixture Album" })
       .locator("span"),
   ).toHaveText("Fixture Artist · 2001");
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Album" })
     .click();
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
@@ -557,7 +521,7 @@ test("album disc order is preserved in views, queue and legacy library migration
   await page.locator(".group-back").click();
   await page.getByRole("tab", { name: "Artists" }).click();
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Artist" })
     .click();
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(
@@ -598,7 +562,7 @@ test("album disc order is preserved in views, queue and legacy library migration
   await page.reload();
   await page.getByRole("tab", { name: "Albums" }).click();
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Fixture Album" })
     .click();
   await expect(page.locator(".library-page .track-copy strong")).toHaveText(

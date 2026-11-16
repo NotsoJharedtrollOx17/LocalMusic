@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { api } from "../api";
+import { compareCatalogTracks } from "../domain";
 import { matchesSearch, normalizeSearch, searchRank } from "../search/match";
 import { automaticPlaylistLabel } from "./automaticPlaylistLabels";
 import type { MusicAppState } from "./useAppState";
@@ -31,6 +32,7 @@ export function useInlineSearch(
   t: typeof en,
   automatic: Playlist[],
   remember: (tracks: Track[]) => void,
+  catalog: import("../types").CatalogIndex | null,
 ) {
   const {
     query,
@@ -89,6 +91,7 @@ export function useInlineSearch(
     onlyFavorites,
     sort,
     catalogRevision,
+    catalog?.revision,
     members,
     state.lists,
     section === "playlists" ? automatic : null,
@@ -175,7 +178,10 @@ export function useInlineSearch(
           const ids = offset
             ? pages.current.get(requestKey)!.ids
             : await api.filterTrackIds(members, q);
-          const tracks = await api.tracksById(ids.slice(offset, offset + 60));
+          const byId = new Map(catalog?.tracks.map((t) => [t.id, t]));
+          const tracks = catalog
+            ? ids.map((id) => byId.get(id)).filter((t): t is Track => !!t)
+            : await api.tracksById(ids);
           result = {
             ...result,
             ids,
@@ -228,27 +234,35 @@ export function useInlineSearch(
           ]);
           result = {
             ...result,
-            groups: groups.slice(0, offset + 60),
+            groups,
             total: groups.length,
             allTotal: all.length,
           };
         } else if (section === "songs") {
-          const options = { favoriteOnly: onlyFavorites, sort };
-          const [found, all] = await Promise.all([
-            api.listTracks(q, offset, 60, options),
-            api.listTracks("", 0, 1, options),
-          ]);
+          const all = (catalog ?? (await api.catalogIndex())).tracks.filter(
+            (t) => !onlyFavorites || t.favorite,
+          );
+          const ids = await api.filterTrackIds(
+            all.map((t) => t.id),
+            q,
+          );
+          const byId = new Map(all.map((t) => [t.id, t]));
           result = {
             ...result,
-            tracks: offset
-              ? [...pages.current.get(requestKey)!.tracks, ...found.tracks]
-              : found.tracks,
-            total: found.total,
-            allTotal: all.total,
+            ids,
+            tracks: ids
+              .map((id) => byId.get(id)!)
+              .sort(
+                (a, b) =>
+                  searchRank(a.title, q) - searchRank(b.title, q) ||
+                  compareCatalogTracks(a, b, sort),
+              ),
+            total: ids.length,
+            allTotal: all.length,
           };
         } else if (section === "albums" || section === "artists") {
           const [found, all] = await Promise.all([
-            api.groups(section, offset, q),
+            api.groups(section, 0, q, 1_000_000),
             api.groups(section),
           ]);
           result = {
@@ -275,7 +289,7 @@ export function useInlineSearch(
           setRequest({ key: requestKey, loading: false, error: String(error) });
       }
     },
-    [key, remember],
+    [key, remember, catalog],
   );
   useEffect(() => {
     if (!active) {
@@ -347,7 +361,7 @@ export function useInlineSearch(
             const target = searchOpen
               ? searchInput.current
               : (document.querySelector<HTMLElement>(
-                  "[data-library-filters]",
+                  "#library-content [data-library-filters]",
                 ) ??
                 document.querySelector<HTMLElement>(
                   "[data-search-trigger] button",

@@ -7,7 +7,7 @@ async function samples(page: Page) {
   await page
     .getByRole("button", { name: "Explore with sample audio", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 for (const width of [320, 390, 411])
   test(`phone header, album grid and transport fit ${width}px`, async ({
@@ -25,14 +25,14 @@ for (const width of [320, 390, 411])
       page.getByRole("button", { name: "Library actions", exact: true }),
     ).toHaveCount(1);
     await page.getByRole("tab", { name: "Albums", exact: true }).click();
-    const cards = page.locator(".album-grid .album-card");
+    const cards = page.locator("#library-content .album-grid .album-card");
     await expect(cards.first()).toBeVisible();
     const first = await cards.nth(0).boundingBox(),
       second = await cards.nth(1).boundingBox();
     expect(Math.abs(first!.y - second!.y)).toBeLessThan(1);
     expect(second!.x).toBeGreaterThan(first!.x + first!.width);
     await page.getByRole("tab", { name: "Songs", exact: true }).click();
-    await page.locator(".track-hit").first().click();
+    await page.locator("#library-content .track-hit").first().click();
     const mini = page.locator(".mini-player");
     for (const name of ["Previous", "Pause", "Next"]) {
       const control = mini.getByRole("button", { name, exact: true });
@@ -46,7 +46,13 @@ for (const width of [320, 390, 411])
         parseFloat(getComputedStyle(el).borderRadius),
       ),
     ).toBe(12); // Compact mini-player corners, while controls keep 48px targets.
-    await page.evaluate(() => scrollTo(0, 350));
+    await page.evaluate(() =>
+      (
+        document.querySelector<HTMLElement>(
+          '.library-pane[data-active="true"]',
+        ) ?? window
+      ).scrollTo(0, 350),
+    );
     const brand = await page.locator(".library-brand-header").boundingBox(),
       tabs = await page.locator(".library-navigation").boundingBox();
     expect(brand!.y).toBeGreaterThanOrEqual(-1);
@@ -71,13 +77,15 @@ test("Android landscape keeps Library and mini-player controls outside side navi
   await page.evaluate(() => {
     document.documentElement.dataset.platform = "android";
   });
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   const mini = page.locator(".mini-player");
   await expect(mini).toHaveCSS("display", "flex");
   for (const control of [
     page.getByRole("button", { name: "Import music", exact: true }),
     page.getByRole("button", { name: "Library actions", exact: true }),
-    page.locator(".track-row > button[aria-haspopup=menu]").first(),
+    page
+      .locator("#library-content .track-row > button[aria-haspopup=menu]")
+      .first(),
     mini.getByRole("button", { name: "Next", exact: true }),
   ]) {
     expect(
@@ -109,7 +117,7 @@ test("persistent player stays above Library content without interrupting playbac
     };
   });
   await samples(page);
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__playingAudio?.paused))
     .toBe(false);
@@ -124,7 +132,15 @@ test("persistent player stays above Library content without interrupting playbac
   for (const tab of ["Albums", "Artists", "Playlists", "Your Recap", "Songs"]) {
     await page.getByRole("tab", { name: tab, exact: true }).click();
     await page.evaluate(() =>
-      scrollTo(0, document.documentElement.scrollHeight),
+      (
+        document.querySelector<HTMLElement>(
+          '.library-pane[data-active="true"]',
+        ) ?? window
+      ).scrollTo(
+        0,
+        document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+          ?.scrollHeight ?? document.documentElement.scrollHeight,
+      ),
     );
     await expect(page.locator(".mini-player")).toBeInViewport();
   }
@@ -199,7 +215,7 @@ test("Android player transitions never spawn a separate flying cover", async ({
       ),
     ).observe(document.body, { childList: true });
   });
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page.locator(".mini-track").click();
   const player = page.getByRole("dialog", { name: "Now playing", exact: true });
   await expect(player).toBeVisible();
@@ -229,7 +245,7 @@ test("phone EQ shows only usable bands with native presets", async ({
     };
   });
   await samples(page);
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   const eq = await openEqualizer(page),
     presets = eq.getByRole("combobox", { name: "Presets", exact: true });
   await expect(presets).toHaveValue("flat");
@@ -268,18 +284,20 @@ test("mobile About returns to Settings and empty artist text spans the grid", as
       mimeType: "audio/wav",
       buffer: wav(12),
     });
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  const empty = page.locator(".album-grid .empty-small");
+  const empty = page.locator("#library-content .album-grid .empty-small");
   await expect(empty).toBeVisible();
   await expect
     .poll(async () => {
       const rect = (await empty.boundingBox())!;
-      return Math.abs(rect.x + rect.width / 2 - 195);
+      const grid = (await page.locator("#library-content .album-grid").boundingBox())!;
+      return Math.abs(rect.x + rect.width / 2 - (grid.x + grid.width / 2));
     })
     .toBeLessThanOrEqual(1);
   const rect = (await empty.boundingBox())!;
-  expect(Math.abs(rect.x + rect.width / 2 - 195)).toBeLessThanOrEqual(1);
+  const grid = (await page.locator("#library-content .album-grid").boundingBox())!;
+  expect(Math.abs(rect.x + rect.width / 2 - (grid.x + grid.width / 2))).toBeLessThanOrEqual(1);
   const settings = await openSettings(page);
   await settings
     .getByRole("button", { name: "About Local Music", exact: true })

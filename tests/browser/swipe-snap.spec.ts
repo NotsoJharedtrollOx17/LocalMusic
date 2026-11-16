@@ -3,7 +3,7 @@ test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
 async function setup(page: import("@playwright/test").Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 const point = (x: number, y = 350) => ({
   pointerType: "touch",
@@ -17,7 +17,7 @@ test("small horizontal drags expose the page background and snap back without ch
 }) => {
   await setup(page);
   const panel = page.locator(".library-page"),
-    content = page.locator("#library-content"),
+    content = page.locator(".library-pager-track"),
     tabs = page.locator(".section-tabs");
   const before = (await content.boundingBox())!,
     header = (await tabs.boundingBox())!;
@@ -31,6 +31,7 @@ test("small horizontal drags expose the page background and snap back without ch
   await page.screenshot({
     path: "artifacts/android-swipe-snap/small-left-drag.png",
   });
+  await page.waitForTimeout(160); // Short deliberate drag, below the fling velocity threshold.
   await panel.dispatchEvent("pointerup", point(265));
   await expect(content).toHaveCSS("transform", "none");
   await expect(page.locator("#tab-songs")).toHaveAttribute(
@@ -53,7 +54,7 @@ test("interrupted drags clear their offset and Reduce Motion suppresses drag and
 }) => {
   await setup(page);
   const panel = page.locator(".library-page"),
-    content = page.locator("#library-content");
+    content = page.locator(".library-pager-track");
   await panel.dispatchEvent("pointerdown", point(300));
   await panel.dispatchEvent("pointermove", point(260));
   expect(

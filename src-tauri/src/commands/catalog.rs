@@ -8,6 +8,19 @@ use music_core::{LibraryPage, Track};
 use serde_json::json;
 use tauri::State;
 
+/// One mutex-held catalog snapshot; no artwork decoding or media-file reads.
+#[tauri::command]
+pub(crate) async fn catalog_index(
+    state: State<'_, MusicState>,
+) -> Result<music_core::catalog_index::CatalogIndex> {
+    let core = state.core.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        core.lock().map_err(|e| e.to_string())?.catalog_index()
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub(crate) async fn list_tracks(
     app: tauri::AppHandle,
@@ -94,6 +107,7 @@ pub(crate) async fn list_groups(
     kind: String,
     offset: usize,
     query: Option<String>,
+    limit: Option<usize>,
 ) -> Result<music_core::groups::GroupPage> {
     let core = state.core.clone();
     let order_ready = state.order_ready.clone();
@@ -102,12 +116,14 @@ pub(crate) async fn list_groups(
         let mut page = core.lock().map_err(|e| e.to_string())?.groups_filtered(
             &kind,
             offset,
-            60,
+            limit.unwrap_or(60),
             query.as_deref().unwrap_or(""),
         )?;
         let cache = artwork::cache_dir(&app)?;
-        for g in &mut page.groups {
-            g.track = artwork::decorate(g.track.clone(), &cache, &app);
+        if limit.unwrap_or(60) <= 60 {
+            for g in &mut page.groups {
+                g.track = artwork::decorate(g.track.clone(), &cache, &app);
+            }
         }
         Ok(page)
     })

@@ -126,7 +126,9 @@ async function seed(page: Page, count = 70, es = false, allAudio = false) {
     { count, es, allAudio, audio: Array.from(wav(12)) },
   );
   await page.reload();
-  await expect(page.locator(".collection-count")).toContainText(String(count));
+  await expect(
+    page.locator("#library-content .collection-count"),
+  ).toContainText(String(count));
 }
 async function down(cdp: CDPSession, target: Locator) {
   const r = (await target.boundingBox())!;
@@ -150,10 +152,14 @@ test("phone text holds select once, Select all crosses pagination and filtered s
 }) => {
   await seed(page);
   const cdp = await context.newCDPSession(page),
-    title = page.locator(".track-copy strong").first();
+    title = page.locator("#library-content .track-copy strong").first();
   // The first 60 loaded songs are virtualized; don't require hidden DOM rows.
-  await expect(page.locator(".track-row").first()).toBeVisible();
-  expect(await page.locator(".track-row").count()).toBeLessThan(60);
+  await expect(
+    page.locator("#library-content .track-row").first(),
+  ).toBeVisible();
+  expect(
+    await page.locator("#library-content .track-row").count(),
+  ).toBeLessThan(60);
   await down(cdp, title);
   await expect(page.locator(".selection-heading")).toContainText("1 selected");
   await up(cdp);
@@ -163,7 +169,7 @@ test("phone text holds select once, Select all crosses pagination and filtered s
   await expect(page.locator(".selection-heading")).toContainText("70 selected");
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  const hit = page.locator(".track-hit").first();
+  const hit = page.locator("#library-content .track-hit").first();
   await hit.dispatchEvent("pointerdown", {
     isPrimary: true,
     pointerType: "touch",
@@ -199,8 +205,8 @@ test("phone text holds select once, Select all crosses pagination and filtered s
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   await page.getByRole("searchbox").fill("Track 069");
-  await expect(page.locator(".track-row")).toHaveCount(1);
-  await down(cdp, page.locator(".track-copy strong").first());
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
+  await down(cdp, page.locator("#library-content .track-copy strong").first());
   await expect(page.locator(".selection-heading")).toContainText("1 selected");
   await up(cdp);
   await page.getByRole("button", { name: "Select all", exact: true }).click();
@@ -217,7 +223,7 @@ test("phone duration, vertical overflow, single active tab and playlist spacing 
   await seed(page, 6);
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 });
-    const row = page.locator(".track-row").first();
+    const row = page.locator("#library-content .track-row").first();
     await expect(row.locator(":scope > .track-duration")).toBeHidden();
     await expect(row.locator(".track-duration-inline")).toHaveText("");
     await expect(row.locator(".track-duration-inline")).toBeHidden();
@@ -404,7 +410,7 @@ test("Recap keeps its disclaimer after Top 10 and phone player keeps only its ac
   );
   await expect(page.locator(".recap-actions")).toHaveCSS("display", "flex");
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mobile-mini-play")
     .getByRole("button", { name: "Pause", exact: true })
@@ -415,46 +421,91 @@ test("Recap keeps its disclaimer after Top 10 and phone player keeps only its ac
   await expect(player.locator(".player-surface-head > h2")).toBeHidden();
 });
 
-
-test("short phone taps activate songs and collection cards without a hold", async ({ page, context }) => {
+test("short phone taps activate songs and collection cards without a hold", async ({
+  page,
+  context,
+}) => {
   await seed(page, 90);
   const cdp = await context.newCDPSession(page);
-  const hit = page.locator(".track-hit").first();
-  await down(cdp, hit); await up(cdp);
-  await expect(page.locator(".track-row.is-playing")).toHaveCount(1);
+  const hit = page.locator("#library-content .track-hit").first();
+  await down(cdp, hit);
+  await up(cdp);
+  await expect(
+    page.locator("#library-content .track-row.is-playing"),
+  ).toHaveCount(1);
   await expect(page.locator(".selection-toolbar")).toHaveCount(0);
-  await down(cdp, hit); await up(cdp);
-  await expect(page.locator(".track-row.is-playing")).toHaveCount(0);
+  await down(cdp, hit);
+  await up(cdp);
+  await expect(
+    page.locator("#library-content .track-row.is-playing"),
+  ).toHaveCount(0);
   for (const kind of ["albums", "artists"]) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 300, y: 450 }] });
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 180, y: 450 }] });
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await expect(page.locator(`#tab-${kind}`)).toHaveAttribute("aria-selected", "true");
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: 300, y: 450 }],
+    });
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: 180, y: 450 }],
+    });
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await expect(page.locator(`#tab-${kind}`)).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     const card = page.locator(`.catalog-${kind} .album-card`).first();
     await expect(card).toBeVisible();
-    await down(cdp, card); await up(cdp);
-    await expect(page.locator(".collection-hero")).toBeVisible();
-    await expect(page.locator(".track-row").first()).toBeVisible();
-    if (kind === "albums") await expect(page.locator(".track-row .album-label")).toHaveCount(0);
-    if (kind === "artists") await expect(page.locator(".track-row .track-artist")).toHaveCount(0);
+    await down(cdp, card);
+    await up(cdp);
+    await expect(page.locator("#library-content .collection-hero")).toBeVisible();
+    await expect(
+      page.locator("#library-content .track-row").first(),
+    ).toBeVisible();
+    if (kind === "albums")
+      await expect(
+        page.locator("#library-content .track-row .album-label"),
+      ).toHaveCount(0);
+    if (kind === "artists")
+      await expect(
+        page.locator("#library-content .track-row .track-artist"),
+      ).toHaveCount(0);
     await page.locator(".group-back").click();
   }
 });
 
-
-test("consecutive phone song taps change tracks and toggle the current song", async ({ page, context }) => {
+test("consecutive phone song taps change tracks and toggle the current song", async ({
+  page,
+  context,
+}) => {
   await seed(page, 6, false, true);
   const cdp = await context.newCDPSession(page);
-  await page.locator('#tab-albums').click();
-  await cdp.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:90,y:450}]});
-  await cdp.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:230,y:450}]});
-  await cdp.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
-  await expect(page.locator('#tab-songs')).toHaveAttribute('aria-selected','true');
+  await page.locator("#tab-albums").click();
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: 90, y: 450 }],
+  });
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: 230, y: 450 }],
+  });
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchEnd",
+    touchPoints: [],
+  });
+  await expect(page.locator("#tab-songs")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   for (const index of [0, 1, 2, 0]) {
-    const row = page.locator('.track-row').nth(index);
-    await down(cdp, row.locator('.track-hit')); await up(cdp);
+    const row = page.locator(".track-row").nth(index);
+    await down(cdp, row.locator(".track-hit"));
+    await up(cdp);
     await expect(row).toHaveClass(/is-playing/);
-    await down(cdp, row.locator('.track-hit')); await up(cdp);
+    await down(cdp, row.locator(".track-hit"));
+    await up(cdp);
     await expect(row).not.toHaveClass(/is-playing/);
     await expect(row).toHaveClass(/is-current/);
   }

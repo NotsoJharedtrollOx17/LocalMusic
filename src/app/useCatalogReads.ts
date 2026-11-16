@@ -1,11 +1,9 @@
-import { defaultAlbumId } from "../library/identity";
 import { useEffect, useRef, useCallback, useState } from "react";
-
 import { api } from "../api";
-
-import { type Track, type CatalogGroup } from "../types";
-
+import type { Track, CatalogIndex } from "../types";
 import type { useAppState } from "./useAppState";
+
+/** One complete metadata preparation; scrolling never performs catalog IO. */
 export function useCatalogReads(
   state: ReturnType<typeof useAppState>,
   act: (fn: () => Promise<unknown>) => Promise<unknown>,
@@ -32,337 +30,169 @@ export function useCatalogReads(
     setArtistAlbums,
     setArtistAlbumsLoading,
   } = state;
+  const [index, setIndex] = useState<CatalogIndex | null>(null);
+  const current = useRef<CatalogIndex | null>(null);
+  const flight = useRef<Promise<CatalogIndex> | null>(null);
   const libraryOptions = useRef({ favoriteOnly: onlyFavorites, sort });
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
-  const [catalogTotal, setCatalogTotal] = useState<number | null>(null);
   const [playlistsReady, setPlaylistsReady] = useState(false);
-  const [libraryRead, setLibraryRead] = useState<{
-    key: string;
-    failed: boolean;
-  } | null>(null);
-  const key = JSON.stringify(["", onlyFavorites, sort]);
-  const desiredKey = useRef(key);
-  desiredKey.current = key;
-  const libraryRequest = useRef(0);
-  const groupRequest = useRef(0);
-  const groupsRequest = useRef({ albums: 0, artists: 0 });
+  const [failed, setFailed] = useState(false);
+  const failedRead = useRef(failed);
+  failedRead.current = failed;
+  const libraryRequest = useRef(0),
+    groupRequest = useRef(0),
+    groupsRequest = useRef({ albums: 0, artists: 0 });
+  const expectedRevision = useRef(catalogRevision);
+  if (expectedRevision.current !== catalogRevision) {
+    expectedRevision.current = catalogRevision;
+    ++libraryRequest.current;
+    flight.current = null;
+  }
+  const publish = useCallback(
+    (next: CatalogIndex) => {
+      current.current = next;
+      setIndex(next);
+      const tracks = next.tracks;
+      setTracks(tracks);
+      setTotal(tracks.length);
+      setGroupPages({
+        albums: {
+          groups: next.albums,
+          total: next.albums.length,
+          status: "ready",
+          loaded: true,
+        },
+        artists: {
+          groups: next.artists,
+          total: next.artists.length,
+          status: "ready",
+          loaded: true,
+        },
+      });
+      remember(next.tracks);
+      setFailed(false);
+    },
+    [remember],
+  );
+  const readIndex = useCallback(() => {
+    if (!flight.current) {
+      const request = api.catalogIndex();
+      flight.current = request;
+      void request
+        .finally(() => {
+          if (flight.current === request) flight.current = null;
+        })
+        .catch(() => {});
+    }
+    return flight.current;
+  }, []);
   const refresh = useCallback(
-    async (_q = "", offset = 0) => {
-      const q = "";
-      const options = { ...libraryOptions.current };
-      const requestKey = JSON.stringify([
-        q,
-        options.favoriteOnly,
-        options.sort,
-      ]);
-      if (requestKey !== desiredKey.current) return;
-      const version = offset
-        ? libraryRequest.current
-        : ++libraryRequest.current;
-      if (!offset) setLibraryLoading(true);
+    async (_q = "", _offset = 0) => {
+      const version = ++libraryRequest.current;
+      const revision = expectedRevision.current;
+      setLibraryLoading(true);
       try {
-        // A filtered page total is never the size of the user's library.
-        const [p, catalog] = await Promise.all([
-          api.listTracks(q, offset, 60, options),
-          q || options.favoriteOnly ? api.listTracks("", 0, 1) : null,
-        ]);
+        const next = await readIndex();
         if (
           version !== libraryRequest.current ||
-          requestKey !== desiredKey.current
+          revision !== expectedRevision.current
         )
           return;
-        setTracks((old) => (offset ? [...old, ...p.tracks] : p.tracks));
-        setTotal(p.total);
-        setCatalogTotal(catalog?.total ?? p.total);
-        setLibraryRead({ key: requestKey, failed: false });
-        remember(p.tracks);
+        if (current.current && next.revision < current.current.revision) return;
+        publish(next);
       } catch (error) {
-        if (
-          version !== libraryRequest.current ||
-          requestKey !== desiredKey.current
-        )
-          return;
-        setLibraryRead({ key: requestKey, failed: true });
+        if (version === libraryRequest.current) {
+          setFailed(true);
+          setGroupPages((old) => ({
+            albums: { ...old.albums, status: "error" },
+            artists: { ...old.artists, status: "error" },
+          }));
+        }
         throw error;
       } finally {
         if (version === libraryRequest.current) setLibraryLoading(false);
       }
     },
-    [remember],
+    [readIndex, publish],
   );
-  const refreshGroup = useCallback(
-    async (selected: NonNullable<typeof group>, limit = 60, reconcile = true) => {
-      const version = ++groupRequest.current;
-      setGroupLoading(true);
-      try {
-        let current = selected;
-        if (reconcile && selected.id) {
-          let resolvedId = selected.id;
-          if (selected.kind === "albums") {
-            const [representative] = await api.tracksById([
-              selected.coverTrack.id,
-            ]);
-            if (representative)
-              resolvedId =
-                representative.albumIdentity?.id ??
-                defaultAlbumId(representative);
-          }
-          for (let offset = 0; ;) {
-            const page = await api.groups(selected.kind, offset);
-            const found = page.groups.find((g) => g.id === resolvedId);
-            if (found) {
-              current = {
-                ...selected,
-                id: found.id,
-                title: found.title,
-                subtitle: found.subtitle,
-                coverTrack: found.track,
-              };
-              break;
-            }
-            offset += page.groups.length;
-            if (offset >= page.total || !page.groups.length) break;
-          }
-        }
-        const ids = await api.groupIds(
-          current.kind,
-          current.title,
-          current.subtitle,
-          current.id,
-        );
-        const nextTracks = await api.tracksById(ids.slice(0, limit));
-        if (version !== groupRequest.current) return;
-        setGroup({ ...current, ids });
-        setGroupTracks(nextTracks);
-        remember(nextTracks);
-      } finally {
-        if (version === groupRequest.current) setGroupLoading(false);
-      }
-    },
-    [remember],
-  );
-  const artistAlbumCache = useRef(new Map<string, CatalogGroup[]>());
-  const artistAlbumOwner = useRef("");
+  const previousRevision = useRef(catalogRevision);
   useEffect(() => {
-    if (group?.kind !== "artists" || artistView !== "albums") return;
-    const cacheKey = JSON.stringify([group.title, group.ids, catalogRevision]);
-    const cached = artistAlbumCache.current.get(cacheKey);
-    if (cached) {
-      artistAlbumOwner.current = group.title;
-      setArtistAlbums(cached);
-      setArtistAlbumsLoading(false);
-      return;
-    }
-    let live = true;
-    setArtistAlbumsLoading(true);
-    if (artistAlbumOwner.current !== group.title) {
-      setArtistAlbums([]);
-      artistAlbumOwner.current = group.title;
-    }
-    void act(async () => {
-      const artistIds = new Set(group.ids),
-        albums: CatalogGroup[] = [];
-      for (let offset = 0; ;) {
-        const page = await api.groups("albums", offset);
-        if (!live) return;
-        albums.push(
-          ...page.groups.filter((album) =>
-            album.ids.some((id) => artistIds.has(id)),
-          ),
-        );
-        offset += page.groups.length;
-        if (offset >= page.total || !page.groups.length) break;
-      }
-      remember(albums.map((album) => album.track));
-      artistAlbumCache.current.set(cacheKey, albums);
-      if (artistAlbumCache.current.size > 16)
-        artistAlbumCache.current.delete(
-          artistAlbumCache.current.keys().next().value!,
-        );
-      setArtistAlbums(albums);
-    }).finally(() => {
-      if (live) setArtistAlbumsLoading(false);
-    });
-    return () => {
-      live = false;
-    };
-  }, [
-    group?.kind,
-    group?.title,
-    group?.ids.join("|"),
-    artistView,
-    catalogRevision,
-    act,
-    remember,
-  ]);
-  const generation = JSON.stringify([catalogRevision, catalogTotal]);
-  const currentGeneration = useRef(generation);
-  currentGeneration.current = generation;
-  const warmPages = useRef(
-    new Map<
-      string,
-      { generation: string; groups: CatalogGroup[]; total: number }
-    >(),
-  );
-  const groupOwners = useRef<Record<string, string>>({});
+    if (previousRevision.current === catalogRevision) return;
+    previousRevision.current = catalogRevision;
+    const timer = setTimeout(
+      () => void refresh().catch((error) => state.setError(String(error))),
+      0,
+    );
+    return () => clearTimeout(timer);
+  }, [catalogRevision, act, refresh]);
   const refreshGroups = useCallback(
-    async (kind: "albums" | "artists", offset = 0) => {
-      const owner = currentGeneration.current;
-      const cached = warmPages.current.get(kind);
-      if (!offset && cached?.generation === owner) {
-        setGroupPages((old) =>
-          (groupOwners.current[kind] === owner &&
-            old[kind].groups.length > cached.groups.length) ||
-          (old[kind].groups === cached.groups && old[kind].status === "ready")
-            ? old
-            : {
-                ...old,
-                [kind]: {
-                  groups: cached.groups,
-                  total: cached.total,
-                  status: "ready",
-                  loaded: true,
-                },
-              },
-        );
+    async (kind: "albums" | "artists", _offset = 0) => {
+      const revision = expectedRevision.current;
+      if (failedRead.current) {
+        await refresh();
         return;
       }
-      const version = ++groupsRequest.current[kind];
-      setGroupPages((old) => ({
-        ...old,
-        [kind]: { ...old[kind], status: "loading" },
-      }));
-      try {
-        const p = await api.groups(kind, offset);
-        if (
-          version !== groupsRequest.current[kind] ||
-          owner !== currentGeneration.current
-        )
-          return;
-        const warmed = warmPages.current.get(kind);
-        groupOwners.current[kind] = owner;
+      const next = current.current ?? (await readIndex());
+      if (revision !== expectedRevision.current) return;
+      if (!current.current) publish(next);
+      else
         setGroupPages((old) => ({
           ...old,
           [kind]: {
-            groups:
-              warmed?.generation === owner &&
-              warmed.groups.length >= offset + p.groups.length
-                ? warmed.groups
-                : offset
-                  ? old[kind].groups.length === offset
-                    ? [...old[kind].groups, ...p.groups]
-                    : old[kind].groups
-                  : p.groups,
-            total: p.total,
+            groups: next[kind],
+            total: next[kind].length,
             status: "ready",
             loaded: true,
           },
         }));
-        remember(p.groups.map((g) => g.track));
-      } catch (error) {
-        if (
-          version === groupsRequest.current[kind] &&
-          owner === currentGeneration.current
-        )
-          setGroupPages((old) => ({
-            ...old,
-            [kind]: { ...old[kind], status: "error" },
-          }));
-        throw error;
+    },
+    [readIndex, publish, refresh],
+  );
+  const refreshGroup = useCallback(
+    async (
+      selected: NonNullable<typeof group>,
+      _limit = 60,
+      reconcile = true,
+    ) => {
+      const version = ++groupRequest.current;
+      setGroupLoading(true);
+      try {
+        const next = current.current ?? (await readIndex());
+        const found =
+          next[selected.kind].find((g) => g.id === selected.id) ??
+          next[selected.kind].find((g) =>
+            g.ids.includes(selected.coverTrack.id),
+          );
+        const ids = found?.ids ?? (reconcile ? [] : selected.ids);
+        const byId = new Map(next.tracks.map((t) => [t.id, t]));
+        const tracks = ids
+          .map((id) => byId.get(id))
+          .filter((t): t is Track => !!t);
+        if (version !== groupRequest.current) return;
+        setGroup(
+          found
+            ? { ...selected, ...found, coverTrack: found.track }
+            : { ...selected, ids },
+        );
+        setGroupTracks(tracks);
+      } finally {
+        if (version === groupRequest.current) setGroupLoading(false);
       }
     },
-    [remember],
+    [readIndex],
   );
   useEffect(() => {
-    if (
-      catalogTotal === null ||
-      state.libraryLoading ||
-      !libraryRead ||
-      libraryRead.failed
-    )
-      return;
-    let stopped = false,
-      running = false,
-      next = 0;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const kinds = ["albums", "artists"] as const;
-    const seed = (kind: "albums" | "artists") => {
-      const cached = warmPages.current.get(kind);
-      return cached?.generation === generation
-        ? { groups: [...cached.groups], total: cached.total }
-        : { groups: [] as CatalogGroup[], total: Infinity };
-    };
-    const pages = { albums: seed("albums"), artists: seed("artists") };
-    const schedule = () => {
-      if (!stopped && !document.hidden)
-        timer = setTimeout(() => void step(), 60);
-    };
-    const step = async () => {
-      if (stopped || running || document.hidden) return;
-      const kind = kinds[next++ % 2],
-        local = pages[kind];
-      if (local.groups.length >= local.total) {
-        if (kinds.some((k) => pages[k].groups.length < pages[k].total))
-          schedule();
-        return;
-      }
-      running = true;
-      try {
-        const page = await api.groups(kind, local.groups.length);
-        if (stopped || generation !== currentGeneration.current) return;
-        local.groups.push(...page.groups);
-        local.total = page.total;
-        if (!page.groups.length) local.total = local.groups.length;
-        const cached = {
-          generation,
-          groups: [...local.groups],
-          total: local.total,
-        };
-        const sameOwner = groupOwners.current[kind] === generation;
-        warmPages.current.set(kind, cached);
-        groupOwners.current[kind] = generation;
-        setGroupPages((old) =>
-          sameOwner && old[kind].groups.length > cached.groups.length
-            ? old
-            : {
-                ...old,
-                [kind]: {
-                  groups: cached.groups,
-                  total: cached.total,
-                  status: "ready",
-                  loaded: true,
-                },
-              },
-        );
-        remember(page.groups.map((g) => g.track));
-      } catch {
-        stopped = true; /* Foreground reads/retry retain their own errors. */
-      } finally {
-        running = false;
-        if (kinds.some((k) => pages[k].groups.length < pages[k].total))
-          schedule();
-      }
-    };
-    const resume = () => {
-      if (!document.hidden && !running) {
-        clearTimeout(timer);
-        schedule();
-      }
-    };
-    schedule();
-    document.addEventListener("visibilitychange", resume);
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-      document.removeEventListener("visibilitychange", resume);
-    };
-  }, [
-    generation,
-    state.libraryLoading,
-    libraryRead?.key,
-    libraryRead?.failed,
-    remember,
-  ]);
+    if (index && group)
+      void refreshGroup(group).catch((error) => state.setError(String(error)));
+  }, [index, refreshGroup]);
+  useEffect(() => {
+    if (group?.kind !== "artists" || artistView !== "albums" || !index) return;
+    const ids = new Set(group.ids);
+    setArtistAlbums(
+      index.albums.filter((g) => g.ids.some((id) => ids.has(id))),
+    );
+    setArtistAlbumsLoading(false);
+  }, [group?.kind, group?.ids, artistView, index]);
   const refreshPicker = useCallback(
     async (q = "", offset = 0) => {
       const page = await api.listTracks(q, offset, 60);
@@ -387,11 +217,12 @@ export function useCatalogReads(
     setPlaylistsReady(true);
   }, []);
   return {
-    catalogTotal,
+    catalogIndex: index,
+    catalogTotal: index?.tracks.length ?? null,
     playlistsReady,
-    libraryViewPending: libraryRead?.key !== key,
-    libraryLoading: state.libraryLoading || libraryRead?.key !== key,
-    libraryError: libraryRead?.key === key && libraryRead.failed,
+    libraryViewPending: !index && !failed,
+    libraryLoading: state.libraryLoading,
+    libraryError: failed,
     libraryOptions,
     libraryRequest,
     groupRequest,

@@ -87,6 +87,7 @@ The browser suite uses an isolated server on port 1421 and writes screenshots/tr
 
 - [Developer guide](docs/developer-guide.md): current module map, data contracts, change workflow and test boundaries.
 - [Architecture](docs/architecture.md): runtime ownership and data flow.
+- [Continuous Library rendering](docs/continuous-library-rendering.md): complete catalog preparation, bounded rows/artwork and the phone content pager.
 - [Recap rules and privacy](docs/recap-methodology.md): time accounting, coverage, snapshots and export.
 - [Implementation plan](docs/implementation-plan.md): original plan and approved revisions.
 - [EQ-only revision](docs/remove-adapt-sound-plan.md): current sound contracts, migration and verification requirements.

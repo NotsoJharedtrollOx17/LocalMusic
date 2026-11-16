@@ -82,7 +82,7 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
       () => (window as unknown as { firstAppTheme: string }).firstAppTheme,
     ),
   ).toBe("dark");
-  await expect(page.locator(".empty-library")).toHaveCount(0);
+  await expect(page.locator("#library-content .empty-library")).toHaveCount(0);
   await release(page);
   await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
 
@@ -90,26 +90,30 @@ test("saved dark theme and library tabs never show unfinished or mismatched resu
   // changing tabs must neither re-read nor flash a cold loading state.
   await page.waitForTimeout(2000);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(4);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(4);
   await expect(page.locator(".catalog-loading-label")).toHaveCount(0);
-  const albums = await page.locator(".album-card strong").allTextContents();
+  const albums = await page
+    .locator("#library-content .album-card strong")
+    .allTextContents();
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".album-card")).toHaveCount(4);
-  const artists = await page.locator(".album-card strong").allTextContents();
+  await expect(page.locator("#library-content .album-card")).toHaveCount(4);
+  const artists = await page
+    .locator("#library-content .album-card strong")
+    .allTextContents();
   expect(artists).not.toEqual(albums);
   await holdNextTrackRead(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-grid")).toHaveAttribute(
+  await expect(page.locator("#library-content .album-grid")).toHaveAttribute(
     "aria-busy",
     "false",
   );
-  expect(await page.locator(".album-card strong").allTextContents()).toEqual(
-    albums,
-  );
+  expect(
+    await page.locator("#library-content .album-card strong").allTextContents(),
+  ).toEqual(albums);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  expect(await page.locator(".album-card strong").allTextContents()).toEqual(
-    artists,
-  );
+  expect(
+    await page.locator("#library-content .album-card strong").allTextContents(),
+  ).toEqual(artists);
   await release(page);
   await page.screenshot({
     path: "artifacts/library-tabs-dark.png",

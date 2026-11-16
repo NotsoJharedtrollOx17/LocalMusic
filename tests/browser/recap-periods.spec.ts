@@ -231,13 +231,10 @@ test("delayed period reads never replace a newer selection and failed loading is
   await expect(page.locator(".orbit-poster strong")).toHaveText("October 2026");
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await page.evaluate(() => {
-    const original = IDBObjectStore.prototype.getAll;
-    IDBObjectStore.prototype.getAll = function (...args) {
-      if (
-        this.name === "tracks" &&
-        this.transaction.objectStoreNames.length === 1
-      ) {
-        IDBObjectStore.prototype.getAll = original;
+    const original = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.get = function (...args) {
+      if (this.name === "settings" && args[0] === "catalog-revision") {
+        IDBObjectStore.prototype.get = original;
         throw new Error("Injected recap read failure");
       }
       return original.apply(this, args);

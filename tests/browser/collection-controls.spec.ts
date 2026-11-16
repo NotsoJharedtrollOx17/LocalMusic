@@ -56,13 +56,13 @@ test("song filtering and sorting return without duplicating Edit", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   const favoriteCount =
     (await page
       .locator('.track-row button[aria-label="Favorite"][aria-pressed="true"]')
       .count()) + 1;
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
@@ -85,15 +85,17 @@ test("song filtering and sorting return without duplicating Edit", async ({
   await menu
     .getByRole("menuitemradio", { name: "Favorites", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(favoriteCount);
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .track-row")).toHaveCount(
+    favoriteCount,
+  );
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     `Favorites · ${favoriteCount} songs`,
   );
   await filter.click();
   await menu
     .getByRole("menuitemradio", { name: "Sort by title", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   for (const name of ["Sort by artist", "Sort by album", "Sort by title"]) {
     await filter.click();
     await menu.getByRole("menuitemradio", { name, exact: true }).click();
@@ -130,7 +132,7 @@ test("compact transport and actions share an axis and sound has no Resume button
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Play / })
     .click();

@@ -157,6 +157,7 @@ export class DetachedFixture {
           return this.sound;
         }
         if (command === "playback_snapshot") return this.player;
+        if (command === "catalog_index") return { revision: this.serial, tracks: this.tracks, albums: [], artists: [] };
         if (command === "list_tracks")
           return { tracks: this.tracks, total: this.tracks.length };
         if (command === "tracks_by_id")

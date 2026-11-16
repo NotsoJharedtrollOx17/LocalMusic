@@ -187,9 +187,9 @@ test("library playback runs through the real AudioWorklet and band edits change 
     mimeType: "audio/wav",
     buffer: b,
   });
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /Play/ })
     .first()
     .click();
@@ -302,9 +302,9 @@ test("multichannel imports retain their processor channels and ordinary equalize
     mimeType: "audio/wav",
     buffer: wav,
   });
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /Play/ })
     .first()
     .click();
@@ -368,6 +368,8 @@ test("missing native output keeps configuration editable and Retry updates runti
               total: 0,
               scanning: false,
             };
+          case "catalog_index":
+            return { revision: 0, tracks: [], albums: [], artists: [] };
           case "list_tracks":
             return { tracks: [], total: 0 };
           case "list_playlists":

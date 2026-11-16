@@ -5,13 +5,13 @@ async function samples(page: import("@playwright/test").Page, width = 390) {
   await page.setViewportSize({ width, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 test("phone artwork toggles the current song without restarting and never leaves stale hover controls", async ({
   page,
 }) => {
   await samples(page);
-  const rows = page.locator(".track-row"),
+  const rows = page.locator("#library-content .track-row"),
     first = rows.first();
   await first.locator(".track-hit").click();
   await expect(first).toHaveClass(/is-current/);
@@ -34,7 +34,13 @@ test("phone artwork toggles the current song without restarting and never leaves
   await rows.nth(1).locator(".track-hit").click();
   await expect(rows.nth(1)).toHaveClass(/is-current/);
   await expect(first.locator(".cover-play")).toHaveCSS("opacity", "0");
-  await page.evaluate(() => scrollTo(0, 180));
+  await page.evaluate(() =>
+    (
+      document.querySelector<HTMLElement>(
+        '.library-pane[data-active="true"]',
+      ) ?? window
+    ).scrollTo(0, 180),
+  );
   await expect(first.locator(".cover-play")).toHaveCSS("opacity", "0");
   await page.setViewportSize({ width: 1280, height: 900 });
   await first.locator(".track-hit").hover();
@@ -46,15 +52,18 @@ test("phone album details use compact organization action, omit both totals and 
 }) => {
   await samples(page, 320);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await page.locator(".catalog-albums .album-card").first().click();
-  const hero = page.locator(".collection-hero[data-kind=albums]"),
-    action = page.locator(".library-toolbar").getByRole("button", {
+  await page
+    .locator("#library-content .catalog-albums .album-card")
+    .first()
+    .click();
+  const hero = page.locator("#library-content .collection-hero[data-kind=albums]"),
+    action = page.locator("#library-content .library-toolbar").getByRole("button", {
       name: "Organize",
       exact: true,
     });
   await expect(hero.locator(".collection-hero-count")).toBeHidden();
   await expect(
-    page.locator(".library-toolbar[data-collection-kind=albums] > h2"),
+    page.locator("#library-content .library-toolbar[data-collection-kind=albums] > h2"),
   ).toBeHidden();
   const cover = (await hero.locator(".cover").boundingBox())!,
     title = (await hero.locator("h1").boundingBox())!;
@@ -69,6 +78,6 @@ test("phone album details use compact organization action, omit both totals and 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(hero.locator(".collection-hero-count")).toBeVisible();
   await expect(
-    page.locator(".library-toolbar[data-collection-kind=albums] > h2"),
+    page.locator("#library-content .library-toolbar[data-collection-kind=albums] > h2"),
   ).toBeVisible();
 });

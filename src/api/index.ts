@@ -46,6 +46,55 @@ const cmd = async <T>(
   return result;
 };
 class NativeMusic implements MusicApi {
+  private catalogMetadataReady = false;
+  async catalogIndex(): Promise<import("../types").CatalogIndex> {
+    let index = await cmd<{
+      revision: number;
+      tracks: import("../types").Track[];
+      albums: Array<
+        Omit<import("../types").CatalogGroup, "track"> & {
+          coverTrackId: string;
+        }
+      >;
+      artists: Array<
+        Omit<import("../types").CatalogGroup, "track"> & {
+          coverTrackId: string;
+        }
+      >;
+    }>("catalog_index");
+    // Preserve the existing legacy tag migration without making ready catalogs
+    // or the read-only index command reopen source audio on every refresh.
+    if (!this.catalogMetadataReady) {
+      if (
+        index.tracks.some(
+          (t) => !t.demo &&
+            (t.orderMetadataRead === false || t.releaseMetadataRead === false),
+        )
+      ) {
+        await cmd("list_tracks", {
+          query: "",
+          offset: 0,
+          limit: 1,
+          favoriteOnly: false,
+          sort: "title",
+        });
+        index = await cmd<typeof index>("catalog_index");
+      }
+      this.catalogMetadataReady = true;
+    }
+    const tracks = new Map(index.tracks.map((t) => [t.id, t]));
+    const groups = (gs: typeof index.albums) =>
+      gs.map(({ coverTrackId, ...g }) => ({
+        ...g,
+        track: tracks.get(coverTrackId)!,
+      }));
+    return {
+      ...index,
+      albums: groups(index.albums),
+      artists: groups(index.artists),
+    };
+  }
+
   organization() {
     return cmd<import("../library/identity").OrganizationSnapshot>(
       "library_organization",
@@ -127,10 +176,10 @@ class NativeMusic implements MusicApi {
   ) {
     return cmd<string[]>("group_ids", { kind, title, subtitle, id });
   }
-  groups(kind: "albums" | "artists", offset = 0, query = "") {
+  groups(kind: "albums" | "artists", offset = 0, query = "", limit = 60) {
     return cmd<{ groups: import("../types").CatalogGroup[]; total: number }>(
       "list_groups",
-      { kind, offset, query },
+      { kind, offset, query, limit },
     );
   }
   cover(id: string, size = 512) {
@@ -275,10 +324,16 @@ class NativeMusic implements MusicApi {
     );
   }
   next() {
-    return this.playbackUpdates.seek(() => cmd<void>("next_track"), () => this.playback());
+    return this.playbackUpdates.seek(
+      () => cmd<void>("next_track"),
+      () => this.playback(),
+    );
   }
   previous() {
-    return this.playbackUpdates.seek(() => cmd<void>("previous_track"), () => this.playback());
+    return this.playbackUpdates.seek(
+      () => cmd<void>("previous_track"),
+      () => this.playback(),
+    );
   }
   setShuffle(value: boolean) {
     return cmd<void>("set_shuffle", { value });

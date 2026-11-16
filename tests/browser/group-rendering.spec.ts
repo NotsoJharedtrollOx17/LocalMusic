@@ -8,36 +8,47 @@ test("warmed phone groups render a bounded window and deep Back restores the ori
   await page.waitForTimeout(2000);
   for (const name of ["Albums", "Artists"]) {
     await page.getByRole("tab", { name, exact: true }).click();
-    await expect(page.locator(".album-grid")).toHaveAttribute(
+    await expect(page.locator("#library-content .album-grid")).toHaveAttribute(
       "data-catalog-total",
       "130",
     );
-    expect(await page.locator(".album-card").count()).toBeLessThan(60);
+    expect(
+      await page.locator("#library-content .album-card").count(),
+    ).toBeLessThan(60);
     const title = name === "Albums" ? "Record 129" : "Person 129";
     await expect
       .poll(async () => {
         await page.evaluate(() =>
-          scrollTo({
-            top: document.documentElement.scrollHeight,
+          (
+            document.querySelector<HTMLElement>(
+              '.library-pane[data-active="true"]',
+            ) ?? window
+          ).scrollTo({
+            top:
+              document.querySelector<HTMLElement>(
+                '.library-pane[data-active="true"]',
+              )?.scrollHeight ?? document.documentElement.scrollHeight,
             behavior: "instant",
           }),
         );
         return page
-          .locator(".album-card")
+          .locator("#library-content .album-card")
           .filter({ has: page.locator("strong", { hasText: title }) })
           .count();
       })
       .toBe(1);
     const card = page
-      .locator(".album-card")
+      .locator("#library-content .album-card")
       .filter({ has: page.locator("strong", { hasText: title }) });
     const key = await card.getAttribute("data-group-key");
     await card.click();
-    await expect(page.locator(".collection-hero")).toBeVisible();
+    await expect(page.locator("#library-content .collection-hero")).toBeVisible();
     await page.locator(".group-back").click();
     await expect(
       page.locator(`[data-group-key=${JSON.stringify(key)}]`),
     ).toBeFocused();
-    expect(await page.locator(".album-card").count()).toBeLessThan(60);
+    expect(
+      await page.locator("#library-content .album-card").count(),
+    ).toBeLessThan(60);
   }
 });

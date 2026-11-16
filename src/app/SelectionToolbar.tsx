@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+import { usePhoneLayout } from "../ux/usePhoneLayout";
 import {
   X,
   Circle,
@@ -14,6 +16,7 @@ import { IconButton } from "../components";
 import { useMusicAppContext } from "./MusicAppContext";
 
 export default function SelectionToolbar() {
+  const phone = usePhoneLayout();
   const {
     query,
     setNotice,
@@ -45,7 +48,7 @@ export default function SelectionToolbar() {
   useLayoutEffect(() => {
     const node = actions.current,
       shell = node?.closest<HTMLElement>(".content-shell");
-    if (!node || !shell) return;
+    if (!node) return;
     const layout = document.documentElement;
     const content = node.closest<HTMLElement>("#library-content");
     content?.getAnimations().forEach((animation) => animation.cancel());
@@ -128,7 +131,7 @@ export default function SelectionToolbar() {
     });
   };
 
-  return (
+  const content = (
     <div className="selection-toolbar" role="region" aria-label={t.selectSongs}>
       <div className="selection-heading">
         <strong aria-live="polite" aria-atomic="true">
@@ -243,4 +246,5 @@ export default function SelectionToolbar() {
       </div>
     </div>
   );
+  return phone ? createPortal(content, document.body) : content;
 }

@@ -94,6 +94,10 @@ export function TrackRow({
     held.current = true;
   };
   useGestureCancellation(interrupt, track.id);
+  useEffect(() => {
+    document.addEventListener("library-paging", interrupt);
+    return () => document.removeEventListener("library-paging", interrupt);
+  }, [track.id]);
   return (
     <div
       data-track-id={track.id}
@@ -214,12 +218,23 @@ export function TrackRow({
           }
         }}
         onPointerUp={(e) => {
-          if (held.current) { clearFeedback(); return; }
+          if (held.current) {
+            clearFeedback();
+            return;
+          }
           flash();
-          if (touch.current && !selectionMode && origin.current &&
-              Math.hypot(e.clientX - origin.current.x, e.clientY - origin.current.y) < 10) {
+          if (
+            touch.current &&
+            !selectionMode &&
+            origin.current &&
+            Math.hypot(
+              e.clientX - origin.current.x,
+              e.clientY - origin.current.y,
+            ) < 10
+          ) {
             touchActivated.current = true;
-            if (current && onToggle) onToggle(); else onPlay();
+            if (current && onToggle) onToggle();
+            else onPlay();
           }
         }}
         onPointerCancel={clearFeedback}
@@ -253,9 +268,11 @@ export function TrackRow({
         <span className="track-copy">
           <strong>{track.title}</strong>
           <span className="track-meta">
-            {!hideArtist && <span className="track-artist">
-              {track.artist || unknownArtist}
-            </span>}
+            {!hideArtist && (
+              <span className="track-artist">
+                {track.artist || unknownArtist}
+              </span>
+            )}
             <span
               className="track-duration-inline"
               data-duration={

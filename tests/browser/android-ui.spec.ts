@@ -6,7 +6,7 @@ async function samples(page: Page) {
   await page
     .getByRole("button", { name: "Explore with sample audio", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 async function full(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -152,7 +152,7 @@ test("horizontal intent switches tabs with entry motion without dragging the Lib
   await page.setViewportSize({ width: 390, height: 844 });
   await samples(page);
   const panel = page.locator(".library-page"),
-    row = page.locator(".track-hit").first();
+    row = page.locator("#library-content .track-hit").first();
   const pointer = (x: number, y: number, id = 1) => ({
     pointerType: "touch",
     pointerId: id,
@@ -163,13 +163,14 @@ test("horizontal intent switches tabs with entry motion without dragging the Lib
   await row.dispatchEvent("pointerdown", pointer(300, 350));
   await row.dispatchEvent("pointermove", pointer(265, 350));
   await expect(panel).toHaveCSS("transform", "none");
+  await page.waitForTimeout(160);
   await row.dispatchEvent("pointerup", pointer(265, 350));
   await row.dispatchEvent("click", { detail: 1 });
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await expect(
     page.getByRole("tab", { name: "Songs", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await panel.locator("#library-content").evaluate((node) => {
+  await panel.locator(".library-pager-track").evaluate((node) => {
     const captured: Keyframe[] = [];
     Object.assign(window, { tabEntryFrames: captured });
     const animate = node.animate.bind(node);
@@ -219,7 +220,7 @@ test("Android landscape player fills the window with reachable transport beside 
   await page.evaluate(
     () => (document.documentElement.dataset.platform = "android"),
   );
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page.locator(".mini-track").click();
   const player = page.getByRole("dialog", { name: "Now playing", exact: true });
   await full(page, player);

@@ -8,9 +8,11 @@ test("automatic playlists stay live, preserve import order and play their derive
 }) => {
   await page.goto("/");
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
   const favorites = page
-    .locator(".automatic-playlist-tile")
+    .locator("#library-content .automatic-playlist-tile")
     .filter({ hasText: "Favorites" });
   await expect(favorites).toBeEnabled();
   await favorites.click();
@@ -29,34 +31,30 @@ test("automatic playlists stay live, preserve import order and play their derive
   }));
   await page.locator("input[type=file]").first().setInputFiles(files);
   const added = page
-    .locator(".automatic-playlist-tile")
+    .locator("#library-content .automatic-playlist-tile")
     .filter({ hasText: "Recently added" });
   await expect(added).toContainText("3 tracks");
   await added.click();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Gamma",
-    "Beta",
-    "Alpha",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Gamma", "Beta", "Alpha"]);
   await page.locator("input[type=file]").first().setInputFiles(files[0]);
   await expect(
     page.locator(".toast").filter({ hasText: "No new songs imported." }),
   ).toBeVisible();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Gamma",
-    "Beta",
-    "Alpha",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Gamma", "Beta", "Alpha"]);
   const alpha = page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .filter({ has: page.getByText("Alpha", { exact: true }) });
   await alpha.getByRole("button", { name: "Favorite", exact: true }).click();
   await page.getByRole("button", { name: "Playlists", exact: true }).click();
   await expect(favorites).toContainText("1 track");
   await favorites.click();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Alpha",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Alpha"]);
   await page
     .getByRole("button", { name: "Play this mix", exact: true })
     .click();
@@ -81,7 +79,7 @@ test("automatic playlists stay live, preserve import order and play their derive
     .getByRole("button", { name: "Pause", exact: true })
     .click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: "Favorite", exact: true })
     .click();
   await expect(page.locator(".automatic-playlist-empty")).toBeVisible();
@@ -103,17 +101,15 @@ test("automatic playlists stay live, preserve import order and play their derive
   await page.getByRole("button", { name: "Playlists", exact: true }).click();
   await expect(
     page
-      .locator(".automatic-playlist-tile")
+      .locator("#library-content .automatic-playlist-tile")
       .filter({ hasText: "Recently played" }),
   ).toContainText("1 track");
   await page.reload();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await added.click();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Gamma",
-    "Beta",
-    "Alpha",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Gamma", "Beta", "Alpha"]);
 });
 
 test("automatic history ranking excludes private music and localizes without changing membership", async ({
@@ -121,7 +117,7 @@ test("automatic history ranking excludes private music and localizes without cha
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await page.evaluate(
     () =>
       new Promise<void>((resolve, reject) => {
@@ -129,11 +125,13 @@ test("automatic history ranking excludes private music and localizes without cha
         request.onsuccess = () => {
           const db = request.result,
             tx = db.transaction(
-              ["tracks", "sessions", "intervals"],
+              ["tracks", "sessions", "intervals", "settings"],
               "readwrite",
             ),
             tracks = tx.objectStore("tracks"),
             read = tracks.getAll();
+          const revision = tx.objectStore("settings").get("catalog-revision");
+          revision.onsuccess = () => tx.objectStore("settings").put(Number(revision.result ?? 0) + 1, "catalog-revision");
           read.onsuccess = () => {
             const songs = read.result;
             songs.slice(0, 3).forEach((track, i) =>
@@ -202,15 +200,15 @@ test("automatic history ranking excludes private music and localizes without cha
         };
       }),
   );
+  await page.evaluate(() => window.dispatchEvent(new Event("library-organization-changed")));
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page
-    .locator(".automatic-playlist-tile")
+    .locator("#library-content .automatic-playlist-tile")
     .filter({ hasText: "Most played" })
     .click();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Rank first",
-    "Rank second",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Rank first", "Rank second"]);
   await expect(
     page.getByRole("button", { name: "Edit", exact: true }),
   ).toHaveCount(0);
@@ -223,13 +221,14 @@ test("automatic history ranking excludes private music and localizes without cha
   await expect(
     page.getByRole("heading", { name: "Más reproducidas", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".track-row .track-copy strong")).toHaveText([
-    "Rank first",
-    "Rank second",
-  ]);
+  await expect(
+    page.locator("#library-content .track-row .track-copy strong"),
+  ).toHaveText(["Rank first", "Rank second"]);
   await page.getByRole("button", { name: "Listas", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

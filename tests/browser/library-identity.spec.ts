@@ -64,7 +64,7 @@ async function seed(page: Page, es = false) {
     { fixture, es },
   );
   await page.reload();
-  await expect(page.locator(".track-row")).not.toHaveCount(0);
+  await expect(page.locator("#library-content .track-row")).not.toHaveCount(0);
 }
 async function open(page: Page, es = false) {
   await openSettings(page);
@@ -124,7 +124,9 @@ test("lead artist corrections persist, reset and keep the original credit", asyn
   await close(page);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   await expect(
-    page.locator(".album-card").filter({ hasText: "Corrected" }),
+    page
+      .locator("#library-content .album-card")
+      .filter({ hasText: "Corrected" }),
   ).toHaveCount(1);
   await page.reload();
   d = await open(page);
@@ -179,24 +181,24 @@ test("confirmed album aliases form one searchable card and unlink restores origi
   await expect(d.getByRole("status")).toContainText("Organization saved");
   await close(page);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".collection-count")).toHaveText("5 albums");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "5 albums",
+  );
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Canonical release" })
     .click();
   await expect(
     page.getByRole("heading", { name: "Canonical release", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".track-row")).toHaveCount(4);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(4);
   await page.setViewportSize({ width: 320, height: 600 });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   ).toBe(true);
-  await page
-    .getByRole("button", { name: "Organize", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Organize", exact: true }).click();
   const organization = page.getByRole("dialog", {
     name: "Organize",
     exact: true,
@@ -275,7 +277,7 @@ test("real tagged imports group featuring credits under the lead artist without 
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".empty-library")).toBeVisible();
+  await expect(page.locator("#library-content .empty-library")).toBeVisible();
   await page
     .locator("input[type=file]")
     .first()
@@ -302,30 +304,47 @@ test("real tagged imports group featuring credits under the lead artist without 
         }),
       },
     ]);
-  await expect(page.locator(".track-row")).toHaveCount(3);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(3);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".collection-count")).toHaveText("2 artists");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "2 artists",
+  );
   await expect(
-    page.locator(".album-card").filter({ hasText: "Lead feat." }),
+    page
+      .locator("#library-content .album-card")
+      .filter({ hasText: "Lead feat." }),
   ).toHaveCount(0);
   await expect(
-    page.locator(".album-card").filter({ hasText: "AC/DC" }),
+    page.locator("#library-content .album-card").filter({ hasText: "AC/DC" }),
   ).toHaveCount(1);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".collection-count")).toHaveText("2 albums");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "2 albums",
+  );
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ has: page.getByText("Album", { exact: true }) })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(2);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(2);
   await expect(
     page.getByText("Lead feat. Guest", { exact: true }),
   ).toBeVisible();
-  await expect(page.locator('.track-row .album-label')).toHaveCount(0);
-  await page.locator('.group-back').click();
-  await page.locator('input[type=file]').first().setInputFiles({name:'collab.wav',mimeType:'audio/wav',buffer:taggedWav('Collab',101,1,{artist:'Lead feat. Guest',album:'Album'})});
-  await expect(page.getByText('No new songs imported.',{exact:true})).toBeVisible();
-  await page.getByRole('tab',{name:'Songs',exact:true}).click();
-  await expect(page.locator('.track-row')).toHaveCount(3);
-
+  await expect(page.locator(".track-row .album-label")).toHaveCount(0);
+  await page.locator(".group-back").click();
+  await page
+    .locator("input[type=file]")
+    .first()
+    .setInputFiles({
+      name: "collab.wav",
+      mimeType: "audio/wav",
+      buffer: taggedWav("Collab", 101, 1, {
+        artist: "Lead feat. Guest",
+        album: "Album",
+      }),
+    });
+  await expect(
+    page.getByText("No new songs imported.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Songs", exact: true }).click();
+  await expect(page.locator(".track-row")).toHaveCount(3);
 });

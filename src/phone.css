@@ -947,3 +947,70 @@
 :root[data-layout="phone"] .mini-track .cover {
   border-radius: 8px;
 }
+
+/* Each Library page owns its vertical range; only this track moves sideways. */
+:root[data-layout="phone"] .content-shell {
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+:root[data-layout="phone"] .content-shell > main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-layout="phone"] .library-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+:root[data-layout="phone"] .library-brand-header,
+:root[data-layout="phone"] .library-page > .library-navigation {
+  flex-shrink: 0;
+  position: relative;
+  top: auto;
+}
+.library-pager {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.library-pager-track {
+  position: absolute;
+  inset: 0;
+}
+.library-pane {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+  scrollbar-gutter: stable;
+}
+.library-pane-content {
+  min-height: 100%;
+  padding-bottom: 16px;
+}
+:root[data-layout="phone"] .library-swipe-gutter {
+  display: block;
+}
+
+.album-grid.catalog-virtual {
+  display: block;
+}
+.catalog-virtual-row {
+  display: grid;
+  grid-template-columns: repeat(var(--catalog-columns, 1), minmax(0, 1fr));
+  gap: 26px;
+  padding-bottom: 26px;
+}
+
+.library-pane,
+.track-list {
+  overflow-anchor: none;
+}

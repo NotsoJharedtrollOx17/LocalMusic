@@ -1,24 +1,44 @@
+import { consumeCompatibilityClick } from "../ux/compatibilityClick";
 import TrackList from "../TrackList";
 import { usePhoneLayout } from "../ux/usePhoneLayout";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Cover } from "../components";
 import LoadingIndicator from "../components/LoadingIndicator";
 import { useMusicAppContext } from "./MusicAppContext";
 
-export default function CatalogGroupGrid() {
+export default function CatalogGroupGrid({
+  groups,
+  kind: requestedKind,
+  loading = false,
+}: {
+  groups?: import("../types").CatalogGroup[];
+  kind?: "albums" | "artists";
+  loading?: boolean;
+} = {}) {
   const {
     section,
-    catalogGroups,
+    catalogGroups: currentGroups,
+    group,
     catalogRevision,
     query,
-    selectedGroupPage: page,
+    selectedGroupPage: currentPage,
     t,
     formatMusicCount,
     openGroup,
     refreshGroups,
     act,
   } = useMusicAppContext();
-  const kind = section === "artists" ? "artists" : "albums";
+  const kind = requestedKind ?? (section === "artists" ? "artists" : "albums");
+  const catalogGroups = groups ?? currentGroups;
+  const page = groups
+    ? {
+        groups,
+        total: groups.length,
+        status: loading ? "loading" : "ready",
+        loaded: true,
+      }
+    : currentPage;
+  const collectionAlbums = group?.kind === "artists" && kind === "albums";
   const pending = page.status === "idle" || page.status === "loading";
   const initialRead = pending && !page.loaded;
   const [loadingKind, setLoadingKind] = useState<string | null>(null);
@@ -29,15 +49,29 @@ export default function CatalogGroupGrid() {
     return () => clearTimeout(timer);
   }, [kind, initialRead]);
   const phone = usePhoneLayout();
+  const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(innerWidth);
   useEffect(() => {
-    const resize = () => setWidth(innerWidth);
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+    const node = container.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => setWidth(node.clientWidth));
+    observer.observe(node);
+    setWidth(node.clientWidth);
+    return () => observer.disconnect();
   }, []);
-  const virtual = phone && catalogGroups.length > 80;
-  const columns = kind === "albums" ? 2 : 1;
-  const measurementKey = JSON.stringify([kind, width, catalogRevision, query]);
+  const virtual = catalogGroups.length > 80;
+  const columns = phone
+    ? kind === "albums"
+      ? 2
+      : 1
+    : Math.max(1, Math.floor((width + 26) / 176));
+  const measurementKey = JSON.stringify([
+    kind,
+    Math.round(width / 8),
+    columns,
+    catalogRevision,
+    query,
+  ]);
   const empty = kind === "albums" ? t.emptyAlbums : t.emptyArtists;
   const renderCard = (g: (typeof catalogGroups)[number]) => (
     <button
@@ -80,6 +114,7 @@ export default function CatalogGroupGrid() {
           ) < 10
         ) {
           card.dataset.touchOpened = "true";
+          consumeCompatibilityClick();
           openGroup(kind, g, card);
         }
         delete card.dataset.pressValid;
@@ -89,11 +124,11 @@ export default function CatalogGroupGrid() {
         openGroup(kind, g, e.currentTarget);
       }}
     >
-      <Cover track={g.track} large />
+      <Cover track={g.track} large size={256} />
       <div className="group-card-copy">
         <strong>{g.title}</strong>
         <span>
-          {g.subtitle || formatMusicCount(g.ids.length)}
+          {collectionAlbums ? "" : g.subtitle || formatMusicCount(g.ids.length)}
           {kind === "albums" && g.track.releaseYear
             ? " · " + g.track.releaseYear
             : ""}
@@ -103,6 +138,8 @@ export default function CatalogGroupGrid() {
   );
   return (
     <div
+      ref={container}
+      style={{ "--catalog-columns": columns } as React.CSSProperties}
       className={
         "album-grid catalog-" + kind + (virtual ? " catalog-virtual" : "")
       }
@@ -111,7 +148,7 @@ export default function CatalogGroupGrid() {
     >
       {virtual ? (
         <TrackList
-          key={measurementKey}
+          itemKey={(i) => catalogGroups[i * columns]?.id ?? i}
           count={Math.ceil(catalogGroups.length / columns)}
           estimateSize={kind === "artists" ? 84 : 260}
           measurementKey={measurementKey}

@@ -19,8 +19,8 @@ test("zoom-sized viewports retain readable player content, reachable controls an
         40,
       ),
     });
-  await expect(page.locator(".track-row")).toHaveCount(1);
-  await page.locator(".track-hit").first().click();
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mini-player")
     .getByRole("button", { name: "Pause", exact: true })

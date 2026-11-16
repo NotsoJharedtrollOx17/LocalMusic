@@ -6,7 +6,7 @@ async function samples(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await page.evaluate(() => document.fonts.ready);
 }
 
@@ -73,8 +73,18 @@ test("keyboard tab focus never changes the Library's vertical scroll", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seedInlineCatalog(page);
-  await page.evaluate(() => window.scrollTo({ top: 260, behavior: "instant" }));
-  const before = await page.evaluate(() => scrollY);
+  await page.evaluate(() =>
+    (
+      document.querySelector<HTMLElement>(
+        '.library-pane[data-active="true"]',
+      ) ?? window
+    ).scrollTo({ top: 260, behavior: "instant" }),
+  );
+  const before = await page.evaluate(
+    () =>
+      document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+        ?.scrollTop ?? window.scrollY,
+  );
   expect(before).toBeGreaterThan(200);
   await page
     .getByRole("tab", { name: "Songs", exact: true })
@@ -83,12 +93,24 @@ test("keyboard tab focus never changes the Library's vertical scroll", async ({
   await expect(
     page.getByRole("tab", { name: "Albums", exact: true }),
   ).toBeFocused();
-  expect(await page.evaluate(() => scrollY)).toBeCloseTo(before, 0);
+  expect(
+    await page.evaluate(
+      () =>
+        document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+          ?.scrollTop ?? window.scrollY,
+    ),
+  ).toBeCloseTo(before, 0);
   await page.keyboard.press("End");
   await expect(
     page.getByRole("tab", { name: "Your Recap", exact: true }),
   ).toBeInViewport();
-  expect(await page.evaluate(() => scrollY)).toBeCloseTo(before, 0);
+  expect(
+    await page.evaluate(
+      () =>
+        document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+          ?.scrollTop ?? window.scrollY,
+    ),
+  ).toBeCloseTo(before, 0);
   await expect(page.getByRole("tab", { selected: true })).toHaveText("Songs");
 });
 
@@ -144,7 +166,7 @@ test("phone Songs keep title and artist while redundant collection metadata stay
   page,
 }) => {
   await samples(page);
-  const row = page.locator(".track-row").first();
+  const row = page.locator("#library-content .track-row").first();
   await expect(row.locator(".track-copy strong")).toBeVisible();
   await expect(row.locator(".track-artist")).toBeVisible();
   await expect(row.locator(".track-duration-inline")).toBeHidden();
@@ -153,9 +175,9 @@ test("phone Songs keep title and artist while redundant collection metadata stay
     row.getByRole("button", { name: "Favorite", exact: true }),
   ).toBeVisible();
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await page.locator(".album-card").first().click();
+  await page.locator("#library-content .album-card").first().click();
   await expect(
-    page.locator(".track-row .track-duration-inline").first(),
+    page.locator("#library-content .track-row .track-duration-inline").first(),
   ).toBeHidden();
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
@@ -169,7 +191,7 @@ test("phone Artists are full-width rows while Albums and desktop Artists retain 
 }) => {
   await samples(page);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  const cards = page.locator(".album-card");
+  const cards = page.locator("#library-content .album-card");
   await expect(cards.nth(1)).toBeVisible();
   const first = (await cards.nth(0).boundingBox())!,
     second = (await cards.nth(1).boundingBox())!;
@@ -179,7 +201,7 @@ test("phone Artists are full-width rows while Albums and desktop Artists retain 
   expect(image.width).toBe(44);
   expect(image.height).toBe(44);
   await cards.first().click();
-  await expect(page.locator(".collection-hero h1")).toBeVisible();
+  await expect(page.locator("#library-content .collection-hero h1")).toBeVisible();
   await page.getByRole("button", { name: "Library", exact: true }).click();
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
   const a = (await cards.nth(0).boundingBox())!,
@@ -202,7 +224,7 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await page.evaluate(() => {
     document.documentElement.dataset.platform = "android";
   });
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mobile-mini-play")
     .getByRole("button", { name: "Pause", exact: true })
@@ -242,7 +264,7 @@ test("phone carousel anchors every activated tab left and content follows horizo
         .evaluate((node) => node.getAnimations().length),
     ).toBe(0);
   }
-  const content = page.locator("#library-content");
+  const content = page.locator(".library-pager-track");
   await page.locator(".library-page").dispatchEvent("pointerdown", {
     pointerType: "touch",
     pointerId: 42,
@@ -261,7 +283,7 @@ test("phone carousel anchors every activated tab left and content follows horizo
     (el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41,
   );
   expect(dx).toBeLessThan(-20);
-  expect(dx).toBeGreaterThanOrEqual(-96);
+  expect(dx).toBeCloseTo(-220, 0);
   await page.locator(".library-page").dispatchEvent("pointerup", {
     pointerType: "touch",
     pointerId: 42,
@@ -289,32 +311,36 @@ test("phone tab entry is brief, directional and opaque; replacement cancels it a
   await samples(page);
   const inspect = (id: string) =>
     page.evaluate(async (id) => {
+      const captured: { frames: Keyframe[]; duration: CSSNumberish }[] = [];
+      const original = Element.prototype.animate;
+      Element.prototype.animate = function (...args) {
+        const animation = original.apply(this, args);
+        if (this.matches(".library-pager-track"))
+          captured.push({ frames: (animation.effect as KeyframeEffect).getKeyframes(), duration: animation.effect!.getTiming().duration });
+        return animation;
+      };
       (document.querySelector(`#tab-${id}`) as HTMLButtonElement).click();
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve()),
       );
-      const animations = document
-        .querySelector("#library-content")!
-        .getAnimations();
-      return animations.map((a) => ({
-        frames: (a.effect as KeyframeEffect).getKeyframes(),
-        duration: a.effect!.getTiming().duration,
-      }));
+      Element.prototype.animate = original;
+      return captured;
     }, id);
   const forward = await inspect("albums");
   expect(forward).toHaveLength(1);
-  expect(forward[0].duration).toBe(160);
-  expect(forward[0].frames[0].transform).toBe("translateX(18px)");
+  expect(forward[0].duration).toBe(180);
+  const width = await page.locator(".library-pager-track").evaluate(el => el.clientWidth);
+  expect(forward[0].frames[0].transform).toBe(`translateX(${width}px)`);
   expect(forward[0].frames.every((f) => !("opacity" in f))).toBe(true);
   const back = await inspect("songs");
   expect(back).toHaveLength(1);
-  expect(back[0].frames[0].transform).toBe("translateX(-18px)");
+  expect(back[0].frames[0].transform).toBe(`translateX(${-width}px)`);
   await page
-    .locator("#library-content")
+    .locator(".library-pager-track")
     .evaluate((el) =>
       Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
     );
-  await expect(page.locator("#library-content")).toHaveCSS("transform", "none");
+  await expect(page.locator(".library-pager-track")).toHaveCSS("transform", "none");
   await page.emulateMedia({ reducedMotion: "reduce" });
   expect(await inspect("albums")).toHaveLength(0);
 });

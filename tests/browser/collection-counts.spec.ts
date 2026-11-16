@@ -7,7 +7,7 @@ test("tab changes never flash a bare title and retain warmed totals", async ({
   page,
 }) => {
   await page.goto("/");
-  const count = page.locator(".collection-count");
+  const count = page.locator("#library-content .collection-count");
   await expect(count).toHaveText("0 songs");
   await page.evaluate(() => {
     const state = window as unknown as { bareCountTitles: string[] };
@@ -52,7 +52,7 @@ test("collection headings show their own totals without inactive buttons", async
   page,
 }) => {
   await page.goto("/");
-  const count = page.locator(".collection-count");
+  const count = page.locator("#library-content .collection-count");
   await expect(count).toHaveText("0 songs");
   await page
     .locator('input[type="file"]')
@@ -110,10 +110,10 @@ test("collection headings show their own totals without inactive buttons", async
     .click();
   await expect(count).toHaveText("Favoritas · 0 canciones");
   await count.click();
-  await expect(page.locator(".empty-favorites")).toBeVisible();
+  await expect(page.locator("#library-content .empty-favorites")).toBeVisible();
   await expect(
     page
-      .locator(".library-toolbar")
+      .locator("#library-content .library-toolbar")
       .getByRole("button", { name: "Toda la música", exact: true }),
   ).toHaveCount(0);
   expect(

@@ -23,7 +23,7 @@ export function useFocusScope(
     document.body.style.overflow = "hidden";
     const background = Array.from(
       document.querySelectorAll<HTMLElement>(
-        ".content-shell,.sidebar,.bottom-nav,.mini-player,.player-scrim,.modal-scrim",
+        ".content-shell,.sidebar,.bottom-nav,.mini-player,.selection-toolbar,.player-scrim,.modal-scrim",
       ),
     ).filter((el) => !el.contains(node));
     const prior = background.map((el) => el.inert);

@@ -1,0 +1,18 @@
+{
+  "sizes": [711, 10000],
+  "track": {
+    "id": "index",
+    "title": "Catalog track",
+    "artist": "Index artist",
+    "album": "Index album",
+    "genre": "Rock",
+    "durationMs": 1000,
+    "sourceUri": "/private/catalog.wav",
+    "artworkUrl": "data:image/png;base64,retired-large-payload",
+    "available": true,
+    "favorite": false,
+    "orderMetadataRead": true,
+    "releaseMetadataRead": true,
+    "identityMetadataRead": true
+  }
+}

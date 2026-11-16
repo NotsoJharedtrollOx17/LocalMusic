@@ -1,3 +1,8 @@
+import {
+  libraryScrollTop,
+  scrollLibraryTo,
+  captureLibraryPosition,
+} from "../ux/libraryScroll";
 import { api, native } from "../api";
 import { en } from "../i18n";
 import { useEffect, useRef, useState } from "react";
@@ -172,10 +177,11 @@ export function useMusicActions(
     setBusy(false);
   }
   async function openPlaylist(p: Playlist) {
+    captureLibraryPosition();
     const version = ++collectionRequest.current;
     openingRequest.current = version;
     setOpeningPlaylist(p.id);
-    state.playlistOrigin.current = { scroll: window.scrollY, id: p.id };
+    state.playlistOrigin.current = { scroll: libraryScrollTop(), id: p.id };
     try {
       await act(async () => {
         let tracks: Track[];

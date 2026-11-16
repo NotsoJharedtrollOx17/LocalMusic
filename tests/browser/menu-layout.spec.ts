@@ -21,12 +21,12 @@ async function library(page: Page) {
         ),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 async function player(page: Page) {
   await library(page);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Play / })
     .click();
@@ -297,8 +297,8 @@ test("player plus targets the current song and returns focus after playlist canc
     .locator(".playlist-tile")
     .filter({ hasText: "Current song collection" })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(1);
-  await expect(page.locator(".track-row strong")).toHaveText(
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row strong")).toHaveText(
     "A long song title from the midnight orchestra and its expanded concert edition",
   );
 });

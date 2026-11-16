@@ -31,9 +31,9 @@ test("inline search carries between tabs and restores parent search after detail
   await expect(input).toHaveValue("blue");
   await revealSearch(page);
   await expect(input).toHaveAccessibleName("Search albums");
-  await expect(page.locator(".album-card")).toHaveCount(2);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(2);
   const card = page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Quiet Assembly" });
   const title = await card.locator("strong").innerText();
   await card.click();
@@ -56,18 +56,18 @@ test("inline search carries between tabs and restores parent search after detail
   await page.keyboard.press("Escape");
   await revealSearch(page);
   await expect(input).toHaveValue("blue");
-  await expect(page.locator(".album-card")).toHaveCount(2);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(2);
   await page.getByRole("tab", { name: "Your Recap", exact: true }).click();
   await expect(page.getByRole("search")).toHaveCount(0);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await revealSearch(page);
   await expect(input).toHaveValue("blue");
-  await expect(page.locator(".track-row")).toHaveCount(4);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(4);
   await page.getByRole("button", { name: "Close search", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Search your library", exact: true }),
   ).toBeFocused();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 });
 
 test("clear, literal queries and scoped playlist names preserve usable navigation", async ({
@@ -83,30 +83,34 @@ test("clear, literal queries and scoped playlist names preserve usable navigatio
     .click();
   const input = page.getByRole("searchbox");
   await fillSearch(page, input, "favorites");
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(1);
-  await expect(page.locator(".generator")).toBeHidden();
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(1);
+  await expect(page.locator("#library-content .generator")).toBeHidden();
   await page.getByRole("button", { name: "Clear search", exact: true }).click();
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
-  await expect(page.locator(".generator")).toBeVisible();
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
+  await expect(page.locator("#library-content .generator")).toBeVisible();
   await page
-    .locator(".generator")
+    .locator("#library-content .generator")
     .evaluate((node) => node.setAttribute("data-retained", "yes"));
   await fillSearch(page, input, "%' OR 1=1");
-  await expect(page.locator(".search-empty")).toBeVisible();
-  await expect(page.locator(".generator")).toHaveAttribute(
+  await expect(page.locator("#library-content .search-empty")).toBeVisible();
+  await expect(page.locator("#library-content .generator")).toHaveAttribute(
     "data-retained",
     "yes",
   );
-  await expect(page.locator(".generator")).toBeHidden();
+  await expect(page.locator("#library-content .generator")).toBeHidden();
   await page
-    .locator(".search-empty")
+    .locator("#library-content .search-empty")
     .getByRole("button", { name: "Clear search" })
     .click();
-  await expect(page.locator(".generator")).toHaveAttribute(
+  await expect(page.locator("#library-content .generator")).toHaveAttribute(
     "data-retained",
     "yes",
   );
-  await expect(page.locator(".generator")).toBeVisible();
+  await expect(page.locator("#library-content .generator")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -122,55 +126,68 @@ test("search reaches unloaded tracks/groups and preserves pagination and filtere
   page,
 }) => {
   await seedInlineCatalog(page);
-  expect(await page.locator(".track-row").count()).toBeLessThan(60);
+  expect(
+    await page.locator("#library-content .track-row").count(),
+  ).toBeLessThan(60);
   await page
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const input = page.getByRole("searchbox");
   await fillSearch(page, input, "129");
-  await expect(page.locator(".track-copy strong")).toHaveText(["Needle last"]);
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
+    "Needle last",
+  ]);
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card strong")).toHaveText(["Record 129"]);
+  await expect(page.locator("#library-content .album-card strong")).toHaveText([
+    "Record 129",
+  ]);
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await expect(page.locator(".album-card strong")).toHaveText(["Person 129"]);
+  await expect(page.locator("#library-content .album-card strong")).toHaveText([
+    "Person 129",
+  ]);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await fillSearch(page, input, "Song");
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     "128 of 130 songs",
   );
-  const firstHeight = await page
-    .locator(".track-list")
-    .evaluate((node) => node.getBoundingClientRect().height);
-  await page.getByRole("button", { name: "Load more", exact: true }).click();
-  await expect
-    .poll(() =>
-      page
-        .locator(".track-list")
-        .evaluate((node) => node.getBoundingClientRect().height),
-    )
-    .toBeGreaterThan(firstHeight);
-  await page.getByRole("button", { name: "Load more", exact: true }).click();
+  await expect(
+    page.locator("#library-content [data-virtual-count]"),
+  ).toHaveAttribute("data-virtual-count", "128");
   await expect(
     page.getByRole("button", { name: "Load more", exact: true }),
   ).toHaveCount(0);
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.evaluate(() =>
+    (
+      document.querySelector<HTMLElement>(
+        '.library-pane[data-active="true"]',
+      ) ?? window
+    ).scrollTo(
+      0,
+      document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+        ?.scrollHeight ?? document.body.scrollHeight,
+    ),
+  );
   await expect(page.getByText("Song 128", { exact: true })).toBeVisible();
   const ids = await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("data-track-id")),
     );
   expect(new Set(ids).size).toBe(ids.length);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await fillSearch(page, input, "Needle");
-  await expect(page.locator(".saved-playlist-card")).toHaveCount(1);
-  await page.locator(".saved-playlist-card .playlist-tile").click();
+  await expect(
+    page.locator("#library-content .saved-playlist-card"),
+  ).toHaveCount(1);
+  await page
+    .locator("#library-content .saved-playlist-card .playlist-tile")
+    .click();
   await expect(page.getByRole("search")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   await fillSearch(page, input, "Needle");
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Needle first",
     "Needle last",
   ]);
@@ -181,7 +198,7 @@ test("search reaches unloaded tracks/groups and preserves pagination and filtere
     .getByRole("button", { name: "Move down", exact: true })
     .first()
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Needle last",
     "Needle first",
   ]);
@@ -207,7 +224,7 @@ test("search reaches unloaded tracks/groups and preserves pagination and filtere
   await page.getByRole("button", { name: "Close search", exact: true }).click();
   await page.getByRole("button", { name: "Playlists", exact: true }).click();
   await expect(
-    page.locator(".saved-playlist-card .playlist-tile"),
+    page.locator("#library-content .saved-playlist-card .playlist-tile"),
   ).toBeFocused();
   await revealSearch(page);
   await expect(input).toHaveValue("Needle");
@@ -225,7 +242,7 @@ test("late worker replies cannot replace newer results; controls stay reachable"
     .click();
   const input = page.getByRole("searchbox");
   const resultTop = await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .evaluate((node) => node.getBoundingClientRect().top);
   await fillSearch(page, input, "Signal");
@@ -242,24 +259,24 @@ test("late worker replies cannot replace newer results; controls stay reachable"
   expect(
     Math.abs(
       (await page
-        .locator(".track-row")
+        .locator("#library-content .track-row")
         .first()
         .evaluate((node) => node.getBoundingClientRect().top)) - resultTop,
     ),
   ).toBeLessThanOrEqual(1);
   await fillSearch(page, input, "rain");
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Blue after rain",
   ]);
   await releaseSearch(page);
   await expect(input).toBeFocused();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Blue after rain",
   ]);
   await input.press("Enter");
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await page.keyboard.press("Escape");
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 });
 
 test("worker failure offers inline Retry without losing the query", async ({
@@ -300,7 +317,7 @@ test("worker failure offers inline Retry without losing the query", async ({
     .locator(".inline-search-status")
     .getByRole("button", { name: "Try again", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Blue after rain",
   ]);
 });
@@ -316,7 +333,7 @@ test("imports update an active search and scope labels follow Spanish and theme"
     .click();
   const input = page.getByRole("searchbox");
   await fillSearch(page, input, "Fresh arrival");
-  await expect(page.locator(".search-empty")).toBeVisible();
+  await expect(page.locator("#library-content .search-empty")).toBeVisible();
   await page
     .locator('input[type="file"]')
     .first()
@@ -325,7 +342,7 @@ test("imports update an active search and scope labels follow Spanish and theme"
       mimeType: "audio/wav",
       buffer: taggedWav("Fresh arrival", 0, 1),
     });
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Fresh arrival",
   ]);
   await revealSearch(page);
@@ -343,7 +360,9 @@ test("imports update an active search and scope labels follow Spanish and theme"
     .click();
   await page.getByRole("tab", { name: "Listas", exact: true }).click();
   await fillSearch(page, input, "Favoritas");
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(1);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(1);
   await expect(input).toBeFocused();
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 600 });
@@ -368,7 +387,7 @@ test("artist subviews search album metadata separately and restore nested parent
   await expect(page.getByText("8 songs", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
   await page
-    .locator(".album-card")
+    .locator("#library-content .album-card")
     .filter({ hasText: "Quiet Assembly" })
     .click();
   await page
@@ -376,16 +395,16 @@ test("artist subviews search album metadata separately and restore nested parent
     .click();
   const input = page.getByRole("searchbox");
   await fillSearch(page, input, "blue");
-  await expect(page.locator(".track-row")).toHaveCount(2);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(2);
   await page
     .locator(".artist-view")
     .getByRole("tab", { name: "Albums", exact: true })
     .click();
-  await expect(page.locator(".album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
   await fillSearch(page, input, "rain");
-  await expect(page.locator(".search-empty")).toBeVisible();
+  await expect(page.locator("#library-content .search-empty")).toBeVisible();
   await fillSearch(page, input, "blue");
-  const card = page.locator(".album-card");
+  const card = page.locator("#library-content .album-card");
   const albumTitle = await card.locator("strong").innerText();
   await card.click();
   await expect(
@@ -411,7 +430,7 @@ test("Favorites and sort combine with a live query without onboarding flashes", 
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   await page.getByRole("searchbox").fill("needle");
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Needle first",
     "Needle last",
   ]);
@@ -421,18 +440,20 @@ test("Favorites and sort combine with a live query without onboarding flashes", 
   await page
     .getByRole("menuitemradio", { name: "Favorites", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText(["Needle last"]);
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
+    "Needle last",
+  ]);
   await page
     .getByRole("button", { name: "Filter and sort", exact: true })
     .click();
   await page
     .getByRole("menuitemradio", { name: "Sort by artist", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Needle first",
     "Needle last",
   ]);
-  await expect(page.locator(".empty-library,.empty-favorites")).toHaveCount(0);
+  await expect(page.locator("#library-content .empty-library,.empty-favorites")).toHaveCount(0);
   await revealSearch(page);
   await expect(page.getByRole("searchbox")).toHaveValue("needle");
 });
@@ -445,7 +466,7 @@ test("search shares the heading count and reflows from desktop left expansion to
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const input = page.getByRole("searchbox");
-  const count = page.locator(".collection-count");
+  const count = page.locator("#library-content .collection-count");
   await expect(count).toHaveText("130 songs");
   await expect(page.locator(".inline-search-status")).toBeEmpty();
   await fillSearch(page, input, "129");
@@ -549,11 +570,15 @@ for (const width of [1280, 390]) {
     await page
       .getByRole("button", { name: "Explore with sample audio" })
       .click();
-    await expect(page.locator(".collection-count")).toHaveText("8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "8 songs",
+    );
     await revealSearch(page);
     const input = page.getByRole("searchbox");
     await input.fill("rain");
-    await expect(page.locator(".collection-count")).toHaveText("1 of 8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "1 of 8 songs",
+    );
     if (width === 390) {
       const filter = page.getByRole("button", {
         name: "Filter and sort",
@@ -567,16 +592,16 @@ for (const width of [1280, 390]) {
         Math.abs(menu!.y - (anchor!.y + anchor!.height + 6)),
       ).toBeLessThanOrEqual(1);
       await page.keyboard.press("Escape");
-      await expect(page.locator(".collection-count")).toHaveText(
-        "1 of 8 songs",
-      );
+      await expect(
+        page.locator("#library-content .collection-count"),
+      ).toHaveText("1 of 8 songs");
       await revealSearch(page);
     }
-    await page.locator(".collection-count").click();
+    await page.locator("#library-content .collection-count").click();
     await expect(input).toHaveCount(0);
-    await expect(page.locator(".track-copy strong")).toHaveText([
-      "Blue after rain",
-    ]);
+    await expect(
+      page.locator("#library-content .track-copy strong"),
+    ).toHaveText(["Blue after rain"]);
     await expect(
       page.locator("[data-search-trigger] button").first(),
     ).toHaveAttribute("aria-pressed", "true");
@@ -592,24 +617,32 @@ for (const width of [1280, 390]) {
     await expect(page.locator(".mini-track strong")).toHaveText(
       "Blue after rain",
     );
-    await expect(page.locator(".collection-count")).toHaveText("1 of 8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "1 of 8 songs",
+    );
     await page.keyboard.press("Escape");
-    await expect(page.locator(".collection-count")).toHaveText("8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "8 songs",
+    );
     await expect(
       page.locator("[data-search-trigger] button").first(),
     ).not.toHaveAttribute("aria-pressed", "true");
     await revealSearch(page);
     await expect(input).toHaveValue("");
     await input.fill("no matching track here");
-    await expect(page.locator(".search-empty")).toBeVisible();
-    await page.locator(".search-empty h3").click();
+    await expect(page.locator("#library-content .search-empty")).toBeVisible();
+    await page.locator("#library-content .search-empty h3").click();
     await expect(input).toHaveCount(0);
-    await expect(page.locator(".collection-count")).toHaveText("0 of 8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "0 of 8 songs",
+    );
     await page
-      .locator(".search-empty")
+      .locator("#library-content .search-empty")
       .getByRole("button", { name: "Clear search", exact: true })
       .click();
-    await expect(page.locator(".collection-count")).toHaveText("8 songs");
+    await expect(page.locator("#library-content .collection-count")).toHaveText(
+      "8 songs",
+    );
   });
 }
 
@@ -623,20 +656,26 @@ test("clearing survives immediate Library tab navigation without clearing newer 
   await input.fill("blue");
   await expect(page.locator("#library-content .track-row")).toHaveCount(4);
   await page.clock.install();
-  await page.locator(".toolbar-actions [data-search-clear]").click();
+  await page.locator("#library-content .toolbar-actions [data-search-clear]").click();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page.clock.runFor(300);
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
-  await expect(page.locator("[data-search-clear]")).toHaveCount(0);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
+  await expect(
+    page.locator("#library-content [data-search-clear]"),
+  ).toHaveCount(0);
 
   await revealSearch(page);
   await input.fill("blue");
   await page.clock.runFor(300);
-  await page.locator(".toolbar-actions [data-search-clear]").click();
+  await page.locator("#library-content .toolbar-actions [data-search-clear]").click();
   await input.fill("rain");
   await page.clock.runFor(300);
   await expect(input).toHaveValue("rain");
-  await expect(page.locator(".collection-count")).toHaveText("0 of 4 playlists");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "0 of 4 playlists",
+  );
 });
 
 test("collapsed query has a reachable clear button without reopening the field", async ({
@@ -646,15 +685,17 @@ test("collapsed query has a reachable clear button without reopening the field",
   const input = page.getByRole("searchbox");
   await revealSearch(page);
   await input.fill("Needle");
-  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "2 of 130 songs",
+  );
   await expect(
     page.getByRole("button", { name: "Clear search", exact: true }),
   ).toHaveCount(1);
-  await page.locator(".collection-count").click();
+  await page.locator("#library-content .collection-count").click();
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 800 });
     const clear = page
-      .locator(".toolbar-actions")
+      .locator("#library-content .toolbar-actions")
       .getByRole("button", { name: "Clear search", exact: true });
     await expect(clear).toBeInViewport();
     const box = await clear.boundingBox();
@@ -667,11 +708,13 @@ test("collapsed query has a reachable clear button without reopening the field",
     ).toBeLessThanOrEqual(1);
   }
   await page
-    .locator(".toolbar-actions")
+    .locator("#library-content .toolbar-actions")
     .getByRole("button", { name: "Clear search", exact: true })
     .click();
   await expect(input).toHaveCount(0);
-  await expect(page.locator(".collection-count")).toHaveText("130 songs");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "130 songs",
+  );
   await expect(page.locator("[data-library-filters]")).toBeFocused();
 });
 
@@ -712,15 +755,19 @@ test("search prioritizes primary names before pagination but preserves playlist 
   await page.reload();
   await revealSearch(page);
   await page.getByRole("searchbox").fill("rain");
-  await expect(page.locator(".track-copy strong").first()).toHaveText("Rain");
-  await expect(page.locator(".track-copy strong").nth(1)).toHaveText(
-    "Rain falls",
-  );
-  await expect(page.locator(".track-copy strong").nth(2)).toHaveText(
-    "After rain",
-  );
+  await expect(
+    page.locator("#library-content .track-copy strong").first(),
+  ).toHaveText("Rain");
+  await expect(
+    page.locator("#library-content .track-copy strong").nth(1),
+  ).toHaveText("Rain falls");
+  await expect(
+    page.locator("#library-content .track-copy strong").nth(2),
+  ).toHaveText("After rain");
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  await expect(page.locator(".album-card strong").first()).toHaveText("Rain");
+  await expect(
+    page.locator("#library-content .album-card strong").first(),
+  ).toHaveText("Rain");
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await revealSearch(page);
   await page.getByRole("searchbox").fill("Needle");
@@ -730,7 +777,7 @@ test("search prioritizes primary names before pagination but preserves playlist 
     .click();
   await revealSearch(page);
   await page.getByRole("searchbox").fill("rain");
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "A metadata 0",
     "A metadata 1",
     "A metadata 2",
@@ -745,8 +792,10 @@ test("toolbar clear retains filtered rows through a cancellable reset and keeps 
   await revealSearch(page);
   const input = page.getByRole("searchbox");
   await input.fill("Needle");
-  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
-  const clear = page.locator("[data-search-clear]");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "2 of 130 songs",
+  );
+  const clear = page.locator("#library-content [data-search-clear]");
   const filter = page.locator("[data-library-filters]");
   const a = await clear.boundingBox(),
     b = await filter.boundingBox();
@@ -760,13 +809,15 @@ test("toolbar clear retains filtered rows through a cancellable reset and keeps 
   await clear.click();
   const content = page.locator("#library-content");
   await expect(content).toHaveAttribute("data-search-reset", "out");
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Needle first",
     "Needle last",
   ]);
   await page.clock.runFor(100);
   await expect(content).toHaveAttribute("data-search-reset", "in");
-  await expect(page.locator(".collection-count")).toHaveText("130 songs");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "130 songs",
+  );
   await expect(input).toBeVisible();
   await expect(input).toHaveValue("");
   await page.clock.runFor(170);
@@ -775,7 +826,9 @@ test("toolbar clear retains filtered rows through a cancellable reset and keeps 
   // A new edit during the exit must cancel the old clear, not erase the edit.
   await input.fill("Needle");
   await page.clock.runFor(200);
-  await expect(page.locator(".collection-count")).toHaveText("2 of 130 songs");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "2 of 130 songs",
+  );
   await clear.click();
   await input.fill("needle ");
   await page.clock.runFor(300);
@@ -796,14 +849,20 @@ test("Reduce Motion clears immediately without dimming or changing Favorites", a
     .click();
   await revealSearch(page);
   await page.getByRole("searchbox").fill("Needle");
-  await expect(page.locator(".collection-count")).toContainText("1 of 1");
-  await page.locator(".collection-count").click();
+  await expect(
+    page.locator("#library-content .collection-count"),
+  ).toContainText("1 of 1");
+  await page.locator("#library-content .collection-count").click();
   await page.clock.install({ time: new Date("2026-10-30T12:00:00Z") });
   await page.clock.pauseAt(new Date("2026-10-30T12:00:01Z"));
-  await page.locator("[data-search-clear]").click();
+  await page.locator("#library-content [data-search-clear]").click();
   await expect(page.locator("#library-content")).not.toHaveAttribute(
     "data-search-reset",
   );
-  await expect(page.locator(".collection-count")).toContainText("Favorites");
-  await expect(page.locator(".track-copy strong")).toHaveText(["Needle last"]);
+  await expect(
+    page.locator("#library-content .collection-count"),
+  ).toContainText("Favorites");
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
+    "Needle last",
+  ]);
 });

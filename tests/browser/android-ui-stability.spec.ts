@@ -12,10 +12,10 @@ const touch = (x = 120, y = 300) => ({
 async function samples(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 async function player(page: Page) {
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mini-player")
     .getByRole("button", { name: "Pause", exact: true })
@@ -139,7 +139,7 @@ test("Visualizer modes share one segmented row with Spanish large labels and Abo
   ).toContainText("Creado por Abraham Jhared Flores Azcona");
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page.locator(".mini-track").click();
   await page.locator("[data-player-menu]").click();
   await page
@@ -215,7 +215,9 @@ test("dragging cards clears touch feedback and rapid swipe replacement leaves on
 }) => {
   await samples(page);
   await page.locator("#tab-artists").click();
-  const card = page.locator(".catalog-artists .album-card").first();
+  const card = page
+    .locator("#library-content .catalog-artists .album-card")
+    .first();
   await card.dispatchEvent("pointerdown", touch(200));
   await expect(card).toHaveAttribute("data-touch-pressed", "true");
   await card.dispatchEvent("pointermove", touch(160));
@@ -241,7 +243,10 @@ test("dragging cards clears touch feedback and rapid swipe replacement leaves on
     ).toBeLessThanOrEqual(1);
   }
   await page.locator("#tab-artists").click();
-  await page.locator(".catalog-artists .album-card").first().tap();
-  await expect(page.locator(".collection-hero")).toBeVisible();
+  await page
+    .locator("#library-content .catalog-artists .album-card")
+    .first()
+    .tap();
+  await expect(page.locator("#library-content .collection-hero")).toBeVisible();
   await expect(page.locator("[data-touch-pressed]")).toHaveCount(0);
 });

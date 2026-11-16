@@ -6,8 +6,8 @@ test("hold selection keeps row geometry and exposes circular controls with top a
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
-  const row = page.locator(".track-row").first(),
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
+  const row = page.locator("#library-content .track-row").first(),
     title = row.locator(".track-copy strong");
   const before = await title.boundingBox();
   await row.locator(".track-hit").dispatchEvent("pointerdown", {
@@ -48,7 +48,7 @@ test("deliberate strip scrolling updates emphasis and interrupted settling canno
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   const strip = page.locator(".section-tabs");
   await strip.dispatchEvent("pointerdown", {
     pointerType: "touch",
@@ -87,18 +87,24 @@ test("selection header and action strip remain separated and reachable with enla
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
-  await page.locator(".track-hit").first().dispatchEvent("pointerdown", {
-    pointerType: "touch",
-    pointerId: 9,
-    isPrimary: true,
-  });
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
+  await page
+    .locator("#library-content .track-hit")
+    .first()
+    .dispatchEvent("pointerdown", {
+      pointerType: "touch",
+      pointerId: 9,
+      isPrimary: true,
+    });
   await expect(page.locator(".selection-heading")).toContainText("1 selected");
-  await page.locator(".track-row").first().dispatchEvent("pointerup", {
-    pointerType: "touch",
-    pointerId: 9,
-    isPrimary: true,
-  });
+  await page
+    .locator("#library-content .track-row")
+    .first()
+    .dispatchEvent("pointerup", {
+      pointerType: "touch",
+      pointerId: 9,
+      isPrimary: true,
+    });
   await page
     .locator(".selection-toolbar button,.selection-toolbar strong")
     .evaluateAll((els) => {
@@ -116,8 +122,14 @@ test("selection header and action strip remain separated and reachable with enla
     .toBeLessThanOrEqual(1);
   for (const button of await page.locator(".selection-actions button").all())
     await expect(button).toBeInViewport({ ratio: 1 });
-  await page.locator(".track-row").last().scrollIntoViewIfNeeded();
-  const row = (await page.locator(".track-row").last().boundingBox())!,
+  await page
+    .locator("#library-content .track-row")
+    .last()
+    .scrollIntoViewIfNeeded();
+  const row = (await page
+      .locator("#library-content .track-row")
+      .last()
+      .boundingBox())!,
     actions = (await page.locator(".selection-actions").boundingBox())!;
   expect(row.y + row.height).toBeLessThanOrEqual(actions.y + 1);
 });

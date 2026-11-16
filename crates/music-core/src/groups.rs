@@ -150,7 +150,7 @@ impl Store {
             .map(|g| g.ids)
             .unwrap_or_default())
     }
-    fn catalog_groups(&self, kind: &str) -> Result<Vec<CatalogGroup>, String> {
+    pub(crate) fn catalog_groups(&self, kind: &str) -> Result<Vec<CatalogGroup>, String> {
         let rev = self.catalog_revision.get();
         let mut cache = self.identity_group_cache.borrow_mut();
         if cache.get(kind).map(|(r, _)| *r) != Some(rev) {
@@ -187,7 +187,7 @@ impl Store {
             groups: groups
                 .into_iter()
                 .skip(offset)
-                .take(limit.min(60))
+                .take(limit.min(1_000_000))
                 .collect(),
             total,
         })

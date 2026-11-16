@@ -11,11 +11,11 @@ test("compact Library menu opens EQ directly and keeps ordinary settings separat
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await expect(page.locator(".library-page > .page-heading h1")).toHaveCount(0);
   await expect(
     page
-      .locator(".library-toolbar")
+      .locator("#library-content .library-toolbar")
       .getByRole("button", { name: "Filter and sort", exact: true }),
   ).toHaveCount(1);
   const menu = page.getByRole("button", {

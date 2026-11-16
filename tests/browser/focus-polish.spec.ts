@@ -9,8 +9,11 @@ async function frame(page: Page, control: Locator) {
       document
         .getAnimations()
         .filter(
-          (animation) =>
-            animation.effect?.getComputedTiming().iterations !== Infinity,
+          (animation) => {
+            const target = (animation.effect as KeyframeEffect | null)?.target;
+            return animation.playState === "running" && animation.effect?.getComputedTiming().iterations !== Infinity &&
+              (!(target instanceof Element) || !target.closest('[inert],[aria-hidden="true"]'));
+          },
         )
         .map((animation) => animation.finished.catch(() => {})),
     ),
@@ -142,7 +145,7 @@ test("keyboard frames stay rounded across buttons, menus, themes and forced colo
     ).toBe(true);
   }
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await page.locator(".track-row .track-hit").first().click();
+  await page.locator("#library-content .track-row .track-hit").first().click();
   await page.locator(".mini-track").click();
   const player = page.getByRole("dialog", { name: "Now playing", exact: true });
   await frame(page, player.locator(".play-circle"));
@@ -186,7 +189,7 @@ test("library frames enclose covers and text, with orange outline-only icon hove
       for (const tab of ["Songs", "Albums", "Artists"]) {
         await page.getByRole("tab", { name: tab, exact: true }).click();
         const entry = page
-          .locator(tab === "Songs" ? ".track-hit" : ".album-card")
+          .locator(tab === "Songs" ? "#library-content .track-hit" : "#library-content .album-card")
           .first();
         await entry.scrollIntoViewIfNeeded();
         const style = await frame(page, entry);

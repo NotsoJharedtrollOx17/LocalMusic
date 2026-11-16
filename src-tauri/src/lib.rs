@@ -63,6 +63,7 @@ pub fn run() {
             about_window::desktop_about,
             commands::settings::patch_settings,
             commands::catalog::list_tracks,
+            commands::catalog::catalog_index,
             commands::catalog::list_groups,
             commands::catalog::group_ids,
             commands::catalog::tracks_by_id,

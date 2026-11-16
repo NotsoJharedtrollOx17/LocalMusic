@@ -6,49 +6,27 @@ import {
   type RefObject,
 } from "react";
 import { coverUrl, hash } from "../domain";
-import { api, native } from "../api";
+import { native } from "../api";
 import { type Track } from "../types";
 
-const largeCoverCache = new Map<string, string>();
-const largeCoverRequests = new Map<string, Promise<string>>();
-function largeCover(key: string, id: string): Promise<string> {
-  const cached = largeCoverCache.get(key);
-  if (cached) return Promise.resolve(cached);
-  const pending = largeCoverRequests.get(key);
-  if (pending) return pending;
-  const request = api
-    .cover(id, 512)
-    .then(
-      async (url) => {
-        const decoded = new Image();
-        decoded.src = url;
-        await decoded.decode();
-        largeCoverRequests.delete(key);
-        largeCoverCache.set(key, url);
-        while (largeCoverCache.size > 32) {
-          largeCoverCache.delete(largeCoverCache.keys().next().value!);
-        }
-        return url;
-      },
-      (error) => {
-        largeCoverRequests.delete(key);
-        throw error;
-      },
-    )
-    .finally(() => largeCoverRequests.delete(key));
-  largeCoverRequests.set(key, request);
-  return request;
-}
+import {
+  cachedArtwork,
+  loadArtwork,
+  pinArtwork,
+  watchArtwork,
+} from "./artworkCache";
 export function Cover({
   track,
   className = "",
   large = false,
   imageRef,
+  size,
 }: {
   track: Track;
   className?: string;
   large?: boolean;
   imageRef?: RefObject<HTMLImageElement | null>;
+  size?: 128 | 256 | 512;
 }) {
   const image = useRef<HTMLImageElement>(null);
   const bindImage = useCallback(
@@ -58,16 +36,44 @@ export function Cover({
     },
     [imageRef],
   );
-  const key = track.id + ":" + hash(track.artworkUrl ?? "");
+  const pixels = size ?? (large ? 512 : 128);
+  const lazySource = native || track.artworkUrl?.startsWith("catalog:");
+  const identity = track.artworkUrl?.startsWith("cache:")
+    ? track.artworkUrl
+    : track.id + ":" + hash(track.artworkUrl ?? "");
+  const key = identity + ":" + pixels;
+  const fallback = lazySource
+    ? coverUrl({ ...track, artworkUrl: undefined })
+    : coverUrl(track);
   const [resolved, setResolved] = useState<{ key: string; url: string } | null>(
     null,
   );
   useEffect(() => {
-    if (!large || !native || !image.current) return;
+    if (!lazySource || !image.current) return;
+    const unwatch = watchArtwork(key);
+    let release: (() => void) | undefined;
+    const visible =
+      typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting))
+              release ??= pinArtwork(key);
+            else {
+              release?.();
+              release = undefined;
+            }
+          })
+        : null;
+    visible?.observe(image.current);
+    if (!visible) release = pinArtwork(key);
+    const unpin = () => {
+      visible?.disconnect();
+      release?.();
+      unwatch();
+    };
     let active = true;
     const element = image.current;
     const load = () => {
-      void largeCover(key, track.id)
+      void loadArtwork(key, track.id, pixels)
         .then((url) => {
           if (active) setResolved({ key, url });
         })
@@ -84,31 +90,32 @@ export function Cover({
             load();
           }
         },
-        { rootMargin: "240px" },
+        { rootMargin: `${Math.min(innerHeight * 2, 1800)}px` },
       );
       observer.observe(element);
       return () => {
         active = false;
         observer.disconnect();
+        unpin();
       };
     }
     return () => {
       active = false;
+      unpin();
     };
-  }, [large, key, track.id]);
+  }, [lazySource, key, track.id, pixels]);
   return (
     <img
       ref={bindImage}
       className={"cover " + className}
       src={
-        large
-          ? ((resolved?.key === key
-              ? resolved.url
-              : largeCoverCache.get(key)) ?? coverUrl(track))
+        lazySource
+          ? ((resolved?.key === key ? resolved.url : cachedArtwork(key)) ??
+            fallback)
           : coverUrl(track)
       }
       alt=""
-      loading="lazy"
+      loading="eager"
       decoding="async"
       onError={(e) => {
         const fallback = coverUrl({ ...track, artworkUrl: undefined });

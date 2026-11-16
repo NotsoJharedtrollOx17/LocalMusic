@@ -58,7 +58,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   await expect(albums).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(albums).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
   const opener = page.getByRole("button", {
     name: "Search your library",
     exact: true,
@@ -67,7 +67,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   const search = page.getByRole("search");
   await expect(search.getByRole("searchbox")).toBeFocused();
   await search.getByRole("searchbox").fill("Fixture");
-  await expect(page.locator(".album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await expect(page.locator("#library-content .track-row")).toHaveCount(35);
   await opener.click();
@@ -77,7 +77,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   await albums.click();
   await expect(albums).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "Artists", exact: true }).click();
-  await page.locator(".album-card").click();
+  await page.locator("#library-content .album-card").click();
   await expect(
     page.getByRole("heading", { name: "Fixture Artist", exact: true }),
   ).toBeVisible();
@@ -85,8 +85,8 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
     .locator(".artist-view")
     .getByRole("tab", { name: "Albums" })
     .click();
-  await expect(page.locator(".album-card")).toHaveCount(1);
-  await page.locator(".album-card").click();
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
+  await page.locator("#library-content .album-card").click();
   await expect(
     page.getByRole("heading", { name: "Fixture Album", exact: true }),
   ).toBeVisible();
@@ -97,7 +97,7 @@ test("grouped search, keyboard tabs, artist albums and focus return", async ({
   await expect(
     page.locator(".artist-view").getByRole("tab", { name: "Albums" }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".album-card")).toHaveCount(1);
+  await expect(page.locator("#library-content .album-card")).toHaveCount(1);
   await page.screenshot({ path: "artifacts/phase-two-artist-desktop.png" });
 });
 
@@ -156,21 +156,51 @@ test("mobile swipe tabs and player keep transport anchored, Back and reduced mot
   await page.emulateMedia({ colorScheme: "dark" });
   await samples(page);
   const savedScroll = await page.evaluate(() => {
-    window.scrollTo(
+    (
+      document.querySelector<HTMLElement>(
+        '.library-pane[data-active="true"]',
+      ) ?? window
+    ).scrollTo(
       0,
-      Math.min(160, document.documentElement.scrollHeight - innerHeight),
+      Math.min(
+        160,
+        (document.querySelector<HTMLElement>(
+          '.library-pane[data-active="true"]',
+        )?.scrollHeight ?? document.documentElement.scrollHeight) - innerHeight,
+      ),
     );
-    return scrollY;
+    return (
+      document.querySelector<HTMLElement>('.library-pane[data-active="true"]')
+        ?.scrollTop ?? window.scrollY
+    );
   });
   expect(savedScroll).toBeGreaterThan(0);
-  await expect.poll(() => page.evaluate(() => scrollY)).toBe(savedScroll);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.querySelector<HTMLElement>(
+            '.library-pane[data-active="true"]',
+          )?.scrollTop ?? window.scrollY,
+      ),
+    )
+    .toBe(savedScroll);
   await swipe(page, 320, 450, 75, 450);
   await expect(
     page.getByRole("tab", { name: "Albums", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.locator(".mini-player")).toHaveCount(0);
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
-  await expect.poll(() => page.evaluate(() => scrollY)).toBe(savedScroll);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.querySelector<HTMLElement>(
+            '.library-pane[data-active="true"]',
+          )?.scrollTop ?? window.scrollY,
+      ),
+    )
+    .toBe(savedScroll);
   await page
     .getByRole("button", { name: "Play A quieter orbit", exact: true })
     .click();
@@ -284,14 +314,14 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await confirm
     .getByRole("button", { name: "Remove from Library", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(0);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(0);
   await page
     .locator(".undo-banner")
     .getByRole("button", { name: "Undo", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .getByRole("button", { name: /^Track actions:/ })
     .click();
   await menu
@@ -303,12 +333,12 @@ test("selection, persistent removal, Undo, original audio copy and reimport", as
   await expect(confirm).toHaveCount(0);
   await expect(page.locator(".undo-banner")).toBeVisible();
   await page.reload();
-  await expect(page.locator(".track-row")).toHaveCount(0);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Make room for your music." }),
   ).toBeVisible();
   await page.locator("input[type=file]").first().setInputFiles(file);
-  await expect(page.locator(".track-row")).toHaveCount(1);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(1);
 });
 
 test("mobile long press, sharing cancellation and editable sound controls", async ({
@@ -316,7 +346,7 @@ test("mobile long press, sharing cancellation and editable sound controls", asyn
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await samples(page);
-  const hit = page.locator(".track-hit").first();
+  const hit = page.locator("#library-content .track-hit").first();
   await hit.dispatchEvent("pointerdown", {
     isPrimary: true,
     pointerType: "touch",
@@ -412,7 +442,7 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .filter({ hasText: "Fixture mix" })
     .click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Track actions:/ })
     .click();
@@ -423,7 +453,7 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .getByRole("dialog", { name: "Remove from Library", exact: true })
     .getByRole("button", { name: "Remove from Library", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Fixture 1",
     "Fixture 2",
   ]);
@@ -435,11 +465,11 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .getByRole("button", { name: "Edit playlist", exact: true })
     .click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: "Move down", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Fixture 2",
     "Fixture 1",
   ]);
@@ -450,7 +480,7 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .locator(".undo-banner")
     .getByRole("button", { name: "Undo", exact: true })
     .click();
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Fixture 0",
     "Fixture 2",
     "Fixture 1",
@@ -466,11 +496,11 @@ test("hidden playlist entries keep their membership and visible editing order", 
     .click();
   await search.getByRole("searchbox").fill("Fixture mix");
   await page
-    .locator(".saved-playlist-card .playlist-tile")
+    .locator("#library-content .saved-playlist-card .playlist-tile")
     .filter({ hasText: "Fixture mix" })
     .click();
   await expect(search).toHaveCount(0);
-  await expect(page.locator(".track-copy strong")).toHaveText([
+  await expect(page.locator("#library-content .track-copy strong")).toHaveText([
     "Fixture 0",
     "Fixture 2",
     "Fixture 1",

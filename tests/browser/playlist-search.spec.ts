@@ -29,7 +29,9 @@ async function seed(page: Page) {
   });
   await page.reload();
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
-  await expect(page.locator(".collection-count")).toHaveText("9 playlists");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "9 playlists",
+  );
 }
 
 const ids = (page: Page) =>
@@ -51,7 +53,7 @@ test("playlist names filter immediately into one counted grid, custom matches fi
   await page.clock.pauseAt(new Date("2026-10-31T12:00:01Z"));
   await input.fill("recent");
   // Timers stay paused: overview name filtering must not wait for the catalog debounce.
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     "5 of 9 playlists",
   );
   expect(await ids(page)).toEqual([
@@ -65,10 +67,10 @@ test("playlist names filter immediately into one counted grid, custom matches fi
     page.getByRole("region", { name: "5 of 9 playlists", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".playlist-section-heading")).toHaveCount(0);
-  await expect(page.locator(".generator")).toBeHidden();
+  await expect(page.locator("#library-content .generator")).toBeHidden();
   await expect(input).toBeFocused();
   await input.fill("favorites");
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     "2 of 9 playlists",
   );
   expect(await ids(page)).toEqual(["c4", "automatic:favorites"]);
@@ -85,24 +87,28 @@ test("playlist names filter immediately into one counted grid, custom matches fi
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   await input.fill("no matching playlists");
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     "0 of 9 playlists",
   );
-  await expect(page.locator(".search-empty")).toBeVisible();
-  await page.locator("[data-search-clear]").click();
+  await expect(page.locator("#library-content .search-empty")).toBeVisible();
+  await page.locator("#library-content [data-search-clear]").click();
   await page.clock.runFor(300);
-  await expect(page.locator(".collection-count")).toHaveText("9 playlists");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "9 playlists",
+  );
   await expect(page.locator("#default-playlists-heading")).toBeVisible();
   await expect(page.locator("#saved-playlists-heading")).toBeVisible();
-  await expect(page.locator(".generator")).toBeVisible();
+  await expect(page.locator("#library-content .generator")).toBeVisible();
   await input.fill("Favorites");
-  await expect(page.locator(".collection-count")).toHaveText(
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
     "2 of 9 playlists",
   );
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await page.clock.runFor(1);
   // Returning to catalog search starts immediately, rather than adding its debounce.
-  await expect(page.locator(".collection-count")).toHaveText("0 of 130 songs");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "0 of 130 songs",
+  );
 });
 
 test("localized defaults share the grid, respect name relevance and reflow in narrow dark UI", async ({
@@ -121,7 +127,9 @@ test("localized defaults share the grid, respect name relevance and reflow in na
     .click();
   const input = page.getByRole("searchbox");
   await input.fill("re");
-  await expect(page.locator(".collection-count")).toHaveText("6 de 9 listas");
+  await expect(page.locator("#library-content .collection-count")).toHaveText(
+    "6 de 9 listas",
+  );
   const found = await ids(page);
   expect(found.slice(0, 3).every((id) => id?.startsWith("c"))).toBe(true);
   expect(found.slice(3)).toEqual([

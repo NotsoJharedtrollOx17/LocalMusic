@@ -12,7 +12,7 @@ test("queue yields the entire modal surface to sound and restores scroll and foc
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Play / })
     .click();
@@ -92,7 +92,7 @@ test("search starts with guidance and playlist Save stays reachable while its li
   ).toHaveCount(1);
   await expect(page.locator(".inline-search-status")).toHaveCount(1);
   await search.getByRole("searchbox").fill("no-music-with-this-name");
-  await expect(page.locator(".search-empty")).toContainText(
+  await expect(page.locator("#library-content .search-empty")).toContainText(
     "No matching music",
   );
   await page.keyboard.press("Escape");
@@ -138,7 +138,7 @@ test("Library orders recap last, groups actions below tabs and keeps EQ actions 
     "Your Recap",
   ]);
   const importButton = page
-    .locator(".library-toolbar")
+    .locator("#library-content .library-toolbar")
     .getByRole("button", { name: "Import music", exact: true });
   await expect(importButton).toBeVisible();
   await expect(
@@ -199,7 +199,7 @@ test("player artwork remains square and fits above transport when height shrinks
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Play / })
     .click();

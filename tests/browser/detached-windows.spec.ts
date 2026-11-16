@@ -41,7 +41,7 @@ test("detached player handoff, Queue, pin, shared playback and deferred return",
   await expect.poll(() => f.tracks[0].favorite).toBe(true);
   await expect(
     page
-      .locator(".track-row")
+      .locator("#library-content .track-row")
       .getByRole("button", { name: "Favorite", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.locator(".mini-track").click();

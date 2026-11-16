@@ -35,14 +35,14 @@ async function library(page: Page, seconds = 1) {
         }),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(4);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(4);
 }
 test("player feedback Undo is keyboard reachable and stays visible while focused", async ({
   page,
 }) => {
   await library(page, 8);
   await page
-    .locator(".track-row")
+    .locator("#library-content .track-row")
     .first()
     .getByRole("button", { name: /^Play / })
     .click();
@@ -146,14 +146,16 @@ test("a delayed ranking cannot replace a preview after creator inputs change", a
   );
   await expect(
     page
-      .locator(".generator")
+      .locator("#library-content .generator")
       .getByText("No duplicate tracks", { exact: true }),
   ).toHaveCount(0);
   await page.screenshot({
     path: "artifacts/personalized-creator-progress.png",
     fullPage: true,
   });
-  const options = await page.locator(".generator-options").boundingBox();
+  const options = await page
+    .locator("#library-content .generator-options")
+    .boundingBox();
   const coverage = await page.locator(".analysis-coverage").boundingBox();
   expect(coverage!.y).toBeGreaterThanOrEqual(options!.y + options!.height);
   await page.getByLabel("Exclude artist", { exact: true }).fill("Artist 0");
@@ -346,7 +348,7 @@ test("feedback persistence failure rolls back, EN/ES narrow creator remains reac
       return original.apply(this, args);
     };
   });
-  const row = page.locator(".track-row").first();
+  const row = page.locator("#library-content .track-row").first();
   await row.getByRole("button", { name: /^Track actions:/ }).click();
   await page
     .getByRole("menuitem", { name: "Suggest less", exact: true })
@@ -404,7 +406,7 @@ test("explicit artist fills the preview and an empty result permits correction",
         }),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(5);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(5);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   const artist = page.getByLabel("Include artist", { exact: true });
   await artist.fill("Focus Artist");
@@ -440,7 +442,9 @@ test("default and saved playlists are separate and saved playlists can be delete
   await expect(
     page.getByRole("heading", { name: "Your playlists", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
   await page.getByRole("button", { name: "New playlist", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog
@@ -449,7 +453,7 @@ test("default and saved playlists are separate and saved playlists can be delete
   await dialog.getByRole("checkbox").first().check();
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   const card = page
-    .locator(".saved-playlist-card")
+    .locator("#library-content .saved-playlist-card")
     .filter({ hasText: "My saved mix" });
   await expect(card).toBeVisible();
   await card
@@ -481,7 +485,9 @@ test("default and saved playlists are separate and saved playlists can be delete
     .getByRole("menuitem", { name: "Delete playlist", exact: true })
     .click();
   await expect(card).toHaveCount(0);
-  await expect(page.locator(".automatic-playlist-tile")).toHaveCount(4);
+  await expect(
+    page.locator("#library-content .automatic-playlist-tile"),
+  ).toHaveCount(4);
 });
 
 test("saved playlist menu stays centered while pressed and rename preserves its contents", async ({
@@ -498,6 +504,7 @@ test("saved playlist menu stays centered while pressed and rename preserves its 
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   const original = (await stored(page, "playlists"))[0];
   await page.setViewportSize({ width: 390, height: 700 });
+  await expect(page.locator('.library-pane[data-pane="playlists"][data-active="true"]')).toBeVisible();
   const opener = page.getByRole("button", {
     name: "Playlist options: Original title",
     exact: true,
@@ -631,10 +638,10 @@ test("multiple included and excluded artists yield a varied mix and report confl
         }),
       })),
     );
-  await expect(page.locator(".track-row")).toHaveCount(7);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(7);
   await page.getByRole("tab", { name: "Playlists", exact: true }).click();
   await page.setViewportSize({ width: 320, height: 700 });
-  await page.locator('.playlist-refine summary').click();
+  await page.locator(".playlist-refine summary").click();
   await page.getByLabel("Include artist", { exact: true }).fill("Alpha");
   const addInclude = page.getByRole("button", {
     name: "Add artist: Include artist",
@@ -707,22 +714,31 @@ test("multiple included and excluded artists yield a varied mix and report confl
   ).toHaveCount(0);
 });
 
-
-test("phone creator keeps essentials visible and reveals optional controls", async ({ page }) => {
-  await page.setViewportSize({width:320,height:844});
+test("phone creator keeps essentials visible and reveals optional controls", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
   await library(page);
-  await page.getByRole('tab',{name:'Playlists',exact:true}).click();
-  const form=page.locator('.generator');
+  await page.getByRole("tab", { name: "Playlists", exact: true }).click();
+  const form = page.locator(".generator");
   await form.scrollIntoViewIfNeeded();
-  await expect(form.getByRole('spinbutton')).toHaveValue('30');
-  await expect(form.getByLabel('Genre',{exact:true})).toBeHidden();
-  await form.locator('.playlist-refine summary').click();
-  await expect(form.getByLabel('Genre',{exact:true})).toBeVisible();
-  await form.getByLabel('Include artist',{exact:true}).fill('Artist 1');
-  await expect(form.locator('.refine-summary')).toContainText('Artist 1');
-  await form.getByLabel('Include artist',{exact:true}).fill('');
-  await form.locator('.playlist-refine summary').click();
-  await form.getByRole('button',{name:'Generate playlist',exact:true}).click();
-  await expect(page.locator('.generated-result .track-row')).toHaveCount(4,{timeout:30000});
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await expect(form.getByRole("spinbutton")).toHaveValue("30");
+  await expect(form.getByLabel("Genre", { exact: true })).toBeHidden();
+  await form.locator(".playlist-refine summary").click();
+  await expect(form.getByLabel("Genre", { exact: true })).toBeVisible();
+  await form.getByLabel("Include artist", { exact: true }).fill("Artist 1");
+  await expect(form.locator(".refine-summary")).toContainText("Artist 1");
+  await form.getByLabel("Include artist", { exact: true }).fill("");
+  await form.locator(".playlist-refine summary").click();
+  await form
+    .getByRole("button", { name: "Generate playlist", exact: true })
+    .click();
+  await expect(page.locator(".generated-result .track-row")).toHaveCount(4, {
+    timeout: 30000,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

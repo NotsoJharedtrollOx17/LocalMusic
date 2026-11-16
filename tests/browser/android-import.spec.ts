@@ -24,12 +24,12 @@ async function importing(page: Page, context: BrowserContext) {
       });
       finish(0);
     }
-    if (command === "list_tracks") {
+    if (command === "list_tracks" || command === "catalog_index") {
       if (holdRefresh)
         await new Promise<void>((resolve) => {
           releaseRefresh = resolve;
         });
-      return { tracks: native.tracks, total: native.tracks.length };
+      return command === "catalog_index" ? { revision: 0, tracks: native.tracks, albums: [], artists: [] } : { tracks: native.tracks, total: native.tracks.length };
     }
   });
   await page.addInitScript(() => {
@@ -39,7 +39,7 @@ async function importing(page: Page, context: BrowserContext) {
     const win = window as any,
       original = win.__TAURI_INTERNALS__.invoke;
     win.__TAURI_INTERNALS__.invoke = (command: string, args: any) =>
-      ["import_music", "cancel_import", "list_tracks"].includes(command)
+      ["import_music", "cancel_import", "list_tracks", "catalog_index"].includes(command)
         ? win.__importCommand(command, args)
         : original(command, args);
   });

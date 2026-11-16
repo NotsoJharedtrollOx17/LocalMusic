@@ -78,6 +78,7 @@ export class BrowserMusic implements MusicApi {
   private catalogCache?: Promise<{
     revision: number;
     tracks: Omit<StoredTrack, "file">[];
+    historyTracks: Omit<StoredTrack, "file">[];
   }>;
   private catalogGroupsCache = new Map<
     string,
@@ -89,8 +90,8 @@ export class BrowserMusic implements MusicApi {
     this.catalogCache = undefined;
     this.catalogGroupsCache.clear();
   }
-  private async catalogSnapshot() {
-    await this.ensureAlbumOrder();
+  private async catalogSnapshot(prepareLegacy = true) {
+    if (prepareLegacy) await this.ensureAlbumOrder();
     const revision = Number(
       (await this.get<number>("settings", "catalog-revision")) ?? 0,
     );
@@ -100,10 +101,10 @@ export class BrowserMusic implements MusicApi {
     }
     return (this.catalogCache ??= (async () => {
       const revision = this.catalogGeneration;
-      const tracks = (await this.all<StoredTrack>("tracks"))
-        .filter((t) => !t.hidden)
+      const historyTracks = (await this.all<StoredTrack>("tracks"))
         .map(({ file: _, ...track }) => track);
-      return { revision, tracks };
+      const tracks = historyTracks.filter((t) => !t.hidden);
+      return { revision, tracks, historyTracks };
     })().catch((error) => {
       this.catalogCache = undefined;
       throw error;
@@ -761,9 +762,11 @@ export class BrowserMusic implements MusicApi {
       if (offset >= page.total || !page.groups.length) return [];
     }
   }
-  async groups(kind: "albums" | "artists", offset = 0, query = "") {
-    const snapshot = await this.catalogSnapshot(),
-      cacheKey = `${kind}:${snapshot.revision}`;
+  private catalogGroups(
+    snapshot: Awaited<ReturnType<BrowserMusic["catalogSnapshot"]>>,
+    kind: "albums" | "artists",
+  ) {
+    const cacheKey = `${kind}:${snapshot.revision}`;
     let groups = this.catalogGroupsCache.get(cacheKey);
     if (!groups) {
       const entries = new Map<string, Track[]>();
@@ -824,6 +827,38 @@ export class BrowserMusic implements MusicApi {
           this.catalogGroupsCache.keys().next().value!,
         );
     }
+    return groups;
+  }
+  async catalogIndex(): Promise<import("../types").CatalogIndex> {
+    await this.ensureAlbumOrder();
+    // Retry if an import/correction overtakes preparation. Never publish mixed revisions.
+    for (;;) {
+      const snapshot = await this.catalogSnapshot(false);
+      const tracks = snapshot.tracks.map(({ cover: _, ...t }) => ({
+        ...t,
+        sourceUri: "",
+        artworkUrl: `catalog:${t.id}`,
+      }));
+      const byId = new Map(tracks.map((t) => [t.id, t]));
+      const groups = (kind: "albums" | "artists") =>
+        this.catalogGroups(snapshot, kind).map((g) => ({
+          ...g,
+          track: byId.get(g.track.id)!,
+        }));
+      const result = {
+        revision: snapshot.revision,
+        tracks,
+        albums: groups("albums"),
+        artists: groups("artists"),
+      };
+      if ((await this.catalogSnapshot(false)).revision === snapshot.revision)
+        return result;
+    }
+  }
+  async groups(kind: "albums" | "artists", offset = 0, query = "", limit = 60) {
+    const snapshot = await this.catalogSnapshot(),
+      cacheKey = `${kind}:${snapshot.revision}`;
+    let groups = this.catalogGroups(snapshot, kind);
     if (query.trim()) {
       const matching = await this.catalogMatcher.match(
         groups.map((g) => ({
@@ -841,7 +876,7 @@ export class BrowserMusic implements MusicApi {
     }
     return {
       groups: groups
-        .slice(offset, offset + 60)
+        .slice(offset, offset + limit)
         .map((g) => ({ ...g, track: this.present(g.track) })),
       total: groups.length,
     };
@@ -1172,9 +1207,13 @@ export class BrowserMusic implements MusicApi {
       this.startedUtc = new Date().toISOString();
     }
     await this.writes;
-    const db = await this.db;
-    await ensureImportOrder(db);
-    const tracks = await this.all<StoredTrack>("tracks");
+    let snapshot = await this.catalogSnapshot(false);
+    if (snapshot.tracks.some((t) => t.importSequence === undefined)) {
+      await ensureImportOrder(await this.db);
+      this.invalidateCatalog();
+      snapshot = await this.catalogSnapshot(false);
+    }
+    const tracks = snapshot.tracks;
     const added = [...tracks]
       .sort(
         (a, b) =>
@@ -1357,13 +1396,20 @@ export class BrowserMusic implements MusicApi {
     const result = aggregate(
       request,
       await this.settings(),
-      (await this.all<StoredTrack>("tracks")).map((t) => this.present(t)),
+        (await this.catalogSnapshot(false)).historyTracks,
       await this.all<Session>("sessions"),
       await this.all<Interval>("intervals"),
     );
     if (revision !== (await this.organizationState()).revision)
       throw Error("Library organization changed. Retry.");
-    return { ...result, organizationRevision: revision };
+    return {
+      ...result,
+      topTracks: result.topTracks.map((item) => ({
+        ...item,
+        track: this.present(item.track),
+      })),
+      organizationRevision: revision,
+    };
   }
   async saveSnapshot(r: Recap) {
     const copy = structuredClone(r);

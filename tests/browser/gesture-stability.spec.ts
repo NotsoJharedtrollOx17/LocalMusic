@@ -7,7 +7,7 @@ async function library(page: Page) {
   await page
     .getByRole("button", { name: "Explore with sample audio", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
 }
 
 for (const interruption of [
@@ -22,7 +22,7 @@ for (const interruption of [
     page,
   }) => {
     await library(page);
-    const hit = page.locator(".track-hit").first();
+    const hit = page.locator("#library-content .track-hit").first();
     await hit.dispatchEvent("pointerdown", {
       pointerType: "touch",
       pointerId: 4,
@@ -39,13 +39,11 @@ for (const interruption of [
         isPrimary: false,
       });
     else if (interruption === "replacement pointer")
-      await page
-        .locator(".library-brand-header")
-        .dispatchEvent("pointerdown", {
-          pointerType: "mouse",
-          pointerId: 7,
-          isPrimary: true,
-        });
+      await page.locator(".library-brand-header").dispatchEvent("pointerdown", {
+        pointerType: "mouse",
+        pointerId: 7,
+        isPrimary: true,
+      });
     else if (interruption === "background")
       await page.evaluate(() => {
         Object.defineProperty(document, "hidden", {
@@ -127,7 +125,7 @@ test("real touch mini-player drag opens only on upward intent and cancellation l
   context,
 }) => {
   await library(page);
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mobile-mini-play")
     .getByRole("button", { name: "Pause", exact: true })
@@ -169,7 +167,7 @@ test("mini-player horizontal drag does not open Now Playing; a subsequent tap st
   page,
 }) => {
   await library(page);
-  await page.locator(".track-hit").first().click();
+  await page.locator("#library-content .track-hit").first().click();
   await page
     .locator(".mobile-mini-play")
     .getByRole("button", { name: "Pause", exact: true })

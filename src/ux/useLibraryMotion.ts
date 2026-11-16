@@ -45,76 +45,27 @@ export function useLibraryMotion(
     observer.observe(heading);
     return () => observer.disconnect();
   }, [panelNode]);
-  const previous = useRef(section),
-    gesture = useRef<{
-      x: number;
-      y: number;
-      pointer: number;
-      horizontal: boolean;
-    } | null>(null);
+  const previous = useRef(section);
   const tabFrame = useRef(0);
   const cancelTabMotion = useCallback(() => {
     cancelAnimationFrame(tabFrame.current);
     tabFrame.current = 0;
   }, []);
-  // Entry and snap-back share one owner; an interrupted snap must never resume
-  // over a newer tab's entry animation.
-  const contentMotion = useRef<Animation | undefined>(undefined),
-    motionKind = useRef<"entry" | "settle">("entry"),
-    pressedMotion = useRef<Animation | undefined>(undefined);
-  const resumeEntryMotion = () => {
-    const animation = pressedMotion.current;
-    if (
-      animation === contentMotion.current &&
-      animation?.playState === "paused"
-    )
-      animation.play();
-    pressedMotion.current = undefined;
-  };
-  const suppressClickUntil = useRef(0);
-  const dragOffset = useRef(0);
-  const finishDrag = useCallback((animate: boolean) => {
-    const content =
-      panel.current?.querySelector<HTMLElement>("#library-content");
-    const offset = dragOffset.current;
-    dragOffset.current = 0;
-    if (motionKind.current === "settle") {
-      contentMotion.current?.cancel();
-      contentMotion.current = undefined;
-    }
-    if (!content) return;
-    content.style.transform = "";
-    if (animate && offset && !reducedMotion()) {
-      contentMotion.current?.cancel();
-      motionKind.current = "settle";
-      contentMotion.current = content.animate(
-        [
-          { transform: `translateX(${offset}px)` },
-          { transform: "translateX(0)" },
-        ],
-        { duration: 140, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
-      );
-    }
-  }, []);
-  const resetSwipe = useCallback(() => {
-    gesture.current = null;
-    suppressClickUntil.current = 0;
-    finishDrag(false);
-  }, [finishDrag]);
-  useGestureCancellation(() => {
-    cancelTabMotion();
-    if (gesture.current) {
-      gesture.current = null;
-      suppressClickUntil.current = performance.now() + 350;
-    }
-    finishDrag(false);
-  }, section);
+  const contentPager = useRef<import("./useContentPager").ContentPager | null>(
+    null,
+  );
+  const resetSwipe = useCallback(() => contentPager.current?.reset(), []);
   const [indicator, setIndicator] = useState({ width: 0, x: 0 }),
     [compact, setCompact] = useState(false);
-  const choose = (next: LibrarySection) => {
+  const commit = (next: LibrarySection) => {
     if (next === section) return;
-    scroll.current[section] = window.scrollY;
+    if (document.documentElement.dataset.layout !== "phone")
+      scroll.current[section] = window.scrollY;
     onChange(next);
+  };
+  const choose = (next: LibrarySection) => {
+    if (contentPager.current) contentPager.current.choose(next);
+    else commit(next);
   };
   const revealTab = useCallback(
     (active: HTMLElement) => {
@@ -213,44 +164,15 @@ export function useLibraryMotion(
     return () => observer.disconnect();
   }, [section, tabsNode, revealTab]);
   useLayoutEffect(() => {
-    if (previous.current !== section) {
-      contentMotion.current?.cancel();
-      contentMotion.current = undefined;
-      pressedMotion.current = undefined;
-      dragOffset.current = 0;
-      const content =
-        panel.current?.querySelector<HTMLElement>("#library-content");
-      if (content) content.style.transform = "";
+    if (
+      previous.current !== section &&
+      document.documentElement.dataset.layout !== "phone"
+    )
       window.scrollTo({
         top: scroll.current[section] ?? 0,
         behavior: "instant",
       });
-      const phone = document.documentElement.dataset.layout === "phone";
-      const direction =
-        librarySections.indexOf(section) >
-        librarySections.indexOf(previous.current)
-          ? 1
-          : -1;
-      // Desktop navigation presents the confirmed view immediately. Fading
-      // every cached page dims the UI and delays an otherwise instant switch.
-      const animation =
-        phone && !reducedMotion()
-          ? content?.animate(
-              [
-                { transform: `translateX(${direction * 18}px)` },
-                { transform: "translateX(0)" },
-              ],
-              {
-                duration: 160,
-                easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-              },
-            )
-          : undefined;
-      previous.current = section;
-      motionKind.current = "entry";
-      contentMotion.current = animation;
-      return () => animation?.cancel();
-    }
+    previous.current = section;
   }, [section]);
   useEffect(() => {
     let frame = 0;
@@ -266,113 +188,15 @@ export function useLibraryMotion(
     };
   }, []);
   const swipe = {
-    onPointerDown: (e: ReactPointerEvent) => {
-      resumeEntryMotion();
-      // Keep the pressed target still until its click is dispatched. A moving
-      // entry animation can otherwise move a card out from under the finger.
-      if (contentMotion.current?.playState === "running") {
-        pressedMotion.current = contentMotion.current;
-        pressedMotion.current.pause();
-      }
-      if (e.pointerType !== "touch" || e.isPrimary === false) {
-        resetSwipe();
-        return;
-      }
-      if (gesture.current && gesture.current.pointer !== e.pointerId) {
-        gesture.current = null;
-        suppressClickUntil.current = performance.now() + 350;
-        return;
-      }
-      suppressClickUntil.current = 0;
-      if (
-        (e.target as HTMLElement).closest(
-          "input,select,textarea,[data-no-swipe],.section-tabs,.album-grid-carousel",
-        )
-      )
-        return;
-      gesture.current = {
-        x: e.clientX,
-        y: e.clientY,
-        pointer: e.pointerId,
-        horizontal: false,
-      };
-    },
-    onPointerMove: (e: ReactPointerEvent) => {
-      const g = gesture.current;
-      if (!g || g.pointer !== e.pointerId) return;
-      const dx = e.clientX - g.x,
-        dy = e.clientY - g.y;
-      if (!g.horizontal) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return;
-        if (Math.abs(dy) > Math.abs(dx) * 1.15) {
-          gesture.current = null;
-          return;
-        }
-        if (Math.abs(dx) <= Math.abs(dy) * 1.15) return;
-        g.horizontal = true;
-      }
-      suppressClickUntil.current = performance.now() + 350;
-      const content =
-        panel.current?.querySelector<HTMLElement>("#library-content");
-      if (
-        document.documentElement.dataset.layout === "phone" &&
-        !reducedMotion() &&
-        content &&
-        !content.inert &&
-        !content.querySelector(".selection-toolbar")
-      ) {
-        contentMotion.current?.cancel();
-        contentMotion.current = undefined;
-        pressedMotion.current = undefined;
-        const next =
-          librarySections[librarySections.indexOf(section) + (dx < 0 ? 1 : -1)];
-        const limit = Math.min(96, innerWidth * 0.25);
-        dragOffset.current = Math.max(
-          -limit,
-          Math.min(limit, dx * (next ? 0.65 : 0.25)),
-        );
-        content.style.transform = `translateX(${dragOffset.current}px)`;
-      }
-    },
-    onPointerUp: (e: ReactPointerEvent) => {
-      const g = gesture.current;
-      gesture.current = null;
-      if (!g || g.pointer !== e.pointerId || !g.horizontal) {
-        finishDrag(false);
-        return;
-      }
-      suppressClickUntil.current = performance.now() + 350;
-      const dx = e.clientX - g.x,
-        dy = e.clientY - g.y;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        suppressClickUntil.current = performance.now() + 350;
-        const next =
-          librarySections[librarySections.indexOf(section) + (dx < 0 ? 1 : -1)];
-        if (next) {
-          finishDrag(false);
-          choose(next);
-          return;
-        }
-      }
-      finishDrag(true);
-    },
-    onPointerCancel: () => {
-      resumeEntryMotion();
-      gesture.current = null;
-      finishDrag(true);
-    },
-    onLostPointerCapture: () => {
-      if (!gesture.current) return;
-      gesture.current = null;
-      finishDrag(true);
-    },
-    onClickCapture: (e: React.MouseEvent) => {
-      resumeEntryMotion();
-      if (e.detail > 0 && performance.now() < suppressClickUntil.current) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
+    onPointerDown: (e: ReactPointerEvent) =>
+      contentPager.current?.swipe.onPointerDown(e),
+    onPointerMove: (e: ReactPointerEvent) =>
+      contentPager.current?.swipe.onPointerMove(e),
+    onPointerUp: (e: ReactPointerEvent) =>
+      contentPager.current?.swipe.onPointerUp(e),
+    onPointerCancel: () => contentPager.current?.reset(),
+    onClickCapture: (e: React.MouseEvent) =>
+      contentPager.current?.swipe.onClickCapture(e),
   };
   const stripDrag = useRef({
     manual: false,
@@ -459,5 +283,7 @@ export function useLibraryMotion(
     choose,
     swipe,
     resetSwipe,
+    contentPager,
+    commit,
   };
 }

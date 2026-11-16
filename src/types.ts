@@ -137,6 +137,13 @@ export interface CatalogGroup {
   ids: string[];
   track: Track;
 }
+/** Complete lightweight catalog. Artwork tokens are resolved only for visible rows. */
+export interface CatalogIndex {
+  revision: number;
+  tracks: Track[];
+  albums: CatalogGroup[];
+  artists: CatalogGroup[];
+}
 export interface LibraryOptions {
   favoriteOnly?: boolean;
   sort?: "title" | "artist" | "album";
@@ -152,6 +159,7 @@ export interface ImportProgress {
 export type SoundCapabilities = import("./sound/types").SoundState;
 export type ShareOutcome = "opened" | "saved" | "download" | "canceled";
 export interface MusicApi {
+  catalogIndex(): Promise<CatalogIndex>;
   organization(): Promise<import("./library/identity").OrganizationSnapshot>;
   organize(
     revision: number,
@@ -193,6 +201,7 @@ export interface MusicApi {
     kind: "albums" | "artists",
     offset?: number,
     query?: string,
+    limit?: number,
   ): Promise<{ groups: CatalogGroup[]; total: number }>;
   cover(id: string, size?: number): Promise<string>;
   tracksById(ids: string[]): Promise<Track[]>;

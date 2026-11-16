@@ -5,7 +5,7 @@ test("song menus are compact, scoped and equivalent across pointer and keyboard"
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  const row = page.locator(".track-row").first();
+  const row = page.locator("#library-content .track-row").first();
   const opener = row.getByRole("button", { name: /^Track actions:/ });
   const menu = page.getByRole("menu");
   const expected = [
@@ -100,11 +100,11 @@ test("backgrounds and cards no longer expose redundant navigation", async ({
     expect(canceled).toBe(true);
     await expect(page.getByRole("menu")).toHaveCount(0);
     if (tab === "Albums" || tab === "Artists") {
-      const card = page.locator(".album-card").first();
+      const card = page.locator("#library-content .album-card").first();
       await expect(card).toBeVisible();
       await card.click({ button: "right" });
       await expect(page.getByRole("menu")).toHaveCount(0);
-      await expect(page.locator(".collection-hero")).toHaveCount(0);
+      await expect(page.locator("#library-content .collection-hero")).toHaveCount(0);
     }
     if (tab !== "Songs") {
       await page
@@ -118,7 +118,7 @@ test("backgrounds and cards no longer expose redundant navigation", async ({
     }
   }
   await page.getByRole("tab", { name: "Albums", exact: true }).click();
-  const card = page.locator(".album-card").first();
+  const card = page.locator("#library-content .album-card").first();
   const title = await card.locator("strong").textContent();
   await card.focus();
   await page.keyboard.press("Enter");
@@ -132,7 +132,7 @@ test("menus switch owners, dismiss without playback and hand focus to their dest
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Explore with sample audio" }).click();
-  const row = page.locator(".track-row").first();
+  const row = page.locator("#library-content .track-row").first();
   const opener = row.getByRole("button", { name: /^Track actions:/ });
   const header = page.getByRole("button", {
     name: "Library actions",

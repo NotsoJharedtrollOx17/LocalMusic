@@ -52,6 +52,7 @@ export async function delayedPlayback(page: Page) {
             total: 1,
             scanning: false,
           };
+        if (command === "catalog_index") return { revision: 0, tracks: [track], albums: [], artists: [] };
         if (command === "list_tracks") return { tracks: [track], total: 1 };
         if (command === "tracks_by_id") return [track];
         if (command === "resolve_cover") return cover;

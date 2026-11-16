@@ -78,7 +78,7 @@ for (const config of [
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/");
     await page.getByRole("button", { name: en.sample, exact: true }).click();
-    await expect(page.locator(".track-row")).toHaveCount(8);
+    await expect(page.locator("#library-content .track-row")).toHaveCount(8);
     let settings = await openSettings(page);
     if (config.dark)
       await settings
@@ -124,7 +124,11 @@ for (const config of [
     });
     await page.keyboard.press("Escape");
     await page.getByRole("tab", { name: t.songs, exact: true }).click();
-    await page.locator(".track-row").first().locator(".track-copy").click();
+    await page
+      .locator("#library-content .track-row")
+      .first()
+      .locator(".track-copy")
+      .click();
     await page.locator(".mini-track").click();
     let player = page.getByRole("dialog", { name: t.nowPlaying, exact: true });
     await expect(player).toBeVisible();

@@ -1,3 +1,8 @@
+import {
+  libraryScrollTop,
+  scrollLibraryTo,
+  captureLibraryPosition,
+} from "../ux/libraryScroll";
 import { listen } from "@tauri-apps/api/event";
 import { native } from "../api";
 import { useInlineSearch } from "./useInlineSearch";
@@ -238,7 +243,13 @@ export function useMusicApp(initialSettings?: Settings) {
     );
   }, [section, selectedList, setSelectedIds]);
   const catalog = useCatalogReads(state, act, remember);
-  const inlineSearch = useInlineSearch(state, t, automatic.playlists, remember);
+  const inlineSearch = useInlineSearch(
+    state,
+    t,
+    automatic.playlists,
+    remember,
+    catalog.catalogIndex,
+  );
   const lastPlaylist = useRef<string | undefined>(undefined);
   const restorePlaylist = useRef<{ scroll: number; id: string } | null>(null);
   useLayoutEffect(() => {
@@ -260,7 +271,7 @@ export function useMusicApp(initialSettings?: Settings) {
         `[data-playlist-id="${CSS.escape(origin.id)}"] button,[data-playlist-id="${CSS.escape(origin.id)}"].automatic-playlist-tile`,
       );
       if (button && !button.closest("[inert]")) {
-        window.scrollTo({ top: origin.scroll, behavior: "instant" });
+        scrollLibraryTo({ top: origin.scroll, behavior: "instant" });
         button.focus({ preventScroll: true });
         restorePlaylist.current = null;
       }
@@ -273,8 +284,7 @@ export function useMusicApp(initialSettings?: Settings) {
   useEffect(() => {
     void act(async () => {
       setSettings(initialSettings ?? (await api.settings()));
-      await refresh();
-      await refreshLists();
+      await Promise.all([refresh(), refreshLists()]);
     });
     let unsubscribe: (() => void) | undefined;
     let disposed = false;
@@ -294,14 +304,6 @@ export function useMusicApp(initialSettings?: Settings) {
       unsubscribe?.();
     };
   }, [act, refresh, refreshLists]);
-  useEffect(() => {
-    const id = setTimeout(() => void act(() => refresh()), 0);
-    return () => clearTimeout(id);
-  }, [onlyFavorites, sort, refresh, act]);
-  useEffect(() => {
-    if (section === "albums" || section === "artists")
-      void act(() => refreshGroups(section));
-  }, [section, catalog.catalogTotal, catalogRevision, act, refreshGroups]);
   const organizationDetail = useRef(state.detail);
   organizationDetail.current = state.detail;
   useEffect(() => {
@@ -314,7 +316,7 @@ export function useMusicApp(initialSettings?: Settings) {
         if (dead) return;
         setCatalogRevision((v) => v + 1);
         setRecapRevision((v) => v + 1);
-        setCache({});
+        // Keep confirmed metadata usable while a new revision is prepared.
         state.setShareRecap(null);
         void act(async () => {
           await refresh();
@@ -365,7 +367,7 @@ export function useMusicApp(initialSettings?: Settings) {
   const restoreNestedGroupFocus = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (restoreGroupScroll.current !== null) {
-      window.scrollTo({ top: restoreGroupScroll.current, behavior: "instant" });
+      scrollLibraryTo({ top: restoreGroupScroll.current, behavior: "instant" });
       restoreGroupScroll.current = null;
     }
     if (
@@ -450,12 +452,17 @@ export function useMusicApp(initialSettings?: Settings) {
   ]);
   const recapRequest = useRef(0);
   useEffect(() => {
-    if (section !== "year" || !settings || snapshotMode) return;
+    if (
+      (section !== "year" && (recap || !catalog.catalogIndex)) ||
+      !settings ||
+      snapshotMode
+    )
+      return;
     const version = ++recapRequest.current;
     let active = true;
     setRecapLoading(true);
     setRecapError("");
-    void act(async () => {
+    void (async () => {
       try {
         await settingsWrite.current;
         const result = await api.recap(recapSelection);
@@ -469,12 +476,13 @@ export function useMusicApp(initialSettings?: Settings) {
       } finally {
         if (active && version === recapRequest.current) setRecapLoading(false);
       }
-    });
+    })();
     return () => {
       active = false;
     };
   }, [
     section,
+    catalog.catalogIndex,
     recapSelection,
     settings,
     snapshotMode,
@@ -548,6 +556,19 @@ export function useMusicApp(initialSettings?: Settings) {
     timeout = setTimeout(dismiss, 4500);
     return () => clearTimeout(timeout);
   }, [notice]);
+  useEffect(() => {
+    if (!state.detail || state.detail.sourceUri) return;
+    let live = true;
+    void api
+      .tracksById([state.detail.id])
+      .then(([track]) => {
+        if (live && track) state.setDetail(track);
+      })
+      .catch((e) => setError(String(e)));
+    return () => {
+      live = false;
+    };
+  }, [state.detail?.id]);
   const current = player.trackId ? cache[player.trackId] : undefined;
   function backGroup() {
     const previous = groupStack.current.pop();
@@ -631,10 +652,6 @@ export function useMusicApp(initialSettings?: Settings) {
       );
     await refresh(query);
     setCatalogRevision((v) => v + 1);
-    setGroupPages({
-      albums: { groups: [], total: 0, status: "idle" },
-      artists: { groups: [], total: 0, status: "idle" },
-    });
   }
   const sharingActive = useRef(false);
   const shareLabel = audioShareLabel(t, state.selectedIds.length);
@@ -662,6 +679,7 @@ export function useMusicApp(initialSettings?: Settings) {
     g: CatalogGroup,
     source?: HTMLElement,
   ) {
+    captureLibraryPosition();
     restoreGroupScroll.current = null;
     if (
       group?.kind === kind &&
@@ -670,11 +688,11 @@ export function useMusicApp(initialSettings?: Settings) {
         : group.title === g.title && group.subtitle === g.subtitle)
     ) {
       setArtistView("tracks");
-      window.scrollTo({ top: 0, behavior: "instant" });
+      scrollLibraryTo({ top: 0, behavior: "instant" });
       return;
     }
     if (!group) {
-      groupScroll.current = window.scrollY;
+      groupScroll.current = libraryScrollTop();
       const row = source?.closest<HTMLElement>("[data-track-id]");
       const key = source?.dataset.groupKey;
       groupOrigin.current = {
@@ -688,7 +706,7 @@ export function useMusicApp(initialSettings?: Settings) {
     } else
       groupStack.current.push({
         group,
-        scroll: window.scrollY,
+        scroll: libraryScrollTop(),
         artistView,
         selector: source?.dataset.groupKey
           ? `[data-group-key="${CSS.escape(source.dataset.groupKey)}"]`
@@ -715,7 +733,7 @@ export function useMusicApp(initialSettings?: Settings) {
       await opening;
       if (version === groupRequest.current) {
         setArtistView("tracks");
-        window.scrollTo({ top: 0, behavior: "instant" });
+        scrollLibraryTo({ top: 0, behavior: "instant" });
       }
     });
   }
@@ -922,6 +940,7 @@ export function useMusicApp(initialSettings?: Settings) {
     dismissModals,
     shareLabel,
     ...catalog,
+    total: !group && onlyFavorites ? visible.length : state.total,
     ...actions,
     selectedGroupPage,
     groupsTotal,

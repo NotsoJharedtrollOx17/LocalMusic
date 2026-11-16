@@ -83,7 +83,7 @@ test("cached desktop tab switches keep confirmed content opaque and immediately 
   await page
     .getByRole("button", { name: "Explore with sample audio", exact: true })
     .click();
-  await expect(page.locator(".track-row")).toHaveCount(8);
+  await expect(page.locator("#library-content .track-row")).toHaveCount(8);
   await page.evaluate(() => {
     const animate = Element.prototype.animate;
     Object.assign(window, { desktopFades: [] as number[] });
@@ -119,6 +119,9 @@ test("cached desktop tab switches keep confirmed content opaque and immediately 
       ),
     ),
   ).toBe(true);
-  await page.locator(".catalog-artists .album-card").first().click();
-  await expect(page.locator(".collection-hero")).toBeVisible();
+  await page
+    .locator("#library-content .catalog-artists .album-card")
+    .first()
+    .click();
+  await expect(page.locator("#library-content .collection-hero")).toBeVisible();
 });

@@ -12,6 +12,7 @@ export default function LibraryToolbar() {
     setOrganizationTab,
     setModal,
     total,
+    catalogIndex,
     libraryViewPending,
     libraryError,
     section,
@@ -42,7 +43,7 @@ export default function LibraryToolbar() {
         : artistAlbums.length
       : group.ids.length
     : songFilters
-      ? libraryViewPending || libraryError
+      ? libraryViewPending || (libraryError && !catalogIndex)
         ? null
         : total
       : selectedGroupPage.loaded && selectedGroupPage.status !== "error"
@@ -61,7 +62,10 @@ export default function LibraryToolbar() {
           <button
             data-organization-origin
             className="button primary collection-organize-action"
-            onClick={() => { setOrganizationTab("albums"); setModal("organize"); }}
+            onClick={() => {
+              setOrganizationTab("albums");
+              setModal("organize");
+            }}
           >
             <SlidersHorizontal size={18} aria-hidden="true" />
             {libraryStrings(settings?.language === "es").organize}

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import TrackList from "../TrackList";
 import { api } from "../api";
 import { TrackRow } from "../components";
@@ -17,6 +18,11 @@ export default function TrackRows({
 }) {
   const {
     group,
+    section,
+    catalogRevision,
+    query,
+    sort,
+    onlyFavorites,
     player,
     selectedList,
     savingPlaylistId,
@@ -31,9 +37,27 @@ export default function TrackRows({
     moveList,
   } = useMusicAppContext();
 
+  const keys = useMemo(() => {
+    const seen = new Map<string, number>();
+    return ts.map((t) => {
+      const n = seen.get(t.id) ?? 0;
+      seen.set(t.id, n + 1);
+      return t.id + ":" + n;
+    });
+  }, [ts]);
   return (
     <TrackList
       count={ts.length}
+      itemKey={(i) => keys[i]}
+      measurementKey={JSON.stringify([
+        section,
+        group?.id,
+        selectedList?.id,
+        catalogRevision,
+        query,
+        sort,
+        onlyFavorites,
+      ])}
       render={(i) => {
         const track = ts[i];
         return (
