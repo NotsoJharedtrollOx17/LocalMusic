@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: node scripts/check-version.mjs
       - run: npm run tauri -- build --features custom-protocol
+      - name: Verify frozen frontend
+        run: node scripts/verify-embedded-assets.mjs --binary src-tauri/target/release/local-music.exe --build src-tauri/target/release/build --output artifacts/release-assets/windows-frontend.json
       - run: ./scripts/package-windows-release.ps1
       - name: Installer smoke check
         shell: pwsh
@@ -48,4 +50,5 @@ jobs:
             artifacts/release-assets/*.zip
             artifacts/release-assets/*setup.exe
             artifacts/release-assets/windows-SHA256SUMS.txt
+            artifacts/release-assets/windows-frontend.json
           if-no-files-found: error
