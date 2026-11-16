@@ -1,6 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openSettings, openEqualizer } from "./navigationHelpers";
 import { wav } from "./fixtures";
+import { readFileSync } from "node:fs";
+const { version } = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+);
 test.use({ hasTouch: true });
 async function samples(page: Page) {
   await page.goto("/");
@@ -306,7 +310,7 @@ test("mobile About returns to Settings and empty artist text spans the grid", as
     name: "About Local Music",
     exact: true,
   });
-  await expect(about).toContainText("0.18.1");
+  await expect(about).toContainText(version);
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(settings).toBeVisible();

@@ -260,11 +260,11 @@ input[type="range"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--ink);
+  border: 0;
   width: 33px;
   height: 33px;
   border-radius: 50%;
-  transform: rotate(-8deg);
+
 }
 .brand-period {
   color: var(--accent);
@@ -2330,3 +2330,27 @@ input[type="range"] {
 }
 
 .track-duration:empty, .track-duration-inline:empty { display: none; }
+
+.brand-symbol,.brand-symbol svg{display:block;width:100%;height:100%;}
+/* Stable export layout: the image never determines dialog/action height. */
+.modal:has(.share-recap){height:min(860px,calc(var(--overlay-height,100dvh) - 32px));display:flex;flex-direction:column;}
+.modal:has(.share-recap) .modal-head{flex:none;}
+.modal:has(.share-recap) .modal-body{flex:1;min-height:0;overflow:auto;display:flex;}
+.share-recap{width:100%;min-height:0;gap:10px;flex:1;}
+.recap-preview-stage{flex:1;min-height:96px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--paper);}
+.recap-image-preview{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;animation:none;}
+.recap-preview-stage .image-loading{min-height:0;}
+.recap-export-actions{display:flex;gap:10px;flex:none;}
+.recap-export-actions .button{flex:1;min-width:0;}
+.recap-save-status{min-height:24px;flex:none;}
+.recap-save-toast{position:static;display:flex;gap:8px;align-items:center;width:auto;font-size:13px;border:0;}
+.share-recap .method-note{margin:0;flex:none;}
+.share-recap .spinner{animation:import-spin 1s linear infinite;transform-origin:center;}
+@media(prefers-reduced-motion:reduce){.share-recap .spinner{animation:import-spin 3s linear infinite!important;}}
+:root[data-layout="phone"] .modal:has(.share-recap){height:100%;}
+@media(max-height:480px){.recap-preview-stage{flex:none;height:120px;}.recap-export-actions{position:sticky;bottom:0;background:var(--paper);}}
+@keyframes recap-preview-reveal{from{opacity:0}to{opacity:1}}
+.recap-image-preview{animation:recap-preview-reveal 140ms ease-out;}
+
+.recap-export-actions{flex-wrap:wrap;}
+.recap-export-actions .button{flex:1 1 160px;}

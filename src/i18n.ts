@@ -1,4 +1,9 @@
 export const en = {
+  shareImage: "Share image",
+  imageSavedDevice: "Saved to device",
+  imageDownloadStarted: "Download started",
+  imageShareUnavailable:
+    "Image sharing is unavailable. Save the image instead.",
   aboutApp: "About Local Music",
   application: "Application",
   libraryManagement: "Library",
@@ -19,7 +24,8 @@ export const en = {
   addArtist: "Add artist",
   removeArtist: "Remove artist",
   artistConflict: "Excluded artists take priority: {artists}.",
-  analysisPlaceholder: "Preference analysis runs only when you generate a playlist.",
+  analysisPlaceholder:
+    "Preference analysis runs only when you generate a playlist.",
   renamePlaylist: "Rename playlist",
   playlistRenamed: "Playlist renamed",
   defaultPlaylists: "The Default Ones",
@@ -310,6 +316,11 @@ export const en = {
   soundOn: "Original sample tones. Turn your volume down before playing.",
 };
 export const es: typeof en = {
+  shareImage: "Compartir imagen",
+  imageSavedDevice: "Guardado en el dispositivo",
+  imageDownloadStarted: "Descarga iniciada",
+  imageShareUnavailable:
+    "No se puede compartir la imagen. Guárdala para compartirla.",
   aboutApp: "Acerca de Local Music",
   application: "Aplicación",
   libraryManagement: "Biblioteca",
@@ -330,7 +341,8 @@ export const es: typeof en = {
   addArtist: "Agregar artista",
   removeArtist: "Quitar artista",
   artistConflict: "Los artistas excluidos tienen prioridad: {artists}.",
-  analysisPlaceholder: "Tus preferencias se analizan solo al generar una lista.",
+  analysisPlaceholder:
+    "Tus preferencias se analizan solo al generar una lista.",
   renamePlaylist: "Cambiar nombre",
   playlistRenamed: "Nombre actualizado",
   defaultPlaylists: "Las de siempre",
