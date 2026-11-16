@@ -1,0 +1,45 @@
+name: Windows package
+on:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - run: npm ci
+      - run: node scripts/check-version.mjs
+      - run: npm run tauri -- build --features custom-protocol
+      - run: ./scripts/package-windows-release.ps1
+      - name: Installer smoke check
+        shell: pwsh
+        run: |
+          $musicVersion=(Get-Content package.json -Raw | ConvertFrom-Json).version
+          $musicInstaller=Get-ChildItem artifacts/release-assets -Filter '*setup.exe' | Select-Object -First 1
+          $musicInstall=Join-Path $env:RUNNER_TEMP 'LocalMusicInstallerCheck'
+          $musicSetup=Start-Process -FilePath $musicInstaller.FullName -ArgumentList @('/S',"/D=$musicInstall") -Wait -PassThru
+          if($musicSetup.ExitCode -ne 0){throw "Installer failed: $($musicSetup.ExitCode)"}
+          $musicExe=Get-ChildItem $musicInstall -Filter 'local-music.exe' -Recurse | Select-Object -First 1
+          if(-not $musicExe -or $musicExe.VersionInfo.ProductVersion -ne $musicVersion){throw 'Installed version mismatch'}
+          $musicApp=Start-Process -FilePath $musicExe.FullName -WindowStyle Hidden -PassThru
+          Start-Sleep -Seconds 8
+          if($musicApp.HasExited){throw "Installed app exited early: $($musicApp.ExitCode)"}
+          Stop-Process -Id $musicApp.Id
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-release
+          path: |
+            artifacts/release-assets/*.zip
+            artifacts/release-assets/*setup.exe
+            artifacts/release-assets/windows-SHA256SUMS.txt
+          if-no-files-found: error

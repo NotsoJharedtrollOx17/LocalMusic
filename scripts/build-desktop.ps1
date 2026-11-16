@@ -6,8 +6,13 @@ try {
  $musicArgs=@('run','tauri','--','build','--features','custom-protocol')
  if($Debug){$musicArgs+='--debug'}
  if($Portable -or $musicGnu){$musicArgs+=@('--no-bundle')}
- & npm.cmd @musicArgs
- if($LASTEXITCODE -ne 0){throw "Desktop build failed ($LASTEXITCODE)"}
+ $musicPreviousErrorAction=$ErrorActionPreference
+ try {
+  $ErrorActionPreference='Continue'
+  & npm.cmd @musicArgs
+  $musicExit=$LASTEXITCODE
+ }finally{$ErrorActionPreference=$musicPreviousErrorAction}
+ if($musicExit -ne 0){throw "Desktop build failed ($musicExit)"}
  if($Portable -or $musicGnu){
   $musicProfile=if($Debug){"debug"}else{"release"}
   $musicDesktopOutput=Join-Path $musicRoot "src-tauri/target/$musicProfile"

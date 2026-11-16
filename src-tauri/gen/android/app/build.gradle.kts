@@ -25,6 +25,21 @@ android {
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
+    val releaseStore = System.getenv("LOCAL_MUSIC_KEYSTORE")
+    val releaseRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+    if (releaseRequested && (releaseStore.isNullOrBlank() || System.getenv("LOCAL_MUSIC_STORE_PASSWORD").isNullOrBlank() || System.getenv("LOCAL_MUSIC_KEY_ALIAS").isNullOrBlank() || System.getenv("LOCAL_MUSIC_KEY_PASSWORD").isNullOrBlank())) {
+        throw GradleException("Release signing requires the four LOCAL_MUSIC signing environment variables; see docs/release-process.md")
+    }
+    signingConfigs {
+        create("release") {
+            if (!releaseStore.isNullOrBlank()) {
+                storeFile = file(releaseStore)
+                storePassword = System.getenv("LOCAL_MUSIC_STORE_PASSWORD")
+                keyAlias = System.getenv("LOCAL_MUSIC_KEY_ALIAS")
+                keyPassword = System.getenv("LOCAL_MUSIC_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         getByName("debug") {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -39,6 +54,11 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isDebuggable = false
+            isJniDebuggable = false
+            // Rust strips the release library; retain its exact bytes for identity verification.
+            packaging { jniLibs.keepDebugSymbols.add("*/arm64-v8a/liblocal_music_lib.so") }
             optimization {
                enable = true
             }

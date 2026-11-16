@@ -1,6 +1,5 @@
 """Validate tracked Markdown links/encoding without fetching external sites."""
 import re
-import subprocess
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
