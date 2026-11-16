@@ -186,7 +186,7 @@ test("frequency colors and every scene follow live light/dark theme changes with
         )
         .toEqual(theme === "light" ? [250, 248, 244] : [20, 22, 21]);
       if (name === "Spectrum") {
-        const colors = await view.locator("canvas").evaluate((node) => {
+        const colors = () => view.locator("canvas").evaluate((node) => {
           const c = node as HTMLCanvasElement,
             ctx = c.getContext("2d")!;
           const sample = (band: number) =>
@@ -200,8 +200,12 @@ test("frequency colors and every scene follow live light/dark theme changes with
             );
           return [sample(0), sample(63)];
         });
-        expect(colors[0][0]).toBeGreaterThan(colors[0][2]);
-        expect(colors[1][2]).toBeGreaterThan(colors[1][0]);
+        // The background can be ready before the initial scene rise-in has
+        // painted the two-pixel silent treble bar at this sample location.
+        await expect.poll(async () => {
+          const sampled = await colors();
+          return sampled[0][0] > sampled[0][2] && sampled[1][2] > sampled[1][0];
+        }).toBe(true);
       }
       await page.screenshot({
         path: `artifacts/visualizer-refined-${theme}-${name.split(" ")[0]}.png`,

@@ -132,6 +132,16 @@ test("Spanish dark tabs retain their geometry at 320px with doubled text", async
         `${parseFloat(getComputedStyle(el).fontSize) * 2}px`;
     }),
   );
+  // Spanish glyphs and the selected weight may load separate font subsets.
+  // Load both before comparing geometry; the comparison still stays exact.
+  await strip.locator("button").evaluateAll(async (els) => {
+    await Promise.all(els.flatMap((el) => {
+      const style = getComputedStyle(el);
+      return [400, 700].map((weight) => document.fonts.load(
+        `${weight} ${style.fontSize} ${style.fontFamily}`, el.textContent ?? "",
+      ));
+    }));
+  });
   const geometry = () =>
     strip.locator("button").evaluateAll((els) =>
       els.map((el) => ({
