@@ -64,9 +64,12 @@
 .creation-mark {
   transform: none;
   flex-shrink: 0;
-  background: var(--surface);
-  border-color: var(--accent);
+  background: #fffdf9;
+  border: 0;
   color: var(--accent);
+}
+.creation-mark .creation-shuffle {
+  color: #20221f;
 }
 .creation-mark > svg {
   display: block;

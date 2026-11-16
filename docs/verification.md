@@ -1694,3 +1694,12 @@ Verified development outputs (ignored, not a new release):
 - Installed in place on the Note10+ SM-N975F. Fresh paused position, queue, settings, EQ, playlists and all 711 tracks matched after installation, ignoring only snapshot revision. Captured the native masked icon and returned to Local Music without starting audio. Temporary inspection forwarding and XML were cleaned up. Other launchers and Android 13+ themed icons remain manual checks. Evidence stays ignored under `artifacts/branding-export/`.
 
 - Optimized Windows no-bundle build passed with exit zero (9m 04s), PE/runtime version 0.19.0, executable SHA-256 `3e7763820dfe597558e584b0c84e4062263a735d9d5048ff0af641de2ee36077`. Launched the rebuilt executable, captured the updated title-bar icon and confirmed the unchanged header, paused playback and existing 160-song catalog. Closed the inspection instance normally. No merge, tag or release.
+
+
+## 16 November 2026 - Playlist creation badge refinement
+
+- Archived scope in `docs/playlist-badge-refinement.md`. Replaced the badge border with an orange SVG arc opening toward the shuffle arrows, kept the orange hammer and current responsive dimensions, and rendered the arrows in charcoal black against a warm light badge surface in both themes. No playlist rules changed; version remains 0.19.0.
+- Production frontend build and all 115 unit tests passed. Six isolated browser layout/theme checks (1280, 390 and 320 px, light/dark) verified the distinct arrow color and badge background and captured the title/badge. Full browser/Rust/Kotlin suites were not repeated for this decorative SVG/CSS follow-up.
+- Optimized Windows no-bundle build passed (8m 52s, exit zero), executable SHA-256 `c53aa60425edba344e133db33f590fa9be6261f203c38b4abd1a0009bfb804b8`. Opened the actual app and inspected its playlist creator badge; verified black arrow color and unchanged paused player/queue. Closed the inspection instance normally.
+- ARM64 debug build/copy-fallback packaging passed (Gradle 30 seconds); APK signature/debug signer verified. APK SHA-256 `83635786c73ebd2b808e354de81472ab002a38aafb03c1ac29fce533a6096955`, packaged native library matches compiled bytes `5af9cc6e42ae8953c16539f698ff2eb56e4f9ab2d84faace2860b32294722828`, ZIP CRC checks passed. This badge APK has not been installed: phone availability confirmation is pending. Previous native phone evidence does not establish this update's installation acceptance.
+- Screenshots/logs remain ignored under `artifacts/branding-export/`. No merge, version bump, tag or release.

@@ -21,10 +21,16 @@ export default function PlaylistBuilder() {
         </div>
         <span className="generator-mark creation-mark" aria-hidden="true">
           <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <path
+              d="M42.67 61.31A31.2 31.2 0 1 1 61.31 42.67"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
             <g transform="rotate(25 32 23)">
               <Hammer x={17} y={8} size={30} strokeWidth={2} />
             </g>
-            <g transform="rotate(-15 42 47)">
+            <g className="creation-shuffle" transform="rotate(-15 42 47)">
               <Shuffle x={33} y={38} size={18} strokeWidth={2} />
             </g>
           </svg>
