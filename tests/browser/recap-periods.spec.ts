@@ -202,8 +202,7 @@ test("delayed period reads never replace a newer selection and failed loading is
   const poster = await page
     .locator(".orbit-poster canvas")
     .evaluate((c: HTMLCanvasElement) => c.toDataURL());
-  await holdNextTrackRead(page);
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
+  await holdNextTrackRead(page, "catalog", "Weekly");
   await expect
     .poll(() =>
       page.evaluate(
@@ -239,8 +238,10 @@ test("delayed period reads never replace a newer selection and failed loading is
       }
       return original.apply(this, args);
     };
+    Array.from(document.querySelectorAll("button")).find(
+      (node) => node.textContent?.trim() === "Weekly",
+    )!.click();
   });
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
   await expect(page.locator(".year-page [role=alert]")).toHaveText(
     "Injected recap read failure",
   );

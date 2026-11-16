@@ -3,8 +3,9 @@ import type { Page } from "@playwright/test";
 export async function holdNextTrackRead(
   page: Page,
   target: "catalog" | "track" = "catalog",
+  triggerButton?: string,
 ) {
-  await page.evaluate((target) => {
+  await page.evaluate(({ target, triggerButton }) => {
     const state = window as unknown as {
       catalogReadHeld: boolean;
       releaseCatalog: () => void;
@@ -54,7 +55,16 @@ export async function holdNextTrackRead(
         ? hold(request)
         : request;
     };
-  }, target);
+    // Arm and trigger within one task so ordinary playback polling cannot
+    // consume this one-shot interception between separate driver commands.
+    if (triggerButton) {
+      const button = Array.from(document.querySelectorAll("button")).find(
+        (node) => node.textContent?.trim() === triggerButton,
+      );
+      if (!button) throw new Error(`Missing gate trigger: ${triggerButton}`);
+      button.click();
+    }
+  }, { target, triggerButton });
 }
 export async function release(page: Page) {
   await page.evaluate(() =>
