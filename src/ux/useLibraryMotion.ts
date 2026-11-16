@@ -231,20 +231,21 @@ export function useLibraryMotion(
         librarySections.indexOf(previous.current)
           ? 1
           : -1;
-      const animation = !reducedMotion()
-        ? content?.animate(
-            phone
-              ? [
-                  { transform: `translateX(${direction * 18}px)` },
-                  { transform: "translateX(0)" },
-                ]
-              : [{ opacity: 0.6 }, { opacity: 1 }],
-            {
-              duration: phone ? 160 : 140,
-              easing: phone ? "cubic-bezier(0.2, 0.8, 0.2, 1)" : "ease-out",
-            },
-          )
-        : undefined;
+      // Desktop navigation presents the confirmed view immediately. Fading
+      // every cached page dims the UI and delays an otherwise instant switch.
+      const animation =
+        phone && !reducedMotion()
+          ? content?.animate(
+              [
+                { transform: `translateX(${direction * 18}px)` },
+                { transform: "translateX(0)" },
+              ],
+              {
+                duration: 160,
+                easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+              },
+            )
+          : undefined;
       previous.current = section;
       motionKind.current = "entry";
       contentMotion.current = animation;

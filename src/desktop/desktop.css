@@ -145,6 +145,11 @@
 .standalone-player .queue-content .track-duration {
   font-size: clamp(12px, 1.9vmin, 16px);
 }
+/* Grow the grid with its hit areas; fixed columns let large buttons overlap. */
+:root:not([data-layout="phone"]) .standalone-player .queue-content .row-actions {
+  grid-template-columns: repeat(3, var(--companion-hit));
+  flex-shrink: 0;
+}
 /* The scene remains resolution-bounded; only its controls change with the window. */
 .companion-shell .visualizer-controls {
   padding: var(--companion-pad);
@@ -249,10 +254,14 @@
   min-height: 0;
   overflow: auto;
   padding: var(--companion-pad);
+  display: flex;
+  flex-direction: column;
 }
 .detached-equalizer-body .sound-controls {
   max-width: 900px;
-  margin-inline: auto;
+  width: 100%;
+  flex: 0 0 auto;
+  margin: auto;
 }
 @media (max-width: 480px) {
   .detached-equalizer-header {
