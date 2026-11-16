@@ -30,10 +30,7 @@ jobs:
         with:
           targets: aarch64-linux-android
       - name: Android toolchain
-        run: |
-          yes | sdkmanager --licenses >/dev/null || test ${PIPESTATUS[1]} -eq 0
-          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865'
-          echo "NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+        run: bash .github/scripts/setup-android.sh
       - run: npm ci
       - run: node scripts/check-version.mjs
       - name: Restore private release key

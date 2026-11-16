@@ -80,12 +80,7 @@ jobs:
           targets: aarch64-linux-android
       - name: Install Android packages
         shell: bash
-        run: |
-          # Hosted runners already contain cmdline-tools. The retired 'tools'
-          # package requested by setup-android v3 no longer exists.
-          yes | sdkmanager --licenses >/dev/null || test ${PIPESTATUS[1]} -eq 0
-          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;29.0.14206865'
-          echo "NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+        run: bash .github/scripts/setup-android.sh
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
