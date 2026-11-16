@@ -25,7 +25,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg class AckArgs { var through:Long?=null }
 @InvokeArg class ArtworkArgs { var uri:String?=null; var idle:Boolean=false }
 @InvokeArg class ImportArgs { var mode:String?=null; var progress:Channel?=null; var knownIds:Array<String>?=null }
-@InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null }
+@InvokeArg class ExportArgs { var name:String?=null; var bytes:Array<Int>?=null; var base64:String?=null
+ fun data():ByteArray{val encoded=base64;if(encoded!=null){require(encoded.length<=28*1024*1024){"Invalid export size"};return android.util.Base64.decode(encoded,android.util.Base64.DEFAULT)};val source=bytes?:emptyArray();require(source.size<=20*1024*1024){"Invalid export size"};return ByteArray(source.size){source[it].toByte()}}
+}
 @InvokeArg class ShareArgs { var uris:Array<String>?=null }
 @InvokeArg class SoundPayloadArgs { var payload:String?=null }
 
@@ -142,9 +144,15 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
    invoke.resolve(JSObject().put("manifestPath",manifest.absolutePath).put("scanned",count.scanned).put("failed",count.failed).put("ready",count.ready).put("cancelled",cancelled.get()))
   }catch(e:Exception){invoke.reject(e.message?:"Import failed")}}
  }
+ @Command fun imageExportCapabilities(invoke:Invoke){invoke.resolve(JSObject().put("save",if(Build.VERSION.SDK_INT>=29)"gallery" else "picker").put("share",true))}
+ @Command fun shareRecapImage(invoke:Invoke){val args=invoke.parseArgs(ExportArgs::class.java);worker.execute{try{
+  val uri=RecapImages.shareUri(activity,args.name?:"recap.png",args.data())
+  activity.runOnUiThread{try{val intent=Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM,uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);intent.clipData=ClipData.newUri(activity.contentResolver,"PNG",uri);activity.startActivity(Intent.createChooser(intent,null));invoke.resolve(JSObject().put("outcome","opened"))}catch(e:Exception){invoke.reject(e.message?:"Sharing unavailable")}}
+ }catch(e:Exception){invoke.reject(e.message?:"Image could not be shared")}}}
  @Command fun exportFile(invoke:Invoke){
   val args=invoke.parseArgs(ExportArgs::class.java);val name=args.name?:"your-year.png"
   if(name.contains('/')||name.contains('\\')||(args.bytes?.size?:0)>20*1024*1024){invoke.reject("Invalid export");return}
+  if(Build.VERSION.SDK_INT>=29&&name.endsWith(".png")){worker.execute{try{RecapImages.save(activity,name,args.data());invoke.resolve(JSObject().put("saved",true))}catch(e:Exception){invoke.reject(e.message?:"Image could not be saved")}};return}
   val intent=Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(if(name.endsWith(".png"))"image/png" else "application/json").putExtra(Intent.EXTRA_TITLE,name)
   startActivityForResult(invoke,intent,"exportResult")
  }
@@ -152,6 +160,6 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
   val uri=result.data?.data
   if(result.resultCode!=Activity.RESULT_OK||uri==null){invoke.resolve(JSObject().put("saved",false));return}
   val args=invoke.parseArgs(ExportArgs::class.java)
-  worker.execute{try{activity.contentResolver.openOutputStream(uri)?.use{out->out.write((args.bytes?:emptyArray()).map{it.toByte()}.toByteArray())}?:throw IllegalStateException("Export destination unavailable");invoke.resolve(JSObject().put("saved",true))}catch(e:Exception){invoke.reject(e.message?:"Export failed")}}
+  worker.execute{try{activity.contentResolver.openOutputStream(uri)?.use{out->out.write(args.data())}?:throw IllegalStateException("Export destination unavailable");invoke.resolve(JSObject().put("saved",true))}catch(e:Exception){invoke.reject(e.message?:"Export failed")}}
  }
 }

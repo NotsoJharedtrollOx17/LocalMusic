@@ -1,3 +1,5 @@
+#[cfg(target_os = "android")]
+use base64::Engine;
 use crate::state::{MusicState, Result};
 #[cfg(target_os = "android")]
 use serde_json::json;
@@ -95,9 +97,7 @@ pub(crate) async fn export_file(
     name: String,
     bytes: Vec<u8>,
 ) -> Result<bool> {
-    if name.contains(['/', '\\']) || bytes.len() > 20 * 1024 * 1024 {
-        return Err("Invalid export".into());
-    }
+    validate_image(&name, &bytes)?;
     #[cfg(not(target_os = "android"))]
     {
         use tauri_plugin_dialog::DialogExt;
@@ -126,10 +126,80 @@ pub(crate) async fn export_file(
         tauri::async_runtime::spawn_blocking(move || {
             let value: serde_json::Value = app
                 .native_music()
-                .call("exportFile", json!({"name":name,"bytes":bytes}))?;
+                .call("exportFile", json!({"name":name,"base64":base64::engine::general_purpose::STANDARD.encode(&bytes)}))?;
             Ok(value["saved"].as_bool().unwrap_or(false))
         })
         .await
         .map_err(|e| e.to_string())?
+    }
+}
+
+fn validate_image(name: &str, bytes: &[u8]) -> Result<()> {
+    if name.is_empty()
+        || name.len() > 240
+        || name.contains(['/', '\\', '\0'])
+        || !name.ends_with(".png")
+        || bytes.len() > 20 * 1024 * 1024
+        || !bytes.starts_with(b"\x89PNG\r\n\x1a\n")
+    {
+        return Err("Invalid PNG export".into());
+    }
+    Ok(())
+}
+#[tauri::command]
+pub(crate) async fn image_export_capabilities(app: tauri::AppHandle) -> Result<serde_json::Value> {
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        return tauri::async_runtime::spawn_blocking(move || {
+            app.native_music()
+                .call("imageExportCapabilities", serde_json::json!({}))
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Ok(serde_json::json!({"save":"picker","share":false}))
+    }
+}
+#[tauri::command]
+pub(crate) async fn share_recap_image(
+    app: tauri::AppHandle,
+    name: String,
+    bytes: Vec<u8>,
+) -> Result<String> {
+    validate_image(&name, &bytes)?;
+    #[cfg(target_os = "android")]
+    {
+        use tauri_plugin_native_music::NativeMusicExt;
+        tauri::async_runtime::spawn_blocking(move || {
+            let value: serde_json::Value = app.native_music().call(
+                "shareRecapImage",
+                serde_json::json!({"name":name,"base64":base64::engine::general_purpose::STANDARD.encode(&bytes)}),
+            )?;
+            Ok(value["outcome"]
+                .as_str()
+                .unwrap_or("unavailable")
+                .to_string())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        Ok("unavailable".into())
+    }
+}
+#[cfg(test)]
+mod image_tests {
+    use super::*;
+    #[test]
+    fn image_boundary_rejects_paths_and_non_png() {
+        assert!(validate_image("../secret.png", b"\x89PNG\r\n\x1a\n").is_err());
+        assert!(validate_image("recap.png", b"wrong bytes").is_err());
+        assert!(validate_image("recap.png", b"\x89PNG\r\n\x1a\n").is_ok());
     }
 }
