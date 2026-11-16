@@ -1,3 +1,0 @@
-# Phone artist and album organization layout — 14 November 2026
-
-Refine the existing organization dialog on the UI audit branch, version 0.15.0. On phones, align artist metadata and Edit in a stable row; lay out album suggestions as compact review/keep rows and make album review cards, artwork and form spacing consistent. Keep the review as one focused workflow with its existing Back/focus return, selections, confirmations and all underlying organization actions. Preserve the Songs flow, desktop behavior, source metadata and storage. Verify EN/ES, narrow and enlarged text, review selection, Back, focus and persistence paths; record actual browser/build/device evidence and manual accessibility limits. No merge or release.

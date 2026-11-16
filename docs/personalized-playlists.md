@@ -1,6 +1,8 @@
 # Personalized playlists
 
-Implementation on `dev.personalized-playlists`, based on the [approved plan](personalized-playlists-plan.md). Application version remains 0.9.0; this branch is not a release integration. See [verification](verification.md) for actual test/build results and remaining device gates.
+The current creator uses 1-100 tracks (initially 30), up to three included/excluded whole artist names, genre and Familiar/Balanced/Explore. Included artists are alternatives; exclusions take precedence, genre becomes a preference, and weighted selection cycles across included artists. Preview order changes only on explicit generation. Saved playlists support Rename/Delete and retain ordinary ordered IDs.
+
+Analysis coverage resets on opening the creator and fills after explicit generation. Generation attempts at most three source analyses while visible and paused; it never scans continuously while browsing. The progress stages report actual sound/matching work. There is no duration selector in the UI. See [usage](usage.md) and [verification](verification.md).
 
 ## Experience and ownership
 
@@ -12,7 +14,7 @@ React owns presentation and an app-scoped explicit-generation coordinator. Rust 
 
 ## Ranking method, version one
 
-Hard constraints run before weighted selection: visible available tracks, explicit artist/genre matching/exclusions, no duplicates, a two-track cap per known artist in general mixes, and count/duration bounds. An explicit Include artist request lifts that artist cap, so a single-artist mix can fill the requested count. Unknown artist values do not share a cap. Hard constraints are never relaxed to fill a mix. Duration mode excludes unknown durations. Requests without a blend retain the previous filter-only policy.
+Hard constraints run before weighted selection: visible available tracks, explicit artist matching/exclusions and genre constraints when no artist is included, no duplicates, a two-track cap per known artist in general mixes, and count bounds in the UI (legacy duration contracts remain backend-compatible). An explicit Include artist request lifts that artist cap, so a single-artist mix can fill the requested count. Unknown artist values do not share a cap. Hard constraints are never relaxed to fill a mix. Duration mode excludes unknown durations. Requests without a blend retain the previous filter-only policy.
 
 - Qualified evidence means an unexcluded session with at least 30,000 played milliseconds. Ignore future or invalid timestamps. Use the last 90 days, otherwise older eligible history, otherwise favorites. Native journals/browser checkpoints flush before generation.
 - Listening affinity sums `2^(-ageDays/30)` and normalizes with `log1p(weight)/log1p(maxWeight)`.
@@ -43,32 +45,3 @@ Shared ranking fixtures establish deterministic adapter agreement and constraint
 
 Actual recommendation quality requires listening review. Galaxy Note10 CPU/memory, cancellation latency, codec/provider compatibility and playback continuity require physical-device measurements. Browser tests, JVM tests, built APKs and desktop source-decoder tests do not establish Android runtime or performance acceptance.
 
-## Explicit generation revision
-
-Acoustic analysis no longer starts automatically while idle. Only pressing Generate playlist authorizes a batch of up to three source-analysis attempts, while visible and paused, before ranking. The lease renews only during that request and is revoked afterward, on playback, backgrounding or unmount. Cached descriptors carry forward; subsequent explicit generations can extend coverage. Failed/refused analysis retains metadata/history matching. Coverage refreshes after the batch rather than polling during browsing. The creator exposes an editable 1?100 track count, initially 30; the Length/count-versus-duration selector is removed. Backend duration contracts remain compatible with existing callers.
-
-## Creator presentation revision
-
-The redundant no-duplicates caption is removed; duplicate prevention remains a hard constraint. The source-analysis count appears in a contrasting panel directly after the preference options. A hammer with its striking face pointed down toward smaller shuffle arrows forms the creator badge. The arrows sit in the lower-right corner, tilted upward to the right, with no impact marks. It uses the theme surface with an orange outline. Generate immediately enters a dedicated busy state, changes the submit label, displays an accessible spinner and explains that matching may take a moment. Progress clears on success, errors and stale-result rejection through a finally block; generation does not show fabricated percentages.
-
-## Playlist sections and explicit-artist revision
-
-The overview separates the four automatic collections from saved playlists. Each saved playlist has an accessible action menu with a confirmed deletion; automatic collections cannot be deleted. Up to three included and three excluded artists can be entered independently. Included artists are alternatives; exclusions take priority, while genre becomes a preference and availability and other selected filters still apply. Artist names are treated as whole values, including names containing commas or slashes. When multiple artists are included, the generator cycles through available matches by artist before filling later rounds, while retaining weighted selection within each artist. General mixes retain the two-per-known-artist diversity cap. Empty generation results remove any previous preview and explain that no tracks match, leaving filters editable for a retry.
-
-Generation reports the sound-analysis step, then matching of the available sound, listening and metadata signals. These are actual stages, not percentages or a claim that unavailable analysis ran. The sound step may use cached features or be skipped when playback/visibility prevents analysis.
-
-## Analysis label and saved-playlist refinement
-
-The creator starts each visit with a compact explanation that preference analysis runs only when generating a playlist, without displaying a previous visit's count. Generation fills the count after the sound step; another generation resets the presentation while the new calculation runs. Source descriptors remain cached. Playlist subsection headings use a smaller italic face, with The Default Ones identifying the automatic collections. Saved-playlist menus use stable vertical positioning and provide Rename before Delete. Rename preserves identity, kind and ordered track IDs, rejects blank titles, supports cancellation and keeps errors in the dialog for retry.
-
-
-The analysis panel fits its content up to 650 px and the available screen width. Initial guidance invites generating a playlist to check preferences; completed results show only the acoustic coverage count, without repeating the guidance.
-
-
-## Multiple artist filters
-
-The creator allows one to three entries in each artist group. The original `includeArtist`/`excludeArtist` string fields remain supported; optional `includeArtists`/`excludeArtists` arrays supply additional whole names. Empty values are ignored, matching is normalized and case-insensitive, duplicates are deduplicated, and exclusions win if a name appears in both groups. A visible conflict notice explains that priority. In personalized generation, genre is a modest preference when artists are explicitly included; without included artists it remains a strict filter. Legacy filter-only requests retain their strict genre behavior. Other chosen filters still intersect with the artist rules; an empty match reports that the artist, genre and listening filters can be checked. The browser and Rust implementations apply the same artist rounds, including filter-only legacy requests, so fixed inputs and seeds remain reproducible.
-
-## Confirmed library identity
-
-Playlist artist matching and diversity use the resolved lead artist, while displayed credits remain original. Confirmed duplicate-song groups share listening affinity, freshness and heard-today cooldowns; every eligible session contributes once. Hard filters apply before choosing one available member of each group, preferring the user's chosen copy when eligible. Explicit Suggest less and favorites remain attached to their original tracks. Existing previews and saved playlists do not reorder when organization changes; saved-playlist cleanup is an explicit preview/apply/Undo operation.
