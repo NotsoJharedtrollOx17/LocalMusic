@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the version you used."
+type: software
+title: Local Music
+authors:
+  - family-names: Flores Azcona
+    given-names: Abraham Jhared
+version: 1.0.0
+date-released: 2026-11-16
+url: https://github.com/NotsoJharedtrollOx17/LocalMusic
+repository-code: https://github.com/NotsoJharedtrollOx17/LocalMusic
+license: MIT
+abstract: "Offline local music player for Android and Windows with playlists, equalizer, visualizers and listening recaps."

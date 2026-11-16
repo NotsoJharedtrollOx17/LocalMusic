@@ -1,3 +1,4 @@
+import { settleUI } from "./settleUI";
 import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
@@ -26,6 +27,7 @@ test("main journeys expose accessible controls at mobile width", async ({
       .toEqual([]);
   }
   await openSettings(page);
+  await settleUI(page);
   expect(
     (
       await new AxeBuilder({ page })

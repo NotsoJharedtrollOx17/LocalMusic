@@ -2,6 +2,7 @@ import { test, expect, type Page, type Locator } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { taggedWav } from "./fixtures";
 import { openSettings, equalizerDialog } from "./navigationHelpers";
+import { settleUI, stableBounds } from "./settleUI";
 
 async function library(page: Page) {
   await page.goto("/");
@@ -38,17 +39,7 @@ async function player(page: Page) {
   return page.getByRole("dialog", { name: "Now playing", exact: true });
 }
 async function settle(page: Page) {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter(
-          (animation) =>
-            animation.effect?.getComputedTiming().iterations !== Infinity,
-        )
-        .map((animation) => animation.finished.catch(() => {})),
-    ),
-  );
+  await settleUI(page);
 }
 async function aligned(surface: Locator) {
   const metrics = await surface.evaluate((node) => {
@@ -347,8 +338,8 @@ test("privacy pending and failure states recover while menus and queue actions r
       }
       return request;
     };
+    document.querySelector<HTMLButtonElement>('.action-menu [role="menuitemcheckbox"]')!.click();
   });
-  await privacy.click();
   await expect(privacy).toHaveAttribute("aria-checked", "true");
   await expect(privacy).toBeDisabled();
   await expect(privacy).toHaveAttribute("aria-busy", "true");
@@ -470,6 +461,10 @@ test("playlist headings share the creation toolbar and detail metadata wraps wit
     for (const width of [1280, 640, 600, 390, 320]) {
       await page.setViewportSize({ width, height: 844 });
       await settle(page);
+      await expect(heading).toBeVisible();
+      await expect(create).toBeVisible();
+      await stableBounds(heading);
+      await stableBounds(create);
       const h = (await heading.boundingBox())!,
         b = (await create.boundingBox())!;
       expect(

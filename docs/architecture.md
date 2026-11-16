@@ -1,46 +1,38 @@
 # Architecture
 
-The application has a React/TypeScript frontend and two runtime adapters. In Tauri, commands call the shared Rust core and the platform player. In a browser, a separate preview adapter stores user-selected audio blobs and a playback journal in IndexedDB and plays through an HTML audio element. The browser preview has no Android background guarantees.
+React/TypeScript owns presentation and interactions. Native commands bridge to the Rust core and platform audio worker. Browser preview is a separate IndexedDB/Web Audio adapter implementing corresponding contracts; it does not establish native background reliability.
 
-The music-core crate owns SQLite catalog/search, playlists, settings, history import and recap aggregation. Playback snapshots are separate from catalog pages. Lists are fetched in pages of 60; queue and playlist items resolve by stable track ID. The React Library contains Songs, Albums, Artists and Playlists tabs; Your Recap is the other primary navigation destination.
+## Ownership
 
-Windows playback runs on a dedicated Rust worker with Rodio. Android playback lives in a Media3 foreground service, controlled through the native-music Tauri plugin. The service persists its queue and writes checkpoints to its own SQLite outbox while the WebView is suspended. Rust imports absolute session totals and intervals idempotently, then acknowledges committed outbox IDs.
+| Subsystem | Authority |
+| --- | --- |
+| Catalog, organization, search, playlists, Recap | Native Rust Store and music-core domain rules |
+| Windows playback | Rust worker, Rodio decoder/mixer, physical or paced silent output |
+| Android playback | Media3 foreground service and durable native journal |
+| Browser preview | IndexedDB, audio element, worklet and workers |
+| Windows window/menu lifecycle | Validated Rust commands and fixed local window labels |
+| UI, gestures, focus, loading/error feedback | Shared React controllers and presentation components |
 
-The browser preview generates original sample tones only after an explicit user action. Those sessions are excluded from recap. Imported audio is processed locally; app features make no remote requests.
+## Catalog and rendering
 
-Native audio identities use size and bounded content fingerprints, avoiding full-library hashing during import. A new URI/path for the same fingerprint updates source aliases without changing listening IDs. This is a bounded fingerprint rather than a guaranteed whole-file identity; remasters with different content remain separate.
+The catalog index prepares complete visible metadata and group membership at one revision before Library readiness. It omits private source paths and embedded cover payloads. React publishes counts/groups together, coalesces reads and rejects obsolete replies. Collection ordering and filtered actions use stable IDs and original playlist positions.
 
-The four supplied images guide typography, spacing, navigation and orange/charcoal motifs. Original seeded geometry fills missing artwork. The static recap orbit is decorative mathematics; it makes no acoustic or psychological claim.
+Rows are virtualized against the phone pane or desktop window; metadata pagination does not limit ready Library scrolling. Overscan is bounded. Separate artwork requests resolve row/card/player variants and share decoded URLs with bounded concurrency/cache accounting. The decoded-art cache budget does not bound process or GPU memory.
 
-Setup and validation status are recorded in [verification.md](verification.md). The [developer guide](developer-guide.md) maps the current code and change workflow; the [implementation plan](implementation-plan.md) preserves the original acceptance gates and approved revisions.
+Phone navigation retains at most neighboring presentation panes under one controller. Inactive panes are inert and hidden from accessibility. Header, tab strip and mini-player stay outside the moving content track. Stable row anchors restore scrolling. Presentation subscriptions isolate transport progress from Library card rerenders.
 
-Recap sharing uses one canvas renderer for both the preview and PNG download. The frontend waits for self-hosted fonts, lays out the selected aspect ratio and fits long music names. Live exports flush current listening first; saved snapshots retain their frozen metrics. Privacy revision is checked before preview and again before saving. Native export commands return a saved/canceled boolean, and the Windows save chooser is attached to the main window with a PNG filter.
+## Playback, journals and multiple windows
 
-Startup reads persisted preferences before mounting React. A validated local theme hint sets the HTML background before module loading; actual settings replace the hint. On desktop the native window remains hidden until React commits the themed shell, then its WebView background is matched and the window revealed. Android retains its normal window lifecycle. Library group pages keep independent Album/Artist data, request versions and loading/error states; pending reads never borrow another tab’s cards or report empty results.
+One native player owns queue and playback time, regardless of open windows. Windows source consumption determines position and eligible history. Android writes checkpoints to its private durable outbox while the WebView is suspended; Rust imports and acknowledges them idempotently. Pauses, buffering and seeked-over intervals never add listening time.
 
-`App.tsx` now composes one-component view files under `src/app/`. A typed context connects those views to the coordinator and its state/read/action hooks. Shared controls live under `src/components/`; motion, gestures and overlay focus live under `src/ux/`. Rendering does not own the playback clock. Player and queue reuse one surface and transport footer; Escape and native Android Back consume the newest interaction layer. Search retains the compact player and its previous navigation state.
+Windows companions mount focused presentation controllers, not a second Library controller. Revisioned snapshots and invalidations synchronize playback, catalog, favorites, playlists, feedback, privacy and sound. Settings changes are field updates against current authoritative values. Child Close dismisses; explicit Return routes back to main. Exactly one visualizer analysis/render lease owns the current session; stale cleanup cannot stop a new owner.
 
-Catalog removal is visibility, with a separate SQLite table and a backwards-compatible browser flag. Source audio, source aliases, listening sessions, snapshots and playlist membership are retained. Browse/search/generation and new recap playback exclude hidden IDs; recap history retains its evidence. Reimport or Undo restores visibility.
+## Audio processing and analysis
 
-Android sound processing and private preferences belong to the Media3 service. Sharing grants temporary access to selected content URIs through the OS chooser. Desktop sharing saves source copies and browser sharing uses capability checks; outcomes distinguish opening a chooser from saving or cancellation.
+Ordinary EQ uses version-two configuration with the retained ten-slot compatibility representation: neutral slot zero, nine editable gains, preamp zero. Atomic migration removes retired personal profiles and preserves ordinary presets/Custom. EQ crossfades coefficient updates and retains channel/limiter behavior.
 
-The native Rust shell is split into an entry point (`lib.rs`), shared startup state (`state.rs`), feature command modules (`commands/`) and a playback bridge (`playback/`). The bridge dispatches to the desktop worker or Android service, and its Android module imports the pending journal before acknowledging committed IDs. IPC names and serialized contracts remain independent of Rust module paths. `music-core` owns domain persistence and rules; the shell owns platform integration.
+Visualizer taps post-EQ/limiter PCM without waiting in audio callbacks. Rust/Kotlin/browser workers reduce bounded samples into display frames; Canvas 2D renders imperatively with bounded resolution, adaptive 60/30 fps and stale-generation rejection. Its 2048-point Blackman FFT differs from the source-analysis descriptor below. Samples/frames are transient, and visualizer reads bypass history-bearing snapshots.
 
-## Sound processing
+Playlist acoustic analysis independently decodes source audio before EQ, only during explicit generation while visible and paused. It stores normalized descriptors, never excerpts. History, metadata, privacy and feedback revisions define the generation snapshot. See [the methodology](personalized-playlists.md).
 
-React owns the nine-band Equalizer under `src/sound/`, with immediate slider drafts, serialized configuration updates and inline runtime/error status. Library and player menus open it directly. The app-scoped controller retains pending edits across dialog transitions; closing returns to the opener.
-
-Windows wraps Rodio sources with `sound/source.rs`; `sound/engine.rs` prepares coefficient banks outside the callback. Core Audio notifications and stream errors signal output changes. The worker preserves the queue and accurate listening checkpoints; Retry recreates output without automatically starting music.
-
-Android uses `SoundEngine`, `SoundAudioProcessor`, `SoundDsp` and Media3's renderer/sink pair. Software PCM16 output, internal double precision, disabled float/offload/passthrough paths and the durable playback journal remain. Battery and latency implications require separate measurements. Browser uses a media-element source and AudioWorklet graph, with truthful activation/output errors and unprocessed fallback after processor failure.
-
-All adapters apply the ordinary EQ to both channel banks, retaining existing mono/multichannel handling, RBJ peaking filters (Q=1.4), a 20 ms configuration crossfade and linked peak limiter. Music has no automatic global attenuation; manual preamp remains zero. The limiter controls digital peaks, not hearing safety.
-
-EQ-only configuration version 2 uses the existing `sound-v1` storage key in Windows SQLite, Android private preferences and browser IndexedDB. Ten compatibility slots remain: neutral hidden 31 Hz followed by nine editable bands. Version-one migration reads only ordinary settings and discards retired profile fields, even if malformed. Ordinary preset/Custom state is preserved; fresh installs use Normal. Atomic persistence precedes processing; write failures expose retryable errors and keep EQ processing inactive. Repeated migration is idempotent. There are no calibration commands, tone/sample players, profile workers or per-ear processing paths. Historical feature plans and release notes remain archival references.
-
-
-## Calendar recaps
-
-React owns timeframe/date navigation and presentation; Rust owns native calendar aggregation, with a matching browser adapter. MusicApi.recap accepts { kind, anchorDate }, where kind is week/month/year and anchorDate is a local ISO date. Boundaries follow the device IANA zone, use inclusive starts/exclusive ends, and resolve midnight gaps/overlaps consistently. Recap schema 2 returns a canonical period and daily buckets for weeks/months or monthly buckets for years. Listening minutes split at boundaries; qualified plays stay in the session's starting period. Monotonic playback accounting and the Android journal are unchanged.
-
-The optional recapPeriod preference defaults to year. Existing snapshot JSON stays unchanged; schema-one yearly values normalize in memory when read. New snapshots freeze period/buckets. Export refreshes the matching period and verifies privacy revision before preview and saving, without exporting exact timestamps or playback IDs.
+The [library rules](library-and-playback.md), [Recap contract](recap-methodology.md), [source map](developer-guide.md) and [verification](verification.md) contain operational details. No application account, metadata service or inference model is required.

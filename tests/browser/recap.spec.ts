@@ -3,6 +3,7 @@ import { openSettings } from "./navigationHelpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
+import { settleUI } from "./settleUI";
 
 test("social recap preview is the saved image and snapshots select their own year", async ({
   page,
@@ -107,6 +108,7 @@ test("social recap preview is the saved image and snapshots select their own yea
   await share.getByRole("button", { name: "Save PNG", exact: true }).click();
   await (await feedWait).saveAs("artifacts/recap-design-feed.png");
   await page.setViewportSize({ width: 390, height: 844 });
+  await settleUI(page);
   expect(
     (
       await new AxeBuilder({ page })

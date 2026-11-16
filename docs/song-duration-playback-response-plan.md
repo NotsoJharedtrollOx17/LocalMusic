@@ -1,3 +1,0 @@
-# Song duration clutter and playback selection response
-
-Remove individual song-duration labels from shared track rows, organization review and Track Details; preserve playback seek timing and unavailable/removed statuses. Refresh authoritative native playback after Play/Pause, queue play and Previous/Next through the existing ordered update mechanism, so stale polls cannot overwrite the latest command and selection does not wait for the periodic poll. Validate frontend and swipe/tap regressions, build Android, and record remaining native timing acceptance separately. Keep version 0.15.0 and the UI audit branch.

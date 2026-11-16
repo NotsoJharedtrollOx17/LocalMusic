@@ -202,8 +202,9 @@ test("delayed period reads never replace a newer selection and failed loading is
   const poster = await page
     .locator(".orbit-poster canvas")
     .evaluate((c: HTMLCanvasElement) => c.toDataURL());
-  await holdNextTrackRead(page);
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
+  // Gate every old selection's final history read, rather than a catalog read
+  // shared with startup/automatic-collection preparation.
+  await holdNextTrackRead(page, "recap", "Weekly");
   await expect
     .poll(() =>
       page.evaluate(
@@ -225,22 +226,29 @@ test("delayed period reads never replace a newer selection and failed loading is
       .locator(".orbit-poster canvas")
       .evaluate((c: HTMLCanvasElement) => c.toDataURL()),
   ).toBe(poster);
-  await page.getByRole("button", { name: "Monthly", exact: true }).click();
+  await page.evaluate(() => {
+    (window as unknown as { stopHoldingCatalog: () => void }).stopHoldingCatalog();
+    Array.from(document.querySelectorAll("button")).find(
+      (node) => node.textContent?.trim() === "Monthly",
+    )!.click();
+  });
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await release(page);
   await expect(page.locator(".orbit-poster strong")).toHaveText("October 2026");
   await expect(page.locator(".recap-total strong")).toHaveText("3");
   await page.evaluate(() => {
-    const original = IDBObjectStore.prototype.get;
-    IDBObjectStore.prototype.get = function (...args) {
-      if (this.name === "settings" && args[0] === "catalog-revision") {
-        IDBObjectStore.prototype.get = original;
+    const original = IDBObjectStore.prototype.getAll;
+    IDBObjectStore.prototype.getAll = function (...args) {
+      if (this.name === "intervals") {
+        IDBObjectStore.prototype.getAll = original;
         throw new Error("Injected recap read failure");
       }
       return original.apply(this, args);
     };
+    Array.from(document.querySelectorAll("button")).find(
+      (node) => node.textContent?.trim() === "Weekly",
+    )!.click();
   });
-  await page.getByRole("button", { name: "Weekly", exact: true }).click();
   await expect(page.locator(".year-page [role=alert]")).toHaveText(
     "Injected recap read failure",
   );

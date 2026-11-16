@@ -1,3 +1,4 @@
+import { settleUI } from "./settleUI";
 import { taggedWav } from "./fixtures";
 import { openSettings } from "./navigationHelpers";
 import { seedInlineCatalog } from "./inlineSearchFixture";
@@ -586,6 +587,7 @@ for (const width of [1280, 390]) {
       });
       await filter.click();
       await expect(input).toHaveCount(0);
+      await settleUI(page);
       const anchor = await filter.boundingBox();
       const menu = await page.locator(".action-menu").boundingBox();
       expect(

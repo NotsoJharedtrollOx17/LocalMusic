@@ -186,7 +186,7 @@ test("frequency colors and every scene follow live light/dark theme changes with
         )
         .toEqual(theme === "light" ? [250, 248, 244] : [20, 22, 21]);
       if (name === "Spectrum") {
-        const colors = await view.locator("canvas").evaluate((node) => {
+        const colors = () => view.locator("canvas").evaluate((node) => {
           const c = node as HTMLCanvasElement,
             ctx = c.getContext("2d")!;
           const sample = (band: number) =>
@@ -200,8 +200,12 @@ test("frequency colors and every scene follow live light/dark theme changes with
             );
           return [sample(0), sample(63)];
         });
-        expect(colors[0][0]).toBeGreaterThan(colors[0][2]);
-        expect(colors[1][2]).toBeGreaterThan(colors[1][0]);
+        // The background can be ready before the initial scene rise-in has
+        // painted the two-pixel silent treble bar at this sample location.
+        await expect.poll(async () => {
+          const sampled = await colors();
+          return sampled[0][0] > sampled[0][2] && sampled[1][2] > sampled[1][0];
+        }).toBe(true);
       }
       await page.screenshot({
         path: `artifacts/visualizer-refined-${theme}-${name.split(" ")[0]}.png`,
@@ -292,6 +296,20 @@ test("reduced motion, narrow layout, accessible controls and remembered mode wit
     });
   }
   await view.getByRole("button", { name: "XMB wave", exact: true }).click();
+  // Preference persistence is asynchronous. Confirm its transaction before
+  // deliberately destroying the document with a hard reload.
+  await expect.poll(() => page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("local-music-v1");
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    return new Promise<string | undefined>((resolve, reject) => {
+      const request = db.transaction("settings").objectStore("settings").get("preferences");
+      request.onsuccess = () => { db.close(); resolve(request.result?.visualizerMode); };
+      request.onerror = () => { db.close(); reject(request.error); };
+    });
+  })).toBe("xmb");
   expect(
     await view.evaluate((node) => node.scrollWidth <= node.clientWidth),
   ).toBe(true);
