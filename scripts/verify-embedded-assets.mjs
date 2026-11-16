@@ -15,10 +15,18 @@ assert(args["--binary"] && args["--build"] && args["--output"],
   "Use --binary FILE --build TARGET/release/build --output REPORT.json");
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const binary = readFileSync(args["--binary"]), encoded = new Map();
-const stats = { directories: [], scanned: 0, embedded: 0, hashes: [] };
-for (const crate of readdirSync(args["--build"]).filter((n) => n.startsWith("local-music-"))) {
-  const directory = join(args["--build"], crate, "out", "tauri-codegen-assets");
-  if (!existsSync(directory)) continue;
+const stats = { directories: [], scanned: 0, embedded: 0, hashes: [], buildEntries: readdirSync(args["--build"]) };
+const directories = [];
+function discover(root, depth = 0) {
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const path = join(root, entry.name);
+    if (entry.name === "tauri-codegen-assets") directories.push(path);
+    else if (depth < 3) discover(path, depth + 1);
+  }
+}
+discover(args["--build"]);
+for (const directory of directories) {
   stats.directories.push(directory);
   for (const file of readdirSync(directory).filter((n) => /\.(js|css)$/.test(n))) {
     const data = readFileSync(join(directory, file));
