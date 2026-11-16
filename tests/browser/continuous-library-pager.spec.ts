@@ -136,16 +136,25 @@ for (const count of fixture.sizes) {
     });
     await writeFile(
       `artifacts/continuous-library-pager/browser-${count}-metrics.json`,
-      JSON.stringify({
-        count,
-        readyObservationMsSinceNavigation: readyObservationMs,
-        metadata: await page.evaluate(() => (window as unknown as {
-          catalogProbe: unknown;
-        }).catalogProbe),
-        mountedRows: await pane(page).locator(".track-row").count(),
-        panes: await page.locator(".library-pane").count(),
-        metadataReadsDuringReadyScrolling: (await reads()) - initialReads,
-      }, null, 2),
+      JSON.stringify(
+        {
+          count,
+          readyObservationMsSinceNavigation: readyObservationMs,
+          metadata: await page.evaluate(
+            () =>
+              (
+                window as unknown as {
+                  catalogProbe: unknown;
+                }
+              ).catalogProbe,
+          ),
+          mountedRows: await pane(page).locator(".track-row").count(),
+          panes: await page.locator(".library-pane").count(),
+          metadataReadsDuringReadyScrolling: (await reads()) - initialReads,
+        },
+        null,
+        2,
+      ),
     );
   });
 }
@@ -161,6 +170,12 @@ test("a drag exposes real neighboring cards, keeps the XMB strip fixed and never
   await panel.dispatchEvent("pointermove", pointer(200));
   const neighbor = page.locator('.library-pane[data-pane="albums"]');
   await expect(neighbor).toHaveAttribute("inert", "");
+  const currentBounds = (await pane(page).boundingBox())!;
+  const neighborBounds = (await neighbor.boundingBox())!;
+  expect(neighborBounds.x - currentBounds.x - currentBounds.width).toBeCloseTo(
+    16,
+    0,
+  );
   const bounds = (await neighbor.locator(".album-card").first().boundingBox())!;
   expect(bounds.x).toBeLessThan(390);
   expect(bounds.x).toBeGreaterThan(200);

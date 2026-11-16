@@ -118,7 +118,14 @@ function Pane({
       className="library-pane"
       data-pane={kind}
       data-active={active}
-      style={{ transform: `translateX(${position * 100}%)` }}
+      style={{
+        transform:
+          position === 0
+            ? "translateX(0)"
+            : position < 0
+              ? "translateX(calc(-100% - var(--library-pane-gap)))"
+              : "translateX(calc(100% + var(--library-pane-gap)))",
+      }}
       inert={!active}
       aria-hidden={!active || undefined}
       role={active && !model.group ? "tabpanel" : undefined}

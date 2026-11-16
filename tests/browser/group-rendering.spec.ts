@@ -12,6 +12,12 @@ test("warmed phone groups render a bounded window and deep Back restores the ori
       "data-catalog-total",
       "130",
     );
+    if (name === "Artists") {
+      const cards = page.locator("#library-content .album-card");
+      const first = (await cards.nth(0).boundingBox())!;
+      const second = (await cards.nth(1).boundingBox())!;
+      expect(second.y - first.y - first.height).toBeLessThanOrEqual(1);
+    }
     expect(
       await page.locator("#library-content .album-card").count(),
     ).toBeLessThan(60);
@@ -42,7 +48,9 @@ test("warmed phone groups render a bounded window and deep Back restores the ori
       .filter({ has: page.locator("strong", { hasText: title }) });
     const key = await card.getAttribute("data-group-key");
     await card.click();
-    await expect(page.locator("#library-content .collection-hero")).toBeVisible();
+    await expect(
+      page.locator("#library-content .collection-hero"),
+    ).toBeVisible();
     await page.locator(".group-back").click();
     await expect(
       page.locator(`[data-group-key=${JSON.stringify(key)}]`),

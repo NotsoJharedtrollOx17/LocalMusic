@@ -886,6 +886,7 @@
 }
 :root[data-layout="phone"] .catalog-virtual-row.artists {
   grid-template-columns: minmax(0, 1fr);
+  padding-bottom: 0;
 }
 
 :root[data-layout="phone"]
@@ -974,6 +975,7 @@
   top: auto;
 }
 .library-pager {
+  --library-pane-gap: 16px;
   flex: 1;
   min-height: 0;
   position: relative;
@@ -982,10 +984,12 @@
 .library-pager-track {
   position: absolute;
   inset: 0;
+  right: calc(-1 * var(--library-pane-gap));
 }
 .library-pane {
   position: absolute;
   inset: 0;
+  right: var(--library-pane-gap);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
