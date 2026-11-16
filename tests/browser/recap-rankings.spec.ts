@@ -554,3 +554,79 @@ test("missing and corrupt covers fall back and a rendering failure can retry", a
     dialog.getByRole("button", { name: "Save PNG", exact: true }),
   ).toBeEnabled();
 });
+
+test("export preview stays bounded and feedback expires without shifting actions", async ({
+  page,
+}) => {
+  await seed(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => true,
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        (window as any).sharedImage = data.files?.[0].type;
+      },
+    });
+  });
+  await holdArtwork(page);
+  await page.getByRole("button", { name: "Export image", exact: true }).click();
+  const dialog = page.getByRole("dialog"),
+    save = dialog.getByRole("button", { name: "Save PNG", exact: true });
+  await expect(dialog.locator(".image-loading")).toBeVisible();
+  const loadingBounds = (await save.boundingBox())!;
+  await expect(dialog.locator(".spinner")).toHaveCSS(
+    "animation-name",
+    "import-spin",
+  );
+  const firstRotation = await dialog
+    .locator(".spinner")
+    .evaluate((el) => getComputedStyle(el).transform);
+  await page.waitForTimeout(150);
+  expect(
+    await dialog
+      .locator(".spinner")
+      .evaluate((el) => getComputedStyle(el).transform),
+  ).not.toBe(firstRotation);
+  await page.evaluate(() => (window as any).releaseCovers());
+  await expect(save).toBeEnabled({ timeout: 30000 });
+  expect(
+    Math.abs((await save.boundingBox())!.y - loadingBounds.y),
+  ).toBeLessThanOrEqual(1);
+  const before = (await save.boundingBox())!;
+  const stage = (await dialog.locator(".recap-preview-stage").boundingBox())!;
+  const preview = (await dialog.locator(".recap-image-preview").boundingBox())!;
+  expect(preview.height).toBeLessThanOrEqual(stage.height + 1);
+  expect(preview.width).toBeLessThanOrEqual(stage.width + 1);
+  await expect(save).toBeInViewport();
+  await dialog.getByRole("button", { name: /^Feed/ }).click();
+  await expect(save).toBeEnabled({ timeout: 30000 });
+  expect(
+    Math.abs((await save.boundingBox())!.y - before.y),
+  ).toBeLessThanOrEqual(1);
+  const download = page.waitForEvent("download");
+  await save.click();
+  await download;
+  await expect(dialog.locator(".recap-save-toast")).toContainText(
+    "Download started",
+  );
+  await expect(dialog.locator(".recap-save-toast")).toHaveCount(0, {
+    timeout: 5000,
+  });
+  expect(
+    Math.abs((await save.boundingBox())!.y - before.y),
+  ).toBeLessThanOrEqual(1);
+  await dialog
+    .getByRole("button", { name: "Share image", exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).sharedImage))
+    .toBe("image/png");
+  await expect(dialog.locator(".recap-save-toast")).toHaveCount(0);
+  await page.screenshot({
+    path: "artifacts/branding-export/browser-preview.png",
+  });
+});

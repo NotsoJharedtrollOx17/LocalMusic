@@ -1,3 +1,4 @@
+import brandMarkUrl from "./brand/mark.svg";
 import { periodRequest, periodLabel, bucketLabel } from "./recap/periods";
 import { prepareRecapRankings, throwIfAborted } from "./recap/exportArtwork";
 import { drawRankings } from "./recap/drawRankings";
@@ -116,6 +117,9 @@ export async function renderRecapCard(
     document.fonts.load("500 28px Inter"),
   ]);
   const rankings = await prepareRecapRankings(recap, signal);
+  const brandImage = new Image();
+  brandImage.src = brandMarkUrl;
+  await brandImage.decode();
   throwIfAborted(signal);
   const dimensions = cardDimensions(format);
   const canvas = document.createElement("canvas");
@@ -273,14 +277,13 @@ export async function renderRecapCard(
     w,
     muted,
   );
-  text(
-    es ? "local. / TU MÚSICA. TU RESUMEN." : "local. / YOUR MUSIC. YOUR RECAP.",
-    pad,
-    h - 38,
-    22,
-    w,
-    ink,
-  );
+  ctx.drawImage(brandImage, pad, h - 62, 42, 42);
+  ctx.fillStyle = ink;
+  ctx.font = '700 28px "Space Grotesk"';
+  ctx.fillText("local", pad + 51, h - 30);
+  const labelWidth = ctx.measureText("local").width;
+  ctx.fillStyle = "#ff6816";
+  ctx.fillText(".", pad + 51 + labelWidth, h - 30);
   throwIfAborted(signal);
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
@@ -289,4 +292,49 @@ export async function renderRecapCard(
       "image/png",
     ),
   );
+}
+
+export type ImageExportCapabilities = {
+  save: "gallery" | "picker" | "download";
+  share: boolean;
+};
+export type ImageShareResult = "opened" | "canceled" | "unavailable";
+export async function imageExportCapabilities(): Promise<ImageExportCapabilities> {
+  if (native)
+    return invoke<ImageExportCapabilities>("image_export_capabilities");
+  return {
+    save: "download",
+    share:
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function",
+  };
+}
+export async function shareImage(
+  blob: Blob,
+  name: string,
+): Promise<ImageShareResult> {
+  if (native)
+    return invoke<ImageShareResult>("share_recap_image", {
+      name,
+      bytes: Array.from(new Uint8Array(await blob.arrayBuffer())),
+    });
+  const file = new File([blob], name, { type: "image/png" });
+  if (!navigator.canShare?.({ files: [file] })) return "unavailable";
+  try {
+    await navigator.share({ files: [file] });
+    return "opened";
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError")
+      return "canceled";
+    throw error;
+  }
+}
+
+export type ImageSaveResult = "saved" | "canceled" | "download-started";
+export async function saveImage(
+  blob: Blob,
+  name: string,
+): Promise<ImageSaveResult> {
+  const saved = await saveBlob(blob, name);
+  return saved === false ? "canceled" : native ? "saved" : "download-started";
 }

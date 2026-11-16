@@ -1,4 +1,5 @@
-import { Music2, Shield } from "lucide-react";
+import BrandMark from "../brand/BrandMark";
+import { Shield } from "lucide-react";
 import { native } from "../api";
 import { useMusicAppContext } from "./MusicAppContext";
 import { useLayoutEffect, useRef } from "react";
@@ -49,7 +50,7 @@ export default function LibraryBrand() {
         aria-label={t.library}
       >
         <span className="brand-mark">
-          <Music2 size={22} />
+          <BrandMark />
         </span>
         <span>
           local<span className="brand-period">.</span>

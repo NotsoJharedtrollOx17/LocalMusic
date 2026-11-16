@@ -92,6 +92,8 @@ pub fn run() {
             commands::playback::set_repeat,
             commands::playback::set_excluded,
             commands::playback::reorder_queue,
+            commands::sharing::image_export_capabilities,
+            commands::sharing::share_recap_image,
             commands::sharing::export_file
         ])
         .run(context)

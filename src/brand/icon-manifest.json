@@ -1,0 +1,7 @@
+{
+  "default": "../../public/icon.svg",
+  "bg_color": "#faf8f4",
+  "android_fg": "../../artifacts/brand-source/android-mark.svg",
+  "android_fg_scale": 100,
+  "android_monochrome": "../../artifacts/brand-source/android-mark.svg"
+}

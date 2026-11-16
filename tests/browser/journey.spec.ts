@@ -56,7 +56,7 @@ test("import, actual listening, seek, recap and privacy-safe exports", async ({
   expect(image.readUInt32BE(16)).toBe(2160);
   expect(image.readUInt32BE(20)).toBe(3840);
   await png.saveAs("artifacts/recap-story.png");
-  await expect(share.getByRole("status")).toContainText("Image saved");
+  await expect(share.getByRole("status")).toContainText("Download started");
   const confirmation = share.locator(".recap-save-toast");
   await expect(confirmation).toBeInViewport();
   await share.locator(".modal-head").scrollIntoViewIfNeeded();
