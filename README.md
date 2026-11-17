@@ -2,34 +2,74 @@
 
 [![Verify](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/workflows/ci.yml)
 
-An offline music player for Android and Windows, with local playlists, an equalizer, audio-reactive visualizers and listening summaries. No account, streaming subscription or downloaded recommendation model is required. English and Spanish; light, dark and system themes.
+**Your files. Your music. Your recap.**
+
+I built Local Music for the music I already own—and because I missed players that made a local collection fun to explore. Give me a good library, a playlist worth revisiting, and some frequency bars dancing along. That's the idea here.
+
+It's a personal project for **Android and Windows**: offline playback, playlists, an equalizer, three visualizers and a weekly, monthly or yearly **Your Recap**. A little Samsung Music in the phone flow, a little PSP XMB in the tabs, and plenty of orange. No account or streaming subscription. English and Spanish, with light, dark and system themes.
+
+## A look around
+
+These are actual native builds: Windows on the left and Android on a Galaxy Note10+ on the right.
+
+<table>
+  <tr>
+    <th>Windows · Your library, room to breathe</th>
+    <th>Android · Music within reach</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/images/windows-library.png" width="720" alt="Local Music on Windows showing the Songs library, album artwork, search and playback controls."></td>
+    <td valign="top"><img src="docs/images/android-library.png" width="260" alt="Local Music on a Galaxy Note10+ showing the Songs library, tab carousel and bottom mini-player."></td>
+  </tr>
+</table>
+
+<details>
+<summary>Take a closer look: Now Playing and Equalizer</summary>
+
+<table>
+  <tr>
+    <th>Windows · A player of its own</th>
+    <th>Android · Tune it your way</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/images/windows-player.png" width="420" alt="The separate Windows Now Playing window with large album artwork, queue, seek and playback controls."></td>
+    <td valign="top"><img src="docs/images/android-equalizer.png" width="260" alt="The Android Equalizer with its preset selector and frequency sliders."></td>
+  </tr>
+</table>
+
+The player can stay beside your library on Windows. On the phone, the mini-player stays close while you browse. Album artwork belongs to its respective owners; the Android mini-player shows original test audio used during release checks.
+
+</details>
 
 ## Get the app
 
-Download published packages from [GitHub Releases](https://github.com/NotsoJharedtrollOx17/LocalMusic/releases): Windows x64 installer/portable ZIP and Android ARM64 APK. Compare package hashes with the release's SHA256SUMS. Windows packages are unsigned. Android production releases use the permanent release certificate; earlier debug-signed installations cannot be updated in place with that certificate. Back up and review app data before switching to a clean installation.
+Grab a build from [GitHub Releases](https://github.com/NotsoJharedtrollOx17/LocalMusic/releases): a Windows x64 installer or portable ZIP, or the Android ARM64 APK. Compare your download with the release's SHA256SUMS.
 
-Windows requires WebView2; the installer may need connectivity to obtain it if it is absent. Android minimum API is 26 (Android 8). GitHub packages are direct downloads, not store listings. Exact build/device results and pending manual gates are in [verification](docs/verification.md).
+Windows packages are unsigned and need WebView2; the installer may need connectivity to obtain it. Android requires Android 8/API 26 or later. These are direct downloads, not store listings.
 
-## What it does
+**Coming from a debug build?** The production Android app uses a permanent release certificate, so it cannot update an earlier debug-signed installation in place. Back up and review your app data before switching to a clean installation. The [verification record](docs/verification.md) lists the builds and devices actually checked.
 
-- **Library:** Import local audio, browse complete Songs/Albums/Artists collections, filter the current view, and organize lead-artist credits, reviewed duplicate songs and equivalent albums without rewriting tags or deleting files.
-- **Playback:** Mini/full player, queue editing, seek, shuffle, repeat and favorites. Android Media3 owns background playback. Windows can consume audio silently when no output device exists; that playback counts toward history.
-- **Playlists:** Four automatic collections, manual lists and explicit Familiar/Balanced/Explore generation. Suggestions combine eligible listening, metadata and available source-audio descriptors; reversible Suggest less feedback affects future generations. Source analysis runs only when generating, while visible and paused.
-- **Sound and visuals:** Nine-band Equalizer with live Custom saving, plus Spectrum, Geometry and XMB waves driven by post-EQ audio. Windows supports detached player/queue, visualizer and equalizer windows and a native menu bar.
-- **Your Recap:** Current calendar week/month/year, real history coverage, top songs/artists/albums, artwork and an explicitly saved top-ten playlist. Privacy-checked Story/Feed PNGs have stable previews, one-tap Android 10+ Gallery saving and system sharing. Opening a chooser does not publish to social media.
-- **Phone interaction:** Complete prepared metadata with bounded rendered rows, adjacent-page content swipes, left-anchored tab carousel, selection actions and a persistent mini-player.
+## What you can do
 
-See [usage](docs/usage.md), [playlist methodology](docs/personalized-playlists.md) and [Recap/privacy rules](docs/recap-methodology.md). Adapt Sound is no longer part of the application. Recommendations describe broad spectral resemblance, not AI mood/genre recognition.
+- **Find that one song.** Browse Songs, Albums and Artists, or search right inside the view you're using. Clean up collaboration credits, review duplicate songs and link equivalent albums while keeping your files and tags intact.
+- **Make the next mix.** Build a playlist yourself, use the four automatic collections, or try Familiar, Balanced or Explore. Suggestions draw on your listening, metadata and available sound descriptors. “Suggest less” is reversible, and audio analysis runs only when you generate a mix, while playback is paused and the app is visible.
+- **Bring back the visualizers.** Spectrum bars, the Origin of Symmetry geometry and XMB waves respond to the music. There's also a nine-band Equalizer with presets and a saved Custom setting. On Windows, the player, visualizer and equalizer can each have their own window.
+- **See what stayed on repeat.** Your Recap covers the current week, month or year, with top songs, artists and albums, artwork and honest history coverage. Save the top ten as a playlist or export a Story/Feed PNG. Android 10+ supports Gallery saving and system sharing; you choose the destination.
+- **Keep listening.** Edit the queue, mark favorites, shuffle, repeat and use the mini-player while browsing. Android supports background playback. On Windows, playback keeps advancing even without an audio output—and that time still counts toward your history.
 
-## Privacy and data
+Curious how the mixes or counts work? The [usage guide](docs/usage.md), [playlist methodology](docs/personalized-playlists.md) and [Recap rules](docs/recap-methodology.md) explain them. The recommendation system is an explainable local heuristic, not a mood-reading model.
 
-Music, metadata, feedback, acoustic descriptors and history stay local. The app does not upload listening data or source audio. Optional browser sample audio is original and excluded from Recap. PNG exports contain display names, artwork and calendar coverage, not source paths, exact listening timestamps, device IDs or private sessions. Sharing hands the image to a destination you choose.
+## Your collection stays yours
 
-History deletion removes listening-derived influence and snapshots while retaining favorites, explicit recommendation preferences, source descriptors and music. Local library organization is reversible. See [library/accounting rules](docs/library-and-playback.md).
+Your music, metadata, feedback, sound descriptors and listening history stay on your device. Local Music doesn't upload your listening data or source audio. Recap images contain display names, artwork and calendar coverage; file paths, exact listening timestamps, device IDs and private sessions stay out of them. Sharing hands the image to the app you choose.
 
-## Develop and verify
+Deleting history clears its influence on suggestions and removes saved Recap snapshots. Your music, favorites, explicit suggestion preferences and sound descriptors remain. Library organization is reversible. Browser sample audio is original and excluded from Recap. The details are in [library and listening rules](docs/library-and-playback.md).
 
-Use Node 24, Rust stable and the appropriate native platform tools. Android CI uses JDK 21, SDK 36 and NDK 29.0.14206865. On PowerShell use `npm.cmd`.
+## Under the hood
+
+React/TypeScript handles the interface, Rust owns the native library and listening rules, and Android Media3 handles background audio. The browser preview has its own IndexedDB/Web Audio adapter. It's useful for development; it isn't a substitute for testing the native app.
+
+Want to work on it? Start with Node 24, Rust stable and the relevant native tools. Android CI uses JDK 21, SDK 36 and NDK 29.0.14206865. On PowerShell, use `npm.cmd`.
 
 ```powershell
 npm.cmd ci
@@ -43,17 +83,17 @@ npx.cmd playwright install chromium
 npm.cmd run test:browser
 ```
 
-Browser preview uses separate IndexedDB/Web Audio storage and does not establish Android background reliability. See [development/setup](docs/developer-guide.md), [testing](docs/testing.md) and [release/signing](docs/release-process.md). Builds, browser mocks and physical-device performance are separate evidence categories; sustained battery/thermal behavior and manual accessibility require measured acceptance.
+See [development/setup](docs/developer-guide.md), [testing](docs/testing.md) and [release/signing](docs/release-process.md). The [verification record](docs/verification.md) keeps passing builds, browser checks and actual device results separate. Sustained battery/thermal behavior and manual accessibility still need their own measurements.
 
 New development starts from `dev` on a `dev.feature-name` branch. Reviewed changes return to `dev`; `main` contains reviewed release integrations and release tags. Read [AGENTS.md](AGENTS.md) before substantial changes. Keep build artifacts, personal profiles and signing material out of Git.
 
 ## Documentation
 
-[Documentation index](docs/README.md) links current usage, architecture, domain rules, verification and release instructions. Superseded plans remain available through Git history. [Release history](docs/releases/history.md) preserves version/branch traceability; original reference images and development briefs remain under `agents/`.
+The [documentation index](docs/README.md) is the starting point for usage, architecture, methods and release instructions. Older plans remain in Git history, [release history](docs/releases/history.md) keeps the version trail, and the original reference material lives under `agents/`.
 
 ## AI-use acknowledgement
 
-ChatGPT/Codex assisted with implementation planning, code development, documentation and test interpretation. Abraham Jhared Flores Azcona reviewed the work and made the product decisions. Automated assistance and passing tests do not replace the native/device acceptance recorded in this repository. No public conversation archive is claimed.
+I used ChatGPT/Codex to help with planning, implementation, documentation and interpreting tests. I made the product decisions and reviewed the work. The [verification record](docs/verification.md) documents the actual build and device checks, including the manual testing still to do.
 
 ## Cite this software
 
@@ -68,8 +108,10 @@ ChatGPT/Codex assisted with implementation planning, code development, documenta
 }
 ```
 
-Machine-readable metadata is in [CITATION.cff](CITATION.cff). Cite the version you used; a GitHub repository is not a peer-reviewed publication.
+Machine-readable citation metadata lives in [CITATION.cff](CITATION.cff). If you use Local Music in your work, please cite the version you used.
 
 ## License and credits
 
-Copyright Abraham Jhared Flores Azcona. [MIT license](LICENSE). Dependency/artwork/font/runtime attribution appears in [third-party notices](docs/third-party-notices.md) and the bundled license files. Reference screenshots guide design; they do not imply affiliation with Samsung, Sony or Apple.
+Copyright (c) 2026 **Abraham Jhared Flores Azcona**. Released under the [MIT license](LICENSE).
+
+Fonts, libraries, artwork and the Origin of Symmetry adaptation have their credits in [third-party notices](docs/third-party-notices.md) and the bundled license files. Samsung Music, PSP XMB and classic visualizers helped shape the feel; this is an independent personal project, with no affiliation to Samsung, Sony or Apple.
