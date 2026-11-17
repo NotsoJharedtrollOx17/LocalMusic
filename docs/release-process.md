@@ -22,4 +22,6 @@ For an automation-only failure after tagging, preserve the tag and fix automatio
 
 Historical tag publication preserves object/commit IDs. GitHub does not produce tag push events when more than three tags are pushed together; verify all historical refs explicitly and publish the final version tag separately. Do not treat historical tag publication as regenerated historical binaries.
 
+Windows packaging runs through the release workflow or an explicit manual dispatch. The temporary preparation-branch trigger is retired after v1.0.0; ordinary feature pushes still run verification.
+
 Use minimal GitHub permissions and scoped diagnostic uploads. Never expose private profiles or keys. Record hosted run URLs, hashes, certificate fingerprint and actual native acceptance in [verification](verification.md); public release evidence and private diagnostics have different retention/access requirements.

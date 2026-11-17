@@ -2,6 +2,8 @@
 
 Historical tags retain their original commits and versioned behavior; publishing them does not regenerate their binaries.
 
+The first official release is [v1.0.0](https://github.com/NotsoJharedtrollOx17/LocalMusic/releases/tag/v1.0.0), fixed at `61a1aaf78d75364f843bd5d86fbf1397715f143e`. Preparation and publication-recovery branches were subsequently merged and retired, leaving main and dev synchronized. Automation/evidence corrections after the tag do not replace its application source; the public provenance asset records both source and workflow commits.
+
 Historical tags: `v0.1.0`, `v0.2.0`, `v0.3.0`, `v0.4.0`, `v0.4.1`, `v0.5.0`, `v0.6.0`, `v0.7.0`, `v0.8.0`, `v0.9.0`, `v0.10.0`, `v0.11.0`, `v0.12.0`, `v0.13.0`, `v0.14.0`, `v0.15.0`, `v0.17.0`, `v0.18.0`, `v0.18.1`, `v0.19.0`, `v0.20.0`.
 
 ## Reviewed branch tips before cleanup
