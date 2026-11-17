@@ -1,8 +1,5 @@
 name: Windows package
 on:
-  push:
-    branches: [dev.release-preparation]
-    paths: ['src-tauri/**', 'src/**', 'scripts/**', 'package*.json', '.github/workflows/windows-package.yml']
   workflow_dispatch:
   workflow_call:
     inputs:
