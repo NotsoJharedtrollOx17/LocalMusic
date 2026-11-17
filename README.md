@@ -4,13 +4,45 @@
 
 **Your files. Your music. Your recap.**
 
+[Take a look around the app →](https://notsojharedtrollox17.github.io/LocalMusic/)
+
 I built Local Music for the music I already own—and because I missed players that made a local collection fun to explore. Give me a good library, a playlist worth revisiting, and some frequency bars dancing along. That's the idea here.
 
 It's a personal project for **Android and Windows**: offline playback, playlists, an equalizer, three visualizers and a weekly, monthly or yearly **Your Recap**. A little Samsung Music in the phone flow, a little PSP XMB in the tabs, and plenty of orange. No account or streaming subscription. English and Spanish, with light, dark and system themes.
 
 ## A look around
 
-These are actual native builds: Windows on the left and Android on a Galaxy Note10+ on the right.
+### Your year in sound. Your songs in motion.
+
+The songs that stayed with you deserve more than a play count. **Your Recap** turns your week, month or year into a little listening keepsake. **Spectrum, Geometry and XMB wave** bring some classic player energy back while the music runs.
+
+<table>
+  <tr><th>Your Recap · A listening keepsake</th><th>Spectrum · Turn it up, watch it move</th></tr>
+  <tr>
+    <td valign="top"><img src="docs/images/recap-story.png" width="250" alt="Illustrative Your Recap Story export with orbit artwork, listening totals and top songs, artists and albums."></td>
+    <td valign="top"><img src="docs/images/visualizer-spectrum.png" width="620" alt="The Spectrum visualizer responding to original sample audio, with orange bass bars grading into blue treble bars."></td>
+  </tr>
+</table>
+
+These captures use the real browser preview with original sample audio and **illustrative listening data**, separate from personal history. Open an image for the full-size view, or [explore the landing page](https://notsojharedtrollox17.github.io/LocalMusic/) to see all three visualizer modes.
+
+<details>
+<summary>Two more moods: Geometry and XMB wave</summary>
+
+<table>
+  <tr><th>Geometry · Origin of Symmetry</th><th>XMB wave · Go with the flow</th></tr>
+  <tr>
+    <td><img src="docs/images/visualizer-geometry.png" width="440" alt="The Geometry visualizer tracing an orange and blue attractor with original sample audio."></td>
+    <td><img src="docs/images/visualizer-xmb.png" width="440" alt="The XMB wave visualizer showing orange and blue ribbons flowing across a charcoal background."></td>
+  </tr>
+</table>
+
+</details>
+
+<details>
+<summary>The native builds: Windows and Android</summary>
+
+Windows on the left and Android on a Galaxy Note10+ on the right, captured during the native v1.0.0 checks.
 
 <table>
   <tr>
@@ -22,6 +54,8 @@ These are actual native builds: Windows on the left and Android on a Galaxy Note
     <td valign="top"><img src="docs/images/android-library.png" width="260" alt="Local Music on a Galaxy Note10+ showing the Songs library, tab carousel and bottom mini-player."></td>
   </tr>
 </table>
+
+</details>
 
 <details>
 <summary>Take a closer look: Now Playing and Equalizer</summary>

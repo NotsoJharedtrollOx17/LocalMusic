@@ -40,6 +40,21 @@ Trace a feature through its UI call site, adapter contract, native domain rule a
 
 Keep imports cancellable, search/generation replies revision-scoped, overlay focus isolated and error recovery usable. Do not start listening sessions from analysis or demos. New documentation must describe current behavior and link to [measured evidence](verification.md). Relevant [tests](testing.md) and [release checks](release-process.md) are required; reversible cosmetic work does not need redundant implementation-mirroring tests.
 
+## Landing website
+
+The independent static page lives under `website/`; it is not bundled into the music application. Its [archived plan](landing-page-plan.md) records the scope. Build and check it with:
+
+```powershell
+node scripts/build-website.mjs
+node scripts/check-website.mjs
+node tests/website/landing.mjs
+python -m http.server 8080 --bind 127.0.0.1 --directory artifacts/landing-site
+```
+
+The build copies an explicit set of reviewed screenshots, brand vectors, self-hosted fonts and licenses into ignored `artifacts/landing-site`. It does not copy app profiles, recordings, raw PCM or application build output. New feature captures use an isolated browser preview, original test audio and explicitly illustrative listening data; existing native captures retain their provenance in [verification](verification.md).
+
+The separate `Website` workflow builds on relevant main changes and after a successful `Release` workflow, then deploys through GitHub Pages. Pull requests build/check without deployment. Its focused browser checks cover responsive layouts, themes, mode selection, keyboard access and automated accessibility. Hosted builds resolve the latest published stable release and validate its three package assets, so downloads do not point at an unreleased development version. Only the deploy job receives Pages/OIDC permissions; Android signing is not involved. The implementation follows [GitHub's Pages workflow guidance](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
 ## Branding
 
 `src/brand/mark.svg` is the centered note/ring master used by the header and Recap stamp. `node scripts/generate-icons.mjs` derives the broken-ring/orange-period launcher variant and platform resources; Android foregrounds include explicit mask-safe padding. Intermediate output belongs under ignored artifacts. Preserve runtime theme contrast and inspect real native icon masks when changing these assets.

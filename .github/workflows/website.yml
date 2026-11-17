@@ -1,0 +1,85 @@
+name: Website
+on:
+  push:
+    branches: [main]
+    paths:
+      [
+        "website/**",
+        "docs/images/**",
+        "scripts/*website.mjs",
+        "tests/website/**",
+        "package*.json",
+        "src/brand/mark.svg",
+        "public/icon.svg",
+        "public/licenses/**",
+        "LICENSE",
+        ".github/workflows/website.yml",
+      ]
+  pull_request:
+    branches: [main, dev]
+    paths:
+      [
+        "website/**",
+        "docs/images/**",
+        "scripts/*website.mjs",
+        "tests/website/**",
+        "package*.json",
+        ".github/workflows/website.yml",
+      ]
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+permissions:
+  contents: read
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve published stable downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" > "$RUNNER_TEMP/local-music-site-release.json"
+          echo "SITE_RELEASE_METADATA=$RUNNER_TEMP/local-music-site-release.json" >> "$GITHUB_ENV"
+      - run: node scripts/build-website.mjs
+      - run: node scripts/check-website.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/website/landing.mjs
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: website-failure-evidence
+          path: |
+            artifacts/landing-page/website-verification.json
+            artifacts/landing-page/landing-*.png
+          retention-days: 7
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: artifacts/landing-site
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
