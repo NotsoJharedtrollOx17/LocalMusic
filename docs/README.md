@@ -17,3 +17,5 @@ Current behavior is documented here; release notes describe behavior at their re
 | [Third-party notices](third-party-notices.md) | Licenses and attribution |
 
 The [approved v1 preparation plan](v1-release-preparation-plan.md) records this cleanup. Superseded plans were consolidated and removed; their original text remains in [Git history](https://github.com/NotsoJharedtrollOx17/LocalMusic/tree/5b6b443/docs). The original [development brief](../agents/Music-Player-MVP-Recap-Codex-Guide.md) and [design reference](../agents/Codex-UX-UI-Design-Reference.md) are historical source material, not current specifications.
+
+The [publication recovery record](release-recovery-plan.md) explains the immutable-tag retry after the first v1.0.0 staging failure.
