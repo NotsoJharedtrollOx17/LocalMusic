@@ -50,7 +50,7 @@ export function PlayerSurface({
   const entryAnimation = useRef<Animation | null>(null);
   const miniOffset = (node: HTMLElement) => {
     const mini = document.querySelector(".mini-player")?.getBoundingClientRect();
-    const bounds = node.getBoundingClientRect();
+    const bounds = node.parentElement!.getBoundingClientRect();
     return `translateY(${Math.max(0, (mini?.top ?? bounds.bottom) - bounds.top)}px)`;
   };
   const exitAnimation = useRef<Animation | null>(null),

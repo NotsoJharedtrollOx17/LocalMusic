@@ -1025,8 +1025,8 @@
   overflow-anchor: none;
 }
 
-:root[data-platform="android"] .section-indicator {
-  transition-duration: 180ms;
+:root[data-layout="phone"] .section-tabs[data-dragging] .section-indicator {
+  transition: none;
 }
 :root[data-platform="android"] .library-pane,
 :root[data-platform="android"] .player-surface-body.player {

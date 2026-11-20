@@ -57,6 +57,19 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
    builtInZoomControls = false
    displayZoomControls = false
   }
+  var multiTouch = false
+  webView.setOnTouchListener { view, event ->
+   when (event.actionMasked) {
+    android.view.MotionEvent.ACTION_DOWN -> multiTouch = false
+    android.view.MotionEvent.ACTION_POINTER_DOWN -> if (!multiTouch) {
+     multiTouch = true
+     val cancel = android.view.MotionEvent.obtain(event)
+     cancel.action = android.view.MotionEvent.ACTION_CANCEL
+     try { view.onTouchEvent(cancel) } finally { cancel.recycle() }
+    }
+   }
+   multiTouch
+  }
   worker.execute {
    migrateLegacyArtwork(java.io.File(activity.dataDir, "artwork"), java.io.File(activity.cacheDir, "artwork"))
   }

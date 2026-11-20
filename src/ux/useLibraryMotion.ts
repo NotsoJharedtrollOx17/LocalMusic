@@ -77,7 +77,9 @@ export function useLibraryMotion(
         end = start + node.clientWidth;
       const target =
         document.documentElement.dataset.layout === "phone"
-          ? left
+          ? (active.id === "tab-year" && document.documentElement.dataset.platform === "android"
+              ? Math.max(0, right - node.clientWidth)
+              : left)
           : left < start
             ? left
             : right > end
@@ -249,10 +251,7 @@ export function useLibraryMotion(
       stripDrag.current.touching = false;
       settleStrip();
     },
-    onTouchCancel: () => {
-      stripDrag.current.touching = false;
-      settleStrip();
-    },
+    onTouchCancel: cancelStrip,
     onPointerDown: (e: ReactPointerEvent) => {
       cancelStrip();
       stripDrag.current.suppress = 0;
