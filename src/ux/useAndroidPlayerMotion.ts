@@ -2,7 +2,7 @@ import { useContext, useLayoutEffect, useRef, type RefObject } from "react";
 import { AndroidPlayerDrag } from "./androidPlayerDrag";
 import { reducedMotion } from "./motion";
 
-function playerFrame(surface: HTMLElement) {
+function playerFrame(surface: HTMLElement, closing: boolean) {
   const mini = document.querySelector<HTMLElement>(".mini-player");
   const full = surface.getBoundingClientRect();
   const dock = mini?.getBoundingClientRect();
@@ -12,7 +12,8 @@ function playerFrame(surface: HTMLElement) {
   const fullCover = surface.querySelector<HTMLImageElement>(".player-cover");
   const from = miniCover?.getBoundingClientRect();
   const to = fullCover?.getBoundingClientRect();
-  const source = miniCover?.currentSrc || fullCover?.currentSrc;
+  const sources = closing ? [fullCover, miniCover] : [miniCover, fullCover];
+  const source = sources.find((image) => image?.complete && image.naturalWidth)?.currentSrc;
   const cover = source && from?.width && to?.width ? new Image() : null;
   if (cover && to && source) {
     cover.src = source;
@@ -82,7 +83,7 @@ export function useAndroidPlayerMotion(
   };
   const prepare = () => {
     if (!frame.current && ref.current && !reducedMotion())
-      frame.current = playerFrame(ref.current);
+      frame.current = playerFrame(ref.current, target.current === 0);
     return frame.current;
   };
   const settle = (end: 0 | 1, done?: () => void) => {
@@ -91,7 +92,7 @@ export function useAndroidPlayerMotion(
     const from = progress.current;
     if (reducedMotion() || !prepare() || from === end) {
       progress.current = end;
-      dispose();
+      if (end === 1 || !done) dispose();
       done?.();
       return;
     }
@@ -99,11 +100,13 @@ export function useAndroidPlayerMotion(
     const start = performance.now();
     const duration = Math.max(80, 240 * Math.abs(end - from));
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
+      const t = Math.max(0, Math.min(1, (now - start) / duration));
       paint(from + (end - from) * (1 - Math.pow(1 - t, 3)));
       if (t < 1) raf.current = requestAnimationFrame(tick);
       else {
-        dispose();
+        // React can commit the close after this animation frame. Keep the
+        // collapsed geometry until unmount so the full player cannot repaint.
+        if (end === 1 || !done) dispose();
         done?.();
       }
     };

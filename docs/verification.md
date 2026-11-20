@@ -101,6 +101,10 @@ After a QA WebView reload on the 711-track fixture, first visits to Albums, Arti
 
 The 44 focused browser cases passed across the initial run and rechecks. Coverage included accessibility, player geometry, Android gesture cancellation, Equalizer placement, English and Spanish Recaps, live and frozen periods, privacy during export, and the Spanish Share cancellation path. Both Story and Feed passed PNG dimension and lower-right logo checks. Native Gallery save and the system share chooser were outside this follow-up’s device checks.
 
+### Now Playing flash follow-up
+
+The Android transition keeps the collapsed panel geometry until the player unmounts. The moving cover uses a loaded image, with the full cover preferred when minimizing. The frontend build, 115 unit tests, and five focused browser cases passed. On the Note10+ the updated QA build passed three native tap cycles. The sampled panel height grew on opening and shrank on minimizing without reversing direction. The same phone run passed swipe cancellation, nested Back, reduced motion, and paused playback checks. Production package metadata matched across the QA update.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.

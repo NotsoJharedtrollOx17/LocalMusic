@@ -128,6 +128,8 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
   });
   expect(closing.heights.some((height) => height > first.height &&
     height < closing.fullHeight)).toBe(true);
+  expect(closing.heights.every((height, index, frames) =>
+    index === 0 || height <= frames[index - 1] + 1)).toBe(true);
   await expect(player).toHaveCount(0);
   await expect(page.locator(".cover-flight")).toHaveCount(0);
   await expect(mini).toBeFocused();
