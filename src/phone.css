@@ -805,7 +805,8 @@
   }
 }
 
-:root[data-layout="phone"] .track-hit:is(:active, [data-pressed="true"]) {
+:root[data-layout="phone"] .track-hit[data-pressed="true"],
+:root[data-layout="phone"]:not([data-platform="android"]) .track-hit:active {
   background: color-mix(in srgb, var(--accent) 12%, var(--paper));
   border-radius: 10px;
 }

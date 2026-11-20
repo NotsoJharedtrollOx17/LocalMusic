@@ -77,9 +77,7 @@ export function useLibraryMotion(
         end = start + node.clientWidth;
       const target =
         document.documentElement.dataset.layout === "phone"
-          ? (active.id === "tab-year" && document.documentElement.dataset.platform === "android"
-              ? Math.max(0, right - node.clientWidth)
-              : left)
+          ? left
           : left < start
             ? left
             : right > end

@@ -8,7 +8,7 @@ async function setup(page: import("@playwright/test").Page) {
     () => (document.documentElement.dataset.platform = "android"),
   );
 }
-test("song press highlights immediately and briefly after activation without haptics", async ({
+test("Android song feedback appears after a tap confirms activation", async ({
   page,
 }) => {
   await setup(page);
@@ -33,6 +33,8 @@ test("song press highlights immediately and briefly after activation without hap
         pointerType: "touch",
         pointerId: 5,
         isPrimary: true,
+        clientX: 100,
+        clientY: 300,
       }),
     );
     el.dispatchEvent(
@@ -52,12 +54,43 @@ test("song press highlights immediately and briefly after activation without hap
     };
   });
   expect(active).toEqual({
-    duringPress: "true",
+    duringPress: null,
     afterRelease: "true",
     afterActivation: "true",
   });
   await expect(page.locator(".mini-player")).toBeVisible();
   await expect(hit).not.toHaveAttribute("data-pressed", "true");
+});
+
+test("Your Recap stays left anchored and scroll intent never paints a song press", async ({
+  page,
+}) => {
+  await setup(page);
+  const tab = page.locator("#tab-year");
+  const strip = page.locator(".section-tabs");
+  await tab.click();
+  await expect.poll(async () => Math.abs((await tab.boundingBox())!.x -
+    (await strip.boundingBox())!.x)).toBeLessThanOrEqual(1);
+  await page.locator("#tab-songs").click();
+  const hit = page.locator("#library-content .track-hit").first();
+  const state = await hit.evaluate((el) => {
+    const dispatch = (type: string, y: number) => el.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true, pointerType: "touch", isPrimary: true,
+        pointerId: 17, clientX: 80, clientY: y,
+      }),
+    );
+    dispatch("pointerdown", 300);
+    const down = el.hasAttribute("data-pressed");
+    dispatch("pointermove", 304);
+    const drift = el.hasAttribute("data-pressed");
+    dispatch("pointermove", 320);
+    dispatch("pointerup", 320);
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    return { down, drift, released: el.hasAttribute("data-pressed") };
+  });
+  expect(state).toEqual({ down: false, drift: false, released: false });
+  await expect(page.locator(".mini-player")).toHaveCount(0);
 });
 
 test("Android player grows from the mini rectangle and closes by shrinking back", async ({
