@@ -94,6 +94,10 @@ export function PlayerSurface({
         ? [
             { transform: startTransform },
             { transform: endTransform },
+          ]
+        : [
+            { transform: startTransform, opacity: 1 },
+            { transform: "translateY(45px) scale(.97)", opacity: 0 },
           ],
       {
         duration: 240,
