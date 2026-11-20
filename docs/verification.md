@@ -105,7 +105,7 @@ The 44 focused browser cases passed across the initial run and rechecks. Coverag
 
 The Android transition keeps the collapsed panel geometry until the player unmounts. The moving cover uses a loaded image, with the full cover preferred when minimizing. The frontend build, 115 unit tests, and five focused browser cases passed. On the Note10+ the updated QA build passed three native tap cycles. The sampled panel height grew on opening and shrank on minimizing without reversing direction. The same phone run passed swipe cancellation, nested Back, reduced motion, and paused playback checks. Production package metadata matched across the QA update.
 
-The portrait Now Playing layout now centers the artwork and track details above the transport. The Equalizer uses the individual slider frequencies as its labels. The frontend build, 115 unit tests, and the focused player geometry and phone Equalizer browser cases passed. This UI follow-up used browser verification.
+The portrait Now Playing layout now centers the artwork and track details above the transport. The Equalizer uses the individual slider frequencies as its labels. The frontend build, 115 unit tests, and the focused player geometry and phone Equalizer browser cases passed. Three Note10+ QA rounds verified centered content, the six frequency sliders supported by the low-sample-rate fixture, and the absence of category labels. The production package version and update time matched across the QA installation.
 
 ## Separate acceptance still requiring measurement
 
