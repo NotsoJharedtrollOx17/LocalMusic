@@ -75,9 +75,6 @@
 .sound-controls .sound-preset-select {
   display: none;
 }
-.equalizer-frequency-guide {
-  display: none;
-}
 .equalizer-inactive-note {
   margin: 12px 0 0;
   color: var(--muted);

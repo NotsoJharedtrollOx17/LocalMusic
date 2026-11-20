@@ -725,21 +725,6 @@
 :root[data-layout="phone"] .equalizer-faders {
   grid-template-columns: repeat(var(--available-bands, 9), minmax(0, 1fr));
 }
-:root[data-layout="phone"] .equalizer-frequency-guide {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 6px;
-  margin: 16px 0 0 42px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-}
-:root[data-layout="phone"] .equalizer-frequency-guide small {
-  display: block;
-  font-size: 10px;
-  line-height: 1.5;
-}
 :root[data-layout="phone"] .equalizer-inactive-note {
   margin-top: 20px;
   font-size: 12px;

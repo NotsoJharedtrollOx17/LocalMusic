@@ -115,6 +115,16 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
   const player = page.locator(".player-surface");
   await expect(player).not.toHaveAttribute("data-player-transition");
   await expect(player.locator(".android-player-backdrop")).toHaveCSS("transform", "none");
+  const spacing = await player.locator(".player-surface-body.player").evaluate((body) => {
+    const content = body.querySelector(".full-player")!.getBoundingClientRect();
+    const bounds = body.getBoundingClientRect();
+    const styles = getComputedStyle(body);
+    return {
+      above: content.top - bounds.top - parseFloat(styles.paddingTop),
+      below: bounds.bottom - content.bottom - parseFloat(styles.paddingBottom),
+    };
+  });
+  expect(Math.abs(spacing.above - spacing.below)).toBeLessThan(3);
   const closing = await player.getByRole("button", { name: "Close", exact: true }).evaluate(async (button) => {
     const panel = document.querySelector<HTMLElement>(".android-player-backdrop")!;
     const fullHeight = panel.getBoundingClientRect().height;
