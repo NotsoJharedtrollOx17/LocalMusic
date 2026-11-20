@@ -83,7 +83,7 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
     val large=File(cache,"$key-512.png")
     if(cacheBytes==null)cacheBytes=cache.listFiles()?.filter{it.isFile&&it.extension=="png"}?.sumOf{it.length()}?:0L
     val previous=large.length()
-    if(large.length()==0L){
+    if(!completeCover(large)){
      val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true};BitmapFactory.decodeByteArray(bytes,0,bytes.size,bounds)
      require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192)
      var sample=1;while(maxOf(bounds.outWidth,bounds.outHeight)/sample>512)sample*=2

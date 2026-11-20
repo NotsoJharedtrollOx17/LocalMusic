@@ -93,7 +93,10 @@ export function loadArtwork(
       return url;
     } finally {
       running--;
-      const next = waiting.entries().next().value;
+      const visibleKey = Array.from(waiting.keys()).find((key) => pins.has(key));
+      const next = visibleKey
+        ? ([visibleKey, waiting.get(visibleKey)!] as const)
+        : waiting.entries().next().value;
       if (next) {
         waiting.delete(next[0]);
         running++;
