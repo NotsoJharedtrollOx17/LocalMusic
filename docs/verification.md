@@ -119,6 +119,8 @@ The stacked Search row fits its header and caps its width. The close button keep
 
 On the Note10+ QA build, the 371 CSS-pixel search field and its 48 CSS-pixel close control fit within the visible viewport with the Android keyboard open at viewport scale 1. Back retained the filter and Clear restored results. The paused profile matched, the three native XMB and scroll checks passed, and production package metadata matched across the QA update.
 
+On Android, the Library sort control is hidden while Search is open or a filter remains active. The count can wrap within its own space. The frontend build and 115 unit tests passed, along with focused browser checks for restoring the control after Clear and retaining filter and sort behavior on other platforms.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.

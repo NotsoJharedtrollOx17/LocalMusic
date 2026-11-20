@@ -170,10 +170,13 @@ test("closing an observed Android keyboard collapses search while retaining its 
   page,
 }) => {
   await setup(page);
+  const filters = page.locator("#library-content [data-library-filters]");
+  await expect(filters).toBeVisible();
   await page
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const input = page.getByRole("searchbox");
+  await expect(filters).toHaveCount(0);
   await input.fill("orbit");
   const viewport = await page.evaluate(() => visualViewport!.height);
   await page.evaluate(() => {
@@ -196,4 +199,7 @@ test("closing an observed Android keyboard collapses search while retaining its 
   await expect(page.locator("#library-content .track-row")).toContainText(
     "A quieter orbit",
   );
+  await expect(filters).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(filters).toBeVisible();
 });
