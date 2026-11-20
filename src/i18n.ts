@@ -250,6 +250,7 @@ export const en = {
   imagePreview: "Recap image preview for",
   preparingImage: "Preparing your image…",
   savingImage: "Saving image…",
+  sharingImage: "Preparing to share…",
   downloadImage: "Save PNG",
   imageSaved: "Image saved. Ready to share.",
   imagePrivacy:
@@ -568,6 +569,7 @@ export const es: typeof en = {
   imagePreview: "Vista previa del resumen de",
   preparingImage: "Preparando tu imagen…",
   savingImage: "Guardando imagen…",
+  sharingImage: "Preparando para compartir…",
   downloadImage: "Guardar PNG",
   imageSaved: "Imagen guardada. Lista para compartir.",
   imagePrivacy:

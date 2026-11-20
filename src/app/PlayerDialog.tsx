@@ -6,6 +6,8 @@ import { Cover, TrackRow } from "../components";
 import { usePlayerContext } from "./PlayerContext";
 import PlayerFooter from "./PlayerFooter";
 import PlayerMenuButton from "./PlayerMenuButton";
+import { useContext } from "react";
+import { AndroidPlayerDrag } from "../ux/androidPlayerDrag";
 
 export default function PlayerDialog() {
   const {
@@ -20,7 +22,10 @@ export default function PlayerDialog() {
     act,
     current,
   } = usePlayerContext();
-  const view = modal === "player" || modal === "queue" ? modal : playerParent;
+  const drag = useContext(AndroidPlayerDrag);
+  const preview = !modal && !!current && drag?.previewTrack === current.id;
+  const view = modal === "player" || modal === "queue" ? modal :
+    playerParent ?? (preview ? "player" : null);
 
   return (
     <>
@@ -31,6 +36,7 @@ export default function PlayerDialog() {
           closeLabel={t.close}
           view={view}
           active={modal === "player" || modal === "queue"}
+          preview={preview}
           trackId={current.id}
           onView={setModal}
           onClose={() => setModal(null)}
@@ -44,7 +50,12 @@ export default function PlayerDialog() {
         >
           {view === "player" ? (
             <div className="full-player">
-              <Cover track={current} className="player-cover" large />
+              <Cover
+                track={current}
+                className="player-cover"
+                large
+                priority={modal === "player" || preview}
+              />
               <div className="player-title">
                 <div>
                   <h2>{current.title}</h2>

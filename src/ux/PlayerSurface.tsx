@@ -12,6 +12,8 @@ import { IconButton } from "../components";
 import { useBackLayer } from "../navigation";
 import { reducedMotion } from "./motion";
 import { animateCover } from "./motion";
+import { useAndroidPlayerMotion } from "./useAndroidPlayerMotion";
+import { useGestureCancellation } from "./useGestureCancellation";
 
 export function PlayerSurface({
   standalone = false,
@@ -25,6 +27,7 @@ export function PlayerSurface({
   headerAction,
   trackId,
   active = true,
+  preview = false,
 }: {
   standalone?: boolean;
   title: string;
@@ -37,24 +40,20 @@ export function PlayerSurface({
   headerAction?: ReactNode;
   trackId: string;
   active?: boolean;
+  preview?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null),
     closing = useRef(false),
-    drag = useRef<{ y: number; t: number } | null>(null);
+    drag = useRef<{ id: number; x: number; y: number; t: number; vertical: boolean } | null>(null);
   const bodyDrag =
     view === "player" &&
     document.documentElement.dataset.platform !== "android";
   const android = document.documentElement.dataset.platform === "android";
-  usePlayerArtworkSize(ref, active, view, trackId);
+  const androidMotion = android && !standalone && view === "player";
+  usePlayerArtworkSize(ref, active || preview, view, trackId);
+  const transition = useAndroidPlayerMotion(ref, androidMotion, active, preview, trackId, onClose);
   const latestClose = useRef(onClose);
   const entryAnimation = useRef<Animation | null>(null);
-  const miniClip = (node: HTMLElement) => {
-    const miniNode = document.querySelector<HTMLElement>(".mini-player");
-    if (!miniNode) return "inset(0px round 0px)";
-    const mini = miniNode.getBoundingClientRect(), bounds = node.getBoundingClientRect();
-    const radius = getComputedStyle(miniNode).borderRadius;
-    return `inset(${Math.max(0, mini.top - bounds.top)}px ${Math.max(0, bounds.right - mini.right)}px ${Math.max(0, bounds.bottom - mini.bottom)}px ${Math.max(0, mini.left - bounds.left)}px round ${radius})`;
-  };
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);
   useEffect(
@@ -73,6 +72,10 @@ export function PlayerSurface({
     }
     if (closing.current) return;
     closing.current = true;
+    if (androidMotion) {
+      transition.close();
+      return;
+    }
     const node = ref.current;
     if (!node || reducedMotion()) {
       latestClose.current();
@@ -86,25 +89,16 @@ export function PlayerSurface({
         mini.getBoundingClientRect(),
         art.src,
       );
-    const startClip = getComputedStyle(node).clipPath;
+    const startTransform = getComputedStyle(node).transform;
     entryAnimation.current?.cancel();
     node.inert = true;
-    if (android) node.dataset.closing = "true";
     const animation = node.animate(
-      android
-        ? [
-            {
-              clipPath:
-                startClip === "none" ? "inset(0px round 0px)" : startClip,
-            },
-            { clipPath: miniClip(node) },
-          ]
-        : [
-            { transform: getComputedStyle(node).transform, opacity: 1 },
+          [
+            { transform: startTransform, opacity: 1 },
             { transform: "translateY(45px) scale(.97)", opacity: 0 },
           ],
       {
-        duration: android ? 240 : 240,
+        duration: 240,
         easing: "cubic-bezier(.4,0,.2,1)",
         fill: "forwards",
       },
@@ -117,7 +111,8 @@ export function PlayerSurface({
       () => {},
     );
   };
-  useBackLayer(active, () =>
+  useBackLayer(active || preview, () =>
+    preview ? transition.cancelPreview() :
     view === "queue" ? onView("player") : collapse(),
   );
   useFocusScope(ref, active && !standalone);
@@ -125,15 +120,7 @@ export function PlayerSurface({
   useLayoutEffect(() => {
     if (!active || view !== "player" || entered.current) return;
     entered.current = true;
-    if (android) {
-      const node = ref.current;
-      if (node && !standalone && !reducedMotion())
-        entryAnimation.current = node.animate(
-          [{ clipPath: miniClip(node) }, { clipPath: "inset(0px round 0px)" }],
-          { duration: 280, easing: "cubic-bezier(.2,0,0,1)" },
-        );
-      return;
-    }
+    if (android) return;
     const mini = document.querySelector<HTMLImageElement>(".mini-track .cover"),
       art = ref.current?.querySelector<HTMLImageElement>(".player-cover");
     if (mini && art)
@@ -144,30 +131,50 @@ export function PlayerSurface({
       );
   }, [trackId, active]);
   const down = (e: ReactPointerEvent) => {
-    if (standalone) return;
+    if (standalone || (android && view !== "player") || closing.current ||
+        !e.isPrimary || e.button !== 0) return;
     if ((e.target as HTMLElement).closest("button,input,select,a")) return;
-    drag.current = { y: e.clientY, t: performance.now() };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), vertical: false };
+    if (e.nativeEvent.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
   };
   const move = (e: ReactPointerEvent) => {
-    if (!drag.current) return;
-    const y = Math.max(0, e.clientY - drag.current.y);
+    const g = drag.current;
+    if (!g || g.id !== e.pointerId) return;
+    const y = Math.max(0, e.clientY - g.y);
+    if (androidMotion) {
+      if (y > 12 && y > Math.abs(e.clientX - g.x) * 1.5) g.vertical = true;
+      if (g.vertical) transition.move(y);
+      return;
+    }
     if (ref.current && !reducedMotion() && !android)
       ref.current.style.transform = `translateY(${Math.min(y, 250)}px)`;
   };
   const up = (e: ReactPointerEvent) => {
-    if (!drag.current) return;
-    const y = e.clientY - drag.current.y,
-      elapsed = performance.now() - drag.current.t;
+    const g = drag.current;
+    if (!g || g.id !== e.pointerId) return;
+    const y = e.clientY - g.y,
+      elapsed = performance.now() - g.t;
     drag.current = null;
-    if (y > 100 || (y > 30 && y / Math.max(1, elapsed) > 0.6)) collapse();
+    if ((!androidMotion || g.vertical) &&
+        (y > 100 || (y > 30 && y / Math.max(1, elapsed) > 0.6))) collapse();
+    else if (androidMotion && g.vertical) transition.release(false);
     else if (ref.current) ref.current.style.transform = "";
   };
+  const cancelDrag = () => {
+    if (!drag.current) return;
+    const vertical = drag.current.vertical;
+    drag.current = null;
+    if (androidMotion && vertical) transition.release(false);
+    else if (ref.current) ref.current.style.transform = "";
+  };
+  useGestureCancellation(cancelDrag, trackId);
   return (
     <div
       className={"player-scrim" + (standalone ? " standalone-player" : "")}
-      hidden={!active}
+      hidden={!active && !preview}
       inert={!active}
+      aria-hidden={!active || undefined}
+      data-player-preview={preview || undefined}
       onClick={(e) => {
         if (e.target === e.currentTarget) collapse();
       }}
@@ -181,15 +188,14 @@ export function PlayerSurface({
         aria-modal={standalone ? undefined : true}
         aria-label={title}
       >
+        {androidMotion && <div className="android-player-backdrop" aria-hidden="true" />}
         <header
           className="player-surface-head"
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
-          onPointerCancel={() => {
-            drag.current = null;
-            if (ref.current) ref.current.style.transform = "";
-          }}
+          onPointerCancel={cancelDrag}
+          onLostPointerCapture={cancelDrag}
         >
           <IconButton label={closeLabel} onClick={collapse}>
             {standalone ? <ArrowLeft /> : <ChevronDown />}
@@ -203,10 +209,7 @@ export function PlayerSurface({
           onPointerDown={bodyDrag ? down : undefined}
           onPointerMove={bodyDrag ? move : undefined}
           onPointerUp={bodyDrag ? up : undefined}
-          onPointerCancel={() => {
-            drag.current = null;
-            if (ref.current) ref.current.style.transform = "";
-          }}
+          onPointerCancel={cancelDrag}
         >
           {children}
         </div>

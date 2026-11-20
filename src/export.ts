@@ -111,23 +111,24 @@ export async function renderRecapCard(
   language: "en" | "es",
   format: CardFormat,
   signal?: AbortSignal,
+  scale = 1,
 ): Promise<Blob> {
   await Promise.all([
     document.fonts.load('700 60px "Space Grotesk"'),
     document.fonts.load("500 28px Inter"),
   ]);
-  const rankings = await prepareRecapRankings(recap, signal);
+  const rankings = await prepareRecapRankings(recap, signal, scale < 1 ? 128 : 512);
   const brandImage = new Image();
   brandImage.src = brandMarkUrl;
   await brandImage.decode();
   throwIfAborted(signal);
   const dimensions = cardDimensions(format);
   const canvas = document.createElement("canvas");
-  canvas.width = dimensions.width;
-  canvas.height = dimensions.height;
+  canvas.width = dimensions.width * scale;
+  canvas.height = dimensions.height * scale;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Image rendering unavailable");
-  ctx.scale(2, 2);
+  ctx.scale(2 * scale, 2 * scale);
   const h = dimensions.height / 2,
     story = format === "story",
     pad = 64,
@@ -264,7 +265,7 @@ export async function renderRecapCard(
     pad,
     h - 117,
     24,
-    w,
+    650,
     muted,
   );
   text(
@@ -274,16 +275,19 @@ export async function renderRecapCard(
     pad,
     h - 79,
     23,
-    w,
+    650,
     muted,
   );
-  ctx.drawImage(brandImage, pad, h - 62, 42, 42);
+  const markSize = 64;
+  const wordmark = "local.";
   ctx.fillStyle = ink;
-  ctx.font = '700 28px "Space Grotesk"';
-  ctx.fillText("local", pad + 51, h - 30);
-  const labelWidth = ctx.measureText("local").width;
+  ctx.font = '700 44px "Space Grotesk"';
+  const wordmarkX = 1080 - pad - ctx.measureText(wordmark).width;
+  const wordmarkY = h - 54;
+  ctx.drawImage(brandImage, wordmarkX - markSize - 12, h - 100, markSize, markSize);
+  ctx.fillText("local", wordmarkX, wordmarkY);
   ctx.fillStyle = "#ff6816";
-  ctx.fillText(".", pad + 51 + labelWidth, h - 30);
+  ctx.fillText(".", wordmarkX + ctx.measureText("local").width, wordmarkY);
   throwIfAborted(signal);
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(

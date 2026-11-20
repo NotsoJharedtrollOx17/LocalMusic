@@ -21,6 +21,7 @@ android {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "app.localmusic.year"
         minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
@@ -42,6 +43,9 @@ android {
     }
     buildTypes {
         getByName("debug") {
+            if (System.getenv("LOCAL_MUSIC_ISOLATED_QA") == "1") {
+                this.applicationIdSuffix = ".qa"
+            }
             manifestPlaceholders["usesCleartextTraffic"] = "true"
             isDebuggable = true
             isJniDebuggable = true

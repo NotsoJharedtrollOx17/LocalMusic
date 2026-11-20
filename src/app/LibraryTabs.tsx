@@ -16,8 +16,8 @@ export default function LibraryTabs() {
         className="section-indicator"
         aria-hidden="true"
         style={{
-          width: motion.indicator.width,
-          transform: "translateX(" + motion.indicator.x + "px)",
+          width: `var(--drag-tab-width, ${motion.indicator.width}px)`,
+          transform: `translateX(var(--drag-tab-x, ${motion.indicator.x}px))`,
         }}
       />
       {librarySections.map((x) => (

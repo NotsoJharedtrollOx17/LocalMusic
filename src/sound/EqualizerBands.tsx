@@ -19,17 +19,6 @@ export default function EqualizerBands({
 }) {
   const t = soundCopy(language);
   const available = EQ_BANDS.filter((band) => !inactive.includes(band.index));
-  const range = (low: number, high: number) => {
-    const bands = available.filter(
-      (b) => b.frequency >= low && b.frequency <= high,
-    );
-    const format = (f: number) => (f < 1000 ? `${f} Hz` : `${f / 1000} kHz`);
-    return !bands.length
-      ? ""
-      : bands.length === 1
-        ? format(bands[0].frequency)
-        : `${format(bands[0].frequency)}\u2013${format(bands.at(-1)!.frequency)}`;
-  };
   return (
     <>
       <div
@@ -77,20 +66,6 @@ export default function EqualizerBands({
             </label>
           ))}
         </EqualizerGrid>
-        <div className="equalizer-frequency-guide">
-          {[
-            [t.bass, range(63, 250)],
-            [t.mids, range(500, 2000)],
-            [t.treble, range(4000, 16000)],
-          ]
-            .filter(([, frequencies]) => frequencies)
-            .map(([label, frequencies]) => (
-              <span key={label}>
-                {label}
-                <small>{frequencies}</small>
-              </span>
-            ))}
-        </div>
         {inactive.length > 0 && (
           <p
             id="equalizer-inactive"

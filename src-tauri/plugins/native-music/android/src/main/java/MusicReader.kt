@@ -76,25 +76,35 @@ class MusicReader(private val context:Context,private val cancelled:AtomicBoolea
  }
  fun albumOrder(uri:Uri):JSONObject {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);JSONObject().also{applyAlbumOrder(it,retriever);applyIdentity(it,retriever)}}finally{retriever.release()}}
  fun artwork(uri:Uri):String? {val retriever=MediaMetadataRetriever();return try{retriever.setDataSource(context,uri);retriever.embeddedPicture?.takeIf{it.size<=8*1024*1024}?.let{cachePicture(it)}}catch(_:Exception){null}finally{retriever.release()}}
- private fun pruneCache(keep:String?=null){val files=File(context.dataDir,"artwork").listFiles()?.filter{it.isFile&&it.extension=="png"}?.sortedBy{it.lastModified()}?:return;var bytes=files.sumOf{it.length()};for(file in files){if(bytes<=128L*1024*1024)break;if(keep!=null&&file.name.startsWith(keep))continue;val size=file.length();if(file.delete())bytes-=size};cacheBytes=bytes}
+ private fun pruneCache(keep:String?=null){val files=File(context.cacheDir,"artwork").listFiles()?.filter{it.isFile&&it.extension=="png"}?.sortedBy{it.lastModified()}?:return;var bytes=files.sumOf{it.length()};for(file in files){if(bytes<=128L*1024*1024)break;if(keep!=null&&file.name.startsWith(keep))continue;val size=file.length();if(file.delete())bytes-=size};cacheBytes=bytes}
  private fun cachePicture(bytes:ByteArray):String? {
     val key=MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it)}
-    val cache=File(context.dataDir,"artwork").apply{mkdirs()}
-    val small=File(cache,"$key-64.png");val large=File(cache,"$key-512.png")
+    val cache=File(context.cacheDir,"artwork").apply{mkdirs()}
+    val large=File(cache,"$key-512.png")
     if(cacheBytes==null)cacheBytes=cache.listFiles()?.filter{it.isFile&&it.extension=="png"}?.sumOf{it.length()}?:0L
-    val previous=small.length()+large.length()
-    if(!small.exists()||!large.exists()){
+    val previous=large.length()
+    if(!completeCover(large)){
      val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true};BitmapFactory.decodeByteArray(bytes,0,bytes.size,bounds)
      require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192)
      var sample=1;while(maxOf(bounds.outWidth,bounds.outHeight)/sample>512)sample*=2
      val options=BitmapFactory.Options().apply{inSampleSize=sample}
      BitmapFactory.decodeByteArray(bytes,0,bytes.size,options)?.let{bitmap->
-      for(size in listOf(64,512)){val destination=File(cache,"$key-$size.png");if(!destination.exists()){val scale=size.toFloat()/maxOf(bitmap.width,bitmap.height);val thumb=Bitmap.createScaledBitmap(bitmap,(bitmap.width*scale).toInt().coerceAtLeast(1),(bitmap.height*scale).toInt().coerceAtLeast(1),true);destination.outputStream().use{thumb.compress(Bitmap.CompressFormat.PNG,100,it)};if(thumb!==bitmap)thumb.recycle()}}
+      val scale = minOf(1f, 512f / maxOf(bitmap.width, bitmap.height))
+      val thumb = Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1),
+          (bitmap.height * scale).toInt().coerceAtLeast(1), true)
+      val temp = File.createTempFile("cover-", ".tmp", cache)
+      try {
+        temp.outputStream().use { check(thumb.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        check(temp.renameTo(large) || large.length() > 0)
+      } finally {
+        temp.delete()
+        if (thumb !== bitmap) thumb.recycle()
+      }
       bitmap.recycle()
      }
     }
-    cacheBytes=(cacheBytes?:0L)+small.length()+large.length()-previous
+    cacheBytes=(cacheBytes?:0L)+large.length()-previous
     if((cacheBytes?:0L)>128L*1024*1024)pruneCache(key)
-    return if(small.exists()&&large.exists())"cache:$key" else null
+    return if(large.length()>0L)"cache:$key" else null
  }
 }

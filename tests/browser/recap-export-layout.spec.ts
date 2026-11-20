@@ -80,6 +80,32 @@ test("Spanish export actions reflow at 320px with enlarged text and reduced moti
   expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
     true,
   );
+  for (const [format, height] of [
+    ["Historia · 9:16", 3840],
+    ["Publicación · 4:5", 2700],
+  ] as const) {
+    await dialog.getByRole("button", { name: format, exact: true }).click();
+    await expect(save).toBeEnabled({ timeout: 30000 });
+    const logo = await dialog.locator(".recap-image-preview").evaluate((node) => {
+      const image = node as HTMLImageElement;
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = 220;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(image, 0, 220 - image.naturalHeight);
+      const countAccent = (x: number, width: number) => {
+        const { data } = ctx.getImageData(x, 0, width, canvas.height);
+        let count = 0;
+        for (let i = 0; i < data.length; i += 4)
+          if (data[i] > 230 && data[i + 1] < 125 && data[i + 2] < 50) count++;
+        return count;
+      };
+      return { width: image.naturalWidth, height: image.naturalHeight,
+        left: countAccent(0, 700), right: countAccent(1500, 660) };
+    });
+    expect(logo).toMatchObject({ width: 2160, height, left: 0 });
+    expect(logo.right).toBeGreaterThan(100);
+  }
   await share.click();
   await expect(share).toBeEnabled();
   await expect(dialog.locator(".recap-save-toast")).toHaveCount(0);

@@ -27,7 +27,11 @@ export default function LibraryToolbar() {
     fileInput,
     t,
     doImport,
+    searchOpen,
+    inlineSearch,
   } = useMusicAppContext();
+  const androidSearch = document.documentElement.dataset.platform === "android" &&
+    (searchOpen || inlineSearch.active);
   const songFilters = section === "songs" && !group;
   const favorites = songFilters && onlyFavorites;
   const kind =
@@ -51,7 +55,7 @@ export default function LibraryToolbar() {
         : null;
 
   return (
-    <div className="library-toolbar" data-collection-kind={group?.kind}>
+    <div className="library-toolbar" data-collection-kind={group?.kind} data-android-search={androidSearch || undefined}>
       <CollectionCountHeading
         kind={kind}
         count={count}
@@ -72,7 +76,7 @@ export default function LibraryToolbar() {
           </button>
         )}
         <ClearSearchButton />
-        <LibraryFilters />
+        {!androidSearch && <LibraryFilters />}
         <button
           className="button primary library-import"
           disabled={busy}

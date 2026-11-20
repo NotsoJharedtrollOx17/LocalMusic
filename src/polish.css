@@ -275,7 +275,10 @@
   .library-navigation > .inline-search {
     grid-column: 1 / -1;
     grid-row: 2;
-    padding: 0 0 12px;
+    box-sizing: border-box;
+    width: min(100%, 420px);
+    justify-self: center;
+    padding: 4px 4px 12px;
   }
 }
 .library-navigation .section-tabs {

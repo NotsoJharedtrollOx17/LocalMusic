@@ -47,7 +47,11 @@ export function installInputModality() {
               ".icon-button:not(:disabled),.album-card,.playlist-tile:not(:disabled),.action-menu button:not([aria-disabled='true'])",
             )
           : null;
-      if (node && root.dataset.layout === "phone") {
+      if (
+        node && root.dataset.layout === "phone" &&
+        !(root.dataset.platform === "android" && event.pointerType === "touch" &&
+          node.matches(".album-card,.playlist-tile"))
+      ) {
         press = {
           node,
           id: event.pointerId,

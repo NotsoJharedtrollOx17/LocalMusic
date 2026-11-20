@@ -74,6 +74,53 @@ The [Website run](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/run
 
 A live headless Chromium smoke at 1440 and 390 px passed page loading, layout, visualizer image switching and theme toggling with no page errors. The updated README was also previewed at 1280 and 390 px, with eight loaded image references, working disclosures and no page-wide overflow; remote README/image blobs matched the committed files. The website build resolves published stable downloads; only its deployment job receives Pages/OIDC permissions. The Android signing environment was rechecked and remains version-tags-only. Application source, version 1.0.0, tag and existing release package bytes remain unchanged.
 
+## Android interaction and cache candidate, 20 November 2026
+
+The [approved hotfix](android-interaction-cache-hotfix-plan.md) is implemented on `dev.android-interaction-hotfix`, `dev.android-artwork-cache`, and `dev.android-recap-preview`. The local integration branch `dev.android-hotfix-integration` carries the [v1.0.1 candidate](releases/v1.0.1.md).
+
+- The frontend build and all 115 frontend unit tests passed. The 34 Rust core tests and 18 Android plugin unit tests passed, including the interrupted artwork migration case. The 38 focused browser tests passed on the updated frontend and covered gesture cancellation, Equalizer layout, tab motion, and Recap export reflow.
+- The full browser run reported 217 passes and five timeouts across 222 tests. All five passed in one-worker rechecks using the same frontend and assertions. The 10,000-track catalog and grouped-search tests passed in an isolated recheck after the full run, in 27.4 s and 7.3 s respectively.
+- The ARM64 debug APK used version name `1.0.1`, code `1000001`, and the separate `app.localmusic.year.qa` application ID. The compiled and packaged Rust library hashes matched, and all 27 frozen JS/CSS payloads were verified. The APK SHA-256 was `66be4fce26b113ed79781968792f8c783860fe7ec7483035559480fd49f69b67`. The production package reported the same version and update time before and after the side-by-side install.
+- On a Galaxy Note10+ running Android 12, the QA startup fixture contained 711 synthetic tracks and 12 legacy thumbnail masters. The first successful Android activity launch reported 738 ms. The WebView rendered 24 song rows at its initial virtualized position. In one DOM-driven Albums → Artists → Songs walkthrough, selection and primary artwork readiness took 681, 103, and 143 ms. A second pass measured 106, 62, and 106 ms. The viewport scale was 1.0 and one Library pane was active at the end.
+- On the same phone the final QA package passed the native two-finger WebView test and matched WebView text scaling to the Android font setting. All 12 expected master thumbnails were present under the cache, and the empty legacy artwork directory had been removed. Android reported 188 KiB allocated to the artwork cache and 576 KiB to the synthetic catalog database.
+- The Windows host reported a missing Android Emulator hypervisor driver. The software launch stayed offline. Same-fixture v1.0.0 comparison, frame pacing and sustained memory measurements remain open.
+
+### XMB and scroll feedback follow-up
+
+On the Note10+ the old QA build reproduced both reports in three native tap-and-swipe sequences. Your Recap settled 263.49 CSS pixels from the left edge of the tab strip, and each vertical swipe set and cleared the song press highlight. With the corrected QA APK, all three Recap selections landed 0.63 CSS pixels from the left edge. Each swipe scrolled the Songs pane by 43–61 CSS pixels, registered Android pointer cancellation, and produced zero row press highlights. The paused playback controls matched before and after each swipe. The production package version and update timestamp matched across the QA update.
+
+The ARM64 QA APK SHA-256 was `2b21f229ed1e895ecce0eac6855f512013ea1e342d83875a08aeae2fc658715b`. The 115 frontend unit tests and 27 focused browser cases passed. This follow-up used the physical phone for Android acceptance at the owner's direction.
+
+### Recap export and player polish follow-up
+
+The [approved follow-up](android-recap-player-polish-plan.md) is on `dev.android-recap-player-polish`. The frontend build and all 115 unit tests passed. The ARM64 debug package used the separate `app.localmusic.year.qa` application ID and the compiled and packaged Rust library SHA-256 hashes matched. The APK SHA-256 was `49b7f1930441be44f4f585cdd8a9213057c5db1b59e519c486847cf53adea4f2`. Production package version and update time matched before and after installation.
+
+On the Galaxy Note10+, three portrait rounds and one landscape round verified tap and swipe opening and closing, short-drag cancellation in both directions, Queue and Equalizer return paths, focus restoration, paused transport, and the Library scroll position. Equalizer controls aligned with the start of the modal body. WebView Reduce Motion emulation bypassed the cover flight. The original device rotation settings were restored. Three more native Library swipe rounds kept Your Recap 0.63 CSS pixels from the tab strip’s left edge and recorded zero orange press highlights.
+
+After a QA WebView reload on the 711-track fixture, first visits to Albums, Artists, and Songs issued 4, 3, and 0 artwork requests and reached primary artwork readiness in 224, 104, and 113 ms. Songs had already loaded at startup. The second pass issued zero artwork requests across the three tabs and measured 121, 68, and 109 ms. The primary cover stayed neutral when observed loading and showed no generated artwork before its embedded bitmap. These are single instrumented walkthroughs. Frame pacing and sustained memory usage remain separate measurements.
+
+The 44 focused browser cases passed across the initial run and rechecks. Coverage included accessibility, player geometry, Android gesture cancellation, Equalizer placement, English and Spanish Recaps, live and frozen periods, privacy during export, and the Spanish Share cancellation path. Both Story and Feed passed PNG dimension and lower-right logo checks. Native Gallery save and the system share chooser were outside this follow-up’s device checks.
+
+### Now Playing flash follow-up
+
+The Android transition keeps the collapsed panel geometry until the player unmounts. The moving cover uses a loaded image, with the full cover preferred when minimizing. The frontend build, 115 unit tests, and five focused browser cases passed. On the Note10+ the updated QA build passed three native tap cycles. The sampled panel height grew on opening and shrank on minimizing without reversing direction. The same phone run passed swipe cancellation, nested Back, reduced motion, and paused playback checks. Production package metadata matched across the QA update.
+
+The portrait Now Playing layout now centers the artwork and track details above the transport. The Equalizer uses the individual slider frequencies as its labels. The frontend build, 115 unit tests, and the focused player geometry and phone Equalizer browser cases passed. Three Note10+ QA rounds verified centered content, the six frequency sliders supported by the low-sample-rate fixture, and the absence of category labels. The production package version and update time matched across the QA installation.
+
+### Cross-platform native UI flow audit
+
+- Android v1.0.1 on the Note10+ passed three native XMB and scroll checks with no transient row highlights, plus three Player, Queue and Equalizer rounds with nested Back, swipe cancellation, focus return and unchanged paused playback. WebView activation verified all five Library tabs. Android keyboard Back preserved the search filter, Clear restored results, and Settings opened and closed without horizontal overflow. Playback, settings, EQ configuration and playlists matched before and after the navigation walkthrough.
+- The isolated Windows v1.0.1 debug build passed native Library menu routing, all five tabs, search clearing, Settings Escape with focus return, and opening and closing detached Player, Visualizer and Equalizer. No JavaScript errors were recorded. The paused playback snapshot, settings, EQ configuration and playlists matched before and after.
+- In the detached Windows Equalizer, the normal window leaves a large gap below the header. At a 568 × 438 CSS-pixel viewport the last slider required scrolling. Keyboard focus brought the slider into view, with its frequency label still below the fold. The host reported audio output unavailable, so the walkthrough covered control reachability and status feedback.
+
+### Inline Search layout follow-up
+
+The stacked Search row fits its header and caps its width. The close button keeps its own column, and focusing Search preserves the scroll position. All 115 unit tests passed. The 22 focused browser cases passed across the initial run and recheck, including the updated narrow-row geometry and the 320–1360 px resize check. The isolated Windows QA app verified the field at 677, 823, and 1259 CSS-pixel viewport widths. Search clearing and the paused profile also passed.
+
+On the Note10+ QA build, the 371 CSS-pixel search field and its 48 CSS-pixel close control fit within the visible viewport with the Android keyboard open at viewport scale 1. Back retained the filter and Clear restored results. The paused profile matched, the three native XMB and scroll checks passed, and production package metadata matched across the QA update.
+
+On Android, the Library sort control is hidden while Search is open or a filter remains active. The count can wrap within its own space. The frontend build and 115 unit tests passed, along with focused browser checks for restoring the control after Clear and retaining filter and sort behavior on other platforms.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.

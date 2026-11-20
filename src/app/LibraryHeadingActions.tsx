@@ -25,7 +25,9 @@ export default function LibraryHeadingActions() {
               searchOpen
                 ? inlineSearch.close()
                 : (setSearchOpen(true),
-                  requestAnimationFrame(() => searchInput.current?.focus()))
+                  requestAnimationFrame(() =>
+                    searchInput.current?.focus({ preventScroll: true }),
+                  ))
             }
           >
             <SearchTriggerIcon />

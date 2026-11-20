@@ -267,12 +267,9 @@ test("phone EQ shows only usable bands with native presets", async ({
     eq.getByRole("slider", { name: "8000 Hz gain", exact: true }),
   ).toHaveCount(0);
   await expect(eq.locator(".equalizer-inactive-note")).toBeHidden();
-  await expect(eq.locator(".equalizer-frequency-guide")).toContainText("4 kHz");
-  await expect(eq.locator(".equalizer-frequency-guide")).not.toContainText(
-    "16 kHz",
-  );
+  await expect(eq.getByRole("slider", { name: "4000 Hz gain", exact: true })).toBeVisible();
   await expect(eq.locator(".equalizer-band small")).toHaveCount(0);
-  await expect(eq.locator(".equalizer-frequency-guide")).toContainText("Bass");
+  await expect(eq.getByText(/^(Bass|Mids|Treble)$/)).toHaveCount(0);
 });
 
 test("mobile About returns to Settings and empty artist text spans the grid", async ({

@@ -10,24 +10,26 @@ export default function SoundDialog() {
       closeLabel={t.close}
       onClose={() => setModal(null)}
     >
-      {soundController.state ? (
-        <SoundControls
-          controller={{ ...soundController, state: soundController.state }}
-          language={settings?.language ?? "en"}
-        />
-      ) : soundController.loading ? (
-        <p role="status">{t.loadingSound}</p>
-      ) : (
-        <div>
-          {soundController.error && <p role="alert">{soundController.error}</p>}
-          <button
-            className="button secondary"
-            onClick={() => void soundController.refresh()}
-          >
-            {t.refresh}
-          </button>
-        </div>
-      )}
+      <div className="equalizer-content">
+        {soundController.state ? (
+          <SoundControls
+            controller={{ ...soundController, state: soundController.state }}
+            language={settings?.language ?? "en"}
+          />
+        ) : soundController.loading ? (
+          <p role="status">{t.loadingSound}</p>
+        ) : (
+          <div>
+            {soundController.error && <p role="alert">{soundController.error}</p>}
+            <button
+              className="button secondary"
+              onClick={() => void soundController.refresh()}
+            >
+              {t.refresh}
+            </button>
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }

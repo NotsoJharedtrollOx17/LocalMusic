@@ -152,7 +152,10 @@
 :root[data-layout="phone"] .library-navigation > .inline-search {
   grid-column: 1;
   grid-row: 2;
-  padding: 4px 0 10px;
+  box-sizing: border-box;
+  width: min(100%, 420px);
+  justify-self: center;
+  padding: 4px 4px 10px;
 }
 :root[data-layout="phone"] .library-navigation > .group-back {
   min-height: 48px;
@@ -178,6 +181,10 @@
   max-width: 100%;
   min-width: 0;
   overflow-wrap: normal;
+}
+:root[data-layout="phone"] .library-toolbar[data-android-search] > h2 {
+  flex: 1 1 min(8rem, 100%);
+  overflow-wrap: anywhere;
 }
 :root[data-layout="phone"] .collection-count-prefix {
   display: block;
@@ -657,14 +664,19 @@
   height: 48px;
   min-height: 48px;
 }
-:root[data-layout="phone"] .modal:has(.sound-controls) > .modal-body {
+:root[data-layout="phone"] .modal:has(.equalizer-content) > .modal-body {
   display: flex;
   flex-direction: column;
 }
-:root[data-layout="phone"] .modal-body > .sound-controls {
+:root[data-layout="phone"] .equalizer-content {
   flex: 0 0 auto;
-  margin-block: auto;
+  margin-block: 0;
+}
+:root[data-layout="phone"] .equalizer-content > * {
   padding-block: 12px;
+}
+:root[data-layout="phone"] .equalizer-content > p:first-child {
+  margin-top: 0;
 }
 :root[data-layout="phone"] .track-details {
   display: flex;
@@ -719,21 +731,6 @@
 }
 :root[data-layout="phone"] .equalizer-faders {
   grid-template-columns: repeat(var(--available-bands, 9), minmax(0, 1fr));
-}
-:root[data-layout="phone"] .equalizer-frequency-guide {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  gap: 6px;
-  margin: 16px 0 0 42px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-}
-:root[data-layout="phone"] .equalizer-frequency-guide small {
-  display: block;
-  font-size: 10px;
-  line-height: 1.5;
 }
 :root[data-layout="phone"] .equalizer-inactive-note {
   margin-top: 20px;
@@ -805,7 +802,8 @@
   }
 }
 
-:root[data-layout="phone"] .track-hit:is(:active, [data-pressed="true"]) {
+:root[data-layout="phone"] .track-hit[data-pressed="true"],
+:root[data-layout="phone"]:not([data-platform="android"]) .track-hit:active {
   background: color-mix(in srgb, var(--accent) 12%, var(--paper));
   border-radius: 10px;
 }
@@ -1023,4 +1021,15 @@
 .library-pane,
 .track-list {
   overflow-anchor: none;
+}
+
+:root[data-layout="phone"] .section-tabs[data-dragging] .section-indicator {
+  transition: none;
+}
+:root[data-platform="android"] .library-pane,
+:root[data-platform="android"] .player-surface-body.player {
+  touch-action: pan-y;
+}
+:root[data-platform="android"] .library-toolbar[data-collection-kind] .library-import {
+  display: none;
 }

@@ -12,6 +12,22 @@ const point = (x: number, y = 350) => ({
   clientX: x,
   clientY: y,
 });
+
+test("finger jitter stays still and a short flick cannot activate a song or page", async ({ page }) => {
+  await setup(page);
+  const hit = page.locator("#library-content .track-hit").first();
+  const track = page.locator(".library-pager-track");
+  await hit.dispatchEvent("pointerdown", point(220));
+  await hit.dispatchEvent("pointermove", point(214));
+  await expect(track).toHaveCSS("transform", "none");
+  await hit.dispatchEvent("pointermove", point(195));
+  await hit.dispatchEvent("pointerup", point(195));
+  await hit.dispatchEvent("click", { detail: 1 });
+  await expect(page.locator("#tab-songs")).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".mini-player")).toHaveCount(0);
+  await hit.tap();
+  await expect(page.locator(".mini-player")).toBeVisible();
+});
 test("small horizontal drags expose the page background and snap back without changing tabs", async ({
   page,
 }) => {

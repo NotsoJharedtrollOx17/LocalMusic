@@ -4,6 +4,7 @@ const budget = 32 * 1024 * 1024;
 const entries = new Map<string, { url: string; bytes: number }>();
 const pending = new Map<string, Promise<string>>();
 const pins = new Map<string, number>();
+const priorities = new Map<string, number>();
 const viewers = new Map<string, number>();
 export function watchArtwork(key: string) {
   viewers.set(key, (viewers.get(key) ?? 0) + 1);
@@ -38,9 +39,15 @@ function prune() {
     bytes -= entry.bytes;
   }
 }
-export function pinArtwork(key: string) {
+export function pinArtwork(key: string, priority = false) {
   pins.set(key, (pins.get(key) ?? 0) + 1);
+  if (priority) priorities.set(key, (priorities.get(key) ?? 0) + 1);
   return () => {
+    if (priority) {
+      const count = (priorities.get(key) ?? 1) - 1;
+      if (count) priorities.set(key, count);
+      else priorities.delete(key);
+    }
     const count = (pins.get(key) ?? 1) - 1;
     if (count) pins.set(key, count);
     else {
@@ -93,7 +100,12 @@ export function loadArtwork(
       return url;
     } finally {
       running--;
-      const next = waiting.entries().next().value;
+      const keys = Array.from(waiting.keys());
+      const visibleKey = keys.find((key) => priorities.has(key)) ??
+        keys.find((key) => pins.has(key));
+      const next = visibleKey
+        ? ([visibleKey, waiting.get(visibleKey)!] as const)
+        : waiting.entries().next().value;
       if (next) {
         waiting.delete(next[0]);
         running++;

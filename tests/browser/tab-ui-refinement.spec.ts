@@ -254,7 +254,7 @@ test("Android player opens without a fade or mini-player progress sliver", async
   await expect(page.locator(".cover-flight")).toHaveCount(0);
 });
 
-test("phone carousel anchors every activated tab left and content follows horizontal dragging", async ({
+test("phone carousel anchors activated tabs and follows dragging after the 12px threshold", async ({
   page,
 }) => {
   await samples(page);
@@ -296,7 +296,7 @@ test("phone carousel anchors every activated tab left and content follows horizo
     (el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41,
   );
   expect(dx).toBeLessThan(-20);
-  expect(dx).toBeCloseTo(-220, 0);
+  expect(dx).toBeCloseTo(-208, 0);
   await page.locator(".library-page").dispatchEvent("pointerup", {
     pointerType: "touch",
     pointerId: 42,

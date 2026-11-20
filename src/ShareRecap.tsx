@@ -26,6 +26,7 @@ export default function ShareRecap({
   frozen: boolean;
   onClose: () => void;
 }) {
+  const androidPreview = native && /Android/i.test(navigator.userAgent);
   const t = language === "es" ? es : en;
   const alive = useRef(true);
   const [capabilities, setCapabilities] = useState<ImageExportCapabilities>({
@@ -62,7 +63,7 @@ export default function ShareRecap({
       language: "en" | "es";
     } | null>(null),
     [preparing, setPreparing] = useState(true),
-    [saving, setSaving] = useState(false),
+    [operation, setOperation] = useState<"save" | "share" | null>(null),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function ShareRecap({
         language,
         format,
         controller.signal,
+        androidPreview ? 0.25 : 1,
       );
       if (!active) return;
       await checkPrivacy(rendered, language, frozen);
@@ -134,35 +136,43 @@ export default function ShareRecap({
     }
   }, [capabilities.share, ready]);
   const size = cardDimensions(format);
+  const exportBlob = async (card: NonNullable<typeof ready>) => {
+    if (androidPreview) await checkPrivacy(card.recap, language, frozen);
+    const blob = androidPreview
+      ? await renderRecapCard(card.recap, language, format)
+      : card.blob;
+    await checkPrivacy(card.recap, language, frozen);
+    return blob;
+  };
   const download = async () => {
-    if (!ready || saving) return;
-    setSaving(true);
+    if (!ready || operation) return;
+    setOperation("save");
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(ready.recap, language, frozen);
+      const blob = await exportBlob(ready);
       if (!alive.current) return;
       const result = await saveImage(
-        ready.blob,
+        blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result !== "canceled" && alive.current) setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setSaving(false);
+      if (alive.current) setOperation(null);
     }
   };
   const share = async () => {
-    if (!ready || saving) return;
-    setSaving(true);
+    if (!ready || operation) return;
+    setOperation("share");
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(ready.recap, language, frozen);
+      const blob = await exportBlob(ready);
       if (!alive.current) return;
       const result = await shareImage(
-        ready.blob,
+        blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result === "unavailable" && alive.current)
@@ -170,7 +180,7 @@ export default function ShareRecap({
     } catch (e) {
       if (alive.current) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      if (alive.current) setSaving(false);
+      if (alive.current) setOperation(null);
     }
   };
   return (
@@ -185,7 +195,7 @@ export default function ShareRecap({
                 "button " + (format === value ? "primary" : "secondary")
               }
               aria-pressed={format === value}
-              disabled={saving}
+              disabled={operation !== null}
               onClick={() => setFormat(value)}
             >
               {value === "story" ? t.storyFormat : t.feedFormat}
@@ -227,25 +237,29 @@ export default function ShareRecap({
         <div className="recap-export-actions">
           <button
             className="button primary full-width"
-            disabled={preparing || saving || !ready}
+            disabled={preparing || operation !== null || !ready}
             onClick={() => void download()}
           >
-            {saving ? (
+            {operation === "save" ? (
               <LoaderCircle className="spinner" size={18} />
             ) : (
               <Download size={18} />
             )}
-            {saving ? t.savingImage : t.downloadImage}
+            {operation === "save" ? t.savingImage : t.downloadImage}
           </button>
           {capabilities.share && (
             <button
               className="button secondary full-width"
-              disabled={preparing || saving || !ready || !canShare}
+              disabled={preparing || operation !== null || !ready || !canShare}
               title={ready && !canShare ? t.imageShareUnavailable : undefined}
               onClick={() => void share()}
             >
-              <Share2 size={18} />
-              {t.shareImage}
+              {operation === "share" ? (
+                <LoaderCircle className="spinner" size={18} />
+              ) : (
+                <Share2 size={18} />
+              )}
+              {operation === "share" ? t.sharingImage : t.shareImage}
             </button>
           )}
         </div>

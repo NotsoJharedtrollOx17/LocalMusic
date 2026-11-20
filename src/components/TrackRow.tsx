@@ -139,17 +139,17 @@ export function TrackRow({
         touchActivated.current = false;
         if (
           !touch.current ||
-          !onSelect ||
           (e.target as HTMLElement).closest(".icon-button,.selection-check")
         )
           return;
         origin.current = { x: e.clientX, y: e.clientY };
         cancel();
-        press.current = setTimeout(() => {
-          held.current = true;
-          clearFeedback();
-          onSelect();
-        }, 480);
+        if (onSelect)
+          press.current = setTimeout(() => {
+            held.current = true;
+            clearFeedback();
+            onSelect();
+          }, 480);
       }}
       onPointerMove={(e) => {
         if (
@@ -211,13 +211,19 @@ export function TrackRow({
       <button
         ref={hit}
         className="track-hit"
-        onPointerDown={() => {
-          if (!selectionMode) {
+        onPointerDown={(e) => {
+          if (
+            !selectionMode &&
+            !(e.pointerType === "touch" && document.documentElement.dataset.platform === "android")
+          ) {
             clearTimeout(feedback.current);
             hit.current?.setAttribute("data-pressed", "true");
           }
         }}
         onPointerUp={(e) => {
+          const moved = origin.current &&
+            Math.hypot(e.clientX - origin.current.x, e.clientY - origin.current.y) >= 10;
+          if (moved) interrupt();
           if (held.current) {
             clearFeedback();
             return;
@@ -225,6 +231,7 @@ export function TrackRow({
           flash();
           if (
             touch.current &&
+            onSelect &&
             !selectionMode &&
             origin.current &&
             Math.hypot(

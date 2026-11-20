@@ -57,6 +57,7 @@ async function decode(url: string, signal?: AbortSignal) {
 export async function prepareRecapRankings(
   recap: Recap,
   signal?: AbortSignal,
+  coverSize = 512,
 ): Promise<ExportRankingGroup[]> {
   throwIfAborted(signal);
   const covers = new Map<string, Promise<HTMLImageElement>>();
@@ -74,7 +75,7 @@ export async function prepareRecapRankings(
               try {
                 const url = artwork.id.startsWith("recap-album:")
                   ? coverUrl(artwork)
-                  : await bounded(api.cover(artwork.id, 512), signal);
+                  : await bounded(api.cover(artwork.id, coverSize), signal);
                 return await decode(url, signal);
               } catch {
                 throwIfAborted(signal);

@@ -22,6 +22,7 @@ import SnapshotsDialog from "./app/SnapshotsDialog";
 import RecapExportDialog from "./app/RecapExportDialog";
 import RecapStoryDialog from "./app/RecapStoryDialog";
 import AboutDialog from "./app/AboutDialog";
+import { AndroidPlayerDrag, useAndroidPlayerDrag } from "./ux/androidPlayerDrag";
 
 export default function App({
   initialSettings,
@@ -29,11 +30,14 @@ export default function App({
   initialSettings?: Settings;
 }) {
   const model = useMusicApp(initialSettings);
+  const playerDrag = useAndroidPlayerDrag();
   return (
     <MusicAppContext.Provider value={model}>
       <div className="app-shell">
         <AppContent />
-        <MiniPlayer />
+        <AndroidPlayerDrag.Provider value={playerDrag}>
+          <MiniPlayer />
+        </AndroidPlayerDrag.Provider>
         <ImportInputs />
         <AppFeedback />
         <DesktopMenuFeedback />
@@ -46,7 +50,9 @@ export default function App({
         <VisualizerView />
         <SettingsDialog />
         <AboutDialog />
-        <PlayerDialog />
+        <AndroidPlayerDrag.Provider value={playerDrag}>
+          <PlayerDialog />
+        </AndroidPlayerDrag.Provider>
         <ManualPlaylistDialog />
         <TrackDetailsDialog />
         <OrganizationDialog />

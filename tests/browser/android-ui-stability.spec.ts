@@ -105,7 +105,7 @@ test("touch menus open neutral, highlight only a press and retain keyboard navig
   ).toBeFocused();
 });
 
-test("EQ centers usable controls but remains scrollable in a short viewport", async ({
+test("EQ places its controls at the top and keeps them reachable in a short viewport", async ({
   page,
 }) => {
   await samples(page);
@@ -114,9 +114,10 @@ test("EQ centers usable controls but remains scrollable in a short viewport", as
   await expect(controls).toBeVisible();
   const body = (await eq.locator(".modal-body").boundingBox())!,
     box = (await controls.boundingBox())!;
-  expect(
-    Math.abs(body.y + body.height / 2 - box.y - box.height / 2),
-  ).toBeLessThan(3);
+  const topPadding = await eq.locator(".modal-body").evaluate(
+    (node) => parseFloat(getComputedStyle(node).paddingTop),
+  );
+  expect(Math.abs(box.y - body.y - topPadding)).toBeLessThan(3);
   await page.setViewportSize({ width: 390, height: 360 });
   await controls.locator('input[type="range"]').last().scrollIntoViewIfNeeded();
   await expect(controls.locator('input[type="range"]').last()).toBeInViewport();

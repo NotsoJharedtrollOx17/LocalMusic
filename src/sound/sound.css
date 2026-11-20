@@ -1,4 +1,4 @@
-.modal:has(.sound-controls) {
+.modal:has(.sound-controls, .equalizer-content) {
   width: min(940px, calc(100vw - 28px));
 }
 .sound-controls {
@@ -73,9 +73,6 @@
   gap: 8px;
 }
 .sound-controls .sound-preset-select {
-  display: none;
-}
-.equalizer-frequency-guide {
   display: none;
 }
 .equalizer-inactive-note {

@@ -8,7 +8,7 @@ async function setup(page: import("@playwright/test").Page) {
     () => (document.documentElement.dataset.platform = "android"),
   );
 }
-test("song press highlights immediately and briefly after activation without haptics", async ({
+test("Android song feedback appears after a tap confirms activation", async ({
   page,
 }) => {
   await setup(page);
@@ -33,6 +33,8 @@ test("song press highlights immediately and briefly after activation without hap
         pointerType: "touch",
         pointerId: 5,
         isPrimary: true,
+        clientX: 100,
+        clientY: 300,
       }),
     );
     el.dispatchEvent(
@@ -52,7 +54,7 @@ test("song press highlights immediately and briefly after activation without hap
     };
   });
   expect(active).toEqual({
-    duringPress: "true",
+    duringPress: null,
     afterRelease: "true",
     afterActivation: "true",
   });
@@ -60,57 +62,121 @@ test("song press highlights immediately and briefly after activation without hap
   await expect(hit).not.toHaveAttribute("data-pressed", "true");
 });
 
+test("Your Recap stays left anchored and scroll intent never paints a song press", async ({
+  page,
+}) => {
+  await setup(page);
+  const tab = page.locator("#tab-year");
+  const strip = page.locator(".section-tabs");
+  await tab.click();
+  await expect.poll(async () => Math.abs((await tab.boundingBox())!.x -
+    (await strip.boundingBox())!.x)).toBeLessThanOrEqual(1);
+  await page.locator("#tab-songs").click();
+  const hit = page.locator("#library-content .track-hit").first();
+  const state = await hit.evaluate((el) => {
+    const dispatch = (type: string, y: number) => el.dispatchEvent(
+      new PointerEvent(type, {
+        bubbles: true, pointerType: "touch", isPrimary: true,
+        pointerId: 17, clientX: 80, clientY: y,
+      }),
+    );
+    dispatch("pointerdown", 300);
+    const down = el.hasAttribute("data-pressed");
+    dispatch("pointermove", 304);
+    const drift = el.hasAttribute("data-pressed");
+    dispatch("pointermove", 320);
+    dispatch("pointerup", 320);
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    return { down, drift, released: el.hasAttribute("data-pressed") };
+  });
+  expect(state).toEqual({ down: false, drift: false, released: false });
+  await expect(page.locator(".mini-player")).toHaveCount(0);
+});
+
 test("Android player grows from the mini rectangle and closes by shrinking back", async ({
   page,
 }) => {
   await setup(page);
   await page.locator("#library-content .track-hit").first().click();
-  const frames = await page.locator(".mini-track").evaluate(async (el) => {
-    const captured: Keyframe[] = [];
-    Object.assign(window, { playerTransitionFrames: captured });
-    const animate = HTMLElement.prototype.animate;
-    HTMLElement.prototype.animate = function (...args) {
-      if (this.matches(".player-surface") && Array.isArray(args[0]))
-        captured.push(...(args[0] as Keyframe[]));
-      return animate.apply(this, args);
-    };
+  const mini = page.locator(".mini-track");
+  const first = await mini.evaluate(async (el) => {
     (el as HTMLElement).focus();
     (el as HTMLElement).click();
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => resolve()),
-    );
-    return captured;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const panel = document.querySelector<HTMLElement>(".android-player-backdrop")!;
+    const bounds = panel.getBoundingClientRect();
+    return { height: bounds.height, top: bounds.top, viewport: innerHeight,
+      opacity: getComputedStyle(panel).opacity, clip: getComputedStyle(panel).clipPath };
   });
+  expect(first.height).toBeLessThan(first.viewport);
+  expect(first.top).toBeGreaterThan(0);
+  expect(first.opacity).toBe("1");
+  expect(first.clip).toBe("none");
   const player = page.locator(".player-surface");
-  expect(frames[0].clipPath).toContain("inset(");
-  expect(frames.every((f) => !("transform" in f))).toBe(true);
-  expect(frames.every((f) => !("opacity" in f))).toBe(true);
-  await player.evaluate((el) =>
-    Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
-  );
-  const exit = await player
-    .getByRole("button", { name: "Close", exact: true })
-    .evaluate((el) => {
-      const frames = (
-        window as unknown as { playerTransitionFrames: Keyframe[] }
-      ).playerTransitionFrames;
-      frames.length = 0;
-      (el as HTMLElement).click();
-      return frames;
-    });
-  expect(exit.at(-1)!.clipPath).toContain("inset(");
-  expect(exit.every((f) => !("transform" in f))).toBe(true);
+  await expect(player).not.toHaveAttribute("data-player-transition");
+  await expect(player.locator(".android-player-backdrop")).toHaveCSS("transform", "none");
+  const spacing = await player.locator(".player-surface-body.player").evaluate((body) => {
+    const content = body.querySelector(".full-player")!.getBoundingClientRect();
+    const bounds = body.getBoundingClientRect();
+    const styles = getComputedStyle(body);
+    return {
+      above: content.top - bounds.top - parseFloat(styles.paddingTop),
+      below: bounds.bottom - content.bottom - parseFloat(styles.paddingBottom),
+    };
+  });
+  expect(Math.abs(spacing.above - spacing.below)).toBeLessThan(3);
+  const closing = await player.getByRole("button", { name: "Close", exact: true }).evaluate(async (button) => {
+    const panel = document.querySelector<HTMLElement>(".android-player-backdrop")!;
+    const fullHeight = panel.getBoundingClientRect().height;
+    (button as HTMLElement).click();
+    const heights: number[] = [];
+    for (let frame = 0; frame < 30 && panel.isConnected; frame++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (panel.isConnected) heights.push(panel.getBoundingClientRect().height);
+    }
+    return { fullHeight, heights };
+  });
+  expect(closing.heights.some((height) => height > first.height &&
+    height < closing.fullHeight)).toBe(true);
+  expect(closing.heights.every((height, index, frames) =>
+    index === 0 || height <= frames[index - 1] + 1)).toBe(true);
   await expect(player).toHaveCount(0);
-  await expect(page.locator(".mini-track")).toBeFocused();
+  await expect(page.locator(".cover-flight")).toHaveCount(0);
+  await expect(mini).toBeFocused();
 });
+
+test("Android player tracks a drag and releases a canceled preview without taking focus", async ({ page }) => {
+  await setup(page);
+  await page.locator("#library-content .track-hit").first().click();
+  const mini = page.locator(".mini-track");
+  await mini.focus();
+  const touch = (y: number) => ({ bubbles: true, pointerType: "touch", pointerId: 9,
+    isPrimary: true, button: 0, clientX: 80, clientY: y });
+  await mini.dispatchEvent("pointerdown", touch(750));
+  await mini.dispatchEvent("pointermove", touch(702));
+  const preview = page.locator(".player-scrim[data-player-preview]");
+  await expect(preview).toHaveAttribute("inert", "");
+  const sheet = preview.locator(".android-player-backdrop");
+  const first = (await sheet.boundingBox())!.height;
+  await mini.dispatchEvent("pointermove", touch(630));
+  expect((await sheet.boundingBox())!.height).toBeGreaterThan(first);
+  await mini.dispatchEvent("pointercancel", touch(630));
+  await expect(preview).toHaveCount(0);
+  await expect(page.locator(".cover-flight")).toHaveCount(0);
+  await expect(mini).toBeFocused();
+});
+
 test("closing an observed Android keyboard collapses search while retaining its filter", async ({
   page,
 }) => {
   await setup(page);
+  const filters = page.locator("#library-content [data-library-filters]");
+  await expect(filters).toBeVisible();
   await page
     .getByRole("button", { name: "Search your library", exact: true })
     .click();
   const input = page.getByRole("searchbox");
+  await expect(filters).toHaveCount(0);
   await input.fill("orbit");
   const viewport = await page.evaluate(() => visualViewport!.height);
   await page.evaluate(() => {
@@ -133,4 +199,7 @@ test("closing an observed Android keyboard collapses search while retaining its 
   await expect(page.locator("#library-content .track-row")).toContainText(
     "A quieter orbit",
   );
+  await expect(filters).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(filters).toBeVisible();
 });

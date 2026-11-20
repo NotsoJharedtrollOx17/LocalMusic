@@ -37,6 +37,21 @@ function Pane({
     active ? model.selectedList?.id : null,
   ]);
   const previous = useRef(key);
+  const detailId = active ? model.group?.id ?? model.selectedList?.id : undefined;
+  const lastDetail = useRef(detailId);
+  useLayoutEffect(() => {
+    const prior = lastDetail.current;
+    lastDetail.current = detailId;
+    if (!root || !active || prior === detailId ||
+        matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const content = root.querySelector<HTMLElement>(".library-pane-content");
+    const movement = content?.animate(
+      [{ transform: `translateX(${detailId ? 24 : -24}px)`, opacity: 0.85 },
+       { transform: "translateX(0)", opacity: 1 }],
+      { duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" },
+    );
+    return () => movement?.cancel();
+  }, [active, detailId, root]);
   useLayoutEffect(() => {
     if (!root || !active) return;
     const save = () => {

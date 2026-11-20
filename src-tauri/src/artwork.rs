@@ -14,6 +14,16 @@ pub fn resolve(
     cache: &Path,
     app: &tauri::AppHandle,
 ) -> Result<String, String> {
+    resolve_cached(track, size, cache, app, true)
+}
+
+fn resolve_cached(
+    track: &Track,
+    size: u32,
+    cache: &Path,
+    app: &tauri::AppHandle,
+    repair: bool,
+) -> Result<String, String> {
     let size = if size <= 64 {
         64
     } else if size <= 128 {
@@ -35,7 +45,7 @@ pub fn resolve(
         .and_then(|s| s.strip_prefix("cache:"))
         .unwrap_or(&seed);
     let mut path = cache.join(format!("{key}-{size}.png"));
-    if size == 128 || size == 256 {
+    if size < 512 {
         let _ = derive_cover(cache, key, size);
     }
     if !path.exists() && key != seed {
@@ -60,7 +70,7 @@ pub fn resolve(
                 .native_music()
                 .call("artwork", serde_json::json!({"uri":track.source_uri}));
         }
-        if size == 128 || size == 256 {
+        if size < 512 {
             let _ = derive_cover(cache, key, size);
         }
         if !path.exists() {
@@ -69,14 +79,33 @@ pub fn resolve(
     }
     if !path.exists() {
         std::fs::create_dir_all(cache).map_err(|e| e.to_string())?;
-        procedural(h, size).save(&path).map_err(|e| e.to_string())?;
+        save_png(&procedural(h, size).into(), &path)?;
         let _ = prune(cache, 128 * 1024 * 1024, Some(&path));
     }
     let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+    if !bytes.starts_with(b"\x89PNG\r\n\x1a\n") || !bytes.ends_with(b"IEND\xaeB`\x82") {
+        if repair {
+            std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+            return resolve_cached(track, size, cache, app, false);
+        }
+        return Err("Incomplete artwork".into());
+    }
     Ok(format!(
         "data:image/png;base64,{}",
         base64::engine::general_purpose::STANDARD.encode(bytes)
     ))
+}
+fn save_png(image: &image::DynamicImage, path: &Path) -> Result<(), String> {
+    let temp = path.with_extension(format!("{}.tmp", uuid::Uuid::new_v4()));
+    let result = image.save_with_format(&temp, image::ImageFormat::Png)
+        .map_err(|e| e.to_string())
+        .and_then(|()| match std::fs::rename(&temp, path) {
+            Ok(()) => Ok(()),
+            Err(_) if path.is_file() => Ok(()),
+            Err(err) => Err(err.to_string()),
+        });
+    let _ = std::fs::remove_file(temp);
+    result
 }
 fn derive_row_cover(cache: &Path, key: &str) -> Result<(), String> {
     derive_cover(cache, key, 128)
@@ -86,11 +115,14 @@ fn derive_cover(cache: &Path, key: &str, size: u32) -> Result<(), String> {
     if !destination.exists() {
         let source = cache.join(format!("{key}-512.png"));
         if source.exists() {
-            image::open(source)
-                .map_err(|e| e.to_string())?
-                .thumbnail(size, size)
-                .save(destination)
-                .map_err(|e| e.to_string())?;
+            let cover = image::open(&source).map_err(|error| {
+                if matches!(error, image::ImageError::Decoding(_)) {
+                    let _ = std::fs::remove_file(&source);
+                }
+                error.to_string()
+            })?;
+            save_png(&cover.thumbnail(size, size), &destination)?;
+            prune(cache, 128 * 1024 * 1024, Some(&destination))?;
         }
     }
     Ok(())
@@ -113,10 +145,7 @@ pub fn save_embedded(bytes: &[u8], cache: &Path) -> Result<String, String> {
     for size in [64, 128, 256, 512] {
         let path = cache.join(format!("{key}-{size}.png"));
         if !path.exists() {
-            image
-                .thumbnail(size, size)
-                .save(&path)
-                .map_err(|e| e.to_string())?;
+            save_png(&image.thumbnail(size, size), &path)?;
         }
     }
     Ok(format!("cache:{key}"))
@@ -135,6 +164,9 @@ pub fn prune(cache: &Path, budget: u64, keep: Option<&Path>) -> Result<(), Strin
         })
         .collect::<Vec<_>>();
     let mut total: u64 = files.iter().map(|x| x.1).sum();
+    if total <= budget {
+        return Ok(());
+    }
     files.sort_by_key(|x| x.2);
     for (p, size, _) in files {
         if total <= budget {
@@ -205,8 +237,11 @@ fn procedural(seed: u32, size: u32) -> image::RgbaImage {
 }
 pub fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     use tauri::Manager;
-    app.path()
-        .app_data_dir()
+    #[cfg(target_os = "android")]
+    let directory = app.path().app_cache_dir();
+    #[cfg(not(target_os = "android"))]
+    let directory = app.path().app_data_dir();
+    directory
         .map(|p| p.join("artwork"))
         .map_err(|e| e.to_string())
 }

@@ -97,7 +97,7 @@ export function useLibraryMotion(
       }
       const started = performance.now();
       const frame = (time: number) => {
-        const t = Math.min(1, (time - started) / 160);
+        const t = Math.min(1, (time - started) / 180);
         node.scrollTo({
           left: start + (target - start) * (1 - Math.pow(1 - t, 3)),
           behavior: "instant",
@@ -249,10 +249,7 @@ export function useLibraryMotion(
       stripDrag.current.touching = false;
       settleStrip();
     },
-    onTouchCancel: () => {
-      stripDrag.current.touching = false;
-      settleStrip();
-    },
+    onTouchCancel: cancelStrip,
     onPointerDown: (e: ReactPointerEvent) => {
       cancelStrip();
       stripDrag.current.suppress = 0;

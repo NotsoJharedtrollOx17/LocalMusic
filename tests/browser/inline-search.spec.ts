@@ -123,6 +123,32 @@ test("clear, literal queries and scoped playlist names preserve usable navigatio
   });
 });
 
+test("an open search field fits narrow windows without stretching across wider rows", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 540 });
+  await seedInlineCatalog(page);
+  await page.getByRole("button", { name: "Search your library", exact: true }).click();
+  await expect(page.getByRole("searchbox")).toBeFocused();
+  for (const width of [320, 390, 900, 1360]) {
+    await page.setViewportSize({ width, height: 540 });
+    const geometry = await page.locator(".inline-search-field").evaluate((node) => {
+      const field = node.getBoundingClientRect();
+      const header = node.closest(".library-navigation")!.getBoundingClientRect();
+      const input = node.querySelector("input")!.getBoundingClientRect();
+      const close = node.querySelector("button")!.getBoundingClientRect();
+      return {
+        withinHeader: field.left >= header.left && field.right <= header.right,
+        withinViewport: field.left >= 0 && field.right <= innerWidth,
+        width: field.width,
+        textWidth: input.width,
+        closeFits: close.left >= input.right && close.right <= field.right,
+      };
+    });
+    expect(geometry).toMatchObject({ withinHeader: true, withinViewport: true, closeFits: true });
+    expect(geometry.width).toBeLessThanOrEqual(420);
+    expect(geometry.textWidth).toBeGreaterThan(100);
+  }
+});
+
 test("search reaches unloaded tracks/groups and preserves pagination and filtered editing positions", async ({
   page,
 }) => {
@@ -532,14 +558,17 @@ test("search shares the heading count and reflows from desktop left expansion to
       return {
         top: field.top,
         tabsBottom: tabs.bottom,
-        left: Math.abs(field.left - nav.left),
-        right: Math.abs(field.right - nav.right),
+        leftInset: field.left - nav.left,
+        rightInset: nav.right - field.right,
+        width: field.width,
         overflow: document.documentElement.scrollWidth - innerWidth,
       };
     });
     expect(geometry.top).toBeGreaterThanOrEqual(geometry.tabsBottom - 1);
-    expect(geometry.left).toBeLessThanOrEqual(1);
-    expect(geometry.right).toBeLessThanOrEqual(1);
+    expect(geometry.leftInset).toBeGreaterThanOrEqual(-1);
+    expect(geometry.rightInset).toBeGreaterThanOrEqual(-1);
+    expect(Math.abs(geometry.leftInset - geometry.rightInset)).toBeLessThanOrEqual(1);
+    expect(geometry.width).toBeLessThanOrEqual(420);
     expect(geometry.overflow).toBeLessThanOrEqual(1);
     await expect(input).toBeFocused();
     await expect(
