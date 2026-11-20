@@ -26,6 +26,7 @@ export default function ShareRecap({
   frozen: boolean;
   onClose: () => void;
 }) {
+  const androidPreview = native && /Android/i.test(navigator.userAgent);
   const t = language === "es" ? es : en;
   const alive = useRef(true);
   const [capabilities, setCapabilities] = useState<ImageExportCapabilities>({
@@ -86,6 +87,7 @@ export default function ShareRecap({
         language,
         format,
         controller.signal,
+        androidPreview ? 0.25 : 1,
       );
       if (!active) return;
       await checkPrivacy(rendered, language, frozen);
@@ -134,16 +136,24 @@ export default function ShareRecap({
     }
   }, [capabilities.share, ready]);
   const size = cardDimensions(format);
+  const exportBlob = async (card: NonNullable<typeof ready>) => {
+    if (androidPreview) await checkPrivacy(card.recap, language, frozen);
+    const blob = androidPreview
+      ? await renderRecapCard(card.recap, language, format)
+      : card.blob;
+    await checkPrivacy(card.recap, language, frozen);
+    return blob;
+  };
   const download = async () => {
     if (!ready || saving) return;
     setSaving(true);
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(ready.recap, language, frozen);
+      const blob = await exportBlob(ready);
       if (!alive.current) return;
       const result = await saveImage(
-        ready.blob,
+        blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result !== "canceled" && alive.current) setSaved(true);
@@ -159,10 +169,10 @@ export default function ShareRecap({
     setError("");
     setSaved(false);
     try {
-      await checkPrivacy(ready.recap, language, frozen);
+      const blob = await exportBlob(ready);
       if (!alive.current) return;
       const result = await shareImage(
-        ready.blob,
+        blob,
         `your-recap-${recap.period.kind}-${recap.period.startDate}-${format}.png`,
       );
       if (result === "unavailable" && alive.current)

@@ -111,23 +111,24 @@ export async function renderRecapCard(
   language: "en" | "es",
   format: CardFormat,
   signal?: AbortSignal,
+  scale = 1,
 ): Promise<Blob> {
   await Promise.all([
     document.fonts.load('700 60px "Space Grotesk"'),
     document.fonts.load("500 28px Inter"),
   ]);
-  const rankings = await prepareRecapRankings(recap, signal);
+  const rankings = await prepareRecapRankings(recap, signal, scale < 1 ? 128 : 512);
   const brandImage = new Image();
   brandImage.src = brandMarkUrl;
   await brandImage.decode();
   throwIfAborted(signal);
   const dimensions = cardDimensions(format);
   const canvas = document.createElement("canvas");
-  canvas.width = dimensions.width;
-  canvas.height = dimensions.height;
+  canvas.width = dimensions.width * scale;
+  canvas.height = dimensions.height * scale;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Image rendering unavailable");
-  ctx.scale(2, 2);
+  ctx.scale(2 * scale, 2 * scale);
   const h = dimensions.height / 2,
     story = format === "story",
     pad = 64,
