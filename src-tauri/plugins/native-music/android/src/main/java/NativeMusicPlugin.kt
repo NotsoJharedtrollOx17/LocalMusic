@@ -57,6 +57,9 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
    builtInZoomControls = false
    displayZoomControls = false
   }
+  worker.execute {
+   migrateLegacyArtwork(java.io.File(activity.dataDir, "artwork"), java.io.File(activity.cacheDir, "artwork"))
+  }
   musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()
   webView.overScrollMode=android.view.View.OVER_SCROLL_NEVER
   (activity as? ComponentActivity)?.onBackPressedDispatcher?.addCallback(activity,object:OnBackPressedCallback(true){
