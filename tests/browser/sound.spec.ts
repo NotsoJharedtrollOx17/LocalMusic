@@ -484,7 +484,8 @@ test("compact EQ scale aligns at desktop, mobile and zoom-sized widths", async (
       "\u221210 dB",
     ]);
     const geometry = await grid.evaluate((root) => {
-      const sliders = [...root.querySelectorAll("input")].map((n) =>
+      const inputs = [...root.querySelectorAll("input")];
+      const sliders = inputs.map((n) =>
         n.getBoundingClientRect(),
       );
       const levels = [...root.querySelectorAll(".equalizer-level")].map(
@@ -495,7 +496,7 @@ test("compact EQ scale aligns at desktop, mobile and zoom-sized widths", async (
       );
       return {
         tops: sliders.map((r) => r.y),
-        heights: sliders.map((r) => r.height),
+        heights: inputs.map((input) => getComputedStyle(input).height),
         centers: sliders.map((r) => r.x + r.width / 2),
         top: levels[0] - sliders[0].y,
         middle: levels[5] - sliders[0].y,
@@ -506,7 +507,7 @@ test("compact EQ scale aligns at desktop, mobile and zoom-sized widths", async (
       };
     });
     expect(new Set(geometry.tops).size).toBe(1);
-    expect(geometry.heights).toEqual(Array(9).fill(180));
+    expect(geometry.heights).toEqual(Array(9).fill("180px"));
     expect(geometry.top).toBeCloseTo(8, 0);
     expect(geometry.middle).toBeCloseTo(90, 0);
     expect(geometry.bottom).toBeCloseTo(172, 0);
