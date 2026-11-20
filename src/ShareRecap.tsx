@@ -63,7 +63,7 @@ export default function ShareRecap({
       language: "en" | "es";
     } | null>(null),
     [preparing, setPreparing] = useState(true),
-    [saving, setSaving] = useState(false),
+    [operation, setOperation] = useState<"save" | "share" | null>(null),
     [error, setError] = useState(""),
     [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -145,8 +145,8 @@ export default function ShareRecap({
     return blob;
   };
   const download = async () => {
-    if (!ready || saving) return;
-    setSaving(true);
+    if (!ready || operation) return;
+    setOperation("save");
     setError("");
     setSaved(false);
     try {
@@ -160,12 +160,12 @@ export default function ShareRecap({
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setSaving(false);
+      if (alive.current) setOperation(null);
     }
   };
   const share = async () => {
-    if (!ready || saving) return;
-    setSaving(true);
+    if (!ready || operation) return;
+    setOperation("share");
     setError("");
     setSaved(false);
     try {
@@ -180,7 +180,7 @@ export default function ShareRecap({
     } catch (e) {
       if (alive.current) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      if (alive.current) setSaving(false);
+      if (alive.current) setOperation(null);
     }
   };
   return (
@@ -195,7 +195,7 @@ export default function ShareRecap({
                 "button " + (format === value ? "primary" : "secondary")
               }
               aria-pressed={format === value}
-              disabled={saving}
+              disabled={operation !== null}
               onClick={() => setFormat(value)}
             >
               {value === "story" ? t.storyFormat : t.feedFormat}
@@ -237,25 +237,29 @@ export default function ShareRecap({
         <div className="recap-export-actions">
           <button
             className="button primary full-width"
-            disabled={preparing || saving || !ready}
+            disabled={preparing || operation !== null || !ready}
             onClick={() => void download()}
           >
-            {saving ? (
+            {operation === "save" ? (
               <LoaderCircle className="spinner" size={18} />
             ) : (
               <Download size={18} />
             )}
-            {saving ? t.savingImage : t.downloadImage}
+            {operation === "save" ? t.savingImage : t.downloadImage}
           </button>
           {capabilities.share && (
             <button
               className="button secondary full-width"
-              disabled={preparing || saving || !ready || !canShare}
+              disabled={preparing || operation !== null || !ready || !canShare}
               title={ready && !canShare ? t.imageShareUnavailable : undefined}
               onClick={() => void share()}
             >
-              <Share2 size={18} />
-              {t.shareImage}
+              {operation === "share" ? (
+                <LoaderCircle className="spinner" size={18} />
+              ) : (
+                <Share2 size={18} />
+              )}
+              {operation === "share" ? t.sharingImage : t.shareImage}
             </button>
           )}
         </div>

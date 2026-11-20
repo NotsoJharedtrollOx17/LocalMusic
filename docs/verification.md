@@ -91,6 +91,16 @@ On the Note10+ the old QA build reproduced both reports in three native tap-and-
 
 The ARM64 QA APK SHA-256 was `2b21f229ed1e895ecce0eac6855f512013ea1e342d83875a08aeae2fc658715b`. The 115 frontend unit tests and 27 focused browser cases passed. This follow-up used the physical phone for Android acceptance at the owner's direction.
 
+### Recap export and player polish follow-up
+
+The [approved follow-up](android-recap-player-polish-plan.md) is on `dev.android-recap-player-polish`. The frontend build and all 115 unit tests passed. The ARM64 debug package used the separate `app.localmusic.year.qa` application ID and the compiled and packaged Rust library SHA-256 hashes matched. The APK SHA-256 was `49b7f1930441be44f4f585cdd8a9213057c5db1b59e519c486847cf53adea4f2`. Production package version and update time matched before and after installation.
+
+On the Galaxy Note10+, three portrait rounds and one landscape round verified tap and swipe opening and closing, short-drag cancellation in both directions, Queue and Equalizer return paths, focus restoration, paused transport, and the Library scroll position. Equalizer controls aligned with the start of the modal body. WebView Reduce Motion emulation bypassed the cover flight. The original device rotation settings were restored. Three more native Library swipe rounds kept Your Recap 0.63 CSS pixels from the tab strip’s left edge and recorded zero orange press highlights.
+
+After a QA WebView reload on the 711-track fixture, first visits to Albums, Artists, and Songs issued 4, 3, and 0 artwork requests and reached primary artwork readiness in 224, 104, and 113 ms. Songs had already loaded at startup. The second pass issued zero artwork requests across the three tabs and measured 121, 68, and 109 ms. The primary cover stayed neutral when observed loading and showed no generated artwork before its embedded bitmap. These are single instrumented walkthroughs. Frame pacing and sustained memory usage remain separate measurements.
+
+The 44 focused browser cases passed across the initial run and rechecks. Coverage included accessibility, player geometry, Android gesture cancellation, Equalizer placement, English and Spanish Recaps, live and frozen periods, privacy during export, and the Spanish Share cancellation path. Both Story and Feed passed PNG dimension and lower-right logo checks. Native Gallery save and the system share chooser were outside this follow-up’s device checks.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.

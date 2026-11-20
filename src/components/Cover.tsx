@@ -21,12 +21,14 @@ export function Cover({
   large = false,
   imageRef,
   size,
+  priority = false,
 }: {
   track: Track;
   className?: string;
   large?: boolean;
   imageRef?: RefObject<HTMLImageElement | null>;
   size?: 128 | 256 | 512;
+  priority?: boolean;
 }) {
   const image = useRef<HTMLImageElement>(null);
   const bindImage = useCallback(
@@ -38,6 +40,7 @@ export function Cover({
   );
   const pixels = size ?? (large ? 512 : 128);
   const lazySource = native || track.artworkUrl?.startsWith("catalog:");
+  const android = document.documentElement.dataset.platform === "android";
   const identity = track.artworkUrl?.startsWith("cache:")
     ? track.artworkUrl
     : track.id + ":" + hash(track.artworkUrl ?? "");
@@ -48,15 +51,21 @@ export function Cover({
   const [resolved, setResolved] = useState<{ key: string; url: string } | null>(
     null,
   );
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const url = lazySource
+    ? (resolved?.key === key ? resolved.url : cachedArtwork(key)) ??
+      (android && priority && pixels > 128 ? cachedArtwork(identity + ":128") : undefined) ??
+      (android && failedKey !== key ? undefined : fallback)
+    : fallback;
   useEffect(() => {
     if (!lazySource || !image.current) return;
     const unwatch = watchArtwork(key);
     let release: (() => void) | undefined;
     const visible =
-      typeof IntersectionObserver !== "undefined"
+      !priority && typeof IntersectionObserver !== "undefined"
         ? new IntersectionObserver((entries) => {
             if (entries.some((entry) => entry.isIntersecting))
-              release ??= pinArtwork(key);
+              release ??= pinArtwork(key, priority);
             else {
               release?.();
               release = undefined;
@@ -64,7 +73,7 @@ export function Cover({
           })
         : null;
     visible?.observe(image.current);
-    if (!visible) release = pinArtwork(key);
+    if (!visible || priority) release = pinArtwork(key, priority);
     const unpin = () => {
       visible?.disconnect();
       release?.();
@@ -78,7 +87,7 @@ export function Cover({
           if (active) setResolved({ key, url });
         })
         .catch(() => {
-          /* the existing image or geometric fallback stays visible */
+          if (active) setFailedKey(key);
         });
     };
     if (typeof IntersectionObserver === "undefined") load();
@@ -92,7 +101,8 @@ export function Cover({
         },
         { rootMargin: `${Math.min(innerHeight * 2, 1800)}px` },
       );
-      observer.observe(element);
+      if (priority) load();
+      else observer.observe(element);
       return () => {
         active = false;
         observer.disconnect();
@@ -103,17 +113,13 @@ export function Cover({
       active = false;
       unpin();
     };
-  }, [lazySource, key, track.id, pixels]);
+  }, [lazySource, key, track.id, pixels, priority]);
   return (
     <img
       ref={bindImage}
       className={"cover " + className}
-      src={
-        lazySource
-          ? ((resolved?.key === key ? resolved.url : cachedArtwork(key)) ??
-            fallback)
-          : coverUrl(track)
-      }
+      src={url}
+      data-artwork-pending={url === undefined || undefined}
       alt=""
       loading="eager"
       decoding="async"

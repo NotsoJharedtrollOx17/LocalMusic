@@ -2,16 +2,22 @@ import { useRef } from "react";
 import { useGestureCancellation } from "./useGestureCancellation";
 import type { PointerEvent, MouseEvent } from "react";
 
-export function useMiniPlayerGesture(open: () => void, trackId?: string) {
+export function useMiniPlayerGesture(
+  open: () => void,
+  trackId?: string,
+  preview?: { move: (distance: number) => void; cancel: () => void },
+) {
   const active = useRef<{
     id: number;
     x: number;
     y: number;
     moved: boolean;
+    vertical: boolean;
   } | null>(null);
   const blocked = useRef(false);
   const cancel = () => {
     if (!active.current) return;
+    if (active.current.vertical) preview?.cancel();
     active.current = null;
     blocked.current = true;
   };
@@ -28,6 +34,7 @@ export function useMiniPlayerGesture(open: () => void, trackId?: string) {
         x: e.clientX,
         y: e.clientY,
         moved: false,
+        vertical: false,
       };
       if (
         e.currentTarget.hasPointerCapture(e.pointerId) ||
@@ -37,11 +44,12 @@ export function useMiniPlayerGesture(open: () => void, trackId?: string) {
     },
     onPointerMove: (e: PointerEvent<HTMLButtonElement>) => {
       const g = active.current;
-      if (
-        g?.id === e.pointerId &&
-        Math.hypot(e.clientX - g.x, e.clientY - g.y) > 10
-      )
-        g.moved = true;
+      if (!g || g.id !== e.pointerId) return;
+      const dx = Math.abs(e.clientX - g.x);
+      const up = g.y - e.clientY;
+      if (Math.hypot(dx, up) > 10) g.moved = true;
+      if (up > 12 && up > dx * 1.5) g.vertical = true;
+      if (g.vertical) preview?.move(Math.max(0, up));
     },
     onPointerUp: (e: PointerEvent<HTMLButtonElement>) => {
       const g = active.current;
@@ -54,7 +62,7 @@ export function useMiniPlayerGesture(open: () => void, trackId?: string) {
         blocked.current = true;
         e.currentTarget.focus({ preventScroll: true });
         open();
-      }
+      } else if (g.vertical) preview?.cancel();
     },
     onPointerCancel: cancel,
     onLostPointerCapture: cancel,
@@ -63,6 +71,7 @@ export function useMiniPlayerGesture(open: () => void, trackId?: string) {
         e.preventDefault();
         return;
       }
+      e.currentTarget.focus({ preventScroll: true });
       open();
     },
   };

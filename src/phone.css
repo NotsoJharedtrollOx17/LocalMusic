@@ -657,14 +657,19 @@
   height: 48px;
   min-height: 48px;
 }
-:root[data-layout="phone"] .modal:has(.sound-controls) > .modal-body {
+:root[data-layout="phone"] .modal:has(.equalizer-content) > .modal-body {
   display: flex;
   flex-direction: column;
 }
-:root[data-layout="phone"] .modal-body > .sound-controls {
+:root[data-layout="phone"] .equalizer-content {
   flex: 0 0 auto;
   margin-block: 0;
+}
+:root[data-layout="phone"] .equalizer-content > * {
   padding-block: 12px;
+}
+:root[data-layout="phone"] .equalizer-content > p:first-child {
+  margin-top: 0;
 }
 :root[data-layout="phone"] .track-details {
   display: flex;

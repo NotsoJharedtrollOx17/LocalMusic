@@ -265,7 +265,7 @@ export async function renderRecapCard(
     pad,
     h - 117,
     24,
-    w,
+    650,
     muted,
   );
   text(
@@ -275,16 +275,19 @@ export async function renderRecapCard(
     pad,
     h - 79,
     23,
-    w,
+    650,
     muted,
   );
-  ctx.drawImage(brandImage, pad, h - 62, 42, 42);
+  const markSize = 64;
+  const wordmark = "local.";
   ctx.fillStyle = ink;
-  ctx.font = '700 28px "Space Grotesk"';
-  ctx.fillText("local", pad + 51, h - 30);
-  const labelWidth = ctx.measureText("local").width;
+  ctx.font = '700 44px "Space Grotesk"';
+  const wordmarkX = 1080 - pad - ctx.measureText(wordmark).width;
+  const wordmarkY = h - 54;
+  ctx.drawImage(brandImage, wordmarkX - markSize - 12, h - 100, markSize, markSize);
+  ctx.fillText("local", wordmarkX, wordmarkY);
   ctx.fillStyle = "#ff6816";
-  ctx.fillText(".", pad + 51 + labelWidth, h - 30);
+  ctx.fillText(".", wordmarkX + ctx.measureText("local").width, wordmarkY);
   throwIfAborted(signal);
   return new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(

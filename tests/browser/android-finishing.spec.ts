@@ -98,44 +98,62 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
 }) => {
   await setup(page);
   await page.locator("#library-content .track-hit").first().click();
-  const frames = await page.locator(".mini-track").evaluate(async (el) => {
-    const captured: Keyframe[] = [];
-    Object.assign(window, { playerTransitionFrames: captured });
-    const animate = HTMLElement.prototype.animate;
-    HTMLElement.prototype.animate = function (...args) {
-      if (this.matches(".player-surface") && Array.isArray(args[0]))
-        captured.push(...(args[0] as Keyframe[]));
-      return animate.apply(this, args);
-    };
+  const mini = page.locator(".mini-track");
+  const first = await mini.evaluate(async (el) => {
     (el as HTMLElement).focus();
     (el as HTMLElement).click();
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => resolve()),
-    );
-    return captured;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const panel = document.querySelector<HTMLElement>(".android-player-backdrop")!;
+    const bounds = panel.getBoundingClientRect();
+    return { height: bounds.height, top: bounds.top, viewport: innerHeight,
+      opacity: getComputedStyle(panel).opacity, clip: getComputedStyle(panel).clipPath };
   });
+  expect(first.height).toBeLessThan(first.viewport);
+  expect(first.top).toBeGreaterThan(0);
+  expect(first.opacity).toBe("1");
+  expect(first.clip).toBe("none");
   const player = page.locator(".player-surface");
-  expect(frames[0].transform).toMatch(/^translateY\([1-9]/);
-  expect(frames.every((f) => !("clipPath" in f))).toBe(true);
-  expect(frames.every((f) => !("opacity" in f))).toBe(true);
-  await player.evaluate((el) =>
-    Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
-  );
-  const exit = await player
-    .getByRole("button", { name: "Close", exact: true })
-    .evaluate((el) => {
-      const frames = (
-        window as unknown as { playerTransitionFrames: Keyframe[] }
-      ).playerTransitionFrames;
-      frames.length = 0;
-      (el as HTMLElement).click();
-      return frames;
-    });
-  expect(exit.at(-1)!.transform).toMatch(/^translateY\([1-9]/);
-  expect(exit.every((f) => !("clipPath" in f))).toBe(true);
+  await expect(player).not.toHaveAttribute("data-player-transition");
+  await expect(player.locator(".android-player-backdrop")).toHaveCSS("transform", "none");
+  const closing = await player.getByRole("button", { name: "Close", exact: true }).evaluate(async (button) => {
+    const panel = document.querySelector<HTMLElement>(".android-player-backdrop")!;
+    const fullHeight = panel.getBoundingClientRect().height;
+    (button as HTMLElement).click();
+    const heights: number[] = [];
+    for (let frame = 0; frame < 30 && panel.isConnected; frame++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (panel.isConnected) heights.push(panel.getBoundingClientRect().height);
+    }
+    return { fullHeight, heights };
+  });
+  expect(closing.heights.some((height) => height > first.height &&
+    height < closing.fullHeight)).toBe(true);
   await expect(player).toHaveCount(0);
-  await expect(page.locator(".mini-track")).toBeFocused();
+  await expect(page.locator(".cover-flight")).toHaveCount(0);
+  await expect(mini).toBeFocused();
 });
+
+test("Android player tracks a drag and releases a canceled preview without taking focus", async ({ page }) => {
+  await setup(page);
+  await page.locator("#library-content .track-hit").first().click();
+  const mini = page.locator(".mini-track");
+  await mini.focus();
+  const touch = (y: number) => ({ bubbles: true, pointerType: "touch", pointerId: 9,
+    isPrimary: true, button: 0, clientX: 80, clientY: y });
+  await mini.dispatchEvent("pointerdown", touch(750));
+  await mini.dispatchEvent("pointermove", touch(702));
+  const preview = page.locator(".player-scrim[data-player-preview]");
+  await expect(preview).toHaveAttribute("inert", "");
+  const sheet = preview.locator(".android-player-backdrop");
+  const first = (await sheet.boundingBox())!.height;
+  await mini.dispatchEvent("pointermove", touch(630));
+  expect((await sheet.boundingBox())!.height).toBeGreaterThan(first);
+  await mini.dispatchEvent("pointercancel", touch(630));
+  await expect(preview).toHaveCount(0);
+  await expect(page.locator(".cover-flight")).toHaveCount(0);
+  await expect(mini).toBeFocused();
+});
+
 test("closing an observed Android keyboard collapses search while retaining its filter", async ({
   page,
 }) => {

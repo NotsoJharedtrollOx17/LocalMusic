@@ -14,10 +14,23 @@ import { useMusicAppContext } from "./MusicAppContext";
 import PlaybackProgress from "./PlaybackProgress";
 import TransportControls from "./TransportControls";
 import { useMiniPlayerGesture } from "../ux/useMiniPlayerGesture";
+import { useContext } from "react";
+import { AndroidPlayerDrag } from "../ux/androidPlayerDrag";
+import { reducedMotion } from "../ux/motion";
 
 export default function MiniPlayer() {
   const { player, setModal, t, act, current, favorite } = useMusicAppContext();
-  const gesture = useMiniPlayerGesture(() => setModal("player"), current?.id);
+  const drag = useContext(AndroidPlayerDrag);
+  const gesture = useMiniPlayerGesture(() => {
+    setModal("player");
+    drag?.clear();
+  }, current?.id, drag && current &&
+    document.documentElement.dataset.platform === "android" ? {
+    move: (pixels) => {
+      if (!reducedMotion()) drag.move(current.id, pixels);
+    },
+    cancel: drag.cancel,
+  } : undefined);
 
   return (
     <>
@@ -25,7 +38,7 @@ export default function MiniPlayer() {
         <div className="mini-player-dock">
           <div className="mini-player">
             <button className="mini-track" data-no-swipe {...gesture}>
-              <Cover track={current} />
+              <Cover track={current} priority />
               <span>
                 <strong>{current.title}</strong>
                 <small>{current.artist || t.unknownArtist}</small>

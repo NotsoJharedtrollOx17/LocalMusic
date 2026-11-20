@@ -287,9 +287,6 @@
    move to a side edge in landscape, so every control region reserves it. */
 :root[data-platform="android"] .player-scrim {
   padding: 0;
-  background: var(--paper);
-}
-:root[data-platform="android"] .player-scrim:has([data-closing="true"]) {
   background: transparent;
 }
 :root[data-platform="android"] .player-surface {
@@ -339,6 +336,37 @@
   }
 }
 
-:root[data-platform="android"] .player-scrim {
+.player-scrim[data-player-preview] {
+  pointer-events: none;
+}
+.player-surface:has(> .android-player-backdrop) {
+  position: relative;
+  isolation: isolate;
   background: transparent;
+}
+.android-player-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  transform-origin: top left;
+  pointer-events: none;
+}
+.android-player-cover-flight {
+  transform-origin: top left;
+}
+.player-surface[data-cover-flight] .player-cover {
+  visibility: hidden;
+}
+.player-surface[data-player-transition] > .player-surface-head {
+  transform: translateY(calc((1 - var(--player-progress, 1)) * 18px));
+}
+.player-surface[data-player-transition] > :is(.player-surface-head, .player-surface-body) {
+  opacity: clamp(0, calc((var(--player-progress, 1) - 0.55) * 4), 1);
+}
+.player-surface[data-player-transition] > .player-surface-footer {
+  opacity: clamp(0, calc((var(--player-progress, 1) - 0.08) * 4), 1);
+}
+.player-surface[data-player-transition] > :is(.player-surface-body, .player-surface-footer) {
+  pointer-events: none;
 }
