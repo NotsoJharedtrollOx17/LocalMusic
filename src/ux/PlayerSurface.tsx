@@ -48,12 +48,10 @@ export function PlayerSurface({
   usePlayerArtworkSize(ref, active, view, trackId);
   const latestClose = useRef(onClose);
   const entryAnimation = useRef<Animation | null>(null);
-  const miniClip = (node: HTMLElement) => {
-    const miniNode = document.querySelector<HTMLElement>(".mini-player");
-    if (!miniNode) return "inset(0px round 0px)";
-    const mini = miniNode.getBoundingClientRect(), bounds = node.getBoundingClientRect();
-    const radius = getComputedStyle(miniNode).borderRadius;
-    return `inset(${Math.max(0, mini.top - bounds.top)}px ${Math.max(0, bounds.right - mini.right)}px ${Math.max(0, bounds.bottom - mini.bottom)}px ${Math.max(0, mini.left - bounds.left)}px round ${radius})`;
+  const miniOffset = (node: HTMLElement) => {
+    const mini = document.querySelector(".mini-player")?.getBoundingClientRect();
+    const bounds = node.getBoundingClientRect();
+    return `translateY(${Math.max(0, (mini?.top ?? bounds.bottom) - bounds.top)}px)`;
   };
   const exitAnimation = useRef<Animation | null>(null),
     exitCover = useRef<(() => void) | null>(null);
@@ -86,25 +84,19 @@ export function PlayerSurface({
         mini.getBoundingClientRect(),
         art.src,
       );
-    const startClip = getComputedStyle(node).clipPath;
+    const startTransform = getComputedStyle(node).transform;
+    const endTransform = miniOffset(node);
     entryAnimation.current?.cancel();
     node.inert = true;
     if (android) node.dataset.closing = "true";
     const animation = node.animate(
       android
         ? [
-            {
-              clipPath:
-                startClip === "none" ? "inset(0px round 0px)" : startClip,
-            },
-            { clipPath: miniClip(node) },
-          ]
-        : [
-            { transform: getComputedStyle(node).transform, opacity: 1 },
-            { transform: "translateY(45px) scale(.97)", opacity: 0 },
+            { transform: startTransform },
+            { transform: endTransform },
           ],
       {
-        duration: android ? 240 : 240,
+        duration: 240,
         easing: "cubic-bezier(.4,0,.2,1)",
         fill: "forwards",
       },
@@ -129,8 +121,8 @@ export function PlayerSurface({
       const node = ref.current;
       if (node && !standalone && !reducedMotion())
         entryAnimation.current = node.animate(
-          [{ clipPath: miniClip(node) }, { clipPath: "inset(0px round 0px)" }],
-          { duration: 280, easing: "cubic-bezier(.2,0,0,1)" },
+          [{ transform: miniOffset(node) }, { transform: "translateY(0)" }],
+          { duration: 240, easing: "cubic-bezier(.2,.8,.2,1)" },
         );
       return;
     }

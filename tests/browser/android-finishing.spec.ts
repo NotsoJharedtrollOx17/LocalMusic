@@ -82,8 +82,8 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
     return captured;
   });
   const player = page.locator(".player-surface");
-  expect(frames[0].clipPath).toContain("inset(");
-  expect(frames.every((f) => !("transform" in f))).toBe(true);
+  expect(frames[0].transform).toMatch(/^translateY\([1-9]/);
+  expect(frames.every((f) => !("clipPath" in f))).toBe(true);
   expect(frames.every((f) => !("opacity" in f))).toBe(true);
   await player.evaluate((el) =>
     Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))),
@@ -98,8 +98,8 @@ test("Android player grows from the mini rectangle and closes by shrinking back"
       (el as HTMLElement).click();
       return frames;
     });
-  expect(exit.at(-1)!.clipPath).toContain("inset(");
-  expect(exit.every((f) => !("transform" in f))).toBe(true);
+  expect(exit.at(-1)!.transform).toMatch(/^translateY\([1-9]/);
+  expect(exit.every((f) => !("clipPath" in f))).toBe(true);
   await expect(player).toHaveCount(0);
   await expect(page.locator(".mini-track")).toBeFocused();
 });

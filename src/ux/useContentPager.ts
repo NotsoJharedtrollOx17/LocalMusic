@@ -108,10 +108,13 @@ export function useContentPager(
           suppress.current = performance.now() + 350;
           return;
         }
+        if (!e.isPrimary) {
+          suppress.current = performance.now() + 350;
+          return;
+        }
         suppress.current = 0;
         if (
           e.pointerType !== "touch" ||
-          !e.isPrimary ||
           !latest.current.enabled ||
           (e.target as HTMLElement).closest(
             "input,select,textarea,[data-no-swipe],.section-tabs,.album-grid-carousel",
@@ -134,6 +137,7 @@ export function useContentPager(
           dy = e.clientY - g.y;
         if (!g.horizontal) {
           if (Math.max(Math.abs(dx), Math.abs(dy)) < 12) return;
+          suppress.current = performance.now() + 350;
           if (Math.abs(dy) > Math.abs(dx) * 1.15) {
             gesture.current = null;
             return;
@@ -149,8 +153,9 @@ export function useContentPager(
             librarySections.indexOf(latest.current.section) + (dx < 0 ? 1 : -1)
           ];
         const width = track.current?.clientWidth ?? innerWidth;
+        const drag = Math.sign(dx) * Math.max(0, Math.abs(dx) - 12);
         offset.current = next
-          ? Math.max(-width, Math.min(width, dx))
+          ? Math.max(-width, Math.min(width, drag))
           : dx * 0.18;
         if (track.current && !reducedMotion())
           track.current.style.transform = `translateX(${offset.current}px)`;
@@ -169,7 +174,7 @@ export function useContentPager(
           ];
         const accepted =
           travel >= width * 0.2 ||
-          (travel >= 24 &&
+          (travel >= 36 &&
             travel / Math.max(1, performance.now() - g.time) > 0.35);
         settle(accepted && next ? next : null);
       },

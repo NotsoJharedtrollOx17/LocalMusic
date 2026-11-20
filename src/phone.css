@@ -663,7 +663,7 @@
 }
 :root[data-layout="phone"] .modal-body > .sound-controls {
   flex: 0 0 auto;
-  margin-block: auto;
+  margin-block: 0;
   padding-block: 12px;
 }
 :root[data-layout="phone"] .track-details {
@@ -1023,4 +1023,15 @@
 .library-pane,
 .track-list {
   overflow-anchor: none;
+}
+
+:root[data-platform="android"] .section-indicator {
+  transition-duration: 180ms;
+}
+:root[data-platform="android"] .library-pane,
+:root[data-platform="android"] .player-surface-body.player {
+  touch-action: pan-y;
+}
+:root[data-platform="android"] .library-toolbar[data-collection-kind] .library-import {
+  display: none;
 }
