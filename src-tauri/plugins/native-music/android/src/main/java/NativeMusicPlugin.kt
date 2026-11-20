@@ -52,6 +52,9 @@ class NativeMusicPlugin(private val activity:Activity):Plugin(activity){
  @Command fun analyzeTrack(invoke:Invoke){val args=invoke.parseArgs(AnalysisArgs::class.java);analysisWorker.execute{try{val feature=AcousticDecoder(activity.applicationContext).decode(Uri.parse(args.uri?:""),args.durationMs);invoke.resolve(JSObject().put("feature",feature?:JSONObject.NULL))}catch(e:Exception){invoke.reject(e.message?:"Audio analysis unavailable")}}}
  private var musicWebView:android.webkit.WebView?=null
  override fun load(webView:android.webkit.WebView){
+  worker.execute {
+   migrateLegacyArtwork(java.io.File(activity.dataDir, "artwork"), java.io.File(activity.cacheDir, "artwork"))
+  }
   musicWebView=webView;webView.settings.textZoom=(activity.resources.configuration.fontScale*100).toInt()
   webView.overScrollMode=android.view.View.OVER_SCROLL_NEVER
   (activity as? ComponentActivity)?.onBackPressedDispatcher?.addCallback(activity,object:OnBackPressedCallback(true){

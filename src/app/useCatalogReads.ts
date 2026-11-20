@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { api } from "../api";
 import type { Track, CatalogIndex } from "../types";
 import type { useAppState } from "./useAppState";
@@ -32,6 +32,7 @@ export function useCatalogReads(
   } = state;
   const [index, setIndex] = useState<CatalogIndex | null>(null);
   const current = useRef<CatalogIndex | null>(null);
+  const tracksById = useMemo(() => new Map(index?.tracks.map((t) => [t.id, t])), [index]);
   const flight = useRef<Promise<CatalogIndex> | null>(null);
   const libraryOptions = useRef({ favoriteOnly: onlyFavorites, sort });
   libraryOptions.current = { favoriteOnly: onlyFavorites, sort };
@@ -164,7 +165,7 @@ export function useCatalogReads(
             g.ids.includes(selected.coverTrack.id),
           );
         const ids = found?.ids ?? (reconcile ? [] : selected.ids);
-        const byId = new Map(next.tracks.map((t) => [t.id, t]));
+        const byId = next === index ? tracksById : new Map(next.tracks.map((t) => [t.id, t]));
         const tracks = ids
           .map((id) => byId.get(id))
           .filter((t): t is Track => !!t);
@@ -179,7 +180,7 @@ export function useCatalogReads(
         if (version === groupRequest.current) setGroupLoading(false);
       }
     },
-    [readIndex],
+    [readIndex, index, tracksById],
   );
   useEffect(() => {
     if (index && group)

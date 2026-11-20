@@ -35,7 +35,7 @@ pub fn resolve(
         .and_then(|s| s.strip_prefix("cache:"))
         .unwrap_or(&seed);
     let mut path = cache.join(format!("{key}-{size}.png"));
-    if size == 128 || size == 256 {
+    if size < 512 {
         let _ = derive_cover(cache, key, size);
     }
     if !path.exists() && key != seed {
@@ -60,7 +60,7 @@ pub fn resolve(
                 .native_music()
                 .call("artwork", serde_json::json!({"uri":track.source_uri}));
         }
-        if size == 128 || size == 256 {
+        if size < 512 {
             let _ = derive_cover(cache, key, size);
         }
         if !path.exists() {
@@ -205,8 +205,11 @@ fn procedural(seed: u32, size: u32) -> image::RgbaImage {
 }
 pub fn cache_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     use tauri::Manager;
-    app.path()
-        .app_data_dir()
+    #[cfg(target_os = "android")]
+    let directory = app.path().app_cache_dir();
+    #[cfg(not(target_os = "android"))]
+    let directory = app.path().app_data_dir();
+    directory
         .map(|p| p.join("artwork"))
         .map_err(|e| e.to_string())
 }
