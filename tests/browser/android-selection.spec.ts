@@ -483,6 +483,7 @@ test("consecutive phone song taps change tracks and toggle the current song", as
   await seed(page, 6, false, true);
   const cdp = await context.newCDPSession(page);
   await page.locator("#tab-albums").click();
+  await expect(page.locator(".library-pager-track")).toHaveCSS("transform", "none");
   await cdp.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [{ x: 90, y: 450 }],
@@ -499,6 +500,7 @@ test("consecutive phone song taps change tracks and toggle the current song", as
     "aria-selected",
     "true",
   );
+  await expect(page.locator(".library-pager-track")).toHaveCSS("transform", "none");
   for (const index of [0, 1, 2, 0]) {
     const row = page.locator(".track-row").nth(index);
     await down(cdp, row.locator(".track-hit"));

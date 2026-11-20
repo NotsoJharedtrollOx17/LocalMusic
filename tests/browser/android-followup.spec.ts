@@ -201,6 +201,8 @@ test("Android player header swipe dismisses without stretching its surface", asy
   const player = page.getByRole("dialog", { name: "Now playing", exact: true }),
     head = player.locator(".player-surface-head");
   const pointer = (y: number) => ({
+    isPrimary: true,
+    button: 0,
     pointerType: "touch",
     pointerId: 9,
     clientX: 190,
@@ -231,16 +233,20 @@ test("real touch landscape swipes retain phone navigation through empty views an
   await page.getByRole("tab", { name: "Songs", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-layout", "phone");
   const cdp = await context.newCDPSession(page);
+  const track = page.locator(".library-pager-track");
   for (const target of ["Albums", "Artists"]) {
+    await expect(track).toHaveCSS("transform", "none");
     await swipe(cdp, 350, 760, 120);
     await expect(
       page.getByRole("tab", { name: target, exact: true }),
     ).toHaveAttribute("aria-selected", "true");
   }
+  await expect(track).toHaveCSS("transform", "none");
   await swipe(cdp, 350, 5, 320);
   await expect(
     page.getByRole("tab", { name: "Albums", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
+  await expect(track).toHaveCSS("transform", "none");
   await swipe(cdp, 350, 863, 500);
   await expect(
     page.getByRole("tab", { name: "Artists", exact: true }),
