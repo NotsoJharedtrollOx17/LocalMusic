@@ -136,7 +136,7 @@ I used ChatGPT/Codex to help with planning, implementation, documentation and in
   author  = {Flores Azcona, Abraham Jhared},
   title   = {Local Music},
   year    = {2026},
-  version = {1.0.1},
+  version = {1.0.2},
   url     = {https://github.com/NotsoJharedtrollOx17/LocalMusic},
   license = {MIT}
 }
