@@ -152,7 +152,10 @@
 :root[data-layout="phone"] .library-navigation > .inline-search {
   grid-column: 1;
   grid-row: 2;
-  padding: 4px 0 10px;
+  box-sizing: border-box;
+  width: min(100%, 420px);
+  justify-self: center;
+  padding: 4px 4px 10px;
 }
 :root[data-layout="phone"] .library-navigation > .group-back {
   min-height: 48px;

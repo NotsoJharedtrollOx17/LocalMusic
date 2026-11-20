@@ -102,7 +102,7 @@ export function useMusicApp(initialSettings?: Settings) {
   useLayoutEffect(() => {
     if (!nativeSearchFocus.current || !searchOpen || section === "year") return;
     nativeSearchFocus.current = false;
-    searchInput.current?.focus();
+    searchInput.current?.focus({ preventScroll: true });
   }, [searchOpen, section, searchInput]);
   type Dialog = typeof modal;
   const dialogHistory = useRef<Array<NonNullable<Dialog>>>([]);
@@ -528,7 +528,7 @@ export function useMusicApp(initialSettings?: Settings) {
       if (e.key === "/" && section !== "year") {
         e.preventDefault();
         setSearchOpen(true);
-        requestAnimationFrame(() => searchInput.current?.focus());
+        requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }));
       }
     };
     window.addEventListener("keydown", listener);
@@ -868,7 +868,7 @@ export function useMusicApp(initialSettings?: Settings) {
           setModal("settings");
           break;
         case "search":
-          if (searchOpen) searchInput.current?.focus();
+          if (searchOpen) searchInput.current?.focus({ preventScroll: true });
           else {
             nativeSearchFocus.current = true;
             setSearchOpen(true);

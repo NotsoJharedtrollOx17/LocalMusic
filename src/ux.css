@@ -368,7 +368,8 @@
   margin: 0;
 }
 .inline-search-field {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: 2px 6px 2px 12px;
@@ -377,9 +378,8 @@
   border-radius: 8px;
 }
 .inline-search-field input[type="search"] {
-  flex: 1;
   min-width: 0;
-  width: 0;
+  width: 100%;
   border: 0;
   background: transparent;
   padding-inline: 4px;

@@ -113,6 +113,12 @@ The portrait Now Playing layout now centers the artwork and track details above 
 - The isolated Windows v1.0.1 debug build passed native Library menu routing, all five tabs, search clearing, Settings Escape with focus return, and opening and closing detached Player, Visualizer and Equalizer. No JavaScript errors were recorded. The paused playback snapshot, settings, EQ configuration and playlists matched before and after.
 - In the detached Windows Equalizer, the normal window leaves a large gap below the header. At a 568 × 438 CSS-pixel viewport the last slider required scrolling. Keyboard focus brought the slider into view, with its frequency label still below the fold. The host reported audio output unavailable, so the walkthrough covered control reachability and status feedback.
 
+### Inline Search layout follow-up
+
+The stacked Search row fits its header and caps its width. The close button keeps its own column, and focusing Search preserves the scroll position. All 115 unit tests passed. The 22 focused browser cases passed across the initial run and recheck, including the updated narrow-row geometry and the 320–1360 px resize check. The isolated Windows QA app verified the field at 677, 823, and 1259 CSS-pixel viewport widths. Search clearing and the paused profile also passed.
+
+On the Note10+ QA build, the 371 CSS-pixel search field and its 48 CSS-pixel close control fit within the visible viewport with the Android keyboard open at viewport scale 1. Back retained the filter and Clear restored results. The paused profile matched, the three native XMB and scroll checks passed, and production package metadata matched across the QA update.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.
