@@ -42,6 +42,8 @@ android {
     }
     buildTypes {
         getByName("debug") {
+            if (System.getenv("LOCAL_MUSIC_ISOLATED_QA") == "1") {
+            }
             manifestPlaceholders["usesCleartextTraffic"] = "true"
             isDebuggable = true
             isJniDebuggable = true
