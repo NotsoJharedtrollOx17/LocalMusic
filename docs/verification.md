@@ -125,6 +125,12 @@ On Android, the Library sort control is hidden while Search is open or a filter 
 
 The [v1.0.1 tag run](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/runs/44789629569) built the Android and Windows packages and stopped at the browser verification gate. Publication was skipped. The original tag was preserved. The v1.0.2 candidate corrects the browser touch fixture and waits for pane motion to settle before running the existing swipe and layout assertions. All six affected local cases passed.
 
+The [v1.0.2 release run](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/runs/44793666528) passed all gates and published the [stable hotfix](https://github.com/NotsoJharedtrollOx17/LocalMusic/releases/tag/v1.0.2) from `4bcb63a`. All eight public assets matched their GitHub digests. The seven files listed in SHA256SUMS matched byte-for-byte, and the packaged executables matched the embedded frontend reports. The production APK passed signer verification and installed in place on the Note10+ as version 1.0.2, code 1000002.
+
+The exact published Windows portable executable passed native menu routing, Search at three window sizes, Settings focus return, and detached Player, Visualizer, and Equalizer flows. The paused profile matched and there were no JavaScript errors. At 568 × 438 CSS pixels, keyboard focus brought the last Equalizer slider into view while its frequency label stayed below the fold.
+
+On the installed production APK, the 713-song count and visible paused mini-player matched their pre-update baseline. The no-results Search screen fit with the Android keyboard open and the sort control hidden. Back retained the query and Clear restored the results. Now Playing and Queue returned through Android Back. The visible Queue button worked by touch while Android's UI hierarchy omitted it by name in Now Playing. This remains a screen-reader follow-up. Playback stayed paused during the walkthrough.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.
