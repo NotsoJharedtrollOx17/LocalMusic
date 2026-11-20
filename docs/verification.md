@@ -107,6 +107,12 @@ The Android transition keeps the collapsed panel geometry until the player unmou
 
 The portrait Now Playing layout now centers the artwork and track details above the transport. The Equalizer uses the individual slider frequencies as its labels. The frontend build, 115 unit tests, and the focused player geometry and phone Equalizer browser cases passed. Three Note10+ QA rounds verified centered content, the six frequency sliders supported by the low-sample-rate fixture, and the absence of category labels. The production package version and update time matched across the QA installation.
 
+### Cross-platform native UI flow audit
+
+- Android v1.0.1 on the Note10+ passed three native XMB and scroll checks with no transient row highlights, plus three Player, Queue and Equalizer rounds with nested Back, swipe cancellation, focus return and unchanged paused playback. WebView activation verified all five Library tabs. Android keyboard Back preserved the search filter, Clear restored results, and Settings opened and closed without horizontal overflow. Playback, settings, EQ configuration and playlists matched before and after the navigation walkthrough.
+- The isolated Windows v1.0.1 debug build passed native Library menu routing, all five tabs, search clearing, Settings Escape with focus return, and opening and closing detached Player, Visualizer and Equalizer. No JavaScript errors were recorded. The paused playback snapshot, settings, EQ configuration and playlists matched before and after.
+- In the detached Windows Equalizer, the normal window leaves a large gap below the header. At a 568 × 438 CSS-pixel viewport the last slider required scrolling. Keyboard focus brought the slider into view, with its frequency label still below the fold. The host reported audio output unavailable, so the walkthrough covered control reachability and status feedback.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.
