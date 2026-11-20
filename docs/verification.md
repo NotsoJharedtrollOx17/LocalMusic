@@ -121,6 +121,10 @@ On the Note10+ QA build, the 371 CSS-pixel search field and its 48 CSS-pixel clo
 
 On Android, the Library sort control is hidden while Search is open or a filter remains active. The count can wrap within its own space. The frontend build and 115 unit tests passed, along with focused browser checks for restoring the control after Clear and retaining filter and sort behavior on other platforms.
 
+### Hotfix release verification
+
+The [v1.0.1 tag run](https://github.com/NotsoJharedtrollOx17/LocalMusic/actions/runs/44789629569) built the Android and Windows packages and stopped at the browser verification gate. Publication was skipped. The original tag was preserved. The v1.0.2 candidate corrects the browser touch fixture and waits for pane motion to settle before running the existing swipe and layout assertions. All six affected local cases passed.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.

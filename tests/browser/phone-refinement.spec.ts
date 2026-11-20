@@ -29,6 +29,7 @@ for (const width of [320, 390, 411])
       page.getByRole("button", { name: "Library actions", exact: true }),
     ).toHaveCount(1);
     await page.getByRole("tab", { name: "Albums", exact: true }).click();
+    await expect(page.locator(".library-pager-track")).toHaveCSS("transform", "none");
     const cards = page.locator("#library-content .album-grid .album-card");
     await expect(cards.first()).toBeVisible();
     const first = await cards.nth(0).boundingBox(),
