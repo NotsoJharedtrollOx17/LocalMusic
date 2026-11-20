@@ -44,6 +44,7 @@ android {
     buildTypes {
         getByName("debug") {
             if (System.getenv("LOCAL_MUSIC_ISOLATED_QA") == "1") {
+                this.applicationIdSuffix = ".qa"
             }
             manifestPlaceholders["usesCleartextTraffic"] = "true"
             isDebuggable = true
