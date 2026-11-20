@@ -85,6 +85,12 @@ The [approved hotfix](android-interaction-cache-hotfix-plan.md) is implemented o
 - On the same phone the final QA package passed the native two-finger WebView test and matched WebView text scaling to the Android font setting. All 12 expected master thumbnails were present under the cache, and the empty legacy artwork directory had been removed. Android reported 188 KiB allocated to the artwork cache and 576 KiB to the synthetic catalog database.
 - The Windows host reported a missing Android Emulator hypervisor driver. The software launch stayed offline. Same-fixture v1.0.0 comparison, frame pacing and sustained memory measurements remain open.
 
+### XMB and scroll feedback follow-up
+
+On the Note10+ the old QA build reproduced both reports in three native tap-and-swipe sequences. Your Recap settled 263.49 CSS pixels from the left edge of the tab strip, and each vertical swipe set and cleared the song press highlight. With the corrected QA APK, all three Recap selections landed 0.63 CSS pixels from the left edge. Each swipe scrolled the Songs pane by 43–61 CSS pixels, registered Android pointer cancellation, and produced zero row press highlights. The paused playback controls matched before and after each swipe. The production package version and update timestamp matched across the QA update.
+
+The ARM64 QA APK SHA-256 was `2b21f229ed1e895ecce0eac6855f512013ea1e342d83875a08aeae2fc658715b`. The 115 frontend unit tests and 27 focused browser cases passed. This follow-up used the physical phone for Android acceptance at the owner's direction.
+
 ## Separate acceptance still requiring measurement
 
 Manual screen-reader flows, broader Android devices/versions/codecs/providers, physical output disconnection/reconnection, audible/wired/Bluetooth synchronization and sustained background/battery/thermal/resource behavior remain separate gates. The phone was charging during smoke tests. No Note10 CPU, p95 frame time, battery or musical-relevance claim follows from builds, screenshots, fixtures or this short runtime check. Multi-monitor/high-contrast and broader native accessibility inspection are also not established here.
